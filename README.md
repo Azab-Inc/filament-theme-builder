@@ -25,6 +25,8 @@ npm run e2e    # Playwright Chromium smoke checks for builder and Filament login
 npm run build  # production builds for builder and demo assets
 ```
 
+The Sail app is served on port 8000 by default. If that port is occupied, use `APP_PORT=8001 npm run dev` (update `APP_URL` in `demo/.env` to match if you need app-generated absolute URLs).
+
 For E2E testing, install the browser once with `npx playwright install chromium`. The demo login route is checked as a rendered Filament page; this workflow does not add public panel access or demo credentials.
 
 Jenkins is the project's planned/used CI. Do not add GitHub Actions.
