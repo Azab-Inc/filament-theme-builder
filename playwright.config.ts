@@ -13,14 +13,14 @@ export default defineConfig({
     {
       command: 'npm --prefix builder run dev -- --host 127.0.0.1 --port 4173',
       url: 'http://127.0.0.1:4173',
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
       timeout: 120_000,
     },
     {
       command: 'php artisan serve --host=127.0.0.1 --port=4174',
       cwd: 'demo',
       url: 'http://127.0.0.1:4174/admin/login',
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
       timeout: 120_000,
     },
   ],
