@@ -47,3 +47,18 @@ test('compose gateway serves demo Vite client and proxied API on same origin', a
   const api = await request.get(`${composeBaseUrl}/api/health`)
   expect(api.ok()).toBeTruthy()
 })
+
+test('production gateway serves compiled assets without exposing Vite hot reload', async ({ request }) => {
+  test.skip(process.env.COMPOSE_E2E !== '1', 'requires a running Compose stack')
+
+  const hotFile = await request.get(`${composeBaseUrl}/hot`)
+  expect(hotFile.ok()).toBeFalsy()
+
+  const manifest = await request.get(`${composeBaseUrl}/build/manifest.json`)
+  expect(manifest.ok()).toBeTruthy()
+  const manifestEntries = await manifest.json()
+  const entry = Object.values(manifestEntries).find((value) => typeof value === 'object' && value !== null)
+  expect(entry).toBeTruthy()
+  const asset = await request.get(`${composeBaseUrl}/build/${(entry as { file: string }).file}`)
+  expect(asset.ok()).toBeTruthy()
+})

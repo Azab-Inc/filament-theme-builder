@@ -42,3 +42,38 @@ Complete. The production stack now builds the Vue builder and Laravel/Vite asset
 
 - The demo npm install reports five critical audit findings from the existing frontend dependency graph; no package changes were made because adding/updating dependencies was outside this task.
 - TLS was intentionally not tested, per the brief.
+
+## Fix round: reviewer findings
+
+### Implemented
+
+- Added Laravel maintenance commands and registered all three with the independent scheduler every ten minutes:
+  - `demo:reset` restores a configured file-backed snapshot atomically and safely reports when no snapshot is configured;
+  - `shares:cleanup-expired` only deletes records when the persistent SQLite database exposes the expected `shares.expires_at` schema;
+  - `uploads:cleanup` removes expired files from the configured temporary-upload directory and safely reports when absent.
+- Added cached configuration for maintenance paths and retention settings.
+- Added a shared `logs` named volume to bootstrap, demo, and scheduler.
+- Made the production host binding configurable through `GATEWAY_HOST`, retaining `127.0.0.1` as the default and `GATEWAY_PORT` as the existing port override.
+- Removed stale copied Laravel bootstrap caches from the production image build, preventing dev-only Debugbar providers from entering a `--no-dev` image.
+- Removed Composer from the final image after dependency installation/autoload generation.
+- Explicitly removed `public/hot` from the production image and return HTTP 404 for `/hot` instead of falling through to the builder SPA.
+- Extended Playwright coverage for compiled production assets and Vite hot-file isolation.
+
+### TDD / verification evidence
+
+- Red check before implementation: `php artisan test tests/Feature/ComposeRuntimeTest.php` — **1 failed, 1 error** because maintenance commands/schedules did not exist.
+- `composer --working-dir=demo run test` — **pass**: Pint, PHPStan, and **9 tests / 26 assertions**.
+- `npm test` — **pass**: root Node tests **7 passed**, builder Vitest **1 passed**, Vue type-check, Pint, PHPStan, and PHPUnit.
+- `docker build --tag filament-theme-builder-prod .` — **pass**.
+- `docker compose -f compose.prod.yaml config --quiet` — **pass**.
+- `GATEWAY_HOST=0.0.0.0 GATEWAY_PORT=9191 docker compose -f compose.prod.yaml config` resolved `host_ip: 0.0.0.0`, `published: "9191"`, and the shared `logs` volume.
+- `docker compose -f compose.prod.yaml up -d` — **pass**; demo became healthy and scheduler remained running.
+- `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:9080 npx playwright test e2e/smoke.spec.ts --grep 'gateway'` — **3 passed**.
+- Production API check returned `{"status":"ok"}`.
+- Production `/hot` check returned **404**.
+- Final image check confirmed `/usr/bin/composer`, Node executables, and `/var/www/html/public/hot` are absent.
+- Scheduler logs reported `No scheduled commands are ready to run.`
+
+### Fix-round concerns
+
+- The repository still has no share/upload domain schema in this task's current application surface; the maintenance commands therefore no-op observably until their configured snapshot, temporary-upload directory, or expected shares schema exists. No unsupported domain schema was invented.

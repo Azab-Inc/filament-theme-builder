@@ -25,9 +25,13 @@ COPY demo/composer.json demo/composer.lock ./
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-progress --no-scripts
 
 COPY demo/ ./
-RUN composer dump-autoload --no-dev --optimize --no-interaction
+RUN rm -f bootstrap/cache/*.php \
+    && composer dump-autoload --no-dev --optimize --no-interaction \
+    && rm -f /usr/bin/composer
+
 COPY --from=demo-assets /app/public/build ./public/build
 COPY --from=builder-assets /app/dist ./builder-dist
+RUN rm -f public/hot
 COPY demo/Caddyfile /etc/caddy/Caddyfile
 COPY scripts/compose-bootstrap.sh /usr/local/bin/compose-bootstrap.sh
 COPY scripts/compose-production-entrypoint.sh /usr/local/bin/compose-production-entrypoint.sh
