@@ -49,7 +49,7 @@ test('compose gateway serves demo Vite client and proxied API on same origin', a
 })
 
 test('production gateway serves compiled assets without exposing Vite hot reload', async ({ request }) => {
-  test.skip(process.env.COMPOSE_E2E !== '1', 'requires a running Compose stack')
+  test.skip(process.env.COMPOSE_PROD_E2E !== '1', 'requires a running production Compose stack')
 
   const hotFile = await request.get(`${composeBaseUrl}/hot`)
   expect(hotFile.ok()).toBeFalsy()

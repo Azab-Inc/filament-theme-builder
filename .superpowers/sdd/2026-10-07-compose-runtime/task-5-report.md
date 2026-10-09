@@ -77,3 +77,20 @@ Complete. The production stack now builds the Vue builder and Laravel/Vite asset
 ### Fix-round concerns
 
 - The repository still has no share/upload domain schema in this task's current application surface; the maintenance commands therefore no-op observably until their configured snapshot, temporary-upload directory, or expected shares schema exists. No unsupported domain schema was invented.
+
+## Fix round 2: production-only Playwright gating
+
+### Implemented
+
+- Production-only `/hot`, manifest, and compiled-asset assertions now require `COMPOSE_PROD_E2E=1`.
+- Shared builder, Filament admin, and API gateway assertions remain enabled whenever `COMPOSE_E2E=1`.
+
+### TDD / verification evidence
+
+- Red reproduction against the documented dev gateway:
+  `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/smoke.spec.ts --grep 'gateway' --reporter=line`
+  — **1 failed, 2 passed**; the production-only `/hot` assertion incorrectly ran against the dev gateway.
+- Green dev gateway command with the same invocation — **1 skipped, 2 passed**; production-only assertions are now excluded.
+- Green production gateway command:
+  `COMPOSE_E2E=1 COMPOSE_PROD_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:9080 npx playwright test e2e/smoke.spec.ts --grep 'gateway' --reporter=line`
+  — **3 passed**.
