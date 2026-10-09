@@ -27,7 +27,7 @@ export default defineConfig({
         {
           command: 'php artisan serve --host=127.0.0.1 --port=4174',
           cwd: 'demo',
-          url: 'http://127.0.0.1:4174/admin/login',
+          url: 'http://127.0.0.1:4174/demo/admin/login',
           reuseExistingServer: false,
           timeout: 120_000,
         },

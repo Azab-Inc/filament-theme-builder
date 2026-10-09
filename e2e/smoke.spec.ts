@@ -11,7 +11,7 @@ test('Vue builder scaffold renders', async ({ page }) => {
 })
 
 test('Filament admin login renders', async ({ page }) => {
-  await page.goto('http://127.0.0.1:4174/admin/login')
+  await page.goto('http://127.0.0.1:4174/demo/admin/login')
 
   await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible()
   await expect(page.getByLabel(/email address/i)).toBeVisible()
@@ -27,6 +27,29 @@ test('compose gateway serves builder and same-origin Filament', async ({ page })
 
   const admin = await page.request.get(`${composeBaseUrl}/demo/admin/login`)
   expect(admin.ok()).toBeTruthy()
+  const adminHtml = await admin.text()
+  const gatewayOrigin = new URL(composeBaseUrl).origin
+  const generatedUrls = [
+    ...adminHtml.matchAll(/(href|src|data-module-url|data-update-uri)="([^"]+)"/g),
+  ].map(([, attribute, value]) => ({ attribute, url: new URL(value, composeBaseUrl) }))
+  const filamentAssets = generatedUrls.filter(({ attribute, url }) =>
+    ['href', 'src'].includes(attribute) && /^\/(?:css|js|fonts)\/filament\//.test(url.pathname),
+  )
+  const livewireUrls = generatedUrls.filter(({ url }) => /^\/livewire[^/]*(?:\/|$)/.test(url.pathname))
+
+  expect(filamentAssets.some(({ url }) => url.pathname.startsWith('/css/filament/'))).toBeTruthy()
+  expect(filamentAssets.some(({ url }) => url.pathname.startsWith('/js/filament/'))).toBeTruthy()
+  expect(filamentAssets.some(({ url }) => url.pathname.startsWith('/fonts/filament/'))).toBeTruthy()
+  expect(livewireUrls.length).toBeGreaterThan(0)
+  for (const { url } of livewireUrls) {
+    expect(url.origin).toBe(gatewayOrigin)
+  }
+  for (const { url } of [...filamentAssets, ...livewireUrls.filter(({ attribute }) => ['href', 'src'].includes(attribute))]) {
+    expect(url.origin).toBe(gatewayOrigin)
+
+    const asset = await page.request.get(url.href)
+    expect(asset.ok(), `${url.pathname} should resolve on the gateway`).toBeTruthy()
+  }
   await page.goto(`${composeBaseUrl}/demo/admin/login`)
   await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible()
   await expect(page.getByLabel(/email address/i)).toBeVisible()
@@ -41,11 +64,15 @@ test('compose gateway serves demo Vite client and proxied API on same origin', a
   expect(client.ok()).toBeTruthy()
   if (demoAssetPath.includes('vite')) {
     expect(client.headers()['content-type']).toContain('javascript')
+    const clientSource = await client.text()
+    expect(clientSource).toContain('/_demo-vite/')
+    expect(clientSource).not.toContain('"/@vite/client"')
   } else {
     expect(client.headers()['content-type']).toContain('json')
   }
   const api = await request.get(`${composeBaseUrl}/api/health`)
   expect(api.ok()).toBeTruthy()
+  expect(new URL(api.url()).origin).toBe(new URL(composeBaseUrl).origin)
 })
 
 test('production gateway serves compiled assets without exposing Vite hot reload', async ({ request }) => {
