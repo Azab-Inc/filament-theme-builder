@@ -34,9 +34,16 @@ test('compose gateway serves builder and same-origin Filament', async ({ page })
 
 test('compose gateway serves demo Vite client and proxied API on same origin', async ({ request }) => {
   test.skip(process.env.COMPOSE_E2E !== '1', 'requires a running Compose stack')
-  const client = await request.get(`${composeBaseUrl}/_demo-vite/@vite/client`)
+  const demoAssetPath = composeBaseUrl.endsWith(':9080')
+    ? '/build/manifest.json'
+    : '/_demo-vite/@vite/client'
+  const client = await request.get(`${composeBaseUrl}${demoAssetPath}`)
   expect(client.ok()).toBeTruthy()
-  expect(client.headers()['content-type']).toContain('javascript')
+  if (demoAssetPath.includes('vite')) {
+    expect(client.headers()['content-type']).toContain('javascript')
+  } else {
+    expect(client.headers()['content-type']).toContain('json')
+  }
   const api = await request.get(`${composeBaseUrl}/api/health`)
   expect(api.ok()).toBeTruthy()
 })

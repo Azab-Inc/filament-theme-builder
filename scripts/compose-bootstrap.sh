@@ -53,3 +53,10 @@ php artisan migrate --force
 if [ "$BOOTSTRAP_PRODUCTION" = "1" ]; then
   php artisan optimize
 fi
+
+if [ -d /runtime ]; then
+  printf '%s' "${APP_KEY:-}" > /runtime/APP_KEY
+  if [ ! -s /runtime/APP_KEY ]; then
+    grep -m 1 '^APP_KEY=' .env | cut -d= -f2- > /runtime/APP_KEY
+  fi
+fi
