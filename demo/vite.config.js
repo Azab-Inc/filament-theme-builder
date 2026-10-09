@@ -19,6 +19,7 @@ export default defineConfig({
     ]),
     server: {
         cors: true,
+        origin: process.env.VITE_DEV_SERVER_ORIGIN,
         ws: {
             path: '/',
         },

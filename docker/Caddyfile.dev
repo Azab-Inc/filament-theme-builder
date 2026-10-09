@@ -1,0 +1,29 @@
+{
+	auto_https off
+}
+
+:80 {
+	@demo_vite path /_demo-vite/*
+	handle @demo_vite {
+		reverse_proxy demo-vite:5173
+	}
+
+	@demo path /demo/*
+	handle @demo {
+		reverse_proxy demo-php:80
+	}
+
+	@api path /api/*
+	handle @api {
+		reverse_proxy demo-php:80
+	}
+
+	@demo_assets path /build/* /storage/* /fonts/* /css/filament/* /js/filament/* /_debugbar/* /livewire* /favicon.ico /robots.txt
+	handle @demo_assets {
+		reverse_proxy demo-php:80
+	}
+
+	handle {
+		reverse_proxy builder-vite:5173
+	}
+}
