@@ -1,5 +1,11 @@
 import { defineConfig, devices } from '@playwright/test'
 
+// Compose gateway smoke tests are opt-in (COMPOSE_E2E=1) and run against an
+// externally managed stack (COMPOSE_BASE_URL, default http://127.0.0.1:4175).
+// Playwright never starts the Compose stacks itself, so the legacy dev servers
+// are only launched for the normal `npm run e2e` workflow.
+const composeE2e = process.env.COMPOSE_E2E === '1'
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -9,19 +15,21 @@ export default defineConfig({
     browserName: 'chromium',
     headless: true,
   },
-  webServer: [
-    {
-      command: 'npm --prefix builder run dev -- --host 127.0.0.1 --port 4173',
-      url: 'http://127.0.0.1:4173',
-      reuseExistingServer: false,
-      timeout: 120_000,
-    },
-    {
-      command: 'php artisan serve --host=127.0.0.1 --port=4174',
-      cwd: 'demo',
-      url: 'http://127.0.0.1:4174/admin/login',
-      reuseExistingServer: false,
-      timeout: 120_000,
-    },
-  ],
+  webServer: composeE2e
+    ? []
+    : [
+        {
+          command: 'npm --prefix builder run dev -- --host 127.0.0.1 --port 4173',
+          url: 'http://127.0.0.1:4173',
+          reuseExistingServer: false,
+          timeout: 120_000,
+        },
+        {
+          command: 'php artisan serve --host=127.0.0.1 --port=4174',
+          cwd: 'demo',
+          url: 'http://127.0.0.1:4174/admin/login',
+          reuseExistingServer: false,
+          timeout: 120_000,
+        },
+      ],
 })
