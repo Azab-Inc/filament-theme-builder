@@ -109,4 +109,13 @@ test('production gateway serves compiled assets without exposing Vite hot reload
   expect(entry).toBeTruthy()
   const asset = await request.get(`${composeBaseUrl}/build/${(entry as { file: string }).file}`)
   expect(asset.ok()).toBeTruthy()
+
+  const builder = await request.get(composeBaseUrl)
+  expect(builder.ok()).toBeTruthy()
+  const builderHtml = await builder.text()
+  const builderAssetPath = builderHtml.match(/(?:src|href)="(\/assets\/[^"]+)"/)?.[1]
+  expect(builderAssetPath).toBeDefined()
+  expect(builderAssetPath).toMatch(/^\/assets\/.+\.(?:js|css)$/)
+  const builderAsset = await request.get(new URL(builderAssetPath!, composeBaseUrl).href)
+  expect(builderAsset.ok()).toBeTruthy()
 })

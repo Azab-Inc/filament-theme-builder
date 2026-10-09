@@ -4,10 +4,8 @@ A visual theme builder for FilamentPHP, with a live Vue builder and an independe
 
 ## Prerequisites
 
-- Supported development hosts: Linux, macOS, or WSL2, with Docker Engine/Desktop and the Docker Compose plugin available to Sail. Native Windows shells are not supported by these npm scripts.
-- Node.js 24.12+ (or 22.18+), npm
-- PHP 8.5+, Composer
-- Docker with the Compose plugin (used by the Sail `sail-8.5/app` image and by the Compose runtime below)
+- For the Docker Compose workflows: Docker Engine/Desktop with the Docker Compose plugin. No host Node.js, PHP, or Composer installation is required.
+- For the legacy npm/Sail workflow: Linux, macOS, or WSL2 (native Windows shells are not supported by these npm scripts), Node.js 24.12+ (or 22.18+) with npm, and PHP 8.5+ with Composer. Docker with the Compose plugin is also required by Sail.
 
 ## Repository layout
 
@@ -24,7 +22,7 @@ section. Each stack starts both parts of the application through a single
 gateway:
 
 - `docker compose -f compose.dev.yaml up` — development stack with hot reload, gateway at `http://127.0.0.1:4175`
-- `docker compose -f compose.prod.yaml up` — production stack with prebuilt static assets, gateway at `http://localhost:9080` (published on loopback as `127.0.0.1:9080`)
+- `docker compose -f compose.prod.yaml up` — production stack with prebuilt static assets, gateway at `http://localhost:9080` (published on all interfaces by default; override with `GATEWAY_HOST`)
 
 Both gateways serve the same single-origin routes:
 
@@ -56,7 +54,7 @@ docker compose -f compose.prod.yaml up
 ```
 
 - The image is built with the builder and demo assets already compiled; at runtime only `bootstrap` (one-shot), `demo` (FrankenPHP with integrated Caddy and Laravel Octane workers) and `scheduler` run. No Node container runs in production — there is no Vite dev server and no hot reload, only the prebuilt files under `/build/*` and the builder's hashed assets.
-- The gateway is published on `127.0.0.1:9080` by default, so `http://localhost:9080` works; override the bind with `GATEWAY_HOST` and the port with `GATEWAY_PORT`. Vite's `/hot` marker is not exposed (it returns 404).
+- The gateway is published on `0.0.0.0:9080` by default, so `http://localhost:9080` works; override the bind with `GATEWAY_HOST` and the port with `GATEWAY_PORT`. Vite's `/hot` marker is not exposed (it returns 404).
 - Persisted share data: the named volume `shares_db` is mounted at `/var/lib/shares` and holds `shares.sqlite`, so share records survive restarts. The demo SQLite database, private/public uploads, framework cache and logs are likewise kept in named volumes (`demo_db`, `demo_storage`, `uploads`, `framework_storage`, `logs`).
 
 ### Stopping the stacks

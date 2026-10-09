@@ -29,7 +29,7 @@ services:
     image: filament-theme-builder-prod
     working_dir: /var/www/html
     ports:
-      - "${GATEWAY_HOST:-127.0.0.1}:${GATEWAY_PORT:-9080}:80"
+      - "${GATEWAY_HOST:-0.0.0.0}:${GATEWAY_PORT:-9080}:80"
     environment: &runtime-environment
       APP_ENV: production
       APP_DEBUG: "false"

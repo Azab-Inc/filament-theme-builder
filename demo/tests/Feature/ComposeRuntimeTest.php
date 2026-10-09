@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
 class ComposeRuntimeTest extends TestCase
@@ -48,5 +49,34 @@ class ComposeRuntimeTest extends TestCase
         $this->artisan('uploads:cleanup')
             ->expectsOutputToContain('skipped')
             ->assertExitCode(0);
+    }
+
+    public function test_share_cleanup_safely_skips_invalid_sqlite_data(): void
+    {
+        $database = tempnam(sys_get_temp_dir(), 'shares-');
+        file_put_contents($database, 'not sqlite data');
+        Config::set('maintenance.shares_database', $database);
+
+        try {
+            $this->artisan('shares:cleanup-expired')
+                ->expectsOutputToContain('skipped')
+                ->assertExitCode(0);
+        } finally {
+            @unlink($database);
+        }
+    }
+
+    public function test_upload_cleanup_safely_skips_a_non_directory_path(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'uploads-');
+        Config::set('maintenance.temporary_uploads_path', $path);
+
+        try {
+            $this->artisan('uploads:cleanup')
+                ->expectsOutputToContain('skipped')
+                ->assertExitCode(0);
+        } finally {
+            @unlink($path);
+        }
     }
 }

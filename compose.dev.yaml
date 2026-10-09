@@ -46,7 +46,6 @@ services:
     command: ["frankenphp", "php-server", "-r", "public/"]
     environment:
       - APP_URL=http://127.0.0.1:${GATEWAY_PORT:-4175}
-      - APP_KEY
     volumes:
       - ./demo:/var/www/html
       - demo_vendor:/var/www/html/vendor
