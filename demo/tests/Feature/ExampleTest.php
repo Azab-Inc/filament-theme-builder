@@ -2,17 +2,12 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
-    use RefreshDatabase;
-
-    public function test_returns_a_successful_response(): void
+    public function test_root_route_is_not_the_laravel_welcome_view(): void
     {
-        $response = $this->get('/');
-
-        $response->assertOk();
+        $this->get('/')->assertNotFound();
     }
 }

@@ -4,6 +4,7 @@ import { bunny } from 'laravel-vite-plugin/fonts';
 import { defineConfig, lazyPlugins } from 'vite-plus';
 
 export default defineConfig({
+    base: '/_demo-vite/',
     plugins: lazyPlugins(() => [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js'],
@@ -18,6 +19,9 @@ export default defineConfig({
     ]),
     server: {
         cors: true,
+        ws: {
+            path: '/',
+        },
         watch: {
             ignored: [
                 '**/.agents/**',
