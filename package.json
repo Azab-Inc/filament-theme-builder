@@ -4,7 +4,7 @@
   "scripts": {
     "setup": "npm ci && node scripts/setup.mjs",
     "dev": "concurrently --kill-others-on-fail --names builder,sail,demo-assets \"npm --prefix builder run dev -- --host 127.0.0.1 --port 5173 --strictPort\" \"cd demo && APP_PORT=${APP_PORT:-8000} ./vendor/bin/sail up\" \"npm --prefix demo run dev -- --host 127.0.0.1 --port 5174 --strictPort\"",
-    "test": "node --test scripts/setup.test.mjs && npm --prefix builder run test:unit -- --run && npm --prefix builder run type-check && composer --working-dir=demo run test",
+    "test": "node --test scripts/setup.test.mjs scripts/compose-bootstrap.test.mjs && npm --prefix builder run test:unit -- --run && npm --prefix builder run type-check && composer --working-dir=demo run test",
     "e2e": "playwright test",
     "build": "npm --prefix builder run build && npm --prefix demo run build"
   },
