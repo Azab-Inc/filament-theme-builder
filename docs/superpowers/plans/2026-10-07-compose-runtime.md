@@ -161,7 +161,7 @@ test('bootstrap propagates command failure', () => {
 
 **Files:** Modify `playwright.config.ts`, `e2e/smoke.spec.ts`, `package.json`, `scripts/compose-bootstrap.test.mjs` as needed.
 
-- [ ] **Step 1: Add one same-origin `/api/health` assertion** and check Filament generated form/static asset URLs remain under `/demo/`; assert demo Vite HTML asset URL and client endpoint use `/_demo-vite/`, never root `/@vite/client`.
+- [ ] **Step 1: Add one same-origin `/api/health` assertion** and check that Filament-generated form/static asset URLs (including root-level `/css/filament`, `/js/filament`, `/fonts/filament`, and `/livewire*` paths supported by the Caddy route table) resolve successfully on the same origin; assert demo Vite HTML asset URL and client endpoint use `/_demo-vite/`, never root `/@vite/client`.
 - [ ] **Step 2: Run legacy browser tests unchanged.** `npm run e2e`; expected existing builder at 4173 and Filament login at 4174 still pass.
 - [ ] **Step 3: Run gateway test in both modes** with respective stacks already running: `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/smoke.spec.ts --grep 'compose gateway'` and same with port `9080`; expected all assertions pass.
 - [ ] **Step 4: Run unit and app suites:** `npm test`, `npm --prefix builder run type-check`, `npm --prefix builder run test:unit -- --run`, `npm --prefix builder run build`, `composer --working-dir=demo run test`; expected pass.
