@@ -14,7 +14,7 @@
 
 ## Dependency map
 
-~~~text
+```text
 FTB-001
 ├── FTB-002
 │   ├── FTB-009 ── FTB-010
@@ -43,14 +43,15 @@ Coverage/showcase tickets feed FTB-033 visual regression.
 Runtime + persistence + tests feed FTB-034 Jenkins and FTB-035 production.
 All public-alpha prerequisites feed FTB-038.
 Complete first-party coverage feeds FTB-039, then FTB-040.
-~~~
+```
 
 ---
 
 <a id="ftb-001"></a>
+
 ## FTB-001 — Bootstrap the sibling-app monorepo
 
-**Status:** ready-for-agent  
+**Status:** done
 **Blocked by:** None (can start immediately)
 
 ### What to build
@@ -70,6 +71,7 @@ Create the repository foundation as one monorepo containing an independent Vue 3
 ---
 
 <a id="ftb-002"></a>
+
 ## FTB-002 — Deliver the real public Filament preview shell
 
 **Status:** ready-for-agent  
@@ -93,6 +95,7 @@ Provide a real Filament 5 preview application that can be embedded by the builde
 ---
 
 <a id="ftb-003"></a>
+
 ## FTB-003 — Make the first theme edit work end to end
 
 **Status:** ready-for-agent  
@@ -116,6 +119,7 @@ Implement the canonical versioned theme state, a Pinia-backed editor state, ifra
 ---
 
 <a id="ftb-004"></a>
+
 ## FTB-004 — Export a usable minimal vanilla theme.css
 
 **Status:** ready-for-agent  
@@ -138,6 +142,7 @@ Turn canonical theme state into readable vanilla CSS and let the user copy or do
 ---
 
 <a id="ftb-005"></a>
+
 ## FTB-005 — Deliver complete global foundations editing
 
 **Status:** ready-for-agent  
@@ -163,6 +168,7 @@ Expand the editor from the first color edit into the complete global foundation 
 ---
 
 <a id="ftb-006"></a>
+
 ## FTB-006 — Implement the semantic theme-control registry and inheritance
 
 **Status:** ready-for-agent  
@@ -187,6 +193,7 @@ Create the version-aware registry that maps semantic Filament UI concepts to sta
 ---
 
 <a id="ftb-007"></a>
+
 ## FTB-007 — Add semantic Inspector mode
 
 **Status:** ready-for-agent  
@@ -210,6 +217,7 @@ Let the user enter Inspector mode, hover real Filament elements, see a visible h
 ---
 
 <a id="ftb-008"></a>
+
 ## FTB-008 — Add advanced raw-element styling to Inspector
 
 **Status:** ready-for-agent  
@@ -233,6 +241,7 @@ Extend Inspector so a user can style an element even when the curated registry i
 ---
 
 <a id="ftb-009"></a>
+
 ## FTB-009 — Build the realistic e-commerce demo domain
 
 **Status:** ready-for-agent  
@@ -254,6 +263,7 @@ Seed the Filament demo with a coherent e-commerce domain rich enough to exercise
 ---
 
 <a id="ftb-010"></a>
+
 ## FTB-010 — Demonstrate Relation Managers and Nested Resources
 
 **Status:** ready-for-agent  
@@ -276,6 +286,7 @@ Use the e-commerce model to demonstrate Filament relationship UI as real workflo
 ---
 
 <a id="ftb-011"></a>
+
 ## FTB-011 — Cover Forms and Schemas visually
 
 **Status:** ready-for-agent  
@@ -297,6 +308,7 @@ Create a Forms & Schemas showcase containing every visually distinct first-party
 ---
 
 <a id="ftb-012"></a>
+
 ## FTB-012 — Cover Tables visually
 
 **Status:** ready-for-agent  
@@ -318,6 +330,7 @@ Create a Tables showcase and realistic table fixtures covering all visually dist
 ---
 
 <a id="ftb-013"></a>
+
 ## FTB-013 — Cover Infolists visually
 
 **Status:** ready-for-agent  
@@ -338,6 +351,7 @@ Create an Infolists showcase containing every visually distinct first-party entr
 ---
 
 <a id="ftb-014"></a>
+
 ## FTB-014 — Cover Actions, Modals, and Notifications visually
 
 **Status:** ready-for-agent  
@@ -358,6 +372,7 @@ Create showcase fixtures and registry coverage for Filament actions, buttons, dr
 ---
 
 <a id="ftb-015"></a>
+
 ## FTB-015 — Cover Widgets, Navigation, Search, and auth/tenant UI
 
 **Status:** ready-for-agent  
@@ -380,6 +395,7 @@ Add visually distinct first-party widgets, sidebar/topbar/navigation patterns, g
 ---
 
 <a id="ftb-016"></a>
+
 ## FTB-016 — Add deterministic forced-state controls
 
 **Status:** ready-for-agent  
@@ -400,6 +416,7 @@ Give showcase pages controls that intentionally force otherwise transient states
 ---
 
 <a id="ftb-017"></a>
+
 ## FTB-017 — Add icon packs and semantic icon replacement
 
 **Status:** ready-for-agent  
@@ -421,6 +438,7 @@ Let users alter the visual icon system with global pack/style presets and indivi
 ---
 
 <a id="ftb-018"></a>
+
 ## FTB-018 — Add panel branding and runtime configuration controls
 
 **Status:** ready-for-agent  
@@ -443,6 +461,7 @@ Support appearance-related panel settings that are not purely CSS, including app
 ---
 
 <a id="ftb-019"></a>
+
 ## FTB-019 — Add responsive preview and before/after comparison
 
 **Status:** ready-for-agent  
@@ -465,6 +484,7 @@ Give the user desktop, tablet, and mobile viewport presets, arbitrary draggable 
 ---
 
 <a id="ftb-020"></a>
+
 ## FTB-020 — Ship starter theme presets
 
 **Status:** ready-for-agent  
@@ -487,6 +507,7 @@ Provide a small curated set of distinct editable theme presets while keeping sto
 ---
 
 <a id="ftb-021"></a>
+
 ## FTB-021 — Manage multiple named local themes
 
 **Status:** ready-for-agent  
@@ -508,6 +529,7 @@ Turn local persistence from one autosaved draft into a small anonymous local pro
 ---
 
 <a id="ftb-022"></a>
+
 ## FTB-022 — Add versioned JSON import/export and migrations
 
 **Status:** ready-for-agent  
@@ -530,6 +552,7 @@ Let users download and import the editable canonical theme representation. Defin
 ---
 
 <a id="ftb-023"></a>
+
 ## FTB-023 — Add Advanced Custom CSS passthrough
 
 **Status:** ready-for-agent  
@@ -551,6 +574,7 @@ Provide an Advanced Custom CSS editor whose contents are appended after generate
 ---
 
 <a id="ftb-024"></a>
+
 ## FTB-024 — Add Fully Explicit vanilla CSS export
 
 **Status:** ready-for-agent  
@@ -572,6 +596,7 @@ Add a second export strategy that writes the complete selected theme configurati
 ---
 
 <a id="ftb-025"></a>
+
 ## FTB-025 — Add Tailwind @apply export
 
 **Status:** ready-for-agent  
@@ -594,6 +619,7 @@ Provide Tailwind @apply as an alternative export syntax while keeping vanilla CS
 ---
 
 <a id="ftb-026"></a>
+
 ## FTB-026 — Deliver complete export and installation guidance
 
 **Status:** ready-for-agent  
@@ -617,6 +643,7 @@ Make export a complete handoff from the visual builder into a user's real Filame
 ---
 
 <a id="ftb-027"></a>
+
 ## FTB-027 — Make demo uploads real but safely bounded
 
 **Status:** ready-for-agent  
@@ -640,6 +667,7 @@ Allow the public demo to exercise real Filament upload UI while constraining fil
 ---
 
 <a id="ftb-028"></a>
+
 ## FTB-028 — Reset demo state every ten minutes without breaking the showcase
 
 **Status:** ready-for-agent  
@@ -663,6 +691,7 @@ Restore the demo from a known-good SQLite snapshot every ten minutes, clean temp
 ---
 
 <a id="ftb-029"></a>
+
 ## FTB-029 — Create temporary server-backed theme sharing
 
 **Status:** ready-for-agent  
@@ -685,6 +714,7 @@ Allow a user to publish the current canonical theme payload to a small persisten
 ---
 
 <a id="ftb-030"></a>
+
 ## FTB-030 — Add anonymous share identity, expiry, rate limits, and expiry UX
 
 **Status:** ready-for-agent  
@@ -711,6 +741,7 @@ Harden sharing for anonymous public hosting by combining a keyed hash of normali
 ---
 
 <a id="ftb-031"></a>
+
 ## FTB-031 — Add non-blocking accessibility contrast guidance
 
 **Status:** ready-for-agent  
@@ -731,6 +762,7 @@ Analyze relevant foreground/background theme combinations and surface WCAG-style
 ---
 
 <a id="ftb-032"></a>
+
 ## FTB-032 — Publish and render the Filament coverage manifest
 
 **Status:** ready-for-agent  
@@ -754,6 +786,7 @@ Create the public source-of-truth coverage manifest and an interactive in-app co
 ---
 
 <a id="ftb-033"></a>
+
 ## FTB-033 — Establish Playwright E2E and visual regression coverage
 
 **Status:** ready-for-agent  
@@ -777,6 +810,7 @@ Create high-level browser tests around the real builder/iframe boundary and dete
 ---
 
 <a id="ftb-034"></a>
+
 ## FTB-034 — Build the single parameterized Jenkins pipeline
 
 **Status:** ready-for-agent  
@@ -801,6 +835,7 @@ Create one Jenkins pipeline that builds and tests the repository on every releva
 ---
 
 <a id="ftb-035"></a>
+
 ## FTB-035 — Provide production Docker deployment with Octane + FrankenPHP
 
 **Status:** ready-for-agent  
@@ -825,6 +860,7 @@ Provide the production deployment topology for a VPS using Laravel Octane on Fra
 ---
 
 <a id="ftb-036"></a>
+
 ## FTB-036 — Add Microsoft Clarity with privacy controls
 
 **Status:** ready-for-agent  
@@ -845,6 +881,7 @@ Integrate Microsoft Clarity for basic product analytics while providing appropri
 ---
 
 <a id="ftb-037"></a>
+
 ## FTB-037 — Publish contributor and architecture documentation
 
 **Status:** ready-for-agent  
@@ -866,6 +903,7 @@ Provide the repository documentation required for outside contributors to unders
 ---
 
 <a id="ftb-038"></a>
+
 ## FTB-038 — Harden and publish the public Alpha
 
 **Status:** ready-for-agent  
@@ -890,6 +928,7 @@ Prepare a public Alpha that is genuinely useful even though the full Filament 5 
 ---
 
 <a id="ftb-039"></a>
+
 ## FTB-039 — Complete and verify the Filament 5 coverage contract
 
 **Status:** ready-for-agent  
@@ -913,6 +952,7 @@ Close every remaining gap in the public Filament 5 coverage manifest and perform
 ---
 
 <a id="ftb-040"></a>
+
 ## FTB-040 — Cut the 1.0 release
 
 **Status:** ready-for-agent  
