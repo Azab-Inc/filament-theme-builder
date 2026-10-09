@@ -53,20 +53,41 @@ test('compose gateway serves builder and same-origin Filament', async ({ page })
   await page.goto(`${composeBaseUrl}/demo/admin/login`)
   await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible()
   await expect(page.getByLabel(/email address/i)).toBeVisible()
+
+  const updateUrl = livewireUrls.find(({ attribute }) => attribute === 'data-update-uri')?.url
+  expect(updateUrl).toBeDefined()
+  expect(updateUrl?.origin).toBe(gatewayOrigin)
+  const csrfToken = await page.locator('meta[name="csrf-token"]').getAttribute('content')
+  const component = page.locator('[wire\\:snapshot]').first()
+  const snapshot = await component.getAttribute('wire:snapshot')
+  expect(csrfToken).toBeTruthy()
+  expect(snapshot).toBeTruthy()
+
+  const update = await page.request.post(updateUrl!.href, {
+    headers: { 'X-CSRF-TOKEN': csrfToken!, 'X-Livewire': 'true' },
+    data: { components: [{ snapshot, updates: {}, calls: [] }] },
+  })
+  expect(update.status(), 'Livewire update should process this session-bound snapshot').toBe(200)
 })
 
 test('compose gateway serves demo Vite client and proxied API on same origin', async ({ request }) => {
   test.skip(process.env.COMPOSE_E2E !== '1', 'requires a running Compose stack')
-  const demoAssetPath = composeBaseUrl.endsWith(':9080')
-    ? '/build/manifest.json'
-    : '/_demo-vite/@vite/client'
-  const client = await request.get(`${composeBaseUrl}${demoAssetPath}`)
+  const isProduction = process.env.COMPOSE_PROD_E2E === '1'
+  const demoAssetUrl = new URL(
+    isProduction ? '/build/manifest.json' : '/_demo-vite/@vite/client',
+    composeBaseUrl,
+  )
+  expect(demoAssetUrl.origin).toBe(new URL(composeBaseUrl).origin)
+  if (!isProduction) {
+    expect(demoAssetUrl.pathname).toBe('/_demo-vite/@vite/client')
+    expect(demoAssetUrl.pathname).toMatch(/^\/_demo-vite\//)
+  }
+  const client = await request.get(demoAssetUrl.href)
   expect(client.ok()).toBeTruthy()
-  if (demoAssetPath.includes('vite')) {
+  if (!isProduction) {
+    expect(new URL(client.url()).pathname).toBe('/_demo-vite/@vite/client')
+    expect(new URL(client.url()).pathname).toMatch(/^\/_demo-vite\//)
     expect(client.headers()['content-type']).toContain('javascript')
-    const clientSource = await client.text()
-    expect(clientSource).toContain('/_demo-vite/')
-    expect(clientSource).not.toContain('"/@vite/client"')
   } else {
     expect(client.headers()['content-type']).toContain('json')
   }
