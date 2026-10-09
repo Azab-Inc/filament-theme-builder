@@ -40,3 +40,73 @@ The first Playwright run returned HTTP 500 for Filament login although the API a
 - No production files or third-party packages/services were added. The Composer executable is copied from the official Composer image; the Vite services use the official Node image.
 - The Composer and npm install logs included upstream package deprecation/audit notices; no dependency manifests or locks were changed by this task.
 - The unrelated pre-existing worktree changes (`TICKETS.md`, Composer manifest/lock, AGENTS/skills-lock files, and `demo/storage/debugbar/`) were preserved and not included.
+
+## Review round 1 fix
+
+### Changes
+
+- Gateway now directly depends on bootstrap with `condition: service_completed_successfully`.
+- Added readiness checks using only installed runtimes: Node's built-in `fetch()` checks the builder root and demo Vite client; PHP's built-in HTTP stream checks `/api/health`. Gateway depends on all three with `condition: service_healthy`.
+- Preserved service names, routes, ports, volumes and all other runtime behavior; no packages or services added.
+
+### Commands and output
+
+```sh
+docker compose -f compose.dev.yaml config --quiet
+```
+
+Output: no output; exit status `0`.
+
+```sh
+docker compose -f compose.dev.yaml up --build -d
+```
+
+Output excerpt showing readiness gates before gateway startup:
+
+```text
+Container filament-theme-builder-demo-php-1 Healthy
+Container filament-theme-builder-builder-vite-1 Healthy
+Container filament-theme-builder-demo-vite-1 Healthy
+Container filament-theme-builder-gateway-1 Starting
+Container filament-theme-builder-gateway-1 Started
+```
+
+```sh
+docker inspect $(docker compose -f compose.dev.yaml ps -q builder-vite demo-vite demo-php) --format '{{.Name}}={{.State.Health.Status}}'
+```
+
+Output:
+
+```text
+/filament-theme-builder-builder-vite-1=healthy
+/filament-theme-builder-demo-php-1=healthy
+/filament-theme-builder-demo-vite-1=healthy
+```
+
+```sh
+COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/smoke.spec.ts --grep 'compose gateway'
+```
+
+Output:
+
+```text
+Running 2 tests using 2 workers
+✓ compose gateway serves demo Vite client and proxied API on same origin
+✓ compose gateway serves builder and same-origin Filament
+2 passed (3.7s)
+```
+
+```sh
+docker compose -f compose.dev.yaml ps --format '{{.Service}} {{.State}} {{.Ports}}'
+```
+
+Output:
+
+```text
+builder-vite running 5173/tcp
+demo-php running 80/tcp, 443/tcp, 2019/tcp, 443/udp
+demo-vite running 5173/tcp
+gateway running 443/tcp, 2019/tcp, 443/udp, 127.0.0.1:4175->80/tcp
+```
+
+Only gateway publishes a host port.
