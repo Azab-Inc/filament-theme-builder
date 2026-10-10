@@ -243,3 +243,45 @@ test.describe('forms and schemas showcase', () => {
     await expect(page.getByLabel('Audience')).toBeFocused()
   })
 })
+
+test.describe('tables showcase', () => {
+  test.beforeEach(async ({ page }) => {
+    await useAuthenticatedSession(page)
+    await page.goto(`${demoBaseUrl}/demo/admin/tables-showcase`)
+  })
+
+  test('shows accessible responsive table controls and seeded product data', async ({ page }) => {
+    const table = page.getByRole('table', { name: /Showcase products/i })
+    await expect(page.getByRole('heading', { name: 'Tables' })).toBeVisible()
+    await expect(table).toBeVisible()
+    await expect(table.getByRole('columnheader', { name: 'Product', exact: true })).toBeVisible()
+    await expect(table.getByRole('columnheader', { name: /Status/i })).toBeVisible()
+    expect(await table.getByRole('row').count()).toBeGreaterThanOrEqual(3)
+    await expect(table).toContainText('Demo Oak Chair')
+    await expect(table).toContainText('Demo Brass Lamp')
+    await expect(page.getByRole('button', { name: /filter/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Column manager' })).toBeVisible()
+    await expect(page.getByRole('checkbox', { name: /select\/deselect all items/i })).toBeVisible()
+
+    await page.getByRole('button', { name: 'Column manager' }).click()
+    await expect(page.getByRole('checkbox', { name: 'Supplier' })).toBeVisible()
+
+    await page.getByRole('searchbox', { name: 'Search', exact: true }).fill('Brass Lamp')
+    expect(await table.getByRole('row').count()).toBeGreaterThanOrEqual(2)
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(table).toBeVisible()
+    await expect(page.getByRole('button', { name: /inspect/i }).first()).toBeVisible()
+  })
+
+  test('requires confirmation for the read-only row action and exposes empty state', async ({ page }) => {
+    await page.getByRole('button', { name: /inspect/i }).first().click()
+    await expect(page.getByRole('heading', { name: /Inspect product/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /cancel/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /confirm/i })).toBeVisible()
+    await page.getByRole('button', { name: /cancel/i }).click()
+
+    await page.getByRole('searchbox', { name: 'Search', exact: true }).fill('no such product')
+    await expect(page.getByText('No products found', { exact: true })).toBeVisible()
+  })
+})

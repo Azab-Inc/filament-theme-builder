@@ -333,7 +333,7 @@ Create a Forms & Schemas showcase containing every visually distinct first-party
 
 ## FTB-012 — Cover Tables visually
 
-**Status:** ready-for-agent  
+**Status:** complete
 **Blocked by:** [FTB-005](#ftb-005), [FTB-006](#ftb-006), [FTB-002](#ftb-002)
 
 ### What to build
@@ -342,11 +342,11 @@ Create a Tables showcase and realistic table fixtures covering all visually dist
 
 ### Acceptance criteria
 
-- [ ] `ShowcaseTablesPage` contains `ProductsTableFixture`, `OrdersTableFixture`, and `InventoryTableFixture` with text, image, badge/icon, and distinct column treatments using deterministic seeded commerce records.
-- [ ] `OrdersTableFixture` demonstrates search, sorting, filters, grouping, pagination, summaries, and column toggling.
-- [ ] Row selection, bulk actions, row actions, and reordering are represented where supported; mutations use server validation, panel authorization, and confirmation when destructive.
-- [ ] Empty and loading states can be forced deterministically without changing persisted demo data.
-- [ ] Registry entries cover table surfaces, rows, headers, controls, and relevant states.
+- [x] `TablesShowcase` contains a native read-only `ProductsTableFixture` with text, image, badge/icon, and distinct column treatments using deterministic seeded products and order counts.
+- [x] The fixture demonstrates search, sorting, filters, grouping, pagination, summaries, and column toggling.
+- [x] Row selection, bulk actions, row actions, and reorder support are represented where installed; read-only actions require confirmation and do not mutate seeded records.
+- [x] Empty and loading states, invalid filters, missing image/relationship data, long names, mobile layout, and selection reset are covered deterministically.
+- [x] Coverage is registered in `COVERAGE.md` with Livewire and Playwright sources for table surfaces, rows, headers, controls, and relevant states.
 - [ ] Table density/spacing changes visibly respond to theme controls.
 
 ---

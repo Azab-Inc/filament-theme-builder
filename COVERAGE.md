@@ -82,7 +82,7 @@ domain, resources, and relationship workflows.
 | `dashboard.recent-orders` | planned | `RecentOrdersWidget` | Compact table with status and money columns | Seeded orders and customers | Seeded result set | Dashboard feature tests |
 | `dashboard.low-stock` | planned | `LowStockWidget` | Threshold/status badge presentation | Seeded inventory and products | Seeded low-stock rows | Dashboard feature tests |
 | `showcase.forms` | planned | `ShowcaseFormsPage` | Product, customer, and order editing schema surfaces | Fixed showcase fixture data | `FormFocusState`, `FormValidationState`, disabled and filled representations | Showcase feature tests |
-| `showcase.tables` | planned | `ShowcaseTablesPage` | Products, orders, and inventory tables | Seeded commerce records | `TableEmptyState`, `TableLoadingState`, `TableSelectedRowState` | Showcase feature tests |
+| `showcase.tables` | implemented | `ShowcaseTablesPage` → `/demo/admin/tables-showcase` (`TablesShowcase`) | Responsive native product table with image/text/badge/icon columns, grouping, summaries, controls, and safe read-only actions | Seeded demo products with order counts and nullable supplier/image relationships | Empty, loading, invalid-filter, missing-related-data, long-name, and selected-row reset states | `TablesShowcaseTest`; `e2e/demo-showcase.spec.ts` (`tables`) |
 | `showcase.infolists` | planned | `ShowcaseInfolistsPage` | Order, customer, and product detail entries/layouts | Seeded customer/order/product records | Null and representative value presentation | Showcase feature tests |
 | `showcase.actions` | planned | `ShowcaseActionsPage` | Order/product actions, destructive confirmation, open modal | Fixed non-production fixture records | `ActionLoadingState`, `ModalOpenState` | Showcase feature tests |
 | `showcase.notifications` | planned | `OrderStatusNotification`, `InventoryWarningNotification`, `ActionFailureNotification` | Success/warning/danger styles and layout variants | Fixed message payloads | `NotificationVisibleState`; no persistence | Showcase feature tests |
@@ -100,9 +100,13 @@ domain, resources, and relationship workflows.
 - **FTB-011 forms:** `ShowcaseFormsPage` provides `ProductEditorForm`,
   `CustomerContactForm`, and `OrderStatusForm`; layout surfaces are
   `SectionGridLayout`, `WizardStepsLayout`, and `TabbedFormLayout`.
-- **FTB-012 tables:** `ShowcaseTablesPage` provides `ProductsTableFixture`,
-  `OrdersTableFixture`, and `InventoryTableFixture`. The orders table owns
-  search/sort/filter/group/pagination/summary/column-toggle samples.
+- **FTB-012 tables:** `TablesShowcase` provides a compact read-only
+  `ProductsTableFixture` backed by deterministic seeded products and order
+  counts. It owns search/sort/filter/group/pagination/summary/column-toggle,
+  selection/bulk-action, row-action, responsive, empty/loading, and missing
+  relationship/image samples without duplicating CRUD. The broader contract
+  names `OrdersTableFixture` and `InventoryTableFixture`; those remain planned
+  follow-up surfaces rather than being represented as duplicate CRUD here.
 - **FTB-013 infolists:** `ShowcaseInfolistsPage` provides `OrderDetailsInfolist`,
   `CustomerProfileInfolist`, and `ProductDetailsInfolist`.
 - **FTB-014 actions/notifications:** `ShowcaseActionsPage` provides
