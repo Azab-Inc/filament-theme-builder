@@ -19,6 +19,6 @@ class CategoriesRelationManager extends RelationManager
     {
         return RelationManagerTable::configure($table, [
             TextColumn::make('name')->searchable()->sortable(), TextColumn::make('slug')->searchable(),
-        ], filters: [Filter::make('named')->query(fn ($query) => $query->whereNotNull('name'))], headerActions: [AttachAction::make()], recordActions: [DetachAction::make()], toolbarActions: [DetachBulkAction::make()]);
+        ], filters: [Filter::make('named')->query(fn ($query) => $query->whereNotNull('name'))], headerActions: [AttachAction::make()->recordTitleAttribute('name')], recordActions: [DetachAction::make()], toolbarActions: [DetachBulkAction::make()]);
     }
 }

@@ -2,13 +2,17 @@
 
 namespace App\Filament\Support;
 
+use App\Models\Order;
+use App\Models\Product;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Illuminate\Validation\Rule;
 
 final class EntityResourceForm
 {
@@ -31,8 +35,56 @@ final class EntityResourceForm
             'inventory' => [Select::make('product_id')->relationship('product', 'name')->searchable()->preload()->required(), Select::make('product_variant_id')->relationship('variant', 'name')->searchable()->preload()->nullable(), TextInput::make('quantity')->numeric()->required(), TextInput::make('location')],
             'supplier' => [TextInput::make('name')->required(), TextInput::make('email')->email(), TextInput::make('phone'), Textarea::make('notes')],
             'discount' => [TextInput::make('name')->required(), TextInput::make('code')->required(), Select::make('type')->options(['fixed' => 'Fixed', 'percentage' => 'Percentage'])->required(), TextInput::make('amount_cents')->numeric()->required(), DateTimePicker::make('starts_at')->nullable(), DateTimePicker::make('ends_at')->nullable(), Toggle::make('is_active')],
-            'note' => [TextInput::make('noteable_type')->required(), TextInput::make('noteable_id')->numeric()->required(), Textarea::make('body')->required()],
+            'note' => [
+                Select::make('noteable_type')
+                    ->options(self::noteableTypes())
+                    ->required()
+                    ->live()
+                    ->afterStateUpdated(fn (callable $set): mixed => $set('noteable_id', null)),
+                Select::make('noteable_id')
+                    ->options(fn (Get $get): array => self::noteableOptions($get->string('noteable_type', true)))
+                    ->rules(fn (Get $get): array => self::noteableRules($get->string('noteable_type', true)))
+                    ->searchable()
+                    ->preload()
+                    ->required(),
+                Textarea::make('body')->required(),
+            ],
             default => throw new \InvalidArgumentException("Unknown entity form: {$entity}"),
         });
+    }
+
+    /** @return array<class-string, string> */
+    private static function noteableTypes(): array
+    {
+        return [
+            Product::class => 'Product',
+            Order::class => 'Order',
+        ];
+    }
+
+    /** @return array<int|string, string> */
+    private static function noteableOptions(?string $noteableType): array
+    {
+        $labelColumn = match ($noteableType) {
+            Product::class => 'name',
+            Order::class => 'number',
+            default => null,
+        };
+
+        if ($labelColumn === null) {
+            return [];
+        }
+
+        return $noteableType::query()->orderBy($labelColumn)->pluck($labelColumn, 'id')->all();
+    }
+
+    /** @return list<\Stringable> */
+    private static function noteableRules(?string $noteableType): array
+    {
+        if (! array_key_exists($noteableType, self::noteableTypes())) {
+            return [Rule::in([])];
+        }
+
+        return [Rule::exists($noteableType::query()->getModel()->getTable(), 'id')];
     }
 }

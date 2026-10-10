@@ -206,6 +206,69 @@ class EntityResourcesTest extends TestCase
         $this->assertDatabaseHas('reviews', ['customer_id' => null]);
     }
 
+    public function test_note_rejects_unsupported_noteable_types(): void
+    {
+        $this->seed();
+        $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
+        $notePages = 'App\\Filament\\Resources\\Notes\\NoteResource'::getPages();
+
+        Livewire::test($notePages['create']->getPage())
+            ->fillForm([
+                'noteable_type' => \stdClass::class,
+                'noteable_id' => 1,
+                'body' => 'Should not be saved',
+            ])
+            ->call('create')
+            ->assertHasFormErrors(['noteable_type']);
+
+        $this->assertDatabaseMissing('notes', ['body' => 'Should not be saved']);
+    }
+
+    public function test_note_rejects_missing_noteable_records(): void
+    {
+        $this->seed();
+        $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
+        $notePages = 'App\\Filament\\Resources\\Notes\\NoteResource'::getPages();
+
+        Livewire::test($notePages['create']->getPage())
+            ->fillForm([
+                'noteable_type' => Product::class,
+                'noteable_id' => 999999,
+                'body' => 'Should not be saved',
+            ])
+            ->call('create')
+            ->assertHasFormErrors(['noteable_id']);
+
+        $this->assertDatabaseMissing('notes', ['body' => 'Should not be saved']);
+    }
+
+    public function test_note_accepts_supported_product_and_order_noteables(): void
+    {
+        $this->seed();
+        $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
+        $notePages = 'App\\Filament\\Resources\\Notes\\NoteResource'::getPages();
+
+        foreach ([Product::class, Order::class] as $noteableType) {
+            $noteableId = $noteableType::query()->firstOrFail()->getKey();
+            $body = "Valid {$noteableType} note";
+
+            Livewire::test($notePages['create']->getPage())
+                ->fillForm([
+                    'noteable_type' => $noteableType,
+                    'noteable_id' => $noteableId,
+                    'body' => $body,
+                ])
+                ->call('create')
+                ->assertHasNoFormErrors();
+
+            $this->assertDatabaseHas('notes', [
+                'noteable_type' => $noteableType,
+                'noteable_id' => $noteableId,
+                'body' => $body,
+            ]);
+        }
+    }
+
     /** @param array<string, mixed> $overrides */
     private function factoryFormData(string $model, array $overrides = []): array
     {

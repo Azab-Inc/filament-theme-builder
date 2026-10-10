@@ -78,7 +78,7 @@ test.describe('demo panel', () => {
       await expect(page.getByRole('tab', { name: relation })).toBeVisible()
     }
     await page.getByRole('tab', { name: 'Categories' }).click()
-    await expect(page.getByText('Demo Chairs', { exact: true })).toBeVisible()
+    await expect(page.getByRole('table', { name: 'Categories' }).getByText('Demo Chairs', { exact: true })).toBeVisible()
     await page.getByRole('row', { name: /Demo Chairs/ }).getByRole('button', { name: 'Detach', exact: true }).click()
     const detachModal = page.locator('.fi-modal-open')
     await detachModal.getByRole('button', { name: 'Detach', exact: true }).click()
@@ -87,11 +87,11 @@ test.describe('demo panel', () => {
     const categoryAttachModal = page.locator('.fi-modal-open')
     await categoryAttachModal.getByRole('combobox').click()
     await categoryAttachModal.getByRole('textbox', { name: 'Search' }).fill('Demo Chairs')
-    const categoryOption = categoryAttachModal.locator('[role="option"][data-value="2"]:visible')
+    const categoryOption = categoryAttachModal.getByRole('option', { name: 'Demo Chairs', exact: true })
     await expect(categoryOption).toBeVisible()
     await categoryOption.click()
     await categoryAttachModal.getByRole('button', { name: 'Attach', exact: true }).click()
-    await expect(page.getByText('Demo Chairs', { exact: true })).toBeVisible()
+    await expect(page.getByRole('table', { name: 'Categories' }).getByText('Demo Chairs', { exact: true })).toBeVisible()
   })
 
   test('product tags preserve strict attach and detach behavior', async ({ authenticatedPage: page }) => {
@@ -100,7 +100,7 @@ test.describe('demo panel', () => {
     await page.getByRole('link', { name: 'Edit', exact: true }).click()
     await expect(page.getByRole('tab', { name: 'Tags' })).toBeVisible()
     await page.getByRole('tab', { name: 'Tags' }).click()
-    await expect(page.getByText('Demo bestseller', { exact: true })).toBeVisible()
+    await expect(page.getByRole('table', { name: 'Tags' }).getByText('Demo bestseller', { exact: true })).toBeVisible()
     await page.getByRole('row', { name: /Demo bestseller/ }).getByRole('button', { name: 'Detach', exact: true }).click()
     await page.locator('.fi-modal-open').getByRole('button', { name: 'Detach', exact: true }).click()
     await expect(page.getByText('Demo bestseller', { exact: true })).toHaveCount(0)
@@ -108,11 +108,11 @@ test.describe('demo panel', () => {
     const tagAttachModal = page.locator('.fi-modal-open')
     await tagAttachModal.getByRole('combobox').click()
     await tagAttachModal.getByRole('textbox', { name: 'Search' }).fill('Demo bestseller')
-    const tagOption = tagAttachModal.locator('[role="option"][data-value="1"]:visible')
+    const tagOption = tagAttachModal.getByRole('option', { name: 'Demo bestseller', exact: true })
     await expect(tagOption).toBeVisible()
     await tagOption.click()
     await tagAttachModal.getByRole('button', { name: 'Attach', exact: true }).click()
-    await expect(page.getByText('Demo bestseller', { exact: true })).toBeVisible()
+    await expect(page.getByRole('table', { name: 'Tags' }).getByText('Demo bestseller', { exact: true })).toBeVisible()
   })
 
   test('customer relationship managers render strict seeded records', async ({ authenticatedPage: page }) => {
