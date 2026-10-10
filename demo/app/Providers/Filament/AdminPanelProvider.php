@@ -3,6 +3,10 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Auth\Pages\Login;
+use App\Filament\Widgets\CommerceStatsOverview;
+use App\Filament\Widgets\LowStockProductsTable;
+use App\Filament\Widgets\RecentOrdersTable;
+use App\Filament\Widgets\RevenueOrdersChart;
 use App\Http\Middleware\AuthenticatePreviewPanel;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -53,6 +57,10 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,
+                CommerceStatsOverview::class,
+                RevenueOrdersChart::class,
+                RecentOrdersTable::class,
+                LowStockProductsTable::class,
             ])
             ->authMiddleware([
                 AuthenticatePreviewPanel::class,

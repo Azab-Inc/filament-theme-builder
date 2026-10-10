@@ -49,4 +49,24 @@ test.describe('demo showcase panel identity and navigation', () => {
       }
     }
   })
+
+  test('dashboard exposes deterministic commerce metrics, links, and responsive sections', async ({ page }) => {
+    const overview = page.getByRole('region', { name: 'Commerce overview' })
+    await expect(overview).toBeVisible()
+    await expect(overview.getByText('Total revenue', { exact: true })).toBeVisible()
+    await expect(overview.getByText('$406.00', { exact: true })).toBeVisible()
+    await expect(overview.getByText('Orders', { exact: true })).toBeVisible()
+    await expect(overview.getByText('Customers', { exact: true })).toBeVisible()
+    await expect(overview.getByText('Products', { exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Revenue and orders' })).toBeVisible()
+    await expect(page.getByRole('img', { name: /Revenue and orders.*October 4–10, 2026/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Recent orders' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Low-stock products' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'DEMO-ORDER-1002' })).toHaveAttribute('href', /\/demo\/admin\/orders\//)
+    await expect(page.getByRole('link', { name: 'DEMO-LAMP-001' })).toHaveAttribute('href', /\/demo\/admin\/products\//)
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(page.getByRole('heading', { name: 'Recent orders' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Low-stock products' })).toBeVisible()
+  })
 })
