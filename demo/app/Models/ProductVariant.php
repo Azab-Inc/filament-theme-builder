@@ -20,16 +20,19 @@ class ProductVariant extends Model
         return ['options' => 'array', 'is_active' => 'boolean'];
     }
 
+    /** @return BelongsTo<Product, $this> */
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
 
+    /** @return HasMany<Inventory, $this> */
     public function inventories(): HasMany
     {
         return $this->hasMany(Inventory::class, 'product_variant_id');
     }
 
+    /** @return HasMany<OrderItem, $this> */
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class);

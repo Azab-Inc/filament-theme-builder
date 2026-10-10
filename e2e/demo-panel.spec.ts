@@ -1,16 +1,18 @@
 import { expect, test, type Page } from '@playwright/test'
 
+const demoBaseUrl = process.env.DEMO_BASE_URL ?? 'http://127.0.0.1:4174'
+
 async function signIn(page: Page): Promise<void> {
-  await page.goto('http://127.0.0.1:4174/demo/admin/login')
+  await page.goto(`${demoBaseUrl}/demo/admin/login`)
   await page.getByLabel(/username/i).fill('user')
   await page.getByRole('textbox', { name: /password/i }).fill('password')
   await page.getByRole('button', { name: /sign in/i }).click()
-  await expect(page).toHaveURL('http://127.0.0.1:4174/demo/admin')
+  await expect(page).toHaveURL(`${demoBaseUrl}/demo/admin`)
 }
 
 test.describe('demo panel', () => {
   test('exposes coherent navigation and stable seeded resources', async ({ page }) => {
-    await page.goto('http://127.0.0.1:4174/demo/admin')
+    await page.goto(`${demoBaseUrl}/demo/admin`)
 
     await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible()
     for (const group of ['Catalog', 'Sales', 'Customers', 'Operations']) {

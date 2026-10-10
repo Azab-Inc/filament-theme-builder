@@ -19,6 +19,7 @@ class Shipment extends Model
         return ['shipped_at' => 'datetime', 'delivered_at' => 'datetime'];
     }
 
+    /** @return BelongsTo<Order, $this> */
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);

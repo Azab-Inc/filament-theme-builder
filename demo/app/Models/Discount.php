@@ -19,6 +19,7 @@ class Discount extends Model
         return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'is_active' => 'boolean'];
     }
 
+    /** @return HasMany<Order, $this> */
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);

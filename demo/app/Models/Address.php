@@ -15,16 +15,19 @@ class Address extends Model
     /** @use HasFactory<AddressFactory> */
     use HasFactory;
 
+    /** @return BelongsTo<Customer, $this> */
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
+    /** @return HasMany<Order, $this> */
     public function billingOrders(): HasMany
     {
         return $this->hasMany(Order::class, 'billing_address_id');
     }
 
+    /** @return HasMany<Order, $this> */
     public function shippingOrders(): HasMany
     {
         return $this->hasMany(Order::class, 'shipping_address_id');

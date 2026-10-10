@@ -19,6 +19,7 @@ class Refund extends Model
         return ['refunded_at' => 'datetime'];
     }
 
+    /** @return BelongsTo<Payment, $this> */
     public function payment(): BelongsTo
     {
         return $this->belongsTo(Payment::class);

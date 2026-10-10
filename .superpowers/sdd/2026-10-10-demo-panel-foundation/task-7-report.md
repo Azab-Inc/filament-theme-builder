@@ -2,9 +2,10 @@
 
 ## Status
 
-Documentation integration is complete. FTB-009A, FTB-009B, and FTB-010 are
-marked done based on the existing executable contracts. FTB-027 and FTB-028
-remain `ready-for-agent` and are explicitly out of scope.
+Review remediation is complete and the required acceptance checks now pass.
+FTB-009A, FTB-009B, and FTB-010 remain marked done based on the verified
+executable contracts. FTB-027 and FTB-028 remain `ready-for-agent` and are
+explicitly out of scope.
 
 ## Commit
 
@@ -73,10 +74,58 @@ hash.
 
 ## Risks and concerns
 
-- Larastan currently fails on 47 relationship return-type generic annotations;
-  this was present before Task 7 and no application code was changed to hide it.
-- The Compose gateway variant exposes a hidden product image to the existing
-  visibility assertion, although the normal browser run passes. The fixed-port
-  assumptions in `demo-panel.spec.ts` and portions of `smoke.spec.ts` also make
-  the full suites unsuitable for a single Compose gateway without environment
-  or test-configuration work, which is outside this documentation-only task.
+- The original Task 7 run had 47 Larastan generic-type failures and a hidden
+  Compose image; both are resolved in the remediation below.
+- The demo-panel Playwright suite now accepts `DEMO_BASE_URL` so the same
+  assertion can run against the Compose gateway without changing its required
+  visibility check. The smoke suite retains its separate Compose opt-in.
+
+## Task 7 review remediation
+
+### Changes
+
+- Added `/demo-images/*` to the Compose demo-asset proxy so the deterministic
+  local SVGs are served by Laravel/FrankenPHP as `image/svg+xml` instead of
+  falling through to the Vite HTML shell. The existing `toBeVisible()` image
+  assertion was preserved.
+- Made `e2e/demo-panel.spec.ts` use `DEMO_BASE_URL` for the Compose gateway.
+- Added Larastan generic return annotations for all domain relationships and
+  corrected two factory expressions exposed by the stricter analysis.
+
+### Fix verification
+
+- `composer test` from `demo/` — **passed**: Pint passed, PHPStan passed with
+  0 errors, PHPUnit passed with 60 tests and 503 assertions.
+- `composer run lint:check` — **passed**.
+- `composer run types:check` — **passed**, 0 errors.
+- `php artisan test` — **passed**, 60 tests and 503 assertions.
+- `php artisan migrate:fresh --seed --force && php artisan db:seed --force` —
+  **passed**; migration and repeat seeding completed, and
+  `php artisan route:list --path=demo/admin` listed 76 routes.
+- `npx playwright test e2e/demo-panel.spec.ts e2e/smoke.spec.ts` — one
+  parallel relationship-run timeout occurred during a concurrent normal run;
+  the isolated acceptance runs below passed. No application failure was
+  reproduced.
+- `npx playwright test e2e/demo-panel.spec.ts --workers=1` — **passed**, 3/3.
+- `npx playwright test e2e/smoke.spec.ts` — **passed**, 6/6 with 3 expected
+  Compose-only skips.
+- `docker compose -f compose.dev.yaml down && docker compose -f
+  compose.dev.yaml up --build -d && DEMO_BASE_URL=http://127.0.0.1:4175
+  COMPOSE_E2E=1 npx playwright test e2e/demo-panel.spec.ts` — **passed**, 3/3.
+- `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test
+  e2e/smoke.spec.ts --grep 'compose gateway'` — **passed**, 2/2.
+- `git diff --check` — **passed** after the final changes.
+- Compose was stopped after verification with `docker compose -f
+  compose.dev.yaml down`.
+
+### Self-review
+
+- The product image assertion remains a strict visibility assertion; only the
+  asset routing and test base URL were corrected.
+- Static analysis is green without ignores, baselines, casts, or widened
+  types. Relationship annotations identify the related model and declaring
+  model for every domain relation.
+- FTB-027 and FTB-028 were not implemented or marked complete.
+- The only changes are the Compose route, demo E2E base URL, domain/factory
+  static contracts, and this report; unrelated worktree changes were not
+  staged.

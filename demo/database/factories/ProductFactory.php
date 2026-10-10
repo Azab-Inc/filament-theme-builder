@@ -11,7 +11,7 @@ class ProductFactory extends Factory
 {
     public function definition(): array
     {
-        $name = fake()->words(3, true);
+        $name = fake()->sentence(3);
 
         return ['name' => $name, 'slug' => Str::slug($name).'-'.fake()->unique()->numerify('####'), 'sku' => fake()->unique()->bothify('SKU-####??'), 'description' => fake()->sentence(), 'price_cents' => fake()->numberBetween(100, 100000), 'status' => 'active', 'image_url' => null, 'supplier_id' => null];
     }

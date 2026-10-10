@@ -14,6 +14,7 @@ class Supplier extends Model
     /** @use HasFactory<SupplierFactory> */
     use HasFactory;
 
+    /** @return HasMany<Product, $this> */
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);

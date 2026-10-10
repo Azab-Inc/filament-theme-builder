@@ -14,6 +14,7 @@ class Note extends Model
     /** @use HasFactory<NoteFactory> */
     use HasFactory;
 
+    /** @return MorphTo<Model, $this> */
     public function noteable(): MorphTo
     {
         return $this->morphTo();

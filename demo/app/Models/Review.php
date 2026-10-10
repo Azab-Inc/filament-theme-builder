@@ -14,11 +14,13 @@ class Review extends Model
     /** @use HasFactory<ReviewFactory> */
     use HasFactory;
 
+    /** @return BelongsTo<Product, $this> */
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
 
+    /** @return BelongsTo<Customer, $this> */
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);

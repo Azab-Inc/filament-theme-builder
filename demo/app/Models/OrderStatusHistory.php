@@ -14,6 +14,7 @@ class OrderStatusHistory extends Model
     /** @use HasFactory<OrderStatusHistoryFactory> */
     use HasFactory;
 
+    /** @return BelongsTo<Order, $this> */
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
