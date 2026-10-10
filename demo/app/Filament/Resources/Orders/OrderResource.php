@@ -28,7 +28,22 @@ class OrderResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Sales';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShoppingCart;
+
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) Order::query()->count();
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'Total orders';
+    }
+
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return 'info';
+    }
 
     public static function form(Schema $schema): Schema
     {

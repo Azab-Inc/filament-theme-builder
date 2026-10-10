@@ -26,7 +26,7 @@ class AddressResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Customers';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMapPin;
 
     public static function form(Schema $schema): Schema
     {

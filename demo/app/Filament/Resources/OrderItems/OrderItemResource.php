@@ -26,7 +26,7 @@ class OrderItemResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Sales';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
     public static function form(Schema $schema): Schema
     {

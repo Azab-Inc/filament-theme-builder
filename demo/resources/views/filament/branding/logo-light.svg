@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248 48" role="img" aria-labelledby="light-title">
+  <title id="light-title">Filament Theme Builder</title>
+  <rect x="2" y="4" width="40" height="40" rx="12" fill="#172554"/>
+  <path d="M13 14h19v5H19v5h11v5H19v6h-6V14Z" fill="#fff"/>
+  <path d="M32 14v21" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>
+  <text x="54" y="31" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="700" letter-spacing="-.4">Filament Theme Builder</text>
+</svg>

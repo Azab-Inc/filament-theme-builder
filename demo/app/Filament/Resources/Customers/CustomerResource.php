@@ -29,7 +29,22 @@ class CustomerResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Customers';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
+
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) Customer::query()->count();
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'Total customers';
+    }
+
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return 'gray';
+    }
 
     public static function form(Schema $schema): Schema
     {
