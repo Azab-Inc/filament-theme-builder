@@ -34,4 +34,38 @@ test.describe('demo panel', () => {
     await expect(page.getByRole('heading', { name: /orders/i })).toBeVisible()
     await expect(page.getByText('DEMO-ORDER-1001', { exact: true })).toBeVisible()
   })
+
+  test('relationship workflows expose manager tabs and nested order items', async ({ page }) => {
+    await page.goto('http://127.0.0.1:4174/demo/admin/login')
+    await page.getByLabel(/username/i).fill('user')
+    await page.getByRole('textbox', { name: /password/i }).fill('password')
+    await page.getByRole('button', { name: /sign in/i }).click()
+
+    await page.getByRole('link', { name: 'Products', exact: true }).click()
+    await page.getByText('Demo Oak Chair', { exact: true }).click()
+    await page.getByRole('link', { name: 'Edit', exact: true }).click()
+    for (const relation of ['Categories', 'Tags', 'Variants']) {
+      await expect(page.getByRole('tab', { name: relation })).toBeVisible()
+    }
+    await page.getByRole('tab', { name: 'Categories' }).click()
+    await expect(page.getByText('Demo Chairs', { exact: true })).toBeVisible()
+    await page.getByRole('button', { name: 'Attach', exact: true }).click()
+    const modal = page.locator('[role="dialog"].fi-modal-open')
+    await expect(modal).toHaveCount(1)
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('button', { name: 'Detach', exact: true })).toBeVisible()
+
+    await page.getByRole('link', { name: 'Customers', exact: true }).click()
+    await page.getByText('Avery Demo', { exact: true }).click()
+    for (const relation of ['Addresses', 'Orders', 'Reviews']) {
+      await expect(page.getByRole('tab', { name: relation })).toBeVisible()
+    }
+
+    await page.getByRole('link', { name: 'Orders', exact: true }).click()
+    await page.getByText('DEMO-ORDER-1001', { exact: true }).click()
+    await expect(page.getByRole('link', { name: 'Items', exact: true })).toBeVisible()
+    await page.getByRole('link', { name: 'Items', exact: true }).click()
+    await expect(page).toHaveURL(/\/orders\/[^/]+\/order-items/)
+    await expect(page.getByRole('heading', { name: /order items/i })).toBeVisible()
+  })
 })

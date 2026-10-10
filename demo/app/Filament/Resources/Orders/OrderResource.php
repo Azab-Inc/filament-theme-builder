@@ -24,6 +24,8 @@ class OrderResource extends Resource
 
     protected static ?string $model = Order::class;
 
+    protected static ?string $recordTitleAttribute = 'number';
+
     protected static string|UnitEnum|null $navigationGroup = 'Sales';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
