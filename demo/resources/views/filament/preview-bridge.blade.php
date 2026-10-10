@@ -18,7 +18,7 @@
             style.textContent = `:root { --ftb-primary: ${hex}; ${palette.map((shade, index) => {
                 const base = Math.round(255 * (10 - index) / 10);
                 const rgb = channels.map((channel) => Math.round(channel * index / 10 + base));
-                return `--primary-${shade}: ${rgb.join(' ')};`;
+                return `--primary-${shade}: rgb(${rgb.join(' ')});`;
             }).join(' ')} }`;
             document.head.append(style);
             window.dispatchEvent(new CustomEvent('ftb:theme:updated', { detail: message.theme }));

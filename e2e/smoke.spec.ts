@@ -19,6 +19,17 @@ test('builder embeds the Filament preview', async ({ page }) => {
   await expect.poll(() => frame.locator('html').evaluate((element) =>
     getComputedStyle(element).getPropertyValue('--ftb-primary').trim(),
   )).toBe('#0f766e')
+  await expect.poll(() => frame.locator('html').evaluate((element) =>
+    [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].every((shade) => {
+      const value = getComputedStyle(element).getPropertyValue(`--primary-${shade}`).trim()
+      return CSS.supports('color', value)
+    }),
+  )).toBe(true)
+  await frame.locator('html').evaluate((element) => element.classList.add('dark'))
+  expect(await frame.locator('html').evaluate((element) => {
+    const shade = getComputedStyle(element).getPropertyValue('--primary-500').trim()
+    return CSS.supports('color', shade)
+  })).toBe(true)
   await expect(page.getByTitle('Filament preview')).toHaveAttribute('src', iframeUrl!)
   await page.getByLabel('Undo').click()
   await expect.poll(() => frame.locator('html').evaluate((element) =>
