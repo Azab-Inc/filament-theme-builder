@@ -98,7 +98,7 @@ Provide a real Filament 5 preview application that can be embedded by the builde
 
 ## FTB-003 — Make the first theme edit work end to end
 
-**Status:** ready-for-agent  
+**Status:** done
 **Blocked by:** [FTB-001](#ftb-001), [FTB-002](#ftb-002)
 
 ### What to build
@@ -107,14 +107,14 @@ Implement the canonical versioned theme state, a Pinia-backed editor state, ifra
 
 ### Acceptance criteria
 
-- [ ] Theme state includes an explicit schemaVersion.
-- [ ] The builder can change at least the global primary color.
-- [ ] The preview updates immediately through client-side messaging.
-- [ ] Normal edits do not require a page reload, Laravel request, or asset rebuild.
-- [ ] Undo and redo work for the edit.
-- [ ] The current draft is automatically persisted to local storage with a short debounce.
-- [ ] Reloading the builder restores the current draft.
-- [ ] The preview accepts messages only from allowed origins/configuration.
+- [x] Theme state includes an explicit schemaVersion.
+- [x] The builder can change at least the global primary color.
+- [x] The preview updates immediately through client-side messaging.
+- [x] Normal edits do not require a page reload, Laravel request, or asset rebuild.
+- [x] Undo and redo work for the edit.
+- [x] The current draft is automatically persisted to local storage with a short debounce.
+- [x] Reloading the builder restores the current draft.
+- [x] The preview accepts messages only from allowed origins/configuration.
 
 ---
 

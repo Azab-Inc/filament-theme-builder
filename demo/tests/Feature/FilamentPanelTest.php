@@ -29,7 +29,9 @@ class FilamentPanelTest extends TestCase
             ->assertOk()
             ->assertSee('Dashboard')
             ->assertSee('ftb-preview-bridge')
-            ->assertSee('event.origin !== window.location.origin', false)
+            ->assertSee('!allowedOrigins.includes(event.origin)', false)
+            ->assertSee("'ftb:theme:update'", false)
+            ->assertSee('allowedOrigins.includes(event.origin)', false)
             ->assertSee('event.source !== window.parent', false);
     }
 

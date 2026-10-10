@@ -11,6 +11,30 @@ test('builder embeds the Filament preview', async ({ page }) => {
   await expect(
     page.frameLocator('iframe[title="Filament preview"]').getByRole('heading', { name: /dashboard/i }),
   ).toBeVisible()
+
+  const frame = page.frameLocator('iframe[title="Filament preview"]')
+  const iframeUrl = await page.getByTitle('Filament preview').getAttribute('src')
+  await page.getByLabel('Primary color').fill('#0f766e')
+  await expect.poll(() => frame.locator('#ftb-managed-theme').count()).toBe(1)
+  await expect.poll(() => frame.locator('html').evaluate((element) =>
+    getComputedStyle(element).getPropertyValue('--ftb-primary').trim(),
+  )).toBe('#0f766e')
+  await expect(page.getByTitle('Filament preview')).toHaveAttribute('src', iframeUrl!)
+  await page.getByLabel('Undo').click()
+  await expect.poll(() => frame.locator('html').evaluate((element) =>
+    getComputedStyle(element).getPropertyValue('--ftb-primary').trim(),
+  )).toBe('#6366f1')
+  await page.keyboard.press('Control+Shift+Z')
+  await expect.poll(() => frame.locator('html').evaluate((element) =>
+    getComputedStyle(element).getPropertyValue('--ftb-primary').trim(),
+  )).toBe('#0f766e')
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('ftb-theme')))
+    .toContain('"primary":"#0f766e"')
+  await page.reload()
+  await expect(page.getByLabel('Primary color')).toHaveValue('#0f766e')
+  await expect.poll(() => page.frameLocator('iframe[title="Filament preview"]')
+    .locator('html').evaluate((element) => getComputedStyle(element).getPropertyValue('--ftb-primary').trim(),
+    )).toBe('#0f766e')
 })
 
 test('Filament admin login renders', async ({ page }) => {
@@ -34,9 +58,9 @@ test('Filament preview is public and embeddable', async ({ page }) => {
   )
 })
 
-test('preview bridge dispatches only for the exact-origin parent window', async ({ page }) => {
+test('preview bridge dispatches only for configured allowed origins', async ({ page }) => {
   const demoOrigin = 'http://127.0.0.1:4174'
-  await page.goto(`${demoOrigin}/demo/admin`)
+  await page.goto('http://127.0.0.1:4173')
   await page.setContent(`
     <iframe name="preview-frame" src="${demoOrigin}/demo/admin"></iframe>
     <iframe name="same-origin-child" src="${demoOrigin}/demo/admin/login"></iframe>
@@ -59,19 +83,35 @@ test('preview bridge dispatches only for the exact-origin parent window', async 
 
   await page.evaluate(() => {
     const previewFrame = document.querySelector<HTMLIFrameElement>('iframe[name="preview-frame"]')!
-    previewFrame.contentWindow!.postMessage({ sender: 'parent' }, window.location.origin)
+    previewFrame.contentWindow!.postMessage({
+      type: 'ftb:theme:update', schemaVersion: 1,
+      theme: { schemaVersion: 1, colors: { primary: '#0f766e' } },
+    }, 'http://127.0.0.1:4174')
   })
   const sameOriginChild = page.frame({ name: 'same-origin-child' })
   expect(sameOriginChild).toBeTruthy()
   await sameOriginChild!.evaluate(() => {
-    const previewFrame = window.parent.document.querySelector<HTMLIFrameElement>('iframe[name="preview-frame"]')!
-    previewFrame.contentWindow!.postMessage({ sender: 'same-origin-child' }, window.location.origin)
+    window.parent.frames['preview-frame']!.postMessage({
+      type: 'ftb:theme:update', schemaVersion: 1,
+      theme: { schemaVersion: 1, colors: { primary: '#0f766e' } },
+    }, 'http://127.0.0.1:4174')
   })
   await expect.poll(() => preview!.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(1)
+  await page.evaluate(() => {
+    const previewFrame = document.querySelector<HTMLIFrameElement>('iframe[name="preview-frame"]')!
+    for (const data of [null, 'not-an-object', { type: 'ftb:theme:update', schemaVersion: 2 }, {
+      type: 'ftb:theme:update', schemaVersion: 1,
+      theme: { schemaVersion: 1, colors: { primary: 'url(javascript:alert(1))' } },
+    }]) {
+      previewFrame.contentWindow!.postMessage(data, 'http://127.0.0.1:4174')
+    }
+  })
   await page.waitForTimeout(100)
   expect(await preview!.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(1)
+  expect(await preview!.locator('#ftb-managed-theme').evaluate((style) => style.textContent))
+    .toContain('#0f766e')
 
-  await page.goto('http://127.0.0.1:4173')
+  await page.goto('http://localhost:4173')
   await page.setContent(`
     <iframe name="cross-origin-preview" src="${demoOrigin}/demo/admin"></iframe>
   `)
@@ -82,16 +122,43 @@ test('preview bridge dispatches only for the exact-origin parent window', async 
   ).toBeVisible()
   await crossOriginPreview!.evaluate(() => {
     document.body.dataset.acceptedMessages = '0'
+    document.body.dataset.receivedMessages = '0'
+    window.addEventListener('message', () => {
+      document.body.dataset.receivedMessages = String(Number(document.body.dataset.receivedMessages) + 1)
+    })
     window.addEventListener('ftb:preview-message-accepted', () => {
       document.body.dataset.acceptedMessages = String(Number(document.body.dataset.acceptedMessages) + 1)
     })
   })
   await page.evaluate(() => {
     const previewFrame = document.querySelector<HTMLIFrameElement>('iframe[name="cross-origin-preview"]')!
-    previewFrame.contentWindow!.postMessage({ sender: 'cross-origin-parent' }, 'http://127.0.0.1:4174')
+    previewFrame.contentWindow!.postMessage({
+      type: 'ftb:theme:update', schemaVersion: 1,
+      theme: { schemaVersion: 1, colors: { primary: '#0f766e' } },
+    }, 'http://127.0.0.1:4174')
   })
+  await expect.poll(() => crossOriginPreview!.evaluate(() => Number(document.body.dataset.receivedMessages))).toBe(1)
   await page.waitForTimeout(100)
   expect(await crossOriginPreview!.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(0)
+})
+
+test('configured preview allowlist does not implicitly allow the demo same-origin', async ({ page }) => {
+  const demoOrigin = 'http://127.0.0.1:4174'
+  await page.goto(`${demoOrigin}/demo/admin`)
+  await page.evaluate(() => {
+    document.body.dataset.acceptedMessages = '0'
+    window.addEventListener('ftb:preview-message-accepted', () => {
+      document.body.dataset.acceptedMessages = String(Number(document.body.dataset.acceptedMessages) + 1)
+    })
+    window.postMessage({
+      type: 'ftb:theme:update', schemaVersion: 1,
+      theme: { schemaVersion: 1, colors: { primary: '#0f766e' } },
+    }, 'http://127.0.0.1:4174')
+  })
+
+  await page.waitForTimeout(100)
+  expect(await page.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(0)
+  expect(await page.locator('#ftb-managed-theme').count()).toBe(0)
 })
 
 test('demo credentials authenticate and logout returns to public preview', async ({ page }) => {
