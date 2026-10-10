@@ -6,7 +6,7 @@ Complete. All 17 standalone Filament resources have generated list/create/edit/v
 
 ## Commit
 
-Pending commit at report authoring time.
+`2798c85` (`Feature: add e-commerce Filament resources`).
 
 ## Files
 
