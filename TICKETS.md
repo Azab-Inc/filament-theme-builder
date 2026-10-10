@@ -74,7 +74,7 @@ Create the repository foundation as one monorepo containing an independent Vue 3
 
 ## FTB-002 — Deliver the real public Filament preview shell
 
-**Status:** ready-for-agent  
+**Status:** done
 **Blocked by:** [FTB-001](#ftb-001)
 
 ### What to build
@@ -83,14 +83,14 @@ Provide a real Filament 5 preview application that can be embedded by the builde
 
 ### Acceptance criteria
 
-- [ ] The Filament panel is reachable publicly without logging in.
-- [ ] The preview is embeddable by the builder.
-- [ ] A real login page exists.
-- [ ] The login page visibly displays Username: user and Password: password.
-- [ ] Those credentials authenticate successfully.
-- [ ] Logging out does not prevent continued access to the public preview.
-- [ ] A subtle notice location exists for future demo-reset messaging.
-- [ ] The preview exposes a safe bridge hook for later builder communication.
+- [x] The Filament panel is reachable publicly without logging in.
+- [x] The preview is embeddable by the builder.
+- [x] A real login page exists.
+- [x] The login page visibly displays Username: user and Password: password.
+- [x] Those credentials authenticate successfully.
+- [x] Logging out does not prevent continued access to the public preview.
+- [x] A subtle notice location exists for future demo-reset messaging.
+- [x] The preview exposes a safe bridge hook for later builder communication.
 
 ---
 

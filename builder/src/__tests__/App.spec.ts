@@ -4,8 +4,9 @@ import { mount } from '@vue/test-utils'
 import App from '../App.vue'
 
 describe('App', () => {
-  it('mounts renders properly', () => {
+  it('embeds the public Filament preview and reserves a subtle notice area', () => {
     const wrapper = mount(App)
-    expect(wrapper.text()).toContain('You did it!')
+    expect(wrapper.get('iframe').attributes('title')).toBe('Filament preview')
+    expect(wrapper.find('[data-demo-notice]').exists()).toBe(true)
   })
 })

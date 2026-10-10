@@ -1,20 +1,60 @@
 import { expect, test } from '@playwright/test'
 
-test('Vue builder scaffold renders', async ({ page }) => {
+test('builder embeds the Filament preview', async ({ page }) => {
   await page.goto('http://127.0.0.1:4173')
 
-  await expect(page.getByRole('heading', { name: 'You did it!' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'vuejs.org' })).toHaveAttribute(
-    'href',
-    'https://vuejs.org/',
+  await expect(page.getByRole('heading', { name: 'Filament Theme Builder' })).toBeVisible()
+  await expect(page.getByTitle('Filament preview')).toHaveAttribute(
+    'src',
+    'http://127.0.0.1:4174/demo/admin',
   )
+  await expect(
+    page.frameLocator('iframe[title="Filament preview"]').getByRole('heading', { name: /dashboard/i }),
+  ).toBeVisible()
 })
 
 test('Filament admin login renders', async ({ page }) => {
   await page.goto('http://127.0.0.1:4174/demo/admin/login')
 
   await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible()
-  await expect(page.getByLabel(/email address/i)).toBeVisible()
+  await expect(page.getByLabel(/username/i)).toBeVisible()
+  await expect(page.getByText('Username: user')).toBeVisible()
+  await expect(page.getByText('Password: password')).toBeVisible()
+})
+
+test('Filament preview is public and the builder embeds it', async ({ page }) => {
+  const preview = await page.goto('http://127.0.0.1:4174/demo/admin')
+  expect(preview?.status()).toBe(200)
+  await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible()
+  await expect(page.locator('#ftb-preview-bridge')).toHaveCount(1)
+
+  await page.goto('http://127.0.0.1:4173')
+  await expect(page.getByTitle('Filament preview')).toHaveAttribute(
+    'src',
+    'http://127.0.0.1:4174/demo/admin',
+  )
+})
+
+test('demo credentials authenticate and logout returns to public preview', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4174/demo/admin/login')
+  await page.getByLabel(/username/i).fill('user')
+  await page.getByRole('textbox', { name: /password/i }).fill('password')
+  await page.getByRole('button', { name: /sign in/i }).click()
+  await expect(page).toHaveURL('http://127.0.0.1:4174/demo/admin')
+  await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible()
+
+  const result = await page.evaluate(async () => {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+    return fetch('/demo/admin/logout', {
+      method: 'POST',
+      headers: { 'X-CSRF-TOKEN': csrfToken ?? '' },
+    }).then((response) => ({ status: response.status, url: response.url }))
+  })
+
+  expect(result.status).toBe(200)
+  expect(result.url).toBe('http://127.0.0.1:4174/demo/admin')
+  await expect(page).toHaveURL('http://127.0.0.1:4174/demo/admin')
+  await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible()
 })
 
 const composeBaseUrl = process.env.COMPOSE_BASE_URL ?? 'http://127.0.0.1:4175'
@@ -52,7 +92,9 @@ test('compose gateway serves builder and same-origin Filament', async ({ page })
   }
   await page.goto(`${composeBaseUrl}/demo/admin/login`)
   await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible()
-  await expect(page.getByLabel(/email address/i)).toBeVisible()
+  await expect(page.getByLabel(/username/i)).toBeVisible()
+  await expect(page.getByText('Username: user')).toBeVisible()
+  await expect(page.getByText('Password: password')).toBeVisible()
 
   const updateUrl = livewireUrls.find(({ attribute }) => attribute === 'data-update-uri')?.url
   expect(updateUrl).toBeDefined()

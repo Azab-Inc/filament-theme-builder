@@ -19,13 +19,15 @@ export default defineConfig({
     ? []
     : [
         {
-          command: 'npm --prefix builder run dev -- --host 127.0.0.1 --port 4173',
+          command:
+            'VITE_DEMO_URL=http://127.0.0.1:4174/demo/admin npm --prefix builder run dev -- --host 127.0.0.1 --port 4173',
           url: 'http://127.0.0.1:4173',
           reuseExistingServer: false,
           timeout: 120_000,
         },
         {
-          command: 'php artisan serve --host=127.0.0.1 --port=4174',
+          command:
+            'php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=127.0.0.1 --port=4174',
           cwd: 'demo',
           url: 'http://127.0.0.1:4174/demo/admin/login',
           reuseExistingServer: false,

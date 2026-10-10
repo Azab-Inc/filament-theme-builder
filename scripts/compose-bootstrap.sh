@@ -66,6 +66,7 @@ if [ -z "${APP_KEY:-}" ] && ! application_key_present .env; then
 fi
 
 php artisan migrate --force
+php artisan db:seed --force
 
 if [ "$BOOTSTRAP_PRODUCTION" = "1" ]; then
   php artisan optimize

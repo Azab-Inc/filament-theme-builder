@@ -67,6 +67,7 @@ function setup() {
   }
 
   run('php', ['artisan', 'migrate', '--force'], demo)
+  run('php', ['artisan', 'db:seed', '--force'], demo)
 }
 
 try {
