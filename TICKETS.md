@@ -14,6 +14,8 @@
 
 ## Dependency map
 
+Demo-showcase implementation order: **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015 → FTB-016 → FTB-017 → FTB-018**. Phase 1 is the dashboard and shared showcase shell; each ticket extends that contract in order. FTB-009A, FTB-009B, and FTB-010 are complete and form the existing demo foundation. FTB-027 and FTB-028 remain parallel operational tickets outside this showcase sequence and do not gate it. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
+
 ```text
 FTB-001
 ├── FTB-002
@@ -318,9 +320,9 @@ Create a Forms & Schemas showcase containing every visually distinct first-party
 
 ### Acceptance criteria
 
-- [ ] Every visually distinct first-party form/schema control identified in COVERAGE.md has a fixture.
-- [ ] Layout components are represented where they create distinct visual surfaces.
-- [ ] Default, filled, focused, disabled, and validation-error states are represented where applicable.
+- [ ] Every visually distinct form/schema control listed under `showcase.forms` in COVERAGE.md has a named fixture and relevant registry target.
+- [ ] Layout fixtures demonstrate distinct surfaces (sections, grids, wizard steps, and tabs) rather than identical API permutations.
+- [ ] Applicable default, filled, focused, disabled, and validation-error states have a deterministic representation.
 - [ ] Registry entries exist for the relevant themable surfaces.
 - [ ] Global/component/variant/state inheritance is demonstrable on representative form controls.
 - [ ] Duplicate API permutations that render identically are not added just to inflate coverage.
@@ -340,10 +342,10 @@ Create a Tables showcase and realistic table fixtures covering all visually dist
 
 ### Acceptance criteria
 
-- [ ] Text, image, badge/icon, and other visually distinct columns are represented.
+- [ ] `showcase.tables` includes text, image, badge/icon, and other visually distinct columns using deterministic seeded commerce records.
 - [ ] Search, sorting, filters, grouping, pagination, summaries, and column toggling are represented.
-- [ ] Row selection, bulk actions, row actions, and reordering are represented where supported.
-- [ ] Empty and loading states are represented.
+- [ ] Row selection, bulk actions, row actions, and reordering are represented where supported; mutations use server validation, panel authorization, and confirmation when destructive.
+- [ ] Empty and loading states can be forced deterministically without changing persisted demo data.
 - [ ] Registry entries cover table surfaces, rows, headers, controls, and relevant states.
 - [ ] Table density/spacing changes visibly respond to theme controls.
 
@@ -362,8 +364,8 @@ Create an Infolists showcase containing every visually distinct first-party entr
 
 ### Acceptance criteria
 
-- [ ] Visually distinct first-party infolist entries are represented.
-- [ ] Section/group/layout surfaces that affect appearance are represented.
+- [ ] `showcase.infolists` includes named fixtures for each visually distinct first-party entry identified in COVERAGE.md.
+- [ ] Section/group/layout surfaces that affect appearance are represented without identical API permutations.
 - [ ] Common states such as empty/null, badges, icons, images, and rich text are demonstrated where visually distinct.
 - [ ] Registry entries exist for relevant surfaces and states.
 - [ ] Infolists respond correctly to light/dark and global foundation changes.
@@ -383,11 +385,11 @@ Create showcase fixtures and registry coverage for Filament actions, buttons, dr
 
 ### Acceptance criteria
 
-- [ ] Primary, danger, success, warning, info, gray, outline, icon-only, disabled, and loading action/button states are represented where applicable.
+- [ ] `showcase.actions` represents primary, danger, success, warning, info, gray, outline, icon-only, disabled, and loading variants where applicable.
 - [ ] Modals include representative sizes, headers, footers, forms, destructive confirmation, and loading/action states.
 - [ ] Notifications include all semantic status styles and meaningful layout variations.
 - [ ] Registry entries expose component, variant, and state-level theming.
-- [ ] These fixtures can be forced open/visible for theme work without relying on timing-sensitive manual interaction.
+- [ ] `showcase.notifications` and modal fixtures can be forced visible for theme work without timing-sensitive interaction; forcing is presentation-only and does not persist data.
 
 ---
 
@@ -404,8 +406,8 @@ Add visually distinct first-party widgets, sidebar/topbar/navigation patterns, g
 
 ### Acceptance criteria
 
-- [ ] Representative stats/chart/table/widget surfaces are available.
-- [ ] Sidebar, topbar, navigation groups/items, active states, badges, collapse behavior, and breadcrumbs are represented.
+- [ ] `dashboard.stats`, `dashboard.revenue-orders-chart`, `dashboard.recent-orders`, and `dashboard.low-stock` use explicit deterministic commerce data sources.
+- [ ] FTB-015 owns the single integrated dashboard/navigation/search/authentication/tenant showcase shell; `showcase.navigation` represents sidebar, topbar, groups/items, active states, badges, collapse behavior, breadcrumbs, global search, profile/authentication, and controlled tenant UI.
 - [ ] Global search UI is represented.
 - [ ] Login/profile/authentication UI is represented.
 - [ ] Tenant-switching UI is represented in a controlled showcase state where applicable.
@@ -427,9 +429,9 @@ Give showcase pages controls that intentionally force otherwise transient states
 
 ### Acceptance criteria
 
-- [ ] Users can switch representative components between meaningful visual states.
+- [ ] `showcase.states` provides deterministic controls for representative hover, focus, loading, disabled, validation-error, open-modal, selected-row, empty, and notification states.
 - [ ] Forced states are deterministic and suitable for screenshot testing.
-- [ ] Forcing a state does not permanently mutate demo data.
+- [ ] FTB-016 owns forcing these visual states; state controls are presentation-only, do not persist data, and expose no MCP mutation tool for changing showcase state or demo records.
 - [ ] Inspector can target the forced state and resolve the correct semantic breadcrumb.
 - [ ] Theme state can override state-level values and visibly demonstrate inheritance.
 
@@ -448,11 +450,12 @@ Let users alter the visual icon system with global pack/style presets and indivi
 
 ### Acceptance criteria
 
-- [ ] At least one default icon configuration and multiple alternative pack/style presets are available.
+- [ ] `panel.icons` has one default and multiple alternative pack/style presets with semantic icon overrides.
 - [ ] Individual semantic icons can be overridden after choosing a pack.
 - [ ] Icon changes preview immediately.
 - [ ] Icon configuration is part of theme JSON.
 - [ ] Required non-CSS configuration is surfaced in PanelProvider/config export rather than faked with brittle CSS.
+- [ ] FTB-017 owns icon configuration and its PanelProvider/config export path; icons are not duplicated as separate dashboard/showcase work.
 - [ ] Reset restores inherited/default icon behavior.
 
 ---
@@ -470,13 +473,14 @@ Support appearance-related panel settings that are not purely CSS, including app
 
 ### Acceptance criteria
 
-- [ ] App name and branding assets can be previewed.
+- [ ] `panel.branding` covers app name and branding assets and classifies each setting as CSS-previewable or PanelProvider/runtime configuration.
 - [ ] Light/dark logos can be represented.
 - [ ] Favicon and logo height configuration are represented.
 - [ ] Agreed layout settings such as content width/sidebar behavior are represented.
 - [ ] Purely visual settings use immediate preview emulation where safe.
 - [ ] Runtime-only settings trigger a controlled preview update/reload.
 - [ ] Theme state clearly distinguishes CSS settings from PanelProvider/runtime settings.
+- [ ] FTB-018 owns runtime branding and export classification; runtime-only settings remain distinct from CSS and use a controlled preview update/reload.
 
 ---
 

@@ -59,3 +59,36 @@ Identifier: `nested-resource`
 
 Relation Managers and Nested Resources are deliberately recorded as separate
 categories above; neither substitutes for a core entity resource.
+
+## Phase 1 and demo-showcase coverage contract
+
+The showcase identity is independent. The official demo is research inspiration
+only; do not copy its identity, branding, content, or presentation. Phase 1 is
+the dashboard plus shared showcase shell and precedes FTB-011 through FTB-018.
+Stable IDs below are the source identifiers for fixtures and tests; they do not
+claim that planned showcase coverage has already shipped. FTB-009A/B/010 are
+done and provide the demo domain, resources, and relationship workflows.
+
+| Stable ID | Status | Route/page/widget | Visual distinction | Data source | Forced-state support | Corresponding test |
+| --- | --- | --- | --- | --- | --- | --- |
+| `phase-1` | planned | Dashboard and shared showcase shell | Independent showcase chrome and commerce dashboard | Deterministic demo seed | Presentation state only | `DemoShowcaseCapabilityInventoryTest`; showcase tests to be added with implementation |
+| `dashboard.stats` | planned | Dashboard stats widgets | Distinct value, label, icon, and trend treatments | Seeded orders/products/inventory | Values fixed by deterministic seed | `DemoShowcaseCapabilityInventoryTest`; dashboard feature tests |
+| `dashboard.revenue-orders-chart` | planned | Dashboard revenue/orders chart | Series, axes, legend, and tooltips | Seeded order totals and dates | Deterministic seeded chart period | Dashboard feature tests |
+| `dashboard.recent-orders` | planned | Dashboard recent-orders table | Compact table with status and money columns | Seeded orders and customers | Seeded result set | Dashboard feature tests |
+| `dashboard.low-stock` | planned | Dashboard low-stock widget | Threshold/status presentation | Seeded inventory and products | Seeded low-stock rows | Dashboard feature tests |
+| `showcase.forms` | planned | Forms showcase page | First-party inputs, schema layouts, validation | Fixed showcase fixture data | Default/filled/focused/disabled/error presentation | Showcase feature tests |
+| `showcase.tables` | planned | Tables showcase page | Distinct columns, filters, grouping, summaries, pagination | Seeded commerce records | Empty/loading/selection presentation | Showcase feature tests |
+| `showcase.infolists` | planned | Infolists showcase page | Entry and section/layout variants | Seeded customer/order/product records | Null and representative value presentation | Showcase feature tests |
+| `showcase.actions` | planned | Actions/modals showcase page | Action variants, groups, modal sizes and confirmation | Fixed non-production fixture records | Deterministic modal/action visibility | Showcase feature tests |
+| `showcase.notifications` | planned | Notification fixtures | Semantic status and layout variants | Fixed message payloads | Explicitly force visible; no persistence | Showcase feature tests |
+| `showcase.navigation` | planned | Shared panel shell | Sidebar/topbar, groups, active item, badge, breadcrumb, search, profile, controlled tenant UI | Panel configuration and fixed showcase identity | Active/collapsed/search UI presentation | Showcase feature tests |
+| `showcase.states` | planned | Showcase state controls | Hover/focus/loading/disabled/error/empty/selected states | In-memory presentation controls | Deterministic; presentation-only | Showcase feature tests |
+| `panel.icons` | planned | Panel icon configuration | Default/alternative packs and semantic overrides | Theme and PanelProvider configuration | Preview configuration only | Builder/theme export tests |
+| `panel.branding` | planned | Panel branding settings | App name, light/dark logos, favicon, logo height and layout | Theme plus PanelProvider/runtime config | CSS preview or controlled runtime reload | Builder/theme export tests |
+
+Commerce mutation fixtures, if provided in action/table samples, retain the
+existing panel authorization and server validation. Destructive or status-change
+operations require confirmation; they use the existing resource/domain service
+and model path. Read/view operations and dashboard/showcase reads are read-only.
+Forced states and presentation controls are not domain mutations and expose no
+MCP mutation tool.
