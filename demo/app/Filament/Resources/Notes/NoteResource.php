@@ -9,6 +9,7 @@ use App\Filament\Resources\Notes\Pages\ViewNote;
 use App\Filament\Resources\Notes\Schemas\NoteForm;
 use App\Filament\Resources\Notes\Schemas\NoteInfolist;
 use App\Filament\Resources\Notes\Tables\NotesTable;
+use App\Filament\Support\HasEagerLoadedRelations;
 use App\Models\Note;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use UnitEnum;
 
 class NoteResource extends Resource
 {
+    use HasEagerLoadedRelations;
+
     protected static ?string $model = Note::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Operations';

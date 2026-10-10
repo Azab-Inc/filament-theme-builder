@@ -9,6 +9,7 @@ use App\Filament\Resources\Categories\Pages\ViewCategory;
 use App\Filament\Resources\Categories\Schemas\CategoryForm;
 use App\Filament\Resources\Categories\Schemas\CategoryInfolist;
 use App\Filament\Resources\Categories\Tables\CategoriesTable;
+use App\Filament\Support\HasEagerLoadedRelations;
 use App\Models\Category;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use UnitEnum;
 
 class CategoryResource extends Resource
 {
+    use HasEagerLoadedRelations;
+
     protected static ?string $model = Category::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Catalog';

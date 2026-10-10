@@ -9,6 +9,7 @@ use App\Filament\Resources\Products\Pages\ViewProduct;
 use App\Filament\Resources\Products\Schemas\ProductForm;
 use App\Filament\Resources\Products\Schemas\ProductInfolist;
 use App\Filament\Resources\Products\Tables\ProductsTable;
+use App\Filament\Support\HasEagerLoadedRelations;
 use App\Models\Product;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use UnitEnum;
 
 class ProductResource extends Resource
 {
+    use HasEagerLoadedRelations;
+
     protected static ?string $model = Product::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Catalog';

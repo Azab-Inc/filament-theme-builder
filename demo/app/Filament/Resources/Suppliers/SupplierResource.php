@@ -9,6 +9,7 @@ use App\Filament\Resources\Suppliers\Pages\ViewSupplier;
 use App\Filament\Resources\Suppliers\Schemas\SupplierForm;
 use App\Filament\Resources\Suppliers\Schemas\SupplierInfolist;
 use App\Filament\Resources\Suppliers\Tables\SuppliersTable;
+use App\Filament\Support\HasEagerLoadedRelations;
 use App\Models\Supplier;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use UnitEnum;
 
 class SupplierResource extends Resource
 {
+    use HasEagerLoadedRelations;
+
     protected static ?string $model = Supplier::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Operations';

@@ -9,6 +9,7 @@ use App\Filament\Resources\OrderItems\Pages\ViewOrderItem;
 use App\Filament\Resources\OrderItems\Schemas\OrderItemForm;
 use App\Filament\Resources\OrderItems\Schemas\OrderItemInfolist;
 use App\Filament\Resources\OrderItems\Tables\OrderItemsTable;
+use App\Filament\Support\HasEagerLoadedRelations;
 use App\Models\OrderItem;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use UnitEnum;
 
 class OrderItemResource extends Resource
 {
+    use HasEagerLoadedRelations;
+
     protected static ?string $model = OrderItem::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Sales';

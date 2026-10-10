@@ -9,6 +9,7 @@ use App\Filament\Resources\Addresses\Pages\ViewAddress;
 use App\Filament\Resources\Addresses\Schemas\AddressForm;
 use App\Filament\Resources\Addresses\Schemas\AddressInfolist;
 use App\Filament\Resources\Addresses\Tables\AddressesTable;
+use App\Filament\Support\HasEagerLoadedRelations;
 use App\Models\Address;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use UnitEnum;
 
 class AddressResource extends Resource
 {
+    use HasEagerLoadedRelations;
+
     protected static ?string $model = Address::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Customers';

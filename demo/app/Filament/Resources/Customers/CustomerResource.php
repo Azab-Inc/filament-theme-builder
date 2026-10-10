@@ -9,6 +9,7 @@ use App\Filament\Resources\Customers\Pages\ViewCustomer;
 use App\Filament\Resources\Customers\Schemas\CustomerForm;
 use App\Filament\Resources\Customers\Schemas\CustomerInfolist;
 use App\Filament\Resources\Customers\Tables\CustomersTable;
+use App\Filament\Support\HasEagerLoadedRelations;
 use App\Models\Customer;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use UnitEnum;
 
 class CustomerResource extends Resource
 {
+    use HasEagerLoadedRelations;
+
     protected static ?string $model = Customer::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Customers';

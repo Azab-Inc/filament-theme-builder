@@ -9,6 +9,7 @@ use App\Filament\Resources\Payments\Pages\ViewPayment;
 use App\Filament\Resources\Payments\Schemas\PaymentForm;
 use App\Filament\Resources\Payments\Schemas\PaymentInfolist;
 use App\Filament\Resources\Payments\Tables\PaymentsTable;
+use App\Filament\Support\HasEagerLoadedRelations;
 use App\Models\Payment;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use UnitEnum;
 
 class PaymentResource extends Resource
 {
+    use HasEagerLoadedRelations;
+
     protected static ?string $model = Payment::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Sales';

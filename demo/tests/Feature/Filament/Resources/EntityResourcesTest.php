@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Filament\Resources;
 
+use App\Filament\Support\EntityResourceTable;
 use App\Models\Address;
 use App\Models\Category;
 use App\Models\Customer;
@@ -70,10 +71,13 @@ class EntityResourcesTest extends TestCase
             ->assertSee($visibleValue);
 
         $formData = $this->factoryFormData($model);
+        $beforeCreateCount = $model::query()->count();
         Livewire::test($pages['create']->getPage())
             ->fillForm($formData)
             ->call('create')
             ->assertHasNoFormErrors();
+        $this->assertSame($beforeCreateCount + 1, $model::query()->count());
+        $this->assertDatabaseHas($model::query()->getModel()->getTable(), $this->persistedCreateAssertions($model, $formData));
 
         $editable = $model::query()->firstOrFail();
         $updatedValue = $visibleValue.' updated';
@@ -128,6 +132,64 @@ class EntityResourcesTest extends TestCase
             ->assertSee('Active')
             ->assertSee('$129.00')
             ->assertSee('Demo Oak Chair');
+
+        $order = Order::query()->firstOrFail();
+        $order->update(['currency' => 'EUR', 'total_cents' => 12900]);
+        $orderPages = 'App\Filament\Resources\Orders\OrderResource'::getPages();
+
+        Livewire::test($orderPages['index']->getPage())
+            ->assertSee('€129.00');
+    }
+
+    public function test_resource_tables_define_filters_and_relationship_queries_eager_load_columns(): void
+    {
+        foreach ([
+            'product' => ['supplier'], 'address' => ['customer'], 'category' => ['parent'], 'product-variant' => ['product'],
+            'review' => ['product', 'customer'], 'order' => ['customer', 'billingAddress', 'shippingAddress', 'discount'],
+            'order-item' => ['order', 'product', 'variant'], 'payment' => ['order'], 'refund' => ['payment'],
+            'shipment' => ['order'], 'order-status-history' => ['order'], 'inventory' => ['product', 'variant'],
+        ] as $entity => $relationships) {
+            $this->assertNotEmpty(EntityResourceTable::filtersFor($entity), $entity.' must define meaningful filters.');
+
+            $resource = match ($entity) {
+                'product' => 'App\\Filament\\Resources\\Products\\ProductResource',
+                'address' => 'App\\Filament\\Resources\\Addresses\\AddressResource',
+                'category' => 'App\\Filament\\Resources\\Categories\\CategoryResource',
+                'product-variant' => 'App\\Filament\\Resources\\ProductVariants\\ProductVariantResource',
+                'review' => 'App\\Filament\\Resources\\Reviews\\ReviewResource',
+                'order' => 'App\\Filament\\Resources\\Orders\\OrderResource',
+                'order-item' => 'App\\Filament\\Resources\\OrderItems\\OrderItemResource',
+                'payment' => 'App\\Filament\\Resources\\Payments\\PaymentResource',
+                'refund' => 'App\\Filament\\Resources\\Refunds\\RefundResource',
+                'shipment' => 'App\\Filament\\Resources\\Shipments\\ShipmentResource',
+                'order-status-history' => 'App\\Filament\\Resources\\OrderStatusHistories\\OrderStatusHistoryResource',
+                'inventory' => 'App\\Filament\\Resources\\Inventories\\InventoryResource',
+                default => null,
+            };
+            if ($resource !== null) {
+                $this->assertSame($relationships, array_keys($resource::getEloquentQuery()->getEagerLoads()));
+            }
+        }
+    }
+
+    public function test_invalid_product_input_reports_required_numeric_status_and_url_errors(): void
+    {
+        $this->seed();
+        $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
+        $pages = 'App\Filament\Resources\Products\ProductResource'::getPages();
+
+        Livewire::test($pages['create']->getPage())
+            ->fillForm(['name' => '', 'price_cents' => 'not-money', 'status' => 'unknown', 'image_url' => 'not-a-url'])
+            ->call('create')
+            ->assertHasFormErrors(['name', 'price_cents', 'status', 'image_url']);
+    }
+
+    public function test_seeded_product_image_is_served_locally_without_external_dependency(): void
+    {
+        $this->seed();
+
+        $this->assertFileExists(public_path('demo-images/demo-oak-chair.svg'));
+        $this->assertStringContainsString('<svg', file_get_contents(public_path('demo-images/demo-oak-chair.svg')));
     }
 
     public function test_nullable_historical_relationships_can_be_saved(): void
@@ -168,5 +230,25 @@ class EntityResourcesTest extends TestCase
             fn (mixed $value): mixed => $value instanceof Model ? $value::query()->firstOrFail()->getKey() : $value,
             $attributes,
         );
+    }
+
+    /** @param array<string, mixed> $formData */
+    private function persistedCreateAssertions(string $model, array $formData): array
+    {
+        return match ($model) {
+            Customer::class, Category::class, Product::class, ProductVariant::class, Tag::class, Supplier::class => ['name' => $formData['name']],
+            Address::class => ['line_1' => $formData['line_1']],
+            Review::class => ['title' => $formData['title']],
+            Order::class => ['number' => $formData['number']],
+            OrderItem::class => ['product_name' => $formData['product_name']],
+            Payment::class => ['transaction_id' => $formData['transaction_id']],
+            Refund::class => ['reason' => $formData['reason']],
+            Shipment::class => ['tracking_number' => $formData['tracking_number']],
+            OrderStatusHistory::class => ['status' => $formData['status']],
+            Inventory::class => ['location' => $formData['location']],
+            Discount::class => ['code' => $formData['code']],
+            Note::class => ['body' => $formData['body']],
+            default => [],
+        };
     }
 }

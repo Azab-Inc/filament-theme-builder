@@ -71,8 +71,8 @@ class EcommerceDemoSeeder extends Seeder
                 'name' => $fixture['name'], 'slug' => $fixture['slug'], 'description' => 'Demonstration product; not available for purchase.',
                 'price_cents' => $fixture['price_cents'], 'status' => 'active', 'supplier_id' => $supplier->id,
                 'image_url' => $fixture['sku'] === 'DEMO-CHAIR-001'
-                    ? 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=640'
-                    : 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=640',
+                    ? config('app.url').'/demo-images/demo-oak-chair.svg'
+                    : config('app.url').'/demo-images/demo-brass-lamp.svg',
             ]);
             $product->categories()->sync([$categories[$fixture['category']]->id]);
             $product->tags()->sync($tags->pluck('id')->all());

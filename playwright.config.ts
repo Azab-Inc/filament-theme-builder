@@ -27,7 +27,7 @@ export default defineConfig({
         },
         {
           command:
-            'export FTB_PREVIEW_ALLOWED_ORIGINS=http://127.0.0.1:4173; php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=127.0.0.1 --port=4174',
+            'export APP_URL=http://127.0.0.1:4174 FTB_PREVIEW_ALLOWED_ORIGINS=http://127.0.0.1:4173; php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=127.0.0.1 --port=4174',
           cwd: 'demo',
           url: 'http://127.0.0.1:4174/demo/admin/login',
           reuseExistingServer: false,
