@@ -17,6 +17,18 @@ final class EntityResourceInfolist
                 TextEntry::make('price_cents')->money('USD', divideBy: 100),
                 TextEntry::make('status')->badge()->formatStateUsing(fn (?string $state): ?string => $state ? ucfirst($state) : null),
             ],
+            'order' => [
+                TextEntry::make('number'),
+                TextEntry::make('customer.name')->label('Customer'),
+                TextEntry::make('total_cents')->money(fn ($record): string => $record->currency ?? 'USD', divideBy: 100),
+                TextEntry::make('status')->badge()->formatStateUsing(fn (?string $state): ?string => $state ? ucfirst($state) : null),
+            ],
+            'payment' => [
+                TextEntry::make('transaction_id'),
+                TextEntry::make('order.number')->label('Order'),
+                TextEntry::make('amount_cents')->money(fn ($record): string => $record->currency ?? 'USD', divideBy: 100),
+                TextEntry::make('status')->badge()->formatStateUsing(fn (?string $state): ?string => $state ? ucfirst($state) : null),
+            ],
             default => [TextEntry::make(match ($entity) {
                 'customer', 'product', 'category', 'product-variant', 'tag', 'supplier' => 'name',
                 'address' => 'name',

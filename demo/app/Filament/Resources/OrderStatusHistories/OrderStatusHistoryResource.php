@@ -9,6 +9,7 @@ use App\Filament\Resources\OrderStatusHistories\Pages\ViewOrderStatusHistory;
 use App\Filament\Resources\OrderStatusHistories\Schemas\OrderStatusHistoryForm;
 use App\Filament\Resources\OrderStatusHistories\Schemas\OrderStatusHistoryInfolist;
 use App\Filament\Resources\OrderStatusHistories\Tables\OrderStatusHistoriesTable;
+use App\Filament\Support\HasEagerLoadedRelations;
 use App\Models\OrderStatusHistory;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use UnitEnum;
 
 class OrderStatusHistoryResource extends Resource
 {
+    use HasEagerLoadedRelations;
+
     protected static ?string $model = OrderStatusHistory::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Sales';

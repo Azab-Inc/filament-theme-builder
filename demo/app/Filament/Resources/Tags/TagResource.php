@@ -9,6 +9,7 @@ use App\Filament\Resources\Tags\Pages\ViewTag;
 use App\Filament\Resources\Tags\Schemas\TagForm;
 use App\Filament\Resources\Tags\Schemas\TagInfolist;
 use App\Filament\Resources\Tags\Tables\TagsTable;
+use App\Filament\Support\HasEagerLoadedRelations;
 use App\Models\Tag;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use UnitEnum;
 
 class TagResource extends Resource
 {
+    use HasEagerLoadedRelations;
+
     protected static ?string $model = Tag::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Catalog';

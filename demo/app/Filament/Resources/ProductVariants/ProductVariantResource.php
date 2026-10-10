@@ -9,6 +9,7 @@ use App\Filament\Resources\ProductVariants\Pages\ViewProductVariant;
 use App\Filament\Resources\ProductVariants\Schemas\ProductVariantForm;
 use App\Filament\Resources\ProductVariants\Schemas\ProductVariantInfolist;
 use App\Filament\Resources\ProductVariants\Tables\ProductVariantsTable;
+use App\Filament\Support\HasEagerLoadedRelations;
 use App\Models\ProductVariant;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use UnitEnum;
 
 class ProductVariantResource extends Resource
 {
+    use HasEagerLoadedRelations;
+
     protected static ?string $model = ProductVariant::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Catalog';

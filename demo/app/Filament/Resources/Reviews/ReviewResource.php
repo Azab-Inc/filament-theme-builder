@@ -9,6 +9,7 @@ use App\Filament\Resources\Reviews\Pages\ViewReview;
 use App\Filament\Resources\Reviews\Schemas\ReviewForm;
 use App\Filament\Resources\Reviews\Schemas\ReviewInfolist;
 use App\Filament\Resources\Reviews\Tables\ReviewsTable;
+use App\Filament\Support\HasEagerLoadedRelations;
 use App\Models\Review;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use UnitEnum;
 
 class ReviewResource extends Resource
 {
+    use HasEagerLoadedRelations;
+
     protected static ?string $model = Review::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Customers';

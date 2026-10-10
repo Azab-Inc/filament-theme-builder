@@ -9,6 +9,7 @@ use App\Filament\Resources\Inventories\Pages\ViewInventory;
 use App\Filament\Resources\Inventories\Schemas\InventoryForm;
 use App\Filament\Resources\Inventories\Schemas\InventoryInfolist;
 use App\Filament\Resources\Inventories\Tables\InventoriesTable;
+use App\Filament\Support\HasEagerLoadedRelations;
 use App\Models\Inventory;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use UnitEnum;
 
 class InventoryResource extends Resource
 {
+    use HasEagerLoadedRelations;
+
     protected static ?string $model = Inventory::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Catalog';

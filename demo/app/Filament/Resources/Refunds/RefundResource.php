@@ -9,6 +9,7 @@ use App\Filament\Resources\Refunds\Pages\ViewRefund;
 use App\Filament\Resources\Refunds\Schemas\RefundForm;
 use App\Filament\Resources\Refunds\Schemas\RefundInfolist;
 use App\Filament\Resources\Refunds\Tables\RefundsTable;
+use App\Filament\Support\HasEagerLoadedRelations;
 use App\Models\Refund;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use UnitEnum;
 
 class RefundResource extends Resource
 {
+    use HasEagerLoadedRelations;
+
     protected static ?string $model = Refund::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Sales';

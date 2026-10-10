@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-labelledby="title">
+  <title id="title">Demo Oak Chair</title>
+  <rect width="640" height="480" fill="#e7d7c1"/>
+  <path d="M210 120h220v180H210zM180 300h280l-30 100H210z" fill="#8b5e3c"/>
+  <path d="M230 150h180v100H230z" fill="#c49a6c"/>
+</svg>

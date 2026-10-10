@@ -36,3 +36,27 @@ Complete. All 17 standalone Filament resources have generated list/create/edit/v
 
 - The demo image URLs depend on the external Unsplash service being reachable during a browser session.
 - Full-project PHPStan still requires a separate domain-model generic-annotation cleanup.
+
+## Review-fix report
+
+### Fixes applied
+
+- Replaced the shared `filters([])` placeholder with entity-specific status, relationship, and date filters for all 17 tables.
+- Added `HasEagerLoadedRelations` and configured every relationship used by a table column through the resource query.
+- Extended the 17-resource Livewire data-provider test to assert create count increments and persisted representative values.
+- Added invalid product form coverage for required, numeric/currency, status, and URL validation, while retaining nullable review relationship coverage.
+- Replaced remote Unsplash assumptions with deterministic SVGs in `demo/public/demo-images/`; the seeder derives absolute image URLs from `APP_URL`, and Playwright starts the demo with the matching URL.
+- Made order/payment money columns and infolists derive currency from each record, while retaining USD for entities without a currency field.
+- Expanded order/payment infolists with relationship, money, and status entries.
+
+### Verification commands and output
+
+- `php artisan test --filter=EntityResourcesTest`: **23 passed, 239 assertions**.
+- `php artisan test`: **49 passed, 458 assertions**.
+- `npx playwright test e2e/demo-panel.spec.ts --grep 'demo panel'`: **2 passed**.
+- `composer run lint:check`: **passed**.
+- `vendor/bin/phpstan analyse app/Filament/Resources app/Filament/Support --no-progress`: **passed, 0 errors**.
+
+### Remaining concern
+
+- The repository-wide `composer run types:check` continues to report pre-existing missing generic annotations in domain model relationship methods; the changed resource/support paths pass targeted PHPStan.

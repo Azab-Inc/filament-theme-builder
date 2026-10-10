@@ -9,6 +9,7 @@ use App\Filament\Resources\Shipments\Pages\ViewShipment;
 use App\Filament\Resources\Shipments\Schemas\ShipmentForm;
 use App\Filament\Resources\Shipments\Schemas\ShipmentInfolist;
 use App\Filament\Resources\Shipments\Tables\ShipmentsTable;
+use App\Filament\Support\HasEagerLoadedRelations;
 use App\Models\Shipment;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use UnitEnum;
 
 class ShipmentResource extends Resource
 {
+    use HasEagerLoadedRelations;
+
     protected static ?string $model = Shipment::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Sales';

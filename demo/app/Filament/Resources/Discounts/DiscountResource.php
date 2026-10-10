@@ -9,6 +9,7 @@ use App\Filament\Resources\Discounts\Pages\ViewDiscount;
 use App\Filament\Resources\Discounts\Schemas\DiscountForm;
 use App\Filament\Resources\Discounts\Schemas\DiscountInfolist;
 use App\Filament\Resources\Discounts\Tables\DiscountsTable;
+use App\Filament\Support\HasEagerLoadedRelations;
 use App\Models\Discount;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use UnitEnum;
 
 class DiscountResource extends Resource
 {
+    use HasEagerLoadedRelations;
+
     protected static ?string $model = Discount::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Sales';

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-labelledby="title">
+  <title id="title">Demo Brass Lamp</title>
+  <rect width="640" height="480" fill="#f3ead4"/>
+  <path d="M260 120h120l70 120H190z" fill="#b88a2d"/>
+  <path d="M315 240h10v150h-10zM270 390h100v18H270z" fill="#7b5b22"/>
+</svg>
