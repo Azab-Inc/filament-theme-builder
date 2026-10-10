@@ -50,6 +50,7 @@ class FormsShowcase extends Page
             'show_details' => true,
             'optional_note' => null,
             'long_text' => 'A long local fixture paragraph demonstrates how editorial copy remains readable while the form stays scannable.',
+            'filled_fixture' => 'Local deterministic value',
             'channels' => [
                 ['channel' => 'Email', 'budget' => '1200'],
             ],
@@ -87,7 +88,7 @@ class FormsShowcase extends Page
                         Textarea::make('long_text')
                             ->label('Long text fixture')
                             ->rows(4)
-                            ->maxLength(500),
+                            ->maxLength(180),
                     ])
                     ->columns(2),
                 Wizard::make([

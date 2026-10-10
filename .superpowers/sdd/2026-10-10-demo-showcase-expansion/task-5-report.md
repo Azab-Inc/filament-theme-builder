@@ -24,4 +24,20 @@ The new tests were written before the page implementation and run red:
 
 ## Concern
 
-Repeated full-file Playwright runs intermittently fail an existing login setup assertion (`/demo/admin/login` remains loaded); focused forms coverage is stable, and no auth code was changed for this task.
+Initial full-file Playwright runs intermittently failed the login setup assertion (`/demo/admin/login` remained loaded). The test harness now uses one authenticated storage state and file-backed sessions for the Playwright-started server; repeated full-file runs pass.
+
+## Review fixes
+
+- Added a deterministic `filled_fixture` value to the mounted form state and asserted it in both Livewire and browser coverage.
+- Reduced the long-text fixture limit to 180 characters and added a Livewire test proving overflow returns a `max` validation error instead of being silently accepted.
+- Added browser interaction coverage for Wizard progression, Repeater add/edit, Builder block selection/editing, and RichEditor content editing.
+- Added browser assertions for light/dark form control styling and the named Campaign brief region.
+- Reused one authenticated Playwright storage state for the showcase file, avoiding repeated Livewire login races between tests.
+- Configured the Playwright-started demo server to use file sessions instead of SQLite-backed sessions.
+
+## Review verification
+
+- `cd demo && php artisan test tests/Feature/Filament/Showcase/FormsShowcaseTest.php`: **passed** (4 tests, 29 assertions).
+- `cd demo && vendor/bin/pint --test && vendor/bin/phpstan analyse --memory-limit=1G`: **passed**.
+- `npx playwright test e2e/demo-showcase.spec.ts --grep 'forms' --workers=1`: **passed** (3 tests).
+- `npx playwright test e2e/demo-showcase.spec.ts --workers=1`: **passed** twice consecutively (7 tests per run).

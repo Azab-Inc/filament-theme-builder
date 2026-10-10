@@ -1,16 +1,35 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page, type StorageState } from '@playwright/test'
 
 const demoBaseUrl = process.env.DEMO_BASE_URL ?? 'http://127.0.0.1:4174'
+
+let authState: StorageState
+
+test.beforeAll(async ({ browser }) => {
+  const context = await browser.newContext()
+  const page = await context.newPage()
+
+  await page.goto(`${demoBaseUrl}/demo/admin/login`)
+  await page.getByLabel(/username/i).fill('user')
+  await page.getByRole('textbox', { name: /password/i }).fill('password')
+  await page.waitForLoadState('networkidle')
+  await page.getByRole('button', { name: /sign in/i }).click()
+  await expect(page).toHaveURL(`${demoBaseUrl}/demo/admin`)
+
+  authState = await context.storageState()
+  await context.close()
+})
+
+async function useAuthenticatedSession(page: Page): Promise<void> {
+  await page.context().addCookies(authState.cookies)
+  await page.goto(`${demoBaseUrl}/demo/admin`)
+  await expect(page).toHaveURL(`${demoBaseUrl}/demo/admin`)
+}
 
 test.describe('demo showcase panel identity and navigation', () => {
   test.describe.configure({ mode: 'serial' })
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(`${demoBaseUrl}/demo/admin/login`)
-    await page.getByLabel(/username/i).fill('user')
-    await page.getByRole('textbox', { name: /password/i }).fill('password')
-    await page.getByRole('button', { name: /sign in/i }).click()
-    await expect(page).toHaveURL(`${demoBaseUrl}/demo/admin`)
+    await useAuthenticatedSession(page)
   })
 
   test('branding uses the independent local identity in light and dark modes', async ({ page }) => {
@@ -146,11 +165,7 @@ test.describe('forms and schemas showcase', () => {
   test.describe.configure({ mode: 'serial' })
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(`${demoBaseUrl}/demo/admin/login`)
-    await page.getByLabel(/username/i).fill('user')
-    await page.getByRole('textbox', { name: /password/i }).fill('password')
-    await page.getByRole('button', { name: /sign in/i }).click()
-    await expect(page).toHaveURL(`${demoBaseUrl}/demo/admin`)
+    await useAuthenticatedSession(page)
     await page.goto(`${demoBaseUrl}/demo/admin/forms-showcase`)
   })
 
@@ -166,10 +181,54 @@ test.describe('forms and schemas showcase', () => {
     await page.getByRole('tab', { name: 'Conditional' }).click()
     await expect(page.getByRole('textbox', { name: /Conditional details/ })).toBeVisible()
     await expect(page.getByLabel('Campaign name')).toHaveValue('Autumn studio launch')
+    await expect(page.getByLabel('Prefilled fixture')).toHaveValue('Local deterministic value')
     await expect(page.getByLabel('Disabled fixture')).toBeDisabled()
+
+    const lightControlStyle = await page.getByLabel('Campaign name').evaluate((control) => {
+      const styles = getComputedStyle(control)
+      return { backgroundColor: styles.backgroundColor, color: styles.color }
+    })
 
     await page.emulateMedia({ colorScheme: 'dark' })
     await expect(page.getByRole('heading', { name: 'Forms & Schemas' })).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Campaign brief' })).toBeVisible()
+    const darkControlStyle = await page.getByLabel('Campaign name').evaluate((control) => {
+      const styles = getComputedStyle(control)
+      return { backgroundColor: styles.backgroundColor, color: styles.color }
+    })
+    expect(darkControlStyle).not.toEqual(lightControlStyle)
+  })
+
+  test('interacts with wizard, repeater, content builder, and rich editor controls', async ({ page }) => {
+    const wizard = page.getByRole('list', { name: 'Wizard' })
+    await expect(wizard).toBeVisible()
+    await page.getByLabel('Plan reference').fill('DEMO-CAMPAIGN-001')
+    await page.getByRole('button', { name: /Next/ }).click()
+    await expect(page.getByRole('group', { name: /Build/ })).toBeVisible()
+    await page.getByRole('button', { name: /Next/ }).click()
+    await expect(page.getByRole('group', { name: /Review/ })).toBeVisible()
+
+    const repeater = page.getByRole('region', { name: 'Repeater' })
+    await repeater.getByRole('button', { name: /Add/ }).click()
+    await expect(repeater.getByRole('textbox', { name: /Channel/ })).toHaveCount(2)
+    await repeater.getByRole('textbox', { name: /Channel/ }).nth(1).fill('Studio partners')
+    await repeater.getByRole('spinbutton', { name: /Budget/ }).nth(1).fill('800')
+    await expect(repeater.getByRole('textbox', { name: /Channel/ }).nth(1)).toHaveValue('Studio partners')
+
+    const builder = page.getByRole('region', { name: 'Content blocks' })
+    await builder.getByRole('button', { name: /Add/ }).click()
+    await page.getByRole('button', { name: 'Quote block' }).click()
+    await expect(builder.getByRole('textbox', { name: /Quote/ })).toHaveCount(1)
+    await builder.getByRole('textbox', { name: /Quote/ }).fill('A considered local quote.')
+    await expect(builder.getByRole('textbox', { name: /Quote/ })).toHaveValue('A considered local quote.')
+
+    const editor = page.getByRole('region', { name: 'Editorial notes' })
+    await expect(editor.getByRole('button', { name: 'Bold' })).toBeVisible()
+    const editorBody = editor.locator('[contenteditable="true"]')
+    await expect(editorBody).toBeVisible()
+    await editorBody.click()
+    await editorBody.pressSequentially('Updated editorial note')
+    await expect(editorBody).toContainText('Updated editorial note')
   })
 
   test('reports required validation and preserves keyboard focus order', async ({ page }) => {

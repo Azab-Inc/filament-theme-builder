@@ -42,9 +42,21 @@ class FormsShowcaseTest extends TestCase
                 'audience' => 'Independent makers',
                 'show_details' => true,
                 'optional_note' => null,
+                'filled_fixture' => 'Local deterministic value',
                 'long_text' => 'A long local fixture paragraph demonstrates how editorial copy remains readable while the form stays scannable.',
             ])
             ->assertSee('Long text fixture');
+    }
+
+    public function test_forms_showcase_rejects_long_text_overflow_instead_of_silently_truncating_it(): void
+    {
+        $this->seed();
+        $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
+
+        Livewire::test(FormsShowcase::class)
+            ->fillForm(['long_text' => str_repeat('Overflow fixture text. ', 10)])
+            ->call('save')
+            ->assertHasFormErrors(['long_text' => 'max']);
     }
 
     public function test_forms_showcase_server_validation_rejects_missing_required_campaign_name(): void
