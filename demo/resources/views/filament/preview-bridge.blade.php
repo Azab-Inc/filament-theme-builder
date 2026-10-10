@@ -4,6 +4,7 @@
             return;
         }
 
-        // FTB-003 owns protocol behavior; this FTB-002 hook intentionally processes no messages.
+        // FTB-003 adds protocol handling; this event only signals that trust checks passed.
+        window.dispatchEvent(new CustomEvent('ftb:preview-message-accepted'));
     });
 </script>

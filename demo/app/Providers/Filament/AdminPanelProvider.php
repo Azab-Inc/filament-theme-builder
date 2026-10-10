@@ -31,6 +31,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('demo/admin')
             ->login(Login::class)
+            ->profile()
             ->renderHook(
                 PanelsRenderHook::BODY_END,
                 fn (): string => view('filament.preview-bridge')->render(),

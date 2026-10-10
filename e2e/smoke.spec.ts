@@ -22,20 +22,76 @@ test('Filament admin login renders', async ({ page }) => {
   await expect(page.getByText('Password: password')).toBeVisible()
 })
 
-test('Filament preview is public, embeddable, and exposes an origin/source-checked bridge hook', async ({ page }) => {
+test('Filament preview is public and embeddable', async ({ page }) => {
   const preview = await page.goto('http://127.0.0.1:4174/demo/admin')
   expect(preview?.status()).toBe(200)
   await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible()
-  // FTB-003 owns observable protocol behavior; this is a structural guard smoke test only.
-  const bridge = await page.locator('#ftb-preview-bridge').textContent()
-  expect(bridge).toContain('event.origin !== window.location.origin')
-  expect(bridge).toContain('event.source !== window.parent')
 
   await page.goto('http://127.0.0.1:4173')
   await expect(page.getByTitle('Filament preview')).toHaveAttribute(
     'src',
     'http://127.0.0.1:4174/demo/admin',
   )
+})
+
+test('preview bridge dispatches only for the exact-origin parent window', async ({ page }) => {
+  const demoOrigin = 'http://127.0.0.1:4174'
+  await page.goto(`${demoOrigin}/demo/admin`)
+  await page.setContent(`
+    <iframe name="preview-frame" src="${demoOrigin}/demo/admin"></iframe>
+    <iframe name="same-origin-child" src="${demoOrigin}/demo/admin/login"></iframe>
+  `)
+
+  const preview = page.frame({ name: 'preview-frame' })
+  expect(preview).toBeTruthy()
+  await expect(
+    page.frameLocator('iframe[name="preview-frame"]').getByRole('heading', { name: /dashboard/i }),
+  ).toBeVisible()
+  await expect(
+    page.frameLocator('iframe[name="same-origin-child"]').getByRole('heading', { name: /sign in/i }),
+  ).toBeVisible()
+  await preview!.evaluate(() => {
+    document.body.dataset.acceptedMessages = '0'
+    window.addEventListener('ftb:preview-message-accepted', () => {
+      document.body.dataset.acceptedMessages = String(Number(document.body.dataset.acceptedMessages) + 1)
+    })
+  })
+
+  await page.evaluate(() => {
+    const previewFrame = document.querySelector<HTMLIFrameElement>('iframe[name="preview-frame"]')!
+    previewFrame.contentWindow!.postMessage({ sender: 'parent' }, window.location.origin)
+  })
+  const sameOriginChild = page.frame({ name: 'same-origin-child' })
+  expect(sameOriginChild).toBeTruthy()
+  await sameOriginChild!.evaluate(() => {
+    const previewFrame = window.parent.document.querySelector<HTMLIFrameElement>('iframe[name="preview-frame"]')!
+    previewFrame.contentWindow!.postMessage({ sender: 'same-origin-child' }, window.location.origin)
+  })
+  await expect.poll(() => preview!.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(1)
+  await page.waitForTimeout(100)
+  expect(await preview!.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(1)
+
+  await page.goto('http://127.0.0.1:4173')
+  await page.setContent(`
+    <iframe name="cross-origin-preview" src="${demoOrigin}/demo/admin"></iframe>
+  `)
+  const crossOriginPreview = page.frame({ name: 'cross-origin-preview' })
+  expect(crossOriginPreview).toBeTruthy()
+  await expect(
+    page.frameLocator('iframe[name="cross-origin-preview"]').getByRole('heading', { name: /dashboard/i }),
+  ).toBeVisible()
+  await crossOriginPreview!.evaluate(() => {
+    document.body.dataset.acceptedMessages = '0'
+    window.addEventListener('ftb:preview-message-accepted', () => {
+      document.body.dataset.acceptedMessages = String(Number(document.body.dataset.acceptedMessages) + 1)
+    })
+  })
+  await page.evaluate(() => {
+    const previewFrame = document.querySelector<HTMLIFrameElement>('iframe[name="cross-origin-preview"]')!
+    previewFrame.contentWindow!.postMessage({ sender: 'cross-origin-parent' }, 'http://127.0.0.1:4174')
+  })
+  await page.waitForTimeout(100)
+  expect(await crossOriginPreview!.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(0)
 })
 
 test('demo credentials authenticate and logout returns to public preview', async ({ page }) => {

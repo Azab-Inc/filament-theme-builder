@@ -3,12 +3,9 @@
 namespace Tests\Feature;
 
 use App\Filament\Auth\Pages\Login;
-use App\Http\Middleware\AuthenticatePreviewPanel;
 use App\Models\User;
-use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -36,23 +33,17 @@ class FilamentPanelTest extends TestCase
             ->assertSee('event.source !== window.parent', false);
     }
 
-    public function test_non_preview_panel_routes_require_authentication(): void
+    public function test_profile_page_requires_authentication_and_allows_seeded_demo_user(): void
     {
-        Route::middleware([
-            'web',
-            AuthenticatePreviewPanel::class,
-        ])->get('/demo/admin/private-test', fn () => response('private'))
-            ->name('filament.admin.pages.private-test');
-
-        Filament::setCurrentPanel(Filament::getPanel('admin'));
-
-        $this->get('/demo/admin/private-test')
+        $this->get('/demo/admin/profile')
             ->assertRedirect('/demo/admin/login');
 
-        $this->actingAs(User::factory()->create())
-            ->get('/demo/admin/private-test')
+        $this->seed();
+
+        $this->actingAs(User::query()->where('email', 'user')->firstOrFail())
+            ->get('/demo/admin/profile')
             ->assertOk()
-            ->assertSee('private');
+            ->assertSee('Profile');
     }
 
     public function test_demo_credentials_can_authenticate_with_username(): void
