@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Auth\Pages\Login;
+use App\Http\Middleware\AuthenticatePreviewPanel;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -24,7 +25,7 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        // Keep the panel's normal middleware but intentionally omit authMiddleware for public preview access.
+        // Only the dashboard preview and logout route bypass panel authentication.
         return $panel
             ->default()
             ->id('admin')
@@ -46,6 +47,9 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 AccountWidget::class,
                 FilamentInfoWidget::class,
+            ])
+            ->authMiddleware([
+                AuthenticatePreviewPanel::class,
             ])
             ->middleware([
                 EncryptCookies::class,

@@ -22,11 +22,14 @@ test('Filament admin login renders', async ({ page }) => {
   await expect(page.getByText('Password: password')).toBeVisible()
 })
 
-test('Filament preview is public and the builder embeds it', async ({ page }) => {
+test('Filament preview is public, embeddable, and exposes an origin/source-checked bridge hook', async ({ page }) => {
   const preview = await page.goto('http://127.0.0.1:4174/demo/admin')
   expect(preview?.status()).toBe(200)
   await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible()
-  await expect(page.locator('#ftb-preview-bridge')).toHaveCount(1)
+  // FTB-003 owns observable protocol behavior; this is a structural guard smoke test only.
+  const bridge = await page.locator('#ftb-preview-bridge').textContent()
+  expect(bridge).toContain('event.origin !== window.location.origin')
+  expect(bridge).toContain('event.source !== window.parent')
 
   await page.goto('http://127.0.0.1:4173')
   await expect(page.getByTitle('Filament preview')).toHaveAttribute(
@@ -54,6 +57,9 @@ test('demo credentials authenticate and logout returns to public preview', async
   expect(result.status).toBe(200)
   expect(result.url).toBe('http://127.0.0.1:4174/demo/admin')
   await expect(page).toHaveURL('http://127.0.0.1:4174/demo/admin')
+  await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible()
+
+  await page.reload()
   await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible()
 })
 
