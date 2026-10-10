@@ -17,8 +17,9 @@
 ```text
 FTB-001
 ├── FTB-002
-│   ├── FTB-009 ── FTB-010
-│   ├── FTB-027 ── FTB-028
+│   ├── FTB-009A ── FTB-009B ── FTB-010
+│   ├── FTB-027 (parallel operational ticket)
+│   ├── FTB-028 (parallel operational ticket; blocked by FTB-009A and FTB-027)
 │   └── FTB-035
 └── FTB-003
     ├── FTB-004 ── FTB-024 ── FTB-026
@@ -242,21 +243,38 @@ Extend Inspector so a user can style an element even when the curated registry i
 
 <a id="ftb-009"></a>
 
-## FTB-009 — Build the realistic e-commerce demo domain
+## FTB-009A — Build the realistic e-commerce demo domain
 
 **Status:** ready-for-agent  
 **Blocked by:** [FTB-002](#ftb-002)
 
 ### What to build
 
-Seed the Filament demo with a coherent e-commerce domain rich enough to exercise real resources, forms, tables, relationships, statuses, images, money, and navigation without turning the preview into unrelated kitchen-sink data.
+Define and persist a coherent e-commerce demo domain rich enough to exercise Filament without turning the preview into unrelated kitchen-sink data. This is the first slice of the former FTB-009; its existing anchor remains stable.
 
 ### Acceptance criteria
 
-- [ ] The domain includes customers, addresses, products, categories, variants, tags, reviews, orders, order items, payments, refunds, shipments, inventory, suppliers, discounts, and appropriate notes/activity/status history.
+- [ ] All entities in SPECS.md §14 are represented, including customers, addresses, products, categories, variants, tags, reviews, orders, order items, payments, refunds, shipments, inventory, suppliers, discounts, and appropriate notes/activity/status history.
+- [ ] Migrations, Eloquent models, and relationships implement the complete domain graph.
+- [ ] Factories and deterministic seeders produce repeatable, non-production disposable demo data.
+- [ ] The model graph naturally includes BelongsTo, HasMany, BelongsToMany, and polymorphic relationships.
+
+---
+
+## FTB-009B — Build core CRUD resources and navigation
+
+**Status:** ready-for-agent
+**Blocked by:** [FTB-009A](#ftb-009)
+
+### What to build
+
+Expose the seeded e-commerce domain through useful core Filament CRUD resources and coherent navigation.
+
+### Acceptance criteria
+
 - [ ] Seed data is deterministic enough for screenshots and repeatable tests.
 - [ ] Core resources expose meaningful lists, create/edit forms, view states, badges, images, money, and status values.
-- [ ] The model graph naturally includes BelongsTo, HasMany, BelongsToMany, and polymorphic relationships.
+- [ ] Core resources are grouped in coherent admin navigation.
 - [ ] Navigation feels like one coherent admin application.
 - [ ] Demo data is explicitly non-production and disposable.
 
@@ -266,19 +284,20 @@ Seed the Filament demo with a coherent e-commerce domain rich enough to exercise
 
 ## FTB-010 — Demonstrate Relation Managers and Nested Resources
 
-**Status:** ready-for-agent  
-**Blocked by:** [FTB-009](#ftb-009)
+**Status:** ready-for-agent
+**Blocked by:** [FTB-009B](#ftb-009)
 
 ### What to build
 
-Use the e-commerce model to demonstrate Filament relationship UI as real workflows, including relation managers, nested resources, attach/detach, associate/dissociate, and related-record actions.
+Use the e-commerce model to demonstrate Filament relationship UI as real workflows after the domain and core CRUD resources are ready, including representative Relation Managers, Nested Resources, and explicit relationship actions.
 
 ### Acceptance criteria
 
 - [ ] At least one resource contains multiple meaningful Relation Managers.
-- [ ] Nested resources are used where full-page related editing is appropriate.
-- [ ] Attach/detach behavior is represented.
-- [ ] Associate/dissociate behavior is represented.
+- [ ] Nested Resources are used where full-page related editing is appropriate.
+- [ ] Attach and detach actions are explicitly available where applicable.
+- [ ] Associate and dissociate actions are explicitly available where applicable.
+- [ ] Related-record create/edit actions are demonstrated where appropriate.
 - [ ] Relationship tables contain filters/actions/states useful for theming.
 - [ ] Relationship forms and modals are represented.
 - [ ] The coverage manifest can distinguish Relation Managers from Nested Resources.
@@ -671,7 +690,7 @@ Allow the public demo to exercise real Filament upload UI while constraining fil
 ## FTB-028 — Reset demo state every ten minutes without breaking the showcase
 
 **Status:** ready-for-agent  
-**Blocked by:** [FTB-009](#ftb-009), [FTB-027](#ftb-027)
+**Blocked by:** [FTB-009A](#ftb-009), [FTB-027](#ftb-027)
 
 ### What to build
 

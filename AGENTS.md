@@ -33,6 +33,10 @@ Do not require separate host commands to start either application when using one
 
 Use test-driven development for every feature and bug fix: write the test first, run it and verify that it fails for the expected reason, then implement the smallest change that makes it pass. For user-visible behavior, create and run the Playwright CLI test before implementation and use it to verify the completed feature or fix. A feature is not done and a bug is not fixed until its test passes.
 
+### Demo-first implementation gate
+
+After FTB-003, builder feature tickets remain blocked until FTB-009A (demo domain), FTB-009B (core resources), and FTB-010 (relationship UI) are complete, in that order. FTB-027/028 are parallel operational tickets outside the current plan; they do not relax or gate this sequence.
+
 ## More Specific Instructions
 
 - Vue-specific conventions are defined in `builder/AGENTS.md`.
