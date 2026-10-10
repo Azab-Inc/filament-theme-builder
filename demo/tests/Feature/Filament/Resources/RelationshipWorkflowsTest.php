@@ -14,11 +14,25 @@ use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class RelationshipWorkflowsTest extends TestCase
 {
     use RefreshDatabase;
+
+    /** @return array<string, array{string, string, string}> */
+    public static function relationManagerRecords(): array
+    {
+        return [
+            'addresses' => ['App\\Filament\\Resources\\Customers\\RelationManagers\\AddressesRelationManager', 'Avery home', 'App\\Models\\Customer'],
+            'orders' => ['App\\Filament\\Resources\\Customers\\RelationManagers\\OrdersRelationManager', 'DEMO-ORDER-1001', 'App\\Models\\Customer'],
+            'reviews' => ['App\\Filament\\Resources\\Customers\\RelationManagers\\ReviewsRelationManager', 'Demo customer review', 'App\\Models\\Customer'],
+            'variants' => ['App\\Filament\\Resources\\Products\\RelationManagers\\VariantsRelationManager', 'Natural finish', 'App\\Models\\Product'],
+            'categories' => ['App\\Filament\\Resources\\Products\\RelationManagers\\CategoriesRelationManager', 'Demo Chairs', 'App\\Models\\Product'],
+            'tags' => ['App\\Filament\\Resources\\Products\\RelationManagers\\TagsRelationManager', 'Demo bestseller', 'App\\Models\\Product'],
+        ];
+    }
 
     public function test_customer_and_product_relation_managers_render_with_seeded_records(): void
     {
@@ -33,18 +47,27 @@ class RelationshipWorkflowsTest extends TestCase
             ->assertSee('Orders')
             ->assertSee('Reviews');
 
-        Livewire::test('App\\Filament\\Resources\\Customers\\RelationManagers\\AddressesRelationManager', ['ownerRecord' => $customer, 'pageClass' => 'App\\Filament\\Resources\\Customers\\Pages\\EditCustomer'])
-            ->call('loadTable')
-            ->assertSee('Avery home');
-
         Livewire::test(ProductResource::getPages()['edit']->getPage(), ['record' => $product->getRouteKey()])
             ->assertSee('Variants')
             ->assertSee('Categories')
             ->assertSee('Tags');
 
-        Livewire::test('App\\Filament\\Resources\\Products\\RelationManagers\\CategoriesRelationManager', ['ownerRecord' => $product, 'pageClass' => 'App\\Filament\\Resources\\Products\\Pages\\EditProduct'])
+    }
+
+    #[DataProvider('relationManagerRecords')]
+    public function test_each_relation_manager_renders_its_seeded_relationship_table(string $manager, string $recordTitle, string $ownerModel): void
+    {
+        $this->seed();
+        $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
+
+        $owner = $ownerModel::query()->firstOrFail();
+        $pageClass = str_contains($ownerModel, 'Customer')
+            ? 'App\\Filament\\Resources\\Customers\\Pages\\EditCustomer'
+            : 'App\\Filament\\Resources\\Products\\Pages\\EditProduct';
+
+        Livewire::test($manager, ['ownerRecord' => $owner, 'pageClass' => $pageClass])
             ->call('loadTable')
-            ->assertSee('Demo Chairs');
+            ->assertSee($recordTitle);
     }
 
     public function test_product_categories_can_attach_and_detach_without_deleting_records(): void
@@ -97,7 +120,7 @@ class RelationshipWorkflowsTest extends TestCase
         $this->assertDatabaseHas('tags', ['id' => $tag->getKey()]);
     }
 
-    public function test_customer_addresses_and_orders_are_parent_scoped_and_order_association_can_be_dissociated(): void
+    public function test_order_can_be_associated_and_dissociated_through_customer_manager_without_deleting_parent_records(): void
     {
         $this->seed();
         $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
@@ -111,7 +134,13 @@ class RelationshipWorkflowsTest extends TestCase
         Livewire::test($manager, ['ownerRecord' => $customer, 'pageClass' => 'App\\Filament\\Resources\\Customers\\Pages\\EditCustomer'])
             ->assertDontSee($order->number);
 
-        $order->update(['customer_id' => $customer->getKey()]);
+        Livewire::test($manager, ['ownerRecord' => $customer, 'pageClass' => 'App\\Filament\\Resources\\Customers\\Pages\\EditCustomer'])
+            ->mountTableAction('associate')
+            ->setTableActionData(['recordId' => $order->getKey()])
+            ->callMountedTableAction();
+
+        $this->assertDatabaseHas('orders', ['id' => $order->getKey(), 'customer_id' => $customer->getKey()]);
+
         Livewire::test($manager, ['ownerRecord' => $customer->fresh(), 'pageClass' => 'App\\Filament\\Resources\\Customers\\Pages\\EditCustomer'])
             ->mountTableAction('dissociate', $order->getKey())
             ->callMountedTableAction();
@@ -131,7 +160,8 @@ class RelationshipWorkflowsTest extends TestCase
         $pages = 'App\\Filament\\Resources\\Orders\\Resources\\OrderItems\\OrderItemResource'::getPages();
 
         Livewire::test($pages['create']->getPage(), ['parentRecord' => $order])
-            ->fillForm(OrderItem::factory()->make(['order_id' => $order->getKey()])->getAttributes())
+            ->assertFormFieldDoesNotExist('order_id')
+            ->fillForm(OrderItem::factory()->make(['order_id' => $otherOrder->getKey()])->getAttributes())
             ->call('create')
             ->assertHasNoFormErrors();
 
@@ -139,11 +169,15 @@ class RelationshipWorkflowsTest extends TestCase
         $this->assertSame($order->getKey(), $created->order_id);
 
         Livewire::test($pages['edit']->getPage(), ['parentRecord' => $order, 'record' => $created->getRouteKey()])
-            ->fillForm(['product_name' => 'Nested updated item'])
+            ->assertFormFieldDoesNotExist('order_id')
+            ->fillForm(['order_id' => $otherOrder->getKey(), 'product_name' => 'Nested updated item'])
             ->call('save')
             ->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('order_items', ['id' => $created->getKey(), 'order_id' => $order->getKey(), 'product_name' => 'Nested updated item']);
+
+        Livewire::test($pages['view']->getPage(), ['parentRecord' => $order, 'record' => $created->getRouteKey()])
+            ->assertSee('Nested updated item');
 
         Livewire::test($pages['edit']->getPage(), ['parentRecord' => $order, 'record' => $created->getRouteKey()])
             ->callAction('delete');

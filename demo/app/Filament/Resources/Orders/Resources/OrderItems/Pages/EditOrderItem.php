@@ -14,4 +14,11 @@ class EditOrderItem extends EditRecord
     {
         return [DeleteAction::make()];
     }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        unset($data['order_id']);
+
+        return $data;
+    }
 }

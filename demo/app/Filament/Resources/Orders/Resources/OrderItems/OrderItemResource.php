@@ -2,13 +2,14 @@
 
 namespace App\Filament\Resources\Orders\Resources\OrderItems;
 
-use App\Filament\Resources\OrderItems\Schemas\OrderItemForm;
 use App\Filament\Resources\OrderItems\Schemas\OrderItemInfolist;
 use App\Filament\Resources\OrderItems\Tables\OrderItemsTable;
 use App\Filament\Resources\Orders\OrderResource;
 use App\Filament\Resources\Orders\Resources\OrderItems\Pages\CreateOrderItem;
 use App\Filament\Resources\Orders\Resources\OrderItems\Pages\EditOrderItem;
 use App\Filament\Resources\Orders\Resources\OrderItems\Pages\ListOrderItems;
+use App\Filament\Resources\Orders\Resources\OrderItems\Pages\ViewOrderItem;
+use App\Filament\Resources\Orders\Resources\OrderItems\Schemas\NestedOrderItemForm;
 use App\Filament\Support\HasEagerLoadedRelations;
 use App\Models\OrderItem;
 use BackedEnum;
@@ -33,7 +34,7 @@ class OrderItemResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return OrderItemForm::configure($schema);
+        return NestedOrderItemForm::configure($schema);
     }
 
     public static function infolist(Schema $schema): Schema
@@ -56,6 +57,7 @@ class OrderItemResource extends Resource
         return [
             'index' => ListOrderItems::route('/'),
             'create' => CreateOrderItem::route('/create'),
+            'view' => ViewOrderItem::route('/{record}'),
             'edit' => EditOrderItem::route('/{record}/edit'),
         ];
     }

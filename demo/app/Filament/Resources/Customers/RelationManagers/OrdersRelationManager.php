@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Customers\RelationManagers;
 
 use App\Filament\Support\RelationManagerTable;
+use Filament\Actions\AssociateAction;
 use Filament\Actions\DissociateAction;
 use Filament\Actions\DissociateBulkAction;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -19,6 +20,6 @@ class OrdersRelationManager extends RelationManager
         return RelationManagerTable::configure($table, [
             TextColumn::make('number')->searchable()->sortable(), TextColumn::make('status')->badge()->sortable(),
             TextColumn::make('total_cents')->money(fn ($record): string => $record->currency ?? 'USD', divideBy: 100),
-        ], filters: [SelectFilter::make('status')->options(['pending' => 'Pending', 'paid' => 'Paid', 'shipped' => 'Shipped', 'refunded' => 'Refunded'])], recordActions: [DissociateAction::make()], toolbarActions: [DissociateBulkAction::make()]);
+        ], filters: [SelectFilter::make('status')->options(['pending' => 'Pending', 'paid' => 'Paid', 'shipped' => 'Shipped', 'refunded' => 'Refunded'])], headerActions: [AssociateAction::make()], recordActions: [DissociateAction::make()], toolbarActions: [DissociateBulkAction::make()])->inverseRelationship('customer');
     }
 }

@@ -8,4 +8,11 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateOrderItem extends CreateRecord
 {
     protected static string $resource = OrderItemResource::class;
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        unset($data['order_id']);
+
+        return $data;
+    }
 }
