@@ -1,5 +1,16 @@
 # Demo panel coverage
 
+This is the implemented demo-panel coverage record, not the complete
+first-party Filament visual coverage gate described by FTB-032/039.
+
+## Domain and resource coverage
+
+The schema/model/relationship contract covers the 17 SPECS §14 entities plus
+their pivots and polymorphic notes. `EcommerceSchemaTest`,
+`EcommerceRelationshipsTest`, and `EcommerceSeedTest` cover table existence,
+foreign-key behavior, both-side relation resolution, factories, fixed business
+keys, deterministic dates, and idempotent seeding.
+
 ## Core resources
 
 The demo panel exposes the 17 Task 5 entity resources: customers, addresses,
@@ -34,3 +45,17 @@ Identifier: `nested-resource`
 - Nested forms omit `order_id`; Livewire tests cover forced parent creation,
   attempted reparenting, update/delete, view rendering, and cross-parent route
   rejection. Playwright covers the nested table and view route.
+
+## Public and navigation coverage
+
+- `FilamentPanelTest` covers the public dashboard, login contract, seeded
+  credentials, authenticated profile, and logout behavior.
+- `EntityResourcesTest` covers the four CRUD surfaces for every entity and the
+  Catalog/Sales/Customers/Operations navigation groups.
+- `e2e/demo-panel.spec.ts` covers public navigation, product/order presentation,
+  customer/product manager tabs, attach/detach, and nested order-item pages.
+- `e2e/smoke.spec.ts` covers the builder iframe, public panel, login/logout,
+  preview message origin filtering, and Compose gateway/API/asset behavior.
+
+Relation Managers and Nested Resources are deliberately recorded as separate
+categories above; neither substitutes for a core entity resource.

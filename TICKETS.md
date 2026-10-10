@@ -245,7 +245,7 @@ Extend Inspector so a user can style an element even when the curated registry i
 
 ## FTB-009A — Build the realistic e-commerce demo domain
 
-**Status:** ready-for-agent  
+**Status:** done
 **Blocked by:** [FTB-002](#ftb-002)
 
 ### What to build
@@ -254,16 +254,16 @@ Define and persist a coherent e-commerce demo domain rich enough to exercise Fil
 
 ### Acceptance criteria
 
-- [ ] All entities in SPECS.md §14 are represented, including customers, addresses, products, categories, variants, tags, reviews, orders, order items, payments, refunds, shipments, inventory, suppliers, discounts, and appropriate notes/activity/status history.
-- [ ] Migrations, Eloquent models, and relationships implement the complete domain graph.
-- [ ] Factories and deterministic seeders produce repeatable, non-production disposable demo data.
-- [ ] The model graph naturally includes BelongsTo, HasMany, BelongsToMany, and polymorphic relationships.
+- [x] All entities in [SPECS.md §14](./SPECS.md#14-demo-domain) are represented, including customers, addresses, products, categories, variants, tags, reviews, orders, order items, payments, refunds, shipments, inventory, suppliers, discounts, and appropriate notes/activity/status history. See [`EcommerceSchemaTest`](./demo/tests/Feature/Domain/EcommerceSchemaTest.php).
+- [x] Migrations, Eloquent models, and relationships implement the complete domain graph. See [`EcommerceRelationshipsTest`](./demo/tests/Feature/Domain/EcommerceRelationshipsTest.php).
+- [x] Factories and deterministic seeders produce repeatable, non-production disposable demo data. See [`EcommerceSeedTest`](./demo/tests/Feature/Domain/EcommerceSeedTest.php).
+- [x] The model graph naturally includes BelongsTo, HasMany, BelongsToMany, and polymorphic relationships.
 
 ---
 
 ## FTB-009B — Build core CRUD resources and navigation
 
-**Status:** ready-for-agent
+**Status:** done
 **Blocked by:** [FTB-009A](#ftb-009)
 
 ### What to build
@@ -272,11 +272,12 @@ Expose the seeded e-commerce domain through useful core Filament CRUD resources 
 
 ### Acceptance criteria
 
-- [ ] Seed data is deterministic enough for screenshots and repeatable tests.
-- [ ] Core resources expose meaningful lists, create/edit forms, view states, badges, images, money, and status values.
-- [ ] Core resources are grouped in coherent admin navigation.
-- [ ] Navigation feels like one coherent admin application.
-- [ ] Demo data is explicitly non-production and disposable.
+- [x] Seed data is deterministic enough for screenshots and repeatable tests (covered by [`EcommerceSeedTest`](./demo/tests/Feature/Domain/EcommerceSeedTest.php)).
+- [x] All 17 entities in [SPECS.md §14](./SPECS.md#14-demo-domain) have list/create/edit/view resource surfaces; [`EntityResourcesTest`](./demo/tests/Feature/Filament/Resources/EntityResourcesTest.php) is the executable matrix.
+- [x] Core resources expose meaningful lists, create/edit forms, view states, badges, images, money, and status values.
+- [x] Core resources are grouped in coherent admin navigation; navigation and public dashboard are covered by `EntityResourcesTest` and [`FilamentPanelTest`](./demo/tests/Feature/FilamentPanelTest.php).
+- [x] Navigation feels like one coherent admin application.
+- [x] Demo data is explicitly non-production and disposable.
 
 ---
 
@@ -284,7 +285,7 @@ Expose the seeded e-commerce domain through useful core Filament CRUD resources 
 
 ## FTB-010 — Demonstrate Relation Managers and Nested Resources
 
-**Status:** ready-for-agent
+**Status:** done
 **Blocked by:** [FTB-009B](#ftb-009)
 
 ### What to build
@@ -293,14 +294,14 @@ Use the e-commerce model to demonstrate Filament relationship UI as real workflo
 
 ### Acceptance criteria
 
-- [ ] At least one resource contains multiple meaningful Relation Managers.
-- [ ] Nested Resources are used where full-page related editing is appropriate.
-- [ ] Attach and detach actions are explicitly available where applicable.
-- [ ] Associate and dissociate actions are explicitly available where applicable.
-- [ ] Related-record create/edit actions are demonstrated where appropriate.
-- [ ] Relationship tables contain filters/actions/states useful for theming.
-- [ ] Relationship forms and modals are represented.
-- [ ] The coverage manifest can distinguish Relation Managers from Nested Resources.
+- [x] At least one resource contains multiple meaningful Relation Managers.
+- [x] Nested Resources are used where full-page related editing is appropriate.
+- [x] Attach and detach actions are explicitly available where applicable.
+- [x] Associate and dissociate actions are explicitly available where applicable.
+- [x] Related-record create/edit actions are demonstrated where appropriate.
+- [x] Relationship tables contain filters/actions/states useful for theming.
+- [x] Relationship forms and modals are represented.
+- [x] The coverage manifest distinguishes Relation Managers from Nested Resources. See [SPECS.md §15](./SPECS.md#15-relation-managers-and-nested-resources), [`RelationshipWorkflowsTest`](./demo/tests/Feature/Filament/Resources/RelationshipWorkflowsTest.php), and [`demo-panel.spec.ts`](./e2e/demo-panel.spec.ts).
 
 ---
 
