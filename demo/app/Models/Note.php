@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-#[Fillable(['body'])]
+#[Fillable(['noteable_type', 'noteable_id', 'body'])]
 class Note extends Model
 {
     /** @use HasFactory<NoteFactory> */
