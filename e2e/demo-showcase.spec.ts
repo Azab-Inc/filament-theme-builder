@@ -141,3 +141,46 @@ test.describe('demo showcase panel identity and navigation', () => {
     await expect(history).not.toHaveText(historyBeforeCancel ?? '')
   })
 })
+
+test.describe('forms and schemas showcase', () => {
+  test.describe.configure({ mode: 'serial' })
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto(`${demoBaseUrl}/demo/admin/login`)
+    await page.getByLabel(/username/i).fill('user')
+    await page.getByRole('textbox', { name: /password/i }).fill('password')
+    await page.getByRole('button', { name: /sign in/i }).click()
+    await expect(page).toHaveURL(`${demoBaseUrl}/demo/admin`)
+    await page.goto(`${demoBaseUrl}/demo/admin/forms-showcase`)
+  })
+
+  test('shows native form controls, filled and disabled states in light and dark modes', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'light' })
+    await expect(page.getByRole('heading', { name: 'Forms & Schemas' })).toBeVisible()
+    await expect(page.getByText('Campaign brief', { exact: true })).toBeVisible()
+    await expect(page.getByRole('list', { name: 'Wizard' })).toBeVisible()
+    await expect(page.getByText('Repeater', { exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Content blocks' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Editorial notes' })).toBeVisible()
+    await expect(page.getByRole('tablist', { name: 'Tabs and sections' })).toBeVisible()
+    await page.getByRole('tab', { name: 'Conditional' }).click()
+    await expect(page.getByRole('textbox', { name: /Conditional details/ })).toBeVisible()
+    await expect(page.getByLabel('Campaign name')).toHaveValue('Autumn studio launch')
+    await expect(page.getByLabel('Disabled fixture')).toBeDisabled()
+
+    await page.emulateMedia({ colorScheme: 'dark' })
+    await expect(page.getByRole('heading', { name: 'Forms & Schemas' })).toBeVisible()
+  })
+
+  test('reports required validation and preserves keyboard focus order', async ({ page }) => {
+    const campaignName = page.getByLabel('Campaign name')
+    await campaignName.fill('')
+    await page.locator('form').filter({ has: page.getByRole('button', { name: /save fixture/i }) }).evaluate((form) => { (form as HTMLFormElement).noValidate = true })
+    await page.getByRole('button', { name: /save fixture/i }).click()
+    await expect(page.getByText('The campaign name field is required.')).toBeVisible()
+
+    await campaignName.focus()
+    await page.keyboard.press('Tab')
+    await expect(page.getByLabel('Audience')).toBeFocused()
+  })
+})
