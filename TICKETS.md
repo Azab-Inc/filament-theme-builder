@@ -14,7 +14,7 @@
 
 ## Dependency map
 
-Demo-showcase implementation order: **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015 → FTB-016 → FTB-017 → FTB-018**. Phase 1 is the dashboard and shared showcase shell; each ticket extends that contract in order. FTB-009A, FTB-009B, and FTB-010 are complete and form the existing demo foundation. FTB-027 and FTB-028 remain parallel operational tickets outside this showcase sequence and do not gate it. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
+Demo-showcase prose delivery order (not hard dependency blockers): **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015 → FTB-016 → FTB-017 → FTB-018**. This prose sequencing guides incremental implementation; the dependency map below remains the source of hard blockers. Phase 1 owns the branded existing dashboard shell, four commerce widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and representative badges. FTB-015 later owns the Showcase navigation/index, search/profile/authentication/tenant surfaces and must integrate (not duplicate) Phase 1 widgets/navigation. FTB-009A, FTB-009B, and FTB-010 are complete and form the existing demo foundation. FTB-027 and FTB-028 remain parallel operational tickets outside this showcase sequence and do not gate it. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
 
 ```text
 FTB-001
@@ -320,8 +320,8 @@ Create a Forms & Schemas showcase containing every visually distinct first-party
 
 ### Acceptance criteria
 
-- [ ] Every visually distinct form/schema control listed under `showcase.forms` in COVERAGE.md has a named fixture and relevant registry target.
-- [ ] Layout fixtures demonstrate distinct surfaces (sections, grids, wizard steps, and tabs) rather than identical API permutations.
+- [ ] `ShowcaseFormsPage` contains named fixtures `ProductEditorForm` (text, price, select, toggle, date, upload), `CustomerContactForm` (address/contact fields), and `OrderStatusForm` (status and validation states), with relevant registry targets.
+- [ ] `ProductEditorForm` demonstrates `SectionGridLayout`, `WizardStepsLayout`, and `TabbedFormLayout` as distinct surfaces, not identical API permutations.
 - [ ] Applicable default, filled, focused, disabled, and validation-error states have a deterministic representation.
 - [ ] Registry entries exist for the relevant themable surfaces.
 - [ ] Global/component/variant/state inheritance is demonstrable on representative form controls.
@@ -342,8 +342,8 @@ Create a Tables showcase and realistic table fixtures covering all visually dist
 
 ### Acceptance criteria
 
-- [ ] `showcase.tables` includes text, image, badge/icon, and other visually distinct columns using deterministic seeded commerce records.
-- [ ] Search, sorting, filters, grouping, pagination, summaries, and column toggling are represented.
+- [ ] `ShowcaseTablesPage` contains `ProductsTableFixture`, `OrdersTableFixture`, and `InventoryTableFixture` with text, image, badge/icon, and distinct column treatments using deterministic seeded commerce records.
+- [ ] `OrdersTableFixture` demonstrates search, sorting, filters, grouping, pagination, summaries, and column toggling.
 - [ ] Row selection, bulk actions, row actions, and reordering are represented where supported; mutations use server validation, panel authorization, and confirmation when destructive.
 - [ ] Empty and loading states can be forced deterministically without changing persisted demo data.
 - [ ] Registry entries cover table surfaces, rows, headers, controls, and relevant states.
@@ -364,8 +364,8 @@ Create an Infolists showcase containing every visually distinct first-party entr
 
 ### Acceptance criteria
 
-- [ ] `showcase.infolists` includes named fixtures for each visually distinct first-party entry identified in COVERAGE.md.
-- [ ] Section/group/layout surfaces that affect appearance are represented without identical API permutations.
+- [ ] `ShowcaseInfolistsPage` contains `OrderDetailsInfolist`, `CustomerProfileInfolist`, and `ProductDetailsInfolist`, including the visually distinct first-party entries identified in COVERAGE.md.
+- [ ] `OrderDetailsInfolist` and `CustomerProfileInfolist` demonstrate distinct section/group layouts without identical API permutations.
 - [ ] Common states such as empty/null, badges, icons, images, and rich text are demonstrated where visually distinct.
 - [ ] Registry entries exist for relevant surfaces and states.
 - [ ] Infolists respond correctly to light/dark and global foundation changes.
@@ -385,9 +385,9 @@ Create showcase fixtures and registry coverage for Filament actions, buttons, dr
 
 ### Acceptance criteria
 
-- [ ] `showcase.actions` represents primary, danger, success, warning, info, gray, outline, icon-only, disabled, and loading variants where applicable.
-- [ ] Modals include representative sizes, headers, footers, forms, destructive confirmation, and loading/action states.
-- [ ] Notifications include all semantic status styles and meaningful layout variations.
+- [ ] `ShowcaseActionsPage` contains `OrderActionsFixture` and `ProductActionsFixture` with primary, danger, success, warning, info, gray, outline, icon-only, disabled, and loading variants where applicable.
+- [ ] `DeleteProductConfirmationModal` and `OrderStatusModal` demonstrate representative sizes, headers, footers, forms, destructive confirmation, and loading/action states.
+- [ ] `OrderStatusNotification`, `InventoryWarningNotification`, and `ActionFailureNotification` demonstrate semantic status styles and layout variations.
 - [ ] Registry entries expose component, variant, and state-level theming.
 - [ ] `showcase.notifications` and modal fixtures can be forced visible for theme work without timing-sensitive interaction; forcing is presentation-only and does not persist data.
 
@@ -406,8 +406,8 @@ Add visually distinct first-party widgets, sidebar/topbar/navigation patterns, g
 
 ### Acceptance criteria
 
-- [ ] `dashboard.stats`, `dashboard.revenue-orders-chart`, `dashboard.recent-orders`, and `dashboard.low-stock` use explicit deterministic commerce data sources.
-- [ ] FTB-015 owns the single integrated dashboard/navigation/search/authentication/tenant showcase shell; `showcase.navigation` represents sidebar, topbar, groups/items, active states, badges, collapse behavior, breadcrumbs, global search, profile/authentication, and controlled tenant UI.
+- [ ] Phase 1 provides `DemoShowcaseDashboard` with the branded existing dashboard shell, four widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and `RepresentativeBadgeSet`, all backed by deterministic commerce data.
+- [ ] `ShowcaseIndexPage` is the FTB-015-owned entry for the showcase; FTB-015 integrates (not duplicates) the Phase 1 dashboard widgets/navigation and adds `ShowcaseSidebarNavigation`, `GlobalSearchSurface`, `ProfileMenuSurface`, `LoginSurface`, and controlled `TenantSwitcherSurface`.
 - [ ] Global search UI is represented.
 - [ ] Login/profile/authentication UI is represented.
 - [ ] Tenant-switching UI is represented in a controlled showcase state where applicable.
@@ -429,7 +429,7 @@ Give showcase pages controls that intentionally force otherwise transient states
 
 ### Acceptance criteria
 
-- [ ] `showcase.states` provides deterministic controls for representative hover, focus, loading, disabled, validation-error, open-modal, selected-row, empty, and notification states.
+- [ ] `ShowcaseStateControls` deterministically switches named surfaces `FormValidationState`, `FormFocusState`, `TableEmptyState`, `TableLoadingState`, `TableSelectedRowState`, `ActionLoadingState`, `ModalOpenState`, and `NotificationVisibleState` (plus representative hover/disabled states).
 - [ ] Forced states are deterministic and suitable for screenshot testing.
 - [ ] FTB-016 owns forcing these visual states; state controls are presentation-only, do not persist data, and expose no MCP mutation tool for changing showcase state or demo records.
 - [ ] Inspector can target the forced state and resolve the correct semantic breadcrumb.
@@ -450,7 +450,7 @@ Let users alter the visual icon system with global pack/style presets and indivi
 
 ### Acceptance criteria
 
-- [ ] `panel.icons` has one default and multiple alternative pack/style presets with semantic icon overrides.
+- [ ] `IconPackConfiguration` offers the default pack and multiple alternative pack/style presets; `SemanticResourceIconOverrides` can replace individual resource icons after pack selection.
 - [ ] Individual semantic icons can be overridden after choosing a pack.
 - [ ] Icon changes preview immediately.
 - [ ] Icon configuration is part of theme JSON.
@@ -473,7 +473,7 @@ Support appearance-related panel settings that are not purely CSS, including app
 
 ### Acceptance criteria
 
-- [ ] `panel.branding` covers app name and branding assets and classifies each setting as CSS-previewable or PanelProvider/runtime configuration.
+- [ ] `PanelBrandingSettings` names app name, light/dark logos, favicon, logo height, brand typography, content width, and sidebar behavior, classifying each as CSS-previewable or PanelProvider/runtime configuration.
 - [ ] Light/dark logos can be represented.
 - [ ] Favicon and logo height configuration are represented.
 - [ ] Agreed layout settings such as content width/sidebar behavior are represented.

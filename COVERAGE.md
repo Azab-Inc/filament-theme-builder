@@ -63,28 +63,63 @@ categories above; neither substitutes for a core entity resource.
 ## Phase 1 and demo-showcase coverage contract
 
 The showcase identity is independent. The official demo is research inspiration
-only; do not copy its identity, branding, content, or presentation. Phase 1 is
-the dashboard plus shared showcase shell and precedes FTB-011 through FTB-018.
-Stable IDs below are the source identifiers for fixtures and tests; they do not
-claim that planned showcase coverage has already shipped. FTB-009A/B/010 are
-done and provide the demo domain, resources, and relationship workflows.
+only; do not copy its identity, branding, content, or presentation. The sequence
+Phase 1 → FTB-011 → … → FTB-018 is prose delivery order, not a set of additional
+hard dependency blockers; the dependency graph in TICKETS.md defines blockers.
+Phase 1 owns the branded existing dashboard shell, four commerce widgets,
+resource icons, and representative badges. FTB-015 later owns the Showcase
+navigation/index, search/profile/authentication/tenant surfaces and integrates
+(does not duplicate) Phase 1 widgets/navigation. Stable IDs below are the source
+identifiers for fixtures and tests; they do not claim that planned showcase
+coverage has already shipped. FTB-009A/B/010 are done and provide the demo
+domain, resources, and relationship workflows.
 
 | Stable ID | Status | Route/page/widget | Visual distinction | Data source | Forced-state support | Corresponding test |
 | --- | --- | --- | --- | --- | --- | --- |
-| `phase-1` | planned | Dashboard and shared showcase shell | Independent showcase chrome and commerce dashboard | Deterministic demo seed | Presentation state only | `DemoShowcaseCapabilityInventoryTest`; showcase tests to be added with implementation |
-| `dashboard.stats` | planned | Dashboard stats widgets | Distinct value, label, icon, and trend treatments | Seeded orders/products/inventory | Values fixed by deterministic seed | `DemoShowcaseCapabilityInventoryTest`; dashboard feature tests |
-| `dashboard.revenue-orders-chart` | planned | Dashboard revenue/orders chart | Series, axes, legend, and tooltips | Seeded order totals and dates | Deterministic seeded chart period | Dashboard feature tests |
-| `dashboard.recent-orders` | planned | Dashboard recent-orders table | Compact table with status and money columns | Seeded orders and customers | Seeded result set | Dashboard feature tests |
-| `dashboard.low-stock` | planned | Dashboard low-stock widget | Threshold/status presentation | Seeded inventory and products | Seeded low-stock rows | Dashboard feature tests |
-| `showcase.forms` | planned | Forms showcase page | First-party inputs, schema layouts, validation | Fixed showcase fixture data | Default/filled/focused/disabled/error presentation | Showcase feature tests |
-| `showcase.tables` | planned | Tables showcase page | Distinct columns, filters, grouping, summaries, pagination | Seeded commerce records | Empty/loading/selection presentation | Showcase feature tests |
-| `showcase.infolists` | planned | Infolists showcase page | Entry and section/layout variants | Seeded customer/order/product records | Null and representative value presentation | Showcase feature tests |
-| `showcase.actions` | planned | Actions/modals showcase page | Action variants, groups, modal sizes and confirmation | Fixed non-production fixture records | Deterministic modal/action visibility | Showcase feature tests |
-| `showcase.notifications` | planned | Notification fixtures | Semantic status and layout variants | Fixed message payloads | Explicitly force visible; no persistence | Showcase feature tests |
-| `showcase.navigation` | planned | Shared panel shell | Sidebar/topbar, groups, active item, badge, breadcrumb, search, profile, controlled tenant UI | Panel configuration and fixed showcase identity | Active/collapsed/search UI presentation | Showcase feature tests |
-| `showcase.states` | planned | Showcase state controls | Hover/focus/loading/disabled/error/empty/selected states | In-memory presentation controls | Deterministic; presentation-only | Showcase feature tests |
-| `panel.icons` | planned | Panel icon configuration | Default/alternative packs and semantic overrides | Theme and PanelProvider configuration | Preview configuration only | Builder/theme export tests |
-| `panel.branding` | planned | Panel branding settings | App name, light/dark logos, favicon, logo height and layout | Theme plus PanelProvider/runtime config | CSS preview or controlled runtime reload | Builder/theme export tests |
+| `phase-1` | planned | `DemoShowcaseDashboard` | Branded existing dashboard shell, resource icons, representative badges | Deterministic demo seed | Dashboard presentation only | `DemoShowcaseCapabilityInventoryTest`; dashboard feature tests |
+| `dashboard.stats` | planned | `CommerceStatsOverviewWidget` | Value, label, icon, trend and representative status badge | Seeded orders/products/inventory | Values fixed by deterministic seed | Dashboard feature tests |
+| `dashboard.revenue-orders-chart` | planned | `RevenueOrdersChartWidget` | Series, axes, legend, tooltips | Seeded order totals and dates | Deterministic seeded chart period | Dashboard feature tests |
+| `dashboard.recent-orders` | planned | `RecentOrdersWidget` | Compact table with status and money columns | Seeded orders and customers | Seeded result set | Dashboard feature tests |
+| `dashboard.low-stock` | planned | `LowStockWidget` | Threshold/status badge presentation | Seeded inventory and products | Seeded low-stock rows | Dashboard feature tests |
+| `showcase.forms` | planned | `ShowcaseFormsPage` | Product, customer, and order editing schema surfaces | Fixed showcase fixture data | `FormFocusState`, `FormValidationState`, disabled and filled representations | Showcase feature tests |
+| `showcase.tables` | planned | `ShowcaseTablesPage` | Products, orders, and inventory tables | Seeded commerce records | `TableEmptyState`, `TableLoadingState`, `TableSelectedRowState` | Showcase feature tests |
+| `showcase.infolists` | planned | `ShowcaseInfolistsPage` | Order, customer, and product detail entries/layouts | Seeded customer/order/product records | Null and representative value presentation | Showcase feature tests |
+| `showcase.actions` | planned | `ShowcaseActionsPage` | Order/product actions, destructive confirmation, open modal | Fixed non-production fixture records | `ActionLoadingState`, `ModalOpenState` | Showcase feature tests |
+| `showcase.notifications` | planned | `OrderStatusNotification`, `InventoryWarningNotification`, `ActionFailureNotification` | Success/warning/danger styles and layout variants | Fixed message payloads | `NotificationVisibleState`; no persistence | Showcase feature tests |
+| `showcase.navigation` | planned | `ShowcaseIndexPage` plus FTB-015 shared navigation integration | Search, profile/auth, controlled tenant surface; reuse Phase 1 navigation/widgets | Panel configuration and fixed showcase identity | Active/collapsed/search UI presentation | Showcase feature tests |
+| `showcase.states` | planned | `ShowcaseStateControls` | Form, table, action, modal, and notification state surfaces | In-memory presentation controls | Deterministic; presentation-only | Showcase feature tests |
+| `panel.icons` | planned | `IconPackConfiguration`, `SemanticResourceIconOverrides` | Default/alternative packs and resource icon replacement | Theme and PanelProvider configuration | Preview configuration only | Builder/theme export tests |
+| `panel.branding` | planned | `PanelBrandingSettings` | App name, light/dark logos, favicon, logo height, typography, content width/sidebar behavior | Theme plus PanelProvider/runtime config | CSS preview or controlled runtime reload | Builder/theme export tests |
+
+### Named showcase fixtures
+
+- **Phase 1/dashboard:** `DemoShowcaseDashboard` composes exactly four commerce
+  widgets: `CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`,
+  `RecentOrdersWidget`, and `LowStockWidget`. `ResourceIconSet` and
+  `RepresentativeBadgeSet` are part of this phase's shell contract.
+- **FTB-011 forms:** `ShowcaseFormsPage` provides `ProductEditorForm`,
+  `CustomerContactForm`, and `OrderStatusForm`; layout surfaces are
+  `SectionGridLayout`, `WizardStepsLayout`, and `TabbedFormLayout`.
+- **FTB-012 tables:** `ShowcaseTablesPage` provides `ProductsTableFixture`,
+  `OrdersTableFixture`, and `InventoryTableFixture`. The orders table owns
+  search/sort/filter/group/pagination/summary/column-toggle samples.
+- **FTB-013 infolists:** `ShowcaseInfolistsPage` provides `OrderDetailsInfolist`,
+  `CustomerProfileInfolist`, and `ProductDetailsInfolist`.
+- **FTB-014 actions/notifications:** `ShowcaseActionsPage` provides
+  `OrderActionsFixture`, `ProductActionsFixture`, `DeleteProductConfirmationModal`,
+  and `OrderStatusModal`; notification fixtures are `OrderStatusNotification`,
+  `InventoryWarningNotification`, and `ActionFailureNotification`.
+- **FTB-015 integration:** `ShowcaseIndexPage` integrates Phase 1 widgets and
+  navigation, adding `ShowcaseSidebarNavigation`, `GlobalSearchSurface`,
+  `ProfileMenuSurface`, `LoginSurface`, and `TenantSwitcherSurface` without
+  duplicating dashboard/navigation fixtures.
+- **FTB-016 states:** `ShowcaseStateControls` controls `FormValidationState`,
+  `FormFocusState`, `TableEmptyState`, `TableLoadingState`,
+  `TableSelectedRowState`, `ActionLoadingState`, `ModalOpenState`, and
+  `NotificationVisibleState`, plus representative hover/disabled states.
+- **FTB-017/018 panel settings:** `IconPackConfiguration`,
+  `SemanticResourceIconOverrides`, and `PanelBrandingSettings` separate icon
+  configuration from runtime branding/export classification.
 
 Commerce mutation fixtures, if provided in action/table samples, retain the
 existing panel authorization and server validation. Destructive or status-change
