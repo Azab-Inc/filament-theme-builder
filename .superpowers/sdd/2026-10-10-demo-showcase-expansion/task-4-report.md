@@ -40,3 +40,32 @@ Complete.
 
 - Authorization is intentionally limited to the existing authenticated demo panel boundary because the demo has no role or tenant policy model.
 - The seeded showcase order is already shipped, so the browser confirmation demonstrates a safe idempotent retry; the paid-to-shipped mutation is covered by Livewire tests.
+
+## Review fix
+
+Status: complete.
+
+Commit: `5cb49ce` — `Fix - QA: prove paid order fulfillment transitions`
+
+- The Playwright flow now uses deterministic seeded order `1`, changes it to
+  `paid` through the existing edit surface, and verifies paid → shipped.
+- Cancel now asserts both the paid status and exact visible status-history text
+  remain unchanged; confirmation asserts the shipped status, added history, and
+  success notification.
+- Invalid workflow and action-failure tests now snapshot status history and
+  assert it is unchanged after rejection.
+- Order details expose read-only status history for browser verification and
+  eager-load it through the existing resource query.
+- The Playwright describe is serial because this test intentionally mutates the
+  shared seeded demo database through existing UI surfaces; no sleeps or retry
+  workarounds were added.
+- The capability inventory remains explicit that no MCP mutation tool is
+  available; no external integration was invented.
+
+Review-fix verification:
+
+- Focused PHP: 34 passed, 288 assertions.
+- Full PHP suite: 83 passed, 921 assertions.
+- Full Playwright showcase suite: 4 passed.
+- `composer lint:check`: passed.
+- `composer types:check`: passed.
