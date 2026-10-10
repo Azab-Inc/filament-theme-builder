@@ -102,4 +102,27 @@ test.describe('demo showcase panel identity and navigation', () => {
     expect(mobileRecentBox!.x).toBe(mobileLowStockBox!.x)
     expect(mobileRecentBox!.y).not.toBe(mobileLowStockBox!.y)
   })
+
+  test('order fulfillment action requires confirmation and reports the safe result', async ({ page }) => {
+    await page.goto(`${demoBaseUrl}/demo/admin/orders/2`)
+
+    const action = page.getByRole('button', { name: /mark fulfilled/i })
+    await expect(action).toBeVisible()
+    await action.click()
+
+    await expect(page.getByRole('heading', { name: 'Mark order as fulfilled' })).toBeVisible()
+    await expect(page.getByLabel('Fulfillment')).toHaveValue('shipped')
+    await expect(page.getByRole('button', { name: /cancel/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /confirm fulfillment/i })).toBeVisible()
+
+    await page.getByRole('button', { name: /cancel/i }).click()
+    await expect(page.getByRole('heading', { name: 'Mark order as fulfilled' })).toHaveCount(0)
+    const status = page.locator('.fi-in-text-item.fi-in-text-has-badges').filter({ hasText: 'Shipped' })
+    await expect(status).toBeVisible()
+
+    await action.click()
+    await page.getByRole('button', { name: /confirm fulfillment/i }).click()
+    await expect(page.getByText('Order marked as fulfilled', { exact: true })).toBeVisible()
+    await expect(status).toBeVisible()
+  })
 })

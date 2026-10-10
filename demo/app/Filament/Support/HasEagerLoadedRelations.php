@@ -20,7 +20,7 @@ trait HasEagerLoadedRelations
             'ProductResource' => ['supplier'],
             'ProductVariantResource' => ['product'],
             'ReviewResource' => ['product', 'customer'],
-            'OrderResource' => ['customer', 'billingAddress', 'shippingAddress', 'discount'],
+            'OrderResource' => ['customer', 'billingAddress', 'shippingAddress', 'discount', 'items.product'],
             'OrderItemResource' => ['order', 'product', 'variant'],
             'PaymentResource' => ['order'],
             'RefundResource' => ['payment'],

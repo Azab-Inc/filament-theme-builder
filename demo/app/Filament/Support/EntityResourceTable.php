@@ -43,7 +43,7 @@ final class EntityResourceTable
             ->columns($columns)
             ->filters(self::filtersFor($entity))
             ->recordActions([ViewAction::make(), EditAction::make()])
-            ->toolbarActions([BulkActionGroup::make([DeleteBulkAction::make()])]);
+            ->toolbarActions($entity === 'order' ? [] : [BulkActionGroup::make([DeleteBulkAction::make()])]);
     }
 
     /** @return list<Filter|SelectFilter> */
