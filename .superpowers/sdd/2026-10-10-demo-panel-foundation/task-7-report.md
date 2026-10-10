@@ -161,3 +161,43 @@ weaken assertions, or skip tests.
 - The only changes are the Compose route, demo E2E base URL, domain/factory
   static contracts, and this report; unrelated worktree changes were not
   staged.
+
+## Task 7 final stabilization
+
+### Root cause and change
+
+The serial relationship suite still performed a fresh login for every test,
+which left the shared database-backed session vulnerable to session churn
+between tests. The authenticated Playwright context is now scoped to the
+worker, while each test receives a fresh page and navigates to the dashboard.
+The public navigation test continues to use an unauthenticated page.
+
+The relationship flow was also split into focused category, tag, customer,
+and nested-order tests. This keeps each test's strict rendered-row assertions
+focused while retaining serial ordering for the shared attach/detach state.
+
+### Verification
+
+- `DEMO_BASE_URL=http://127.0.0.1:4175 COMPOSE_E2E=1 npx playwright test
+  e2e/demo-panel.spec.ts` — **passed**, 6/6.
+- The same default Compose demo command was run five consecutive times —
+  **passed**, 30/30 tests.
+- `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test
+  e2e/smoke.spec.ts --grep 'compose gateway'` — **passed**, 2/2.
+- `npx playwright test e2e/demo-panel.spec.ts e2e/smoke.spec.ts` — **passed**,
+  12/12 executed tests, with 3 expected Compose-only skips after Compose was
+  stopped.
+- `composer test` from `demo/` — **passed**: Pint passed, PHPStan passed with
+  0 errors, PHPUnit passed with 60 tests and 503 assertions.
+- `php artisan test` from `demo/` — **passed**, 60 tests and 503 assertions.
+- `git diff --check` — **passed**.
+- Compose was stopped after verification with `docker compose -f
+  compose.dev.yaml down`.
+
+### Self-review
+
+- No retries, sleeps, skipped tests, weakened assertions, or CLI worker
+  overrides were added.
+- Authentication is reused only within the demo-panel worker fixture; each
+  authenticated test still receives a fresh page and strict assertions.
+- The public navigation test remains independent of the authenticated fixture.

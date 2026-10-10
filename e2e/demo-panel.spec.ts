@@ -1,6 +1,14 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test as base, type BrowserContext, type Page } from '@playwright/test'
 
 const demoBaseUrl = process.env.DEMO_BASE_URL ?? 'http://127.0.0.1:4174'
+
+type Fixtures = {
+  authenticatedPage: Page
+}
+
+type WorkerFixtures = {
+  authenticatedContext: BrowserContext
+}
 
 async function signIn(page: Page): Promise<void> {
   await page.goto(`${demoBaseUrl}/demo/admin/login`)
@@ -9,6 +17,25 @@ async function signIn(page: Page): Promise<void> {
   await page.getByRole('button', { name: /sign in/i }).click()
   await expect(page).toHaveURL(`${demoBaseUrl}/demo/admin`)
 }
+
+const test = base.extend<Fixtures, WorkerFixtures>({
+  authenticatedContext: [async ({ browser }, use) => {
+    const context = await browser.newContext()
+    const page = await context.newPage()
+
+    await signIn(page)
+    await page.close()
+    await use(context)
+    await context.close()
+  }, { scope: 'worker' }],
+  authenticatedPage: async ({ authenticatedContext }, use) => {
+    const page = await authenticatedContext.newPage()
+
+    await page.goto(`${demoBaseUrl}/demo/admin`)
+    await use(page)
+    await page.close()
+  },
+})
 
 test.describe('demo panel', () => {
   test.describe.configure({ mode: 'serial' })
@@ -25,8 +52,7 @@ test.describe('demo panel', () => {
     }
   })
 
-  test('shows product and order records with detail presentation', async ({ page }) => {
-    await signIn(page)
+  test('shows product and order records with detail presentation', async ({ authenticatedPage: page }) => {
     await page.getByRole('link', { name: 'Products', exact: true }).click()
     await expect(page.getByRole('heading', { name: /products/i })).toBeVisible()
     await expect(page.getByText('Demo Oak Chair', { exact: true })).toBeVisible()
@@ -43,8 +69,7 @@ test.describe('demo panel', () => {
     await expect(page.getByText('DEMO-ORDER-1001', { exact: true })).toBeVisible()
   })
 
-  test('relationship workflows expose manager tabs and nested order items', async ({ page }) => {
-    await signIn(page)
+  test('product categories preserve strict attach and detach behavior', async ({ authenticatedPage: page }) => {
 
     await page.getByRole('link', { name: 'Products', exact: true }).click()
     await page.getByText('Demo Oak Chair', { exact: true }).click()
@@ -62,11 +87,18 @@ test.describe('demo panel', () => {
     const categoryAttachModal = page.locator('.fi-modal-open')
     await categoryAttachModal.getByRole('combobox').click()
     await categoryAttachModal.getByRole('textbox', { name: 'Search' }).fill('Demo Chairs')
-    await page.waitForTimeout(700)
-    await categoryAttachModal.locator('[role="option"][data-value="2"]:visible').click()
+    const categoryOption = categoryAttachModal.locator('[role="option"][data-value="2"]:visible')
+    await expect(categoryOption).toBeVisible()
+    await categoryOption.click()
     await categoryAttachModal.getByRole('button', { name: 'Attach', exact: true }).click()
     await expect(page.getByText('Demo Chairs', { exact: true })).toBeVisible()
+  })
 
+  test('product tags preserve strict attach and detach behavior', async ({ authenticatedPage: page }) => {
+    await page.getByRole('link', { name: 'Products', exact: true }).click()
+    await page.getByText('Demo Oak Chair', { exact: true }).click()
+    await page.getByRole('link', { name: 'Edit', exact: true }).click()
+    await expect(page.getByRole('tab', { name: 'Tags' })).toBeVisible()
     await page.getByRole('tab', { name: 'Tags' }).click()
     await expect(page.getByText('Demo bestseller', { exact: true })).toBeVisible()
     await page.getByRole('row', { name: /Demo bestseller/ }).getByRole('button', { name: 'Detach', exact: true }).click()
@@ -76,23 +108,28 @@ test.describe('demo panel', () => {
     const tagAttachModal = page.locator('.fi-modal-open')
     await tagAttachModal.getByRole('combobox').click()
     await tagAttachModal.getByRole('textbox', { name: 'Search' }).fill('Demo bestseller')
-    await page.waitForTimeout(700)
-    await tagAttachModal.locator('[role="option"][data-value="1"]:visible').click()
+    const tagOption = tagAttachModal.locator('[role="option"][data-value="1"]:visible')
+    await expect(tagOption).toBeVisible()
+    await tagOption.click()
     await tagAttachModal.getByRole('button', { name: 'Attach', exact: true }).click()
     await expect(page.getByText('Demo bestseller', { exact: true })).toBeVisible()
+  })
 
+  test('customer relationship managers render strict seeded records', async ({ authenticatedPage: page }) => {
     await page.getByRole('link', { name: 'Customers', exact: true }).click()
     await page.getByText('Avery Demo', { exact: true }).click()
     for (const relation of ['Addresses', 'Orders', 'Reviews']) {
       await expect(page.getByRole('tab', { name: relation })).toBeVisible()
     }
     await page.getByRole('tab', { name: 'Addresses' }).click()
-    await expect(page.getByText('Avery home', { exact: true })).toBeVisible()
+    await expect(page.getByRole('row', { name: /Avery home/ })).toBeVisible()
     await page.getByRole('tab', { name: 'Orders' }).click()
-    await expect(page.getByText('DEMO-ORDER-1001', { exact: true })).toBeVisible()
+    await expect(page.getByRole('row', { name: /DEMO-ORDER-1001/ })).toBeVisible()
     await page.getByRole('tab', { name: 'Reviews' }).click()
-    await expect(page.getByText('Demo customer review', { exact: true })).toBeVisible()
+    await expect(page.getByRole('row', { name: /Demo customer review/ })).toBeVisible()
+  })
 
+  test('nested order items preserve strict parent-scoped rendered records', async ({ authenticatedPage: page }) => {
     await page.getByRole('link', { name: 'Orders', exact: true }).click()
     await page.getByText('DEMO-ORDER-1001', { exact: true }).click()
     await expect(page.getByRole('link', { name: 'Items', exact: true })).toBeVisible()
