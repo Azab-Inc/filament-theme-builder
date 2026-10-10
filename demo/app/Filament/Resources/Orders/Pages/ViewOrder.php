@@ -50,6 +50,7 @@ class ViewOrder extends ViewRecord
                         }
 
                         app(OrderWorkflow::class)->markFulfilled($record);
+                        $this->getRecord()->refresh();
                     } catch (ValidationException $exception) {
                         Notification::make()->danger()->title('Unable to fulfill order')->body($exception->validator->errors()->first())->send();
 

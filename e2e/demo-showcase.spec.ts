@@ -3,6 +3,8 @@ import { expect, test } from '@playwright/test'
 const demoBaseUrl = process.env.DEMO_BASE_URL ?? 'http://127.0.0.1:4174'
 
 test.describe('demo showcase panel identity and navigation', () => {
+  test.describe.configure({ mode: 'serial' })
+
   test.beforeEach(async ({ page }) => {
     await page.goto(`${demoBaseUrl}/demo/admin/login`)
     await page.getByLabel(/username/i).fill('user')
@@ -104,7 +106,18 @@ test.describe('demo showcase panel identity and navigation', () => {
   })
 
   test('order fulfillment action requires confirmation and reports the safe result', async ({ page }) => {
-    await page.goto(`${demoBaseUrl}/demo/admin/orders/2`)
+    await page.goto(`${demoBaseUrl}/demo/admin/orders/1/edit`)
+    await page.getByLabel('Status').selectOption('paid')
+    await page.getByRole('button', { name: /save changes/i }).click()
+    await expect(page.getByRole('heading', { name: 'Saved' })).toBeVisible()
+    await page.getByRole('link', { name: 'View', exact: true }).click()
+    await expect(page).toHaveURL(/\/demo\/admin\/orders\/1$/)
+
+    const status = page.locator('.fi-in-text-item.fi-in-text-has-badges').filter({ hasText: 'Paid' })
+    const history = page.locator('.fi-in-entry').filter({ hasText: 'Status history' })
+    await expect(status).toBeVisible()
+    await expect(history).toContainText('Refunded')
+    const historyBeforeCancel = await history.textContent()
 
     const action = page.getByRole('button', { name: /mark fulfilled/i })
     await expect(action).toBeVisible()
@@ -117,12 +130,14 @@ test.describe('demo showcase panel identity and navigation', () => {
 
     await page.getByRole('button', { name: /cancel/i }).click()
     await expect(page.getByRole('heading', { name: 'Mark order as fulfilled' })).toHaveCount(0)
-    const status = page.locator('.fi-in-text-item.fi-in-text-has-badges').filter({ hasText: 'Shipped' })
     await expect(status).toBeVisible()
+    await expect(history).toHaveText(historyBeforeCancel ?? '')
 
     await action.click()
     await page.getByRole('button', { name: /confirm fulfillment/i }).click()
     await expect(page.getByText('Order marked as fulfilled', { exact: true })).toBeVisible()
-    await expect(status).toBeVisible()
+    await expect(page.locator('.fi-in-text-item.fi-in-text-has-badges').filter({ hasText: 'Shipped' })).toBeVisible()
+    await expect(history).toContainText('Shipped')
+    await expect(history).not.toHaveText(historyBeforeCancel ?? '')
   })
 })

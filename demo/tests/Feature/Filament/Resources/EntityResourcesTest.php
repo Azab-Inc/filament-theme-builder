@@ -145,7 +145,7 @@ class EntityResourcesTest extends TestCase
     {
         foreach ([
             'product' => ['supplier'], 'address' => ['customer'], 'category' => ['parent'], 'product-variant' => ['product'],
-            'review' => ['product', 'customer'], 'order' => ['customer', 'billingAddress', 'shippingAddress', 'discount', 'items', 'items.product'],
+            'review' => ['product', 'customer'], 'order' => ['customer', 'billingAddress', 'shippingAddress', 'discount', 'items', 'items.product', 'statusHistories'],
             'order-item' => ['order', 'product', 'variant'], 'payment' => ['order'], 'refund' => ['payment'],
             'shipment' => ['order'], 'order-status-history' => ['order'], 'inventory' => ['product', 'variant'],
         ] as $entity => $relationships) {

@@ -6,6 +6,7 @@ use App\Filament\Resources\Orders\OrderResource;
 use App\Filament\Support\OrderWorkflow;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderStatusHistory;
 use App\Models\User;
 use Filament\Actions\Action;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -71,9 +72,17 @@ class CommerceActionsTest extends TestCase
         $this->seed();
         $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
         $order = Order::factory()->create(['status' => 'pending']);
+        $historyBefore = OrderStatusHistory::query()->where('order_id', $order->getKey())->get()->toArray();
 
-        $this->expectException(ValidationException::class);
-        app(OrderWorkflow::class)->markFulfilled($order);
+        try {
+            app(OrderWorkflow::class)->markFulfilled($order);
+            $this->fail('Expected the invalid fulfillment transition to be rejected.');
+        } catch (ValidationException) {
+            // The invalid transition is expected to be rejected without persistence.
+        }
+
+        $this->assertDatabaseHas('orders', ['id' => $order->getKey(), 'status' => 'pending']);
+        $this->assertSame($historyBefore, OrderStatusHistory::query()->where('order_id', $order->getKey())->get()->toArray());
     }
 
     public function test_invalid_transition_action_sends_failure_notification_without_mutating_order(): void
@@ -81,6 +90,7 @@ class CommerceActionsTest extends TestCase
         $this->seed();
         $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
         $order = Order::factory()->create(['status' => 'pending']);
+        $historyBefore = OrderStatusHistory::query()->where('order_id', $order->getKey())->get()->toArray();
 
         Livewire::test(OrderResource::getPages()['view']->getPage(), ['record' => $order->getRouteKey()])
             ->mountAction('markFulfilled')
@@ -89,6 +99,7 @@ class CommerceActionsTest extends TestCase
             ->assertNotified('Unable to fulfill order');
 
         $this->assertDatabaseHas('orders', ['id' => $order->getKey(), 'status' => 'pending']);
+        $this->assertSame($historyBefore, OrderStatusHistory::query()->where('order_id', $order->getKey())->get()->toArray());
     }
 
     public function test_unauthorized_user_cannot_use_the_order_workflow(): void

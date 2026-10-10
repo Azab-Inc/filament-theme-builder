@@ -22,6 +22,9 @@ class OrderInfolist
                     return $product instanceof Product ? $product->name : ($item->product_name ?? 'Product unavailable');
                 })
                 ->join(', ')),
+            TextEntry::make('statusHistories')->label('Status history')->state(fn (Order $record): string => $record->statusHistories
+                ->map(fn ($history): string => ucfirst((string) $history->status))
+                ->join(', ')),
             TextEntry::make('total_cents')->money(fn ($record): string => $record->currency ?? 'USD', divideBy: 100),
             TextEntry::make('status')->badge()->formatStateUsing(fn (?string $state): ?string => $state ? ucfirst($state) : null),
         ]);
