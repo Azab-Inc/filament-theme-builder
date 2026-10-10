@@ -33,12 +33,12 @@ class CustomerResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) Customer::query()->count();
+        return (string) Customer::query()->showcaseFixture()->count();
     }
 
     public static function getNavigationBadgeTooltip(): ?string
     {
-        return 'Total customers';
+        return 'Showcase customer fixtures';
     }
 
     public static function getNavigationBadgeColor(): string|array|null

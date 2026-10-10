@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasDemoFixture;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 #[Fillable(['name', 'slug', 'sku', 'description', 'price_cents', 'status', 'image_url', 'supplier_id'])]
 class Product extends Model
 {
+    use HasDemoFixture;
+
     /** @use HasFactory<ProductFactory> */
     use HasFactory;
 

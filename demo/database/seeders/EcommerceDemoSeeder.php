@@ -37,7 +37,12 @@ class EcommerceDemoSeeder extends Seeder
         $customers = collect([
             ['name' => 'Avery Demo', 'email' => 'avery@example.test', 'phone' => '555-0101'],
             ['name' => 'Jordan Sample', 'email' => 'jordan@example.test', 'phone' => '555-0102'],
-        ])->mapWithKeys(fn (array $attributes) => [$attributes['email'] => Customer::query()->updateOrCreate(['email' => $attributes['email']], $attributes)]);
+        ])->mapWithKeys(function (array $attributes): array {
+            $customer = Customer::query()->updateOrCreate(['email' => $attributes['email']], $attributes);
+            $customer->forceFill(['is_demo_fixture' => true])->save();
+
+            return [$attributes['email'] => $customer];
+        });
 
         $addresses = [];
         foreach ([
@@ -74,6 +79,7 @@ class EcommerceDemoSeeder extends Seeder
                     ? config('app.url').'/demo-images/demo-oak-chair.svg'
                     : config('app.url').'/demo-images/demo-brass-lamp.svg',
             ]);
+            $product->forceFill(['is_demo_fixture' => true])->save();
             $product->categories()->sync([$categories[$fixture['category']]->id]);
             $product->tags()->sync($tags->pluck('id')->all());
             $products[$fixture['sku']] = $product;
@@ -120,6 +126,7 @@ class EcommerceDemoSeeder extends Seeder
                 'subtotal_cents' => $subtotal, 'discount_cents' => $discountCents, 'tax_cents' => 0, 'shipping_cents' => 0,
                 'total_cents' => $subtotal - $discountCents, 'placed_at' => $date->copy()->subDays(3 - $index),
             ]);
+            $order->forceFill(['is_demo_fixture' => true])->save();
             foreach ($lines as $line) {
                 OrderItem::query()->updateOrCreate(['order_id' => $order->id, 'sku' => $line['product']->sku], [
                     'product_id' => $line['product']->id, 'product_variant_id' => $line['variant']->id,

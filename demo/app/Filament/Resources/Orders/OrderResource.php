@@ -32,12 +32,12 @@ class OrderResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) Order::query()->count();
+        return (string) Order::query()->showcaseFixture()->count();
     }
 
     public static function getNavigationBadgeTooltip(): ?string
     {
-        return 'Total orders';
+        return 'Showcase order fixtures';
     }
 
     public static function getNavigationBadgeColor(): string|array|null

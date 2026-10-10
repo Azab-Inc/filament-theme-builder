@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasDemoFixture;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 #[Fillable(['customer_id', 'billing_address_id', 'shipping_address_id', 'discount_id', 'number', 'status', 'currency', 'subtotal_cents', 'discount_cents', 'tax_cents', 'shipping_cents', 'total_cents', 'placed_at'])]
 class Order extends Model
 {
+    use HasDemoFixture;
+
     /** @use HasFactory<OrderFactory> */
     use HasFactory;
 

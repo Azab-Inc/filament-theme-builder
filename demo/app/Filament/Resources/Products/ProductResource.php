@@ -33,12 +33,12 @@ class ProductResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) Product::query()->count();
+        return (string) Product::query()->showcaseFixture()->count();
     }
 
     public static function getNavigationBadgeTooltip(): ?string
     {
-        return 'Total products';
+        return 'Showcase product fixtures';
     }
 
     public static function getNavigationBadgeColor(): string|array|null

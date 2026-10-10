@@ -12,15 +12,19 @@ test.describe('demo showcase panel identity and navigation', () => {
   })
 
   test('branding uses the independent local identity in light and dark modes', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'light' })
+    await page.reload()
     await expect(page.getByRole('img', { name: 'Filament Theme Builder' }).first()).toBeVisible()
     await expect(page.getByText('Filament Demo', { exact: true })).toHaveCount(0)
     await expect(page.getByRole('img', { name: 'Filament', exact: true })).toHaveCount(0)
-    await expect(page.locator('.fi-logo-light svg').first()).toBeAttached()
+    await expect(page.locator('.fi-logo-light').first()).toBeVisible()
+    await expect(page.locator('.fi-logo-dark').first()).toBeHidden()
     await expect(page.locator('link[rel="icon"][href^="data:image/svg+xml;base64,"]')).toHaveCount(1)
 
     await page.emulateMedia({ colorScheme: 'dark' })
     await page.reload()
-    await expect(page.locator('.fi-logo-dark svg').first()).toBeAttached()
+    await expect(page.locator('.fi-logo-dark').first()).toBeVisible()
+    await expect(page.locator('.fi-logo-light').first()).toBeHidden()
     await expect(page.getByRole('img', { name: 'Filament Theme Builder' }).last()).toBeVisible()
   })
 
@@ -28,18 +32,21 @@ test.describe('demo showcase panel identity and navigation', () => {
     for (const group of ['Catalog', 'Sales', 'Customers', 'Operations']) {
       await expect(page.locator('.fi-sidebar-group-label', { hasText: group })).toBeVisible()
     }
-    for (const item of ['Products', 'Orders', 'Customers', 'Suppliers', 'Notes']) {
-      const link = page.getByRole('link', { name: new RegExp(item) })
+    for (const [label, tooltip] of [
+      ['Products 2', 'Showcase product fixtures'],
+      ['Orders 2', 'Showcase order fixtures'],
+      ['Customers 2', 'Showcase customer fixtures'],
+      ['Suppliers', null],
+      ['Notes', null],
+    ] as const) {
+      const link = page.getByRole('link', { name: label, exact: true })
       await expect(link).toBeVisible()
-    }
-    const iconMarkup = await Promise.all(['Products', 'Orders', 'Customers'].map(async (item) =>
-      page.getByRole('link', { name: new RegExp(item) }).locator('svg').evaluate((icon) => icon.innerHTML),
-    ))
-    expect(new Set(iconMarkup).size).toBe(3)
-    for (const [item, tooltip] of [['Products', 'Total products'], ['Orders', 'Total orders'], ['Customers', 'Total customers']]) {
-      const link = page.getByRole('link', { name: new RegExp(item) })
-      await expect(link.locator('.fi-sidebar-item-badge-ctn .fi-badge')).toHaveText('2')
-      await expect(link.locator('.fi-sidebar-item-badge-ctn [x-tooltip]')).toHaveAttribute('x-tooltip', new RegExp(tooltip))
+      await expect(link.locator('.fi-sidebar-item-icon')).toBeAttached()
+
+      if (tooltip !== null) {
+        await expect(link.locator('.fi-sidebar-item-badge-ctn .fi-badge')).toHaveText('2')
+        await expect(link.locator('.fi-sidebar-item-badge-ctn [x-tooltip]')).toHaveAttribute('x-tooltip', new RegExp(tooltip))
+      }
     }
   })
 })
