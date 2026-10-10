@@ -2,7 +2,7 @@
 
 namespace App\Filament\Pages\Showcase;
 
-use App\Models\Product;
+use App\Models\ShowcaseTableProduct;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Notifications\Notification;
@@ -39,14 +39,13 @@ class TablesShowcase extends Page implements HasTable
         return 'tables-showcase';
     }
 
-    /** @return Builder<Product> */
+    /** @return Builder<ShowcaseTableProduct> */
     public function getTableQuery(): Builder
     {
-        return Product::query()
-            ->showcaseFixture()
-            ->with('supplier')
+        return ShowcaseTableProduct::query()
+            ->with('product.supplier')
             ->withCount('orderItems')
-            ->orderBy('products.id');
+            ->when(blank($this->tableSort), fn (Builder $query): Builder => $query->orderBy('showcase_table_products.position'));
     }
 
     public function updatedTableSearch(): void
@@ -72,33 +71,38 @@ class TablesShowcase extends Page implements HasTable
             ->heading('Showcase products')
             ->description('A read-only native table using the seeded product and order fixtures.')
             ->columns([
-                ImageColumn::make('image_url')
+                ImageColumn::make('product.image_url')
                     ->label('Product image')
-                    ->alt(fn (Product $record): string => filled($record->image_url) ? $record->name : 'No image')
+                    ->state(fn (ShowcaseTableProduct $record): ?string => $record->product?->image_url)
+                    ->alt(fn (ShowcaseTableProduct $record): string => filled($record->product?->image_url) ? $record->product->name : 'No image')
                     ->defaultImageUrl(fn (): string => 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48"%3E%3Crect width="48" height="48" fill="%23f3f4f6"/%3E%3C/svg%3E')
                     ->square(),
-                TextColumn::make('name')
+                TextColumn::make('product.name')
                     ->label('Product')
                     ->searchable()
                     ->sortable()
                     ->wrap()
                     ->limit(80),
-                TextColumn::make('sku')
+                TextColumn::make('product.sku')
                     ->label('SKU')
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
-                TextColumn::make('supplier.name')
+                TextColumn::make('position')
+                    ->label('Showcase position')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('product.supplier.name')
                     ->label('Supplier')
-                    ->state(function (Product $record): string {
-                        $supplier = $record->supplier;
+                    ->state(function (ShowcaseTableProduct $record): string {
+                        $supplier = $record->product?->supplier;
 
                         return $supplier === null ? 'No supplier' : $supplier->name;
                     })
                     ->searchable()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('status')
+                TextColumn::make('product.status')
                     ->label('Status')
                     ->formatStateUsing(fn (?string $state): ?string => $state ? ucfirst($state) : null)
                     ->badge()
@@ -111,7 +115,7 @@ class TablesShowcase extends Page implements HasTable
                 IconColumn::make('is_featured')
                     ->label('Featured')
                     ->boolean()
-                    ->state(fn (Product $record): bool => $record->sku === 'DEMO-CHAIR-001')
+                    ->state(fn (ShowcaseTableProduct $record): bool => $record->product?->sku === 'DEMO-CHAIR-001')
                     ->toggleable(),
             ])
             ->filters([
@@ -121,19 +125,24 @@ class TablesShowcase extends Page implements HasTable
                         'active' => 'Active',
                         'draft' => 'Draft',
                         'archived' => 'Archived',
-                    ]),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            filled($data['value'] ?? null),
+                            fn (Builder $query): Builder => $query->whereHas('product', fn (Builder $query): Builder => $query->where('status', $data['value'])),
+                        );
+                    }),
             ])
             ->groups([
-                Group::make('status')->label('Status')->collapsible(),
-                Group::make('supplier.name')->label('Supplier')->collapsible(),
+                Group::make('product.status')->label('Status')->collapsible(),
+                Group::make('product.supplier.name')->label('Supplier')->collapsible(),
             ])
-            ->defaultGroup('status')
-            ->defaultSort('products.id')
+            ->defaultSort('position')
             ->persistSortInSession(false)
             ->persistSearchInSession(false)
             ->persistFiltersInSession(false)
             ->deselectAllRecordsWhenFiltered()
-            ->reorderable('id', condition: false)
+            ->reorderable('position')
             ->recordActions([
                 Action::make('inspect')
                     ->label('Inspect')

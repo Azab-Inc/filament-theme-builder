@@ -252,21 +252,39 @@ test.describe('tables showcase', () => {
 
   test('shows accessible responsive table controls and seeded product data', async ({ page }) => {
     const table = page.getByRole('table', { name: /Showcase products/i })
+    const productFixture = page.locator('.fi-ta').filter({ has: table })
+    const orders = page.getByRole('table', { name: /Orders table fixture/i })
+    const inventory = page.getByRole('table', { name: /Inventory table fixture/i })
     await expect(page.getByRole('heading', { name: 'Tables' })).toBeVisible()
     await expect(table).toBeVisible()
+    await expect(orders).toBeVisible()
+    await expect(inventory).toBeVisible()
     await expect(table.getByRole('columnheader', { name: 'Product', exact: true })).toBeVisible()
     await expect(table.getByRole('columnheader', { name: /Status/i })).toBeVisible()
     expect(await table.getByRole('row').count()).toBeGreaterThanOrEqual(3)
     await expect(table).toContainText('Demo Oak Chair')
     await expect(table).toContainText('Demo Brass Lamp')
-    await expect(page.getByRole('button', { name: /filter/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Column manager' })).toBeVisible()
-    await expect(page.getByRole('checkbox', { name: /select\/deselect all items/i })).toBeVisible()
+    await expect(orders).toContainText('DEMO-ORDER-1001')
+    await expect(inventory).toContainText('Demo Oak Chair')
+    await expect(productFixture.getByRole('button', { name: 'Filter' })).toBeVisible()
+    await expect(productFixture.getByRole('button', { name: 'Column manager' })).toBeVisible()
+    await expect(table.getByRole('checkbox', { name: /select\/deselect all items/i })).toBeVisible()
 
-    await page.getByRole('button', { name: 'Column manager' }).click()
+    await productFixture.getByRole('combobox', { name: 'Group by' }).selectOption({ label: 'Status' })
+    await expect(table.getByRole('heading', { name: /Status: active/i })).toBeVisible()
+
+    await table.getByRole('button', { name: 'Product', exact: true }).click()
+    await expect(table.getByRole('columnheader', { name: 'Product', exact: true })).toHaveAttribute('aria-sort', 'ascending')
+
+    await productFixture.getByRole('button', { name: 'Column manager' }).click()
     await expect(page.getByRole('checkbox', { name: 'Supplier' })).toBeVisible()
 
-    await page.getByRole('searchbox', { name: 'Search', exact: true }).fill('Brass Lamp')
+    const supplierToggle = page.getByRole('checkbox', { name: 'Supplier' })
+    await expect(supplierToggle).not.toBeChecked()
+    await supplierToggle.check()
+    await expect(supplierToggle).toBeChecked()
+
+    await productFixture.getByRole('searchbox', { name: 'Search', exact: true }).fill('Brass Lamp')
     expect(await table.getByRole('row').count()).toBeGreaterThanOrEqual(2)
 
     await page.setViewportSize({ width: 390, height: 844 })
@@ -275,13 +293,33 @@ test.describe('tables showcase', () => {
   })
 
   test('requires confirmation for the read-only row action and exposes empty state', async ({ page }) => {
+    const productFixture = page.locator('.fi-ta').filter({ has: page.getByRole('table', { name: /Showcase products/i }) })
     await page.getByRole('button', { name: /inspect/i }).first().click()
     await expect(page.getByRole('heading', { name: /Inspect product/i })).toBeVisible()
     await expect(page.getByRole('button', { name: /cancel/i })).toBeVisible()
     await expect(page.getByRole('button', { name: /confirm/i })).toBeVisible()
     await page.getByRole('button', { name: /cancel/i }).click()
 
-    await page.getByRole('searchbox', { name: 'Search', exact: true }).fill('no such product')
+    await productFixture.getByRole('searchbox', { name: 'Search', exact: true }).fill('no such product')
     await expect(page.getByText('No products found', { exact: true })).toBeVisible()
+  })
+
+  test('confirms a selection action, exposes reorder controls, and keeps loading status accessible', async ({ page }) => {
+    const table = page.getByRole('table', { name: /Showcase products/i })
+    await expect(page.getByRole('status', { name: '' }).first()).toBeAttached()
+    await table.getByRole('checkbox', { name: /select\/deselect item/i }).first().check()
+    await expect(page.getByRole('button', { name: /review selection/i })).toBeVisible()
+    await page.getByRole('button', { name: /review selection/i }).click()
+    await expect(page.getByRole('heading', { name: /Review selected products/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /confirm/i })).toBeVisible()
+    await page.getByRole('button', { name: /cancel/i }).click()
+
+    await expect(page.getByRole('button', { name: 'Reorder records' })).toBeVisible()
+    await page.getByRole('button', { name: 'Reorder records' }).click()
+    await expect(page.getByRole('button', { name: 'Finish reordering' })).toBeVisible()
+    const reorderRows = table.locator('tr[x-sortable-item]')
+    await expect(reorderRows).toHaveCount(2)
+    await reorderRows.nth(1).dragTo(reorderRows.nth(0))
+    await expect(table.locator('tr[x-sortable-item]')).toHaveCount(2)
   })
 })

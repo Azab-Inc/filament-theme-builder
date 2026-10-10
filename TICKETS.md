@@ -333,7 +333,7 @@ Create a Forms & Schemas showcase containing every visually distinct first-party
 
 ## FTB-012 — Cover Tables visually
 
-**Status:** complete
+**Status:** partial
 **Blocked by:** [FTB-005](#ftb-005), [FTB-006](#ftb-006), [FTB-002](#ftb-002)
 
 ### What to build
@@ -348,6 +348,8 @@ Create a Tables showcase and realistic table fixtures covering all visually dist
 - [x] Empty and loading states, invalid filters, missing image/relationship data, long names, mobile layout, and selection reset are covered deterministically.
 - [x] Coverage is registered in `COVERAGE.md` with Livewire and Playwright sources for table surfaces, rows, headers, controls, and relevant states.
 - [ ] Table density/spacing changes visibly respond to theme controls.
+
+The native tables and interaction contract are implemented. The remaining density/theme-control criterion belongs to the later theme integration work and is intentionally not claimed here.
 
 ---
 

@@ -61,4 +61,6 @@ Task 5: fix round 1/5 (3 important and 2 minor findings addressed — long-text,
 
 Task 5: complete (commits fe846ac..6d5d403, review clean)
 
-Task 6: complete (focused PHP/Playwright, full PHP, Pint, and PHPStan clean; full browser suite has one pre-existing demo-panel navigation failure because it expects exact resource labels not present in the current panel; tables coverage is isolated and passing)
+Task 6: implementation complete; FTB-012 remains partial for the deferred theme-density criterion (focused PHP/Playwright, full PHP, Pint, and PHPStan clean; full browser suite has one pre-existing demo-panel navigation failure because it expects exact resource labels not present in the current panel; tables coverage is isolated and passing)
+
+Task 6 review fixes: native isolated reorder mapping, Orders and Inventory fixtures, behavioral interaction coverage, and documentation correction complete; focused/full PHP, focused tables Playwright, Pint, and PHPStan pass. Full browser suite retains the unrelated exact `Products` navigation-label failure.

@@ -102,11 +102,11 @@ domain, resources, and relationship workflows.
   `SectionGridLayout`, `WizardStepsLayout`, and `TabbedFormLayout`.
 - **FTB-012 tables:** `TablesShowcase` provides a compact read-only
   `ProductsTableFixture` backed by deterministic seeded products and order
-  counts. It owns search/sort/filter/group/pagination/summary/column-toggle,
-  selection/bulk-action, row-action, responsive, empty/loading, and missing
-  relationship/image samples without duplicating CRUD. The broader contract
-  names `OrdersTableFixture` and `InventoryTableFixture`; those remain planned
-  follow-up surfaces rather than being represented as duplicate CRUD here.
+  counts, plus native `OrdersTableFixture` and `InventoryTableFixture` widgets.
+  The fixtures own search/sort/filter/group/pagination/summary/column-toggle,
+  selection/bulk-action, row-action, isolated reorder, responsive,
+  empty/loading, and missing relationship/image samples without duplicating
+  CRUD.
 - **FTB-013 infolists:** `ShowcaseInfolistsPage` provides `OrderDetailsInfolist`,
   `CustomerProfileInfolist`, and `ProductDetailsInfolist`.
 - **FTB-014 actions/notifications:** `ShowcaseActionsPage` provides

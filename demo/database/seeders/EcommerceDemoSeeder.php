@@ -17,6 +17,7 @@ use App\Models\ProductVariant;
 use App\Models\Refund;
 use App\Models\Review;
 use App\Models\Shipment;
+use App\Models\ShowcaseTableProduct;
 use App\Models\Supplier;
 use App\Models\Tag;
 use Illuminate\Database\Seeder;
@@ -83,6 +84,13 @@ class EcommerceDemoSeeder extends Seeder
             $product->categories()->sync([$categories[$fixture['category']]->id]);
             $product->tags()->sync($tags->pluck('id')->all());
             $products[$fixture['sku']] = $product;
+        }
+
+        foreach (array_values($products) as $position => $product) {
+            ShowcaseTableProduct::query()->updateOrCreate(
+                ['product_id' => $product->getKey()],
+                ['position' => $position + 1],
+            );
         }
 
         $variants = [];
