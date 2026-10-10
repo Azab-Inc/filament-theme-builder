@@ -18,12 +18,13 @@ class LowStockProductsTable extends TableWidget
     {
         return $table
             ->heading('Low-stock products')
-            ->description('Showcase products with inventory at or below 10 units.')
+            ->description('Showcase products with inventory at or below '.DashboardMetrics::LOW_STOCK_THRESHOLD.' units.')
             ->records(fn (): Collection => app(DashboardMetrics::class)->lowStockProducts())
             ->columns([
                 TextColumn::make('sku')->label('SKU')->url(fn (Product $record): string => ProductResource::getUrl('view', ['record' => $record])),
                 TextColumn::make('name')->label('Product'),
-                TextColumn::make('inventories.quantity')->label('Units'),
+                TextColumn::make('dashboard_inventory_quantity')->label('Units'),
+                TextColumn::make('stock_status')->label('Status')->state('Low stock')->badge(),
             ])
             ->paginated(false)
             ->emptyStateHeading('No low-stock products')

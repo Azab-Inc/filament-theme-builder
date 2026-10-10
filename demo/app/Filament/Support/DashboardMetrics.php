@@ -12,7 +12,8 @@ final class DashboardMetrics
 {
     private const REFERENCE_DATE = '2026-10-10 12:00:00';
 
-    private const LOW_STOCK_THRESHOLD = 10;
+    /** Dashboard presentation contract; this threshold is not persisted domain data. */
+    public const LOW_STOCK_THRESHOLD = 10;
 
     /** @return array{revenue_cents: int, orders_count: int, customers_count: int, products_count: int, low_stock_count: int} */
     public function summary(): array
@@ -62,10 +63,17 @@ final class DashboardMetrics
     {
         return Product::query()
             ->showcaseFixture()
-            ->whereHas('inventories', fn ($query) => $query->where('quantity', '<=', self::LOW_STOCK_THRESHOLD))
             ->with(['inventories' => fn ($query) => $query->orderBy('location')->orderBy('id')])
             ->orderBy('sku')
-            ->limit(5)
-            ->get();
+            ->get()
+            ->map(function (Product $product): Product {
+                return $product->setAttribute(
+                    'dashboard_inventory_quantity',
+                    (int) $product->inventories->sum('quantity'),
+                );
+            })
+            ->filter(fn (Product $product): bool => (int) $product->getAttribute('dashboard_inventory_quantity') <= self::LOW_STOCK_THRESHOLD)
+            ->values()
+            ->take(5);
     }
 }

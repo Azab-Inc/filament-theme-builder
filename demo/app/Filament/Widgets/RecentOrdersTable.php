@@ -23,6 +23,7 @@ class RecentOrdersTable extends TableWidget
             ->columns([
                 TextColumn::make('number')->label('Order')->url(fn (Order $record): string => OrderResource::getUrl('view', ['record' => $record])),
                 TextColumn::make('customer.name')->label('Customer')->placeholder('Guest'),
+                TextColumn::make('placed_at')->label('Placed')->dateTime('M j, Y'),
                 TextColumn::make('total_cents')->label('Total')->money(fn (Order $record): string => $record->currency, divideBy: 100),
                 TextColumn::make('status')->badge(),
             ])
