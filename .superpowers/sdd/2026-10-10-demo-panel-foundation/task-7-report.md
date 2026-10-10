@@ -78,7 +78,8 @@ hash.
   Compose image; both are resolved in the remediation below.
 - The demo-panel Playwright suite now accepts `DEMO_BASE_URL` so the same
   assertion can run against the Compose gateway without changing its required
-  visibility check. The smoke suite retains its separate Compose opt-in.
+  visibility check, and runs its shared-state tests serially without a manual
+  worker override. The smoke suite retains its separate Compose opt-in.
 
 ## Task 7 review remediation
 
@@ -91,6 +92,37 @@ hash.
 - Made `e2e/demo-panel.spec.ts` use `DEMO_BASE_URL` for the Compose gateway.
 - Added Larastan generic return annotations for all domain relationships and
   corrected two factory expressions exposed by the stricter analysis.
+
+## Task 7 re-review remediation
+
+### Root cause and change
+
+The demo-panel tests share one seeded SQLite/application state while the
+relationship flow performs attach/detach and navigation mutations. Running the
+three tests fully parallel caused an intermittent timeout while opening the
+seeded order record, even though the record was present. The suite now uses
+Playwright's scoped `serial` describe mode. This is an explicit suite-level
+isolation rule; it does not rely on an undocumented CLI `--workers=1` override,
+weaken assertions, or skip tests.
+
+### Verification
+
+- `docker compose -f compose.dev.yaml up --build -d && DEMO_BASE_URL=http://127.0.0.1:4175 COMPOSE_E2E=1 npx playwright test e2e/demo-panel.spec.ts` — **passed**, 3/3, with the default suite configuration selecting one worker for the serial group.
+- `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/smoke.spec.ts --grep 'compose gateway'` — **passed**, 2/2.
+- `docker compose -f compose.dev.yaml down` — **passed**; Compose services were stopped before the normal smoke run.
+- `npx playwright test e2e/smoke.spec.ts` — **passed**, 6/6 with 3 expected Compose-only skips.
+- `npx playwright test e2e/demo-panel.spec.ts` — **passed**, 3/3 with no CLI worker override.
+- `composer test` from `demo/` — **passed**: Pint passed, PHPStan passed with 0 errors, PHPUnit passed with 60 tests and 503 assertions.
+
+### Re-review self-review
+
+- The relationship, nested-resource, attach/detach, associate/dissociate, and
+  image visibility assertions are unchanged.
+- Serial isolation is scoped only to `e2e/demo-panel.spec.ts`; other Playwright
+  suites retain their existing parallel configuration.
+- FTB-009A/B/010 remain complete because the default Compose demo E2E,
+  normal smoke tests, Composer suite, and focused demo suite now pass.
+- FTB-027/028 remain incomplete and were not modified.
 
 ### Fix verification
 

@@ -11,6 +11,8 @@ async function signIn(page: Page): Promise<void> {
 }
 
 test.describe('demo panel', () => {
+  test.describe.configure({ mode: 'serial' })
+
   test('exposes coherent navigation and stable seeded resources', async ({ page }) => {
     await page.goto(`${demoBaseUrl}/demo/admin`)
 
