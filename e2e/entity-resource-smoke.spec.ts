@@ -16,6 +16,7 @@ test('customers and products resource indexes and product detail load', async ({
   await page.goto(`${demoBaseUrl}/demo/admin/products`)
   await expect(page.getByRole('heading', { name: /products/i })).toBeVisible()
   await page.getByText('Demo Oak Chair', { exact: true }).click()
+  await expect(page).toHaveURL(/\/demo\/admin\/products\/\d+$/)
   await expect(page.getByText('Demo Oak Chair', { exact: true })).toBeVisible()
   await expect(page.getByText('$129.00', { exact: true })).toBeVisible()
 })
