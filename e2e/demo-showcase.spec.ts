@@ -323,3 +323,43 @@ test.describe('tables showcase', () => {
     await expect(table.locator('tr[x-sortable-item]')).toHaveCount(2)
   })
 })
+
+test.describe('infolists showcase', () => {
+  test.beforeEach(async ({ page }) => {
+    await useAuthenticatedSession(page)
+    await page.goto(`${demoBaseUrl}/demo/admin/infolists-showcase`)
+  })
+
+  test('renders accessible native entries, safe rich text, media, badges, icons, and repeatable rows', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'light' })
+    await expect(page.getByRole('heading', { name: 'Infolists' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Product overview' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Product details' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Related order' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Order items' })).toBeVisible()
+    await expect(page.getByText('DEMO-CHAIR-001', { exact: true })).toBeVisible()
+    await expect(page.getByText('DEMO-ORDER-1001', { exact: true })).toBeVisible()
+    await expect(page.getByText('Avery Demo', { exact: true })).toBeVisible()
+    await expect(page.getByRole('img', { name: 'Demo Oak Chair' })).toBeVisible()
+    await expect(page.locator('.fi-in-icon')).toHaveCount(1)
+    await expect(page.getByText('Demo bestseller', { exact: true })).toBeVisible()
+    await expect(page.getByText('Featured fixture', { exact: true })).toBeVisible()
+    await expect(page.getByText('Natural finish', { exact: true })).toBeVisible()
+    await expect(page.getByText('Demo Brass Lamp', { exact: true })).toBeVisible()
+    await expect(page.locator('script:has-text("alert(\\\"xss\\\")")')).toHaveCount(0)
+
+    const lightSection = await page.getByRole('region', { name: 'Product overview' }).evaluate((element) => getComputedStyle(element).color)
+    await page.emulateMedia({ colorScheme: 'dark' })
+    await expect(page.getByRole('heading', { name: 'Infolists' })).toBeVisible()
+    const darkSection = await page.getByRole('region', { name: 'Product overview' }).evaluate((element) => getComputedStyle(element).color)
+    expect(darkSection).not.toBe(lightSection)
+  })
+
+  test('keeps seeded detail fixtures read-only with no mutation controls', async ({ page }) => {
+    const showcase = page.locator('.fi-page')
+    await expect(showcase.getByRole('heading', { name: 'Infolists' })).toBeVisible()
+    await expect(showcase.getByText('DEMO-ORDER-1001', { exact: true })).toBeVisible()
+    await expect(showcase.getByRole('button')).toHaveCount(0)
+    await expect(showcase.getByRole('textbox')).toHaveCount(0)
+  })
+})
