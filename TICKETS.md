@@ -149,7 +149,7 @@ Turn canonical theme state into readable vanilla CSS and let the user copy or do
 
 ## FTB-005 — Deliver complete global foundations editing
 
-**Status:** ready-for-agent  
+**Status:** done  
 **Blocked by:** [FTB-003](#ftb-003)
 
 ### What to build
@@ -158,16 +158,20 @@ Expand the editor from the first color edit into the complete global foundation 
 
 ### Acceptance criteria
 
-- [ ] Primary, success, warning, danger, info, and gray palettes are editable.
-- [ ] Page, sidebar, topbar, card/elevated, input, border, and text layers are editable.
-- [ ] Relevant values can differ between light and dark mode.
-- [ ] A base color can generate a 50–950 palette.
-- [ ] Individual generated shades can be overridden.
-- [ ] System fonts, curated Google Fonts, and custom font-family names are represented.
-- [ ] Density presets include Compact, Default, and Spacious.
-- [ ] Global spacing scale, radius, border, and shadow controls are available.
-- [ ] Preview changes remain immediate.
-- [ ] Reset-to-default behavior works for every foundation control.
+- [x] Primary, success, warning, danger, info, and gray palettes are editable. Evidence: `builder/src/__tests__/foundation-defaults.spec.ts`, `builder/src/__tests__/App.spec.ts`, and `e2e/theme-foundations.spec.ts` cover the six palette controls.
+- [x] Page, sidebar, topbar, card/elevated, input, border, and text layers are editable. Evidence: typed default/control coverage in `foundation-defaults.spec.ts` and the rendered control/reset coverage in `App.spec.ts` and `e2e/theme-foundations.spec.ts`.
+- [x] Relevant values can differ between light and dark mode. Evidence: independent defaults and light/dark resolution in `foundation-defaults.spec.ts` and `theme-state.spec.ts`; Compose Playwright verifies mode projection in `theme-foundations.spec.ts`.
+- [x] A base color can generate a 50–950 palette. Evidence: `builder/src/__tests__/palette-generator.spec.ts` and `foundation-defaults.spec.ts` assert all eleven shades and deterministic generation.
+- [x] Individual generated shades can be overridden. Evidence: `palette-generator.spec.ts`, `theme-state.spec.ts`, and the Compose Playwright shade override/reset journey in `e2e/theme-foundations.spec.ts`.
+- [x] System fonts, curated Google Fonts, and custom font-family names are represented. Evidence: `App.spec.ts` and `e2e/theme-foundations.spec.ts` exercise system, curated-name, and custom-name choices; the same E2E test verifies no font loading.
+- [x] Density presets include Compact, Default, and Spacious. Evidence: `foundation-defaults.spec.ts`, `theme-state.spec.ts`, and the density controls in `App.spec.ts`/`e2e/theme-foundations.spec.ts`.
+- [x] Global spacing scale, radius, border, and shadow controls are available. Evidence: `App.spec.ts` and `e2e/theme-foundations.spec.ts` cover controls, edits, persistence, and resets.
+- [x] Preview changes remain immediate. Evidence: `e2e/theme-foundations.spec.ts` verifies real iframe updates/events without reload or non-GET traffic; `builder/src/__tests__/foundation-projection.spec.ts` and `demo/tests/Feature/FilamentPanelTest.php` cover the validated bridge contract.
+- [x] Reset-to-default behavior works for every foundation control. Evidence: per-control reset rendering in `App.spec.ts`, store reset/history coverage in `theme-state.spec.ts`, and the Compose Playwright reset/persistence journey in `e2e/theme-foundations.spec.ts`.
+
+FTB-005 evidence was recorded after these fresh checks: `cd builder && npm run type-check && npm run test:unit -- --run && npm run build` (121 unit tests); `docker compose -f compose.dev.yaml exec -T demo-php php artisan test tests/Feature/FilamentPanelTest.php` (7 tests, 43 assertions); `docker compose -f compose.dev.yaml exec -T demo-php php artisan test` (148 tests, 1,394 assertions); `docker compose -f compose.dev.yaml exec -T demo-php vendor/bin/pint --test` (277 files); `docker compose -f compose.dev.yaml exec -T demo-php vendor/bin/phpstan analyse` (251 files, no errors); `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/theme-foundations.spec.ts` (3 passed); and Compose `/api/health` (`{"status":"ok"}`). The full Playwright command was also run: the three FTB-005 tests passed, while nine unrelated existing tests failed because they hard-code unavailable host ports 4173/4174; this does not leave an FTB-005 acceptance gap.
+
+FTB-012 density integration and FTB-018 branding/runtime consumption remain separate work. This status does not lift the demo-first gate or claim completion of those tickets.
 
 ---
 
