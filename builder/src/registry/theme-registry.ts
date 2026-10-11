@@ -46,6 +46,7 @@ const legacyPrimary: RegistryEntry = {
       id: 'primary',
       valueType: 'color',
       constraints: { pattern: /^#[\da-f]{6}$/i },
+      defaultValue: '#6366f1',
     },
   ],
   variants: [],

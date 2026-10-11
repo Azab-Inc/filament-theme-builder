@@ -4,7 +4,7 @@ import type { ThemeOverride, ThemeScope, ThemeState, ThemeValue } from '@/models
 export type ThemeValidationContext = {
   targetId: string
   controlId: string
-  scope: ThemeScope
+  scope: string
 }
 
 export type ThemeOverrideValidationFailure = ThemeValidationContext & {
@@ -24,13 +24,24 @@ export function validateThemeOverride(override: ThemeOverride, registry: Filamen
   const context: ThemeValidationContext = {
     targetId: typeof override?.targetId === 'string' ? override.targetId : '',
     controlId: typeof override?.controlId === 'string' ? override.controlId : '',
-    scope: isScope(override?.scope) ? override.scope : 'global',
+    scope: typeof override?.scope === 'string' ? override.scope : '',
   }
 
   if (!isObject(override)) return failure(context, 'Override must be an object')
+  if (!isScope(override.scope)) return failure(context, 'Invalid scope value')
+  if (!nonEmptyString(override.targetId)) return failure(context, 'Target identifier must be a non-empty string')
+  if (!nonEmptyString(override.controlId)) return failure(context, 'Control identifier must be a non-empty string')
+  if (hasUnsupportedKeys(override)) return failure(context, 'Unsupported override key')
+  if (!validOptionalIdentifiers(override)) return failure(context, 'Override identifiers must be non-empty strings')
+
+  const compatibilityError = validateCompatibilityBaseline(registry)
+  if (compatibilityError) return failure(context, compatibilityError)
 
   const entry = registry.entries.find(({ id }) => id === override.targetId)
   if (!entry) return failure(context, `Unknown target: ${override.targetId}`)
+
+  const baseline = registry.entries[0]!.filamentCompatibility
+  if (entry.filamentCompatibility !== baseline) return failure(context, `Mismatched compatibility baseline for ${override.targetId}`)
 
   const control = entry.controls.find(({ id }) => id === override.controlId)
   if (!control) return failure(context, `Unknown control: ${override.controlId}`)
@@ -78,6 +89,27 @@ function validateScope(override: ThemeOverride, entry: RegistryEntry): string | 
   return undefined
 }
 
+function validateCompatibilityBaseline(registry: FilamentRegistry): string | undefined {
+  if (!isObject(registry) || !Array.isArray(registry.entries) || registry.entries.length === 0) return 'Invalid compatibility baseline'
+  const baseline = registry.entries[0]?.filamentCompatibility
+  if (!isCompatibilityBaseline(baseline)) return 'Unsupported compatibility baseline'
+  if (registry.entries.some((entry) => !isObject(entry) || entry.filamentCompatibility !== baseline || !isCompatibilityBaseline(entry.filamentCompatibility))) return 'Mismatched compatibility baseline'
+  return undefined
+}
+
+function hasUnsupportedKeys(override: Record<string, unknown>): boolean {
+  const allowedKeys = new Set(['targetId', 'controlId', 'scope', 'componentId', 'variantId', 'stateId', 'value'])
+  return Reflect.ownKeys(override).some((key) => typeof key !== 'string' || !allowedKeys.has(key))
+}
+
+function validOptionalIdentifiers(override: Record<string, unknown>): boolean {
+  return ['componentId', 'variantId', 'stateId'].every((key) => override[key] === undefined || nonEmptyString(override[key]))
+}
+
+function isCompatibilityBaseline(value: unknown): value is string {
+  return typeof value === 'string' && /^\d+\.x$/.test(value)
+}
+
 function isValidControlValue(value: unknown, control: RegistryControl): value is ThemeValue {
   if (control.valueType === 'boolean') return typeof value === 'boolean'
   if (control.valueType === 'number') return typeof value === 'number' && Number.isFinite(value) && (control.constraints?.min === undefined || value >= control.constraints.min) && (control.constraints?.max === undefined || value <= control.constraints.max)
@@ -91,6 +123,10 @@ function failure(context: ThemeValidationContext, error: string): ThemeOverrideV
 
 function isScope(value: unknown): value is ThemeScope {
   return value === 'global' || value === 'component' || value === 'variant' || value === 'state'
+}
+
+function nonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {

@@ -27,3 +27,13 @@
 
 - Store migration, persistence integration, serialization, UI, and exporter work remain intentionally unimplemented for later tasks.
 - The unrelated pre-existing `.gitignore` modification was preserved.
+
+## Fix round 1
+
+- Added explicit compatibility-baseline checks against every registry entry, including unsupported and mismatched runtime baselines.
+- Added runtime validation for scope, required/optional identifiers, control values, and every unsupported own key in external overrides.
+- Expanded precedence tests to cover exact Global → Component → Variant → State selection and nearest fallback at each parent level.
+- Added a registry default for the legacy global primary control and verified valid version-1 `colors.primary` wins before that default.
+- Tightened default and quarantine assertions to verify exact values and contextual invalid override results.
+- RED: focused resolver tests failed with precedence, compatibility, and runtime validation gaps before implementation.
+- GREEN: focused resolver tests passed: `1` file, `8` tests.
