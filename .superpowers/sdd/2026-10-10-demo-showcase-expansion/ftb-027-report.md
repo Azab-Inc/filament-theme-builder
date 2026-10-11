@@ -5,6 +5,10 @@
 - `demo/app/Support/Uploads/TemporaryUploadStorage.php` — reusable MIME/extension, size, owner-quota, global-capacity, purge, safe-path, permissions, and retention boundary.
 - `demo/app/Filament/Pages/Showcase/Forms/ProductEditorForm.php` — native Filament `FileUpload` accepting JPEG, PNG, WebP, and PDF with a 5 MB limit and guarded storage callback.
 - `demo/app/Filament/Pages/Showcase/FormsShowcase.php` — dehydrates upload state and renders storage quota validation errors.
+- `demo/app/Filament/Pages/Showcase/AnonymousUploadShowcase.php` and `demo/resources/views/filament/pages/showcase/anonymous-upload-showcase.blade.php` — minimal public, upload-only Filament fixture.
+- `demo/app/Http/Middleware/AuthenticatePreviewPanel.php` — explicit allowlist entry for the public upload fixture.
+- `demo/tests/Feature/FilamentPanelTest.php` — public-route regression coverage.
+- `docs/ai-operability/demo-showcase-capability-inventory.md` — records the UI-only anonymous upload capability and its shared safety boundary.
 - `demo/app/Console/Commands/CleanupTemporaryUploadsCommand.php` — delegates recursive cleanup to the storage boundary.
 - `demo/config/maintenance.php` — private default storage path and 5 MB / 25 MB / 500 MB / 400 MB limits.
 - `demo/tests/Feature/Uploads/TemporaryUploadStorageTest.php` — real temporary-files regression coverage.
@@ -105,3 +109,24 @@ docker compose -f compose.dev.yaml run --rm --no-deps demo-php vendor/bin/phpsta
 docker compose -f compose.dev.yaml ps && curl --fail --silent http://127.0.0.1:4175/api/health
 All Compose services healthy/running; {"status":"ok"}
 ```
+
+## Round 2 review fix
+
+Root cause: the prior quota test cleared cookies but still navigated to the authenticated `forms-showcase` page. The page was correctly redirected by `AuthenticatePreviewPanel`, so the test could not prove the session-owner fallback used for anonymous uploads.
+
+The fix adds the smallest production-safe public fixture: `/demo/admin/anonymous-upload`. It is an explicitly allowlisted, navigation-hidden Filament page containing only the existing guarded upload field and submit action. It has no commerce data, persistence, or extra permissions; uploads still use the same `TemporaryUploadStorage` service, MIME/extension checks, owner quota, global cleanup, and private storage. The browser tests clear cookies, navigate directly to this public fixture, submit two valid files under the test-safe quota, and assert the rendered quota error. The oversized-file test uses the same anonymous surface.
+
+Round 2 green evidence:
+
+```text
+docker compose -f compose.dev.yaml run --rm --no-deps -e TEMP_UPLOADS_PATH=/tmp/ftb-no-default-upload-path demo-php php artisan test tests/Feature/FilamentPanelTest.php --filter anonymous_upload
+PASS — 1 test, 3 assertions
+
+TEMP_UPLOAD_OWNER_QUOTA_BYTES=12288 TEMP_UPLOAD_MAX_BYTES=16384 docker compose -f compose.dev.yaml up -d
+COMPOSE_E2E=1 DEMO_UPLOAD_TEST_LIMITS=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 DEMO_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/demo-showcase.spec.ts --grep "temporary quota|five megabyte"
+2 passed
+```
+
+The test-safe overrides are explicit in the command and retain production defaults when omitted.
+
+The focused covering PHP suite passed after Round 2, along with Pint, PHPStan, Compose config validation, default-limit verification, and health checks. The full `php artisan test` run had three unrelated baseline failures in existing AI-operability assertions/path assumptions: the ticket-sequence assertion, the inventory assertion when resolved from the container's `/var/www` path, and the existing commerce inventory path assertion. The newly added public-route test and all upload/forms/runtime tests passed.

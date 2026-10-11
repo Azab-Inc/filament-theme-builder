@@ -52,19 +52,7 @@ final class ProductEditorForm
                     DatePicker::make('product_launch_date')
                         ->label('Product launch date')
                         ->required(),
-                    FileUpload::make('product_image')
-                        ->label('Product image')
-                        ->helperText('JPEG, PNG, WebP, or PDF up to 5 MB')
-                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
-                        ->maxSize((int) ceil((int) config('maintenance.temporary_upload_max_bytes') / 1024))
-                        ->disk('local')
-                        ->directory('demo-uploads')
-                        ->saveUploadedFileUsing(static function (TemporaryUploadedFile $file): string {
-                            return app(TemporaryUploadStorage::class)->store(
-                                $file,
-                                (string) (auth()->id() ?? session()->getId()),
-                            );
-                        }),
+                    self::imageUpload(),
                     Textarea::make('product_long_text')
                         ->label('Long text fixture')
                         ->default('A long deterministic fixture paragraph keeps the showcase readable while exercising long-form text treatment without relying on persisted content.')
@@ -115,5 +103,22 @@ final class ProductEditorForm
                         ]),
                 ]),
         ];
+    }
+
+    public static function imageUpload(): FileUpload
+    {
+        return FileUpload::make('product_image')
+            ->label('Product image')
+            ->helperText('JPEG, PNG, WebP, or PDF up to 5 MB')
+            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
+            ->maxSize((int) ceil((int) config('maintenance.temporary_upload_max_bytes') / 1024))
+            ->disk('local')
+            ->directory('demo-uploads')
+            ->saveUploadedFileUsing(static function (TemporaryUploadedFile $file): string {
+                return app(TemporaryUploadStorage::class)->store(
+                    $file,
+                    (string) (auth()->id() ?? session()->getId()),
+                );
+            });
     }
 }

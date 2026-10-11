@@ -306,8 +306,12 @@ test.describe('forms and schemas showcase', () => {
   test('reports the temporary quota after a valid upload is submitted', async ({ page }) => {
     test.skip(!uploadBoundaryTestsEnabled, 'Run with the explicit Compose test-safe upload limits.')
 
+    await page.context().clearCookies()
+    await page.goto(`${demoBaseUrl}/demo/admin/anonymous-upload`)
+    await expect(page.getByRole('heading', { name: 'Anonymous demo uploads' })).toBeVisible()
+
     const upload = page.locator('input[type="file"]')
-    const save = page.getByRole('button', { name: /save fixture/i })
+    const save = page.getByRole('button', { name: 'Save anonymous upload', exact: true })
     const pdf = (name: string) => ({
       name,
       mimeType: 'application/pdf',
@@ -329,6 +333,10 @@ test.describe('forms and schemas showcase', () => {
 
   test('reports the five megabyte limit for oversized uploads', async ({ page }) => {
     test.skip(!uploadBoundaryTestsEnabled, 'Run with the explicit Compose test-safe upload limits.')
+
+    await page.context().clearCookies()
+    await page.goto(`${demoBaseUrl}/demo/admin/anonymous-upload`)
+    await expect(page.getByRole('heading', { name: 'Anonymous demo uploads' })).toBeVisible()
 
     const upload = page.locator('input[type="file"]')
     await upload.setInputFiles({

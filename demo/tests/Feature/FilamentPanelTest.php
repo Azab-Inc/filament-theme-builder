@@ -41,6 +41,14 @@ class FilamentPanelTest extends TestCase
         $this->get('/demo/admin/forms-showcase')->assertRedirect('/demo/admin/login');
     }
 
+    public function test_anonymous_upload_fixture_is_public_and_isolated_from_focused_showcase_pages(): void
+    {
+        $this->get('/demo/admin/anonymous-upload')
+            ->assertOk()
+            ->assertSee('Anonymous demo uploads')
+            ->assertSee('JPEG, PNG, WebP, or PDF up to 5 MB');
+    }
+
     public function test_profile_page_requires_authentication_and_allows_seeded_demo_user(): void
     {
         $this->get('/demo/admin/profile')
