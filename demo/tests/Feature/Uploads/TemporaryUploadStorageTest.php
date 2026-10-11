@@ -140,6 +140,94 @@ class TemporaryUploadStorageTest extends TestCase
         $this->assertLessThanOrEqual(400 * 1024 + 1, $this->directorySize());
     }
 
+    public function test_preview_accepts_allowed_metadata_without_mutating_storage(): void
+    {
+        $before = $this->directorySize();
+
+        $preview = app(TemporaryUploadStorage::class)->preview(
+            'photo.jpg',
+            'image/jpeg',
+            100,
+            'anonymous-session',
+        );
+
+        $this->assertTrue($preview['accepted']);
+        $this->assertSame('jpg', $preview['extension']);
+        $this->assertSame($before, $this->directorySize());
+        $this->assertSame([], array_values(array_diff(scandir($this->directory) ?: [], ['.', '..'])));
+    }
+
+    public function test_preview_rejects_disallowed_metadata(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        app(TemporaryUploadStorage::class)->preview(
+            'graphic.svg',
+            'image/svg+xml',
+            100,
+            'anonymous-session',
+        );
+    }
+
+    public function test_preview_rejects_size_and_owner_quota_limits(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        app(TemporaryUploadStorage::class)->preview(
+            'large.pdf',
+            'application/pdf',
+            5 * 1024 * 1024 + 1,
+            'anonymous-session',
+        );
+    }
+
+    public function test_preview_rejects_owner_quota_without_deleting_existing_files(): void
+    {
+        Config::set('maintenance.temporary_upload_owner_quota_bytes', 25 * 1024);
+
+        $owner = hash('sha256', 'anonymous-session');
+        mkdir($this->directory.'/'.$owner, 0750, true);
+        file_put_contents($this->directory.'/'.$owner.'/existing.bin', str_repeat('x', 25 * 1024));
+
+        $before = $this->directorySize();
+
+        try {
+            app(TemporaryUploadStorage::class)->preview(
+                'photo.png',
+                'image/png',
+                1,
+                'anonymous-session',
+            );
+            $this->fail('Expected the owner quota to be rejected.');
+        } catch (ValidationException) {
+            $this->assertSame($before, $this->directorySize());
+            $this->assertFileExists($this->directory.'/'.$owner.'/existing.bin');
+        }
+    }
+
+    public function test_preview_reports_global_cleanup_without_performing_it(): void
+    {
+        $owner = hash('sha256', 'anonymous-session');
+        mkdir($this->directory.'/'.$owner, 0750, true);
+        $old = $this->directory.'/'.$owner.'/old.bin';
+        $new = $this->directory.'/'.$owner.'/new.bin';
+        file_put_contents($old, str_repeat('o', 120 * 1024));
+        file_put_contents($new, str_repeat('n', 390 * 1024));
+        touch($old, now()->subHour()->getTimestamp());
+        touch($new, now()->getTimestamp());
+
+        $preview = app(TemporaryUploadStorage::class)->preview(
+            'photo.webp',
+            'image/webp',
+            1,
+            'anonymous-session',
+        );
+
+        $this->assertSame(1, $preview['purge_count']);
+        $this->assertFileExists($old);
+        $this->assertFileExists($new);
+    }
+
     private function directorySize(): int
     {
         $size = 0;

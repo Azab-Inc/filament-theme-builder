@@ -21,7 +21,11 @@ final class TemporaryUploadStorage
 
     public function store(UploadedFile $file, string $owner): string
     {
-        $this->validate($file);
+        $this->validateMetadata(
+            (string) $file->getClientOriginalName(),
+            (string) $file->getMimeType(),
+            (int) $file->getSize(),
+        );
 
         $ownerDirectory = hash('sha256', $owner);
         $size = (int) $file->getSize();
@@ -58,6 +62,35 @@ final class TemporaryUploadStorage
         return $relativePath;
     }
 
+    /**
+     * Validate an upload's metadata and quotas without writing or deleting files.
+     *
+     * @return array{accepted: true, extension: string, owner_bytes: int, global_bytes: int, purge_count: int}
+     */
+    public function preview(string $filename, string $mime, int $size, string $owner): array
+    {
+        $extension = $this->validateMetadata($filename, $mime, $size);
+        $ownerDirectory = hash('sha256', $owner);
+        $ownerBytes = $this->sizeOf($this->rootPath().'/'.$ownerDirectory);
+        $ownerLimit = (int) config('maintenance.temporary_upload_owner_quota_bytes');
+
+        if (($ownerBytes + $size) > $ownerLimit) {
+            throw ValidationException::withMessages([
+                'product_image' => 'Your temporary upload space is full. Remove a file before uploading another.',
+            ]);
+        }
+
+        [$globalBytes, $purgeCount] = $this->previewGlobalRoom($size);
+
+        return [
+            'accepted' => true,
+            'extension' => $extension,
+            'owner_bytes' => $ownerBytes,
+            'global_bytes' => $globalBytes,
+            'purge_count' => $purgeCount,
+        ];
+    }
+
     public function cleanupExpired(): int
     {
         $cutoff = now()->subHours((int) config('maintenance.temporary_upload_retention_hours'))->getTimestamp();
@@ -72,10 +105,9 @@ final class TemporaryUploadStorage
         return $deleted;
     }
 
-    private function validate(UploadedFile $file): void
+    private function validateMetadata(string $filename, string $mime, int $size): string
     {
-        $mime = $file->getMimeType();
-        $extension = strtolower($file->getClientOriginalExtension());
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
         $expectedExtension = self::ALLOWED_TYPES[$mime] ?? null;
         $extensions = $mime === 'image/jpeg' ? ['jpg', 'jpeg'] : [$expectedExtension];
 
@@ -85,11 +117,43 @@ final class TemporaryUploadStorage
             ]);
         }
 
-        if ((int) $file->getSize() > (int) config('maintenance.temporary_upload_max_bytes')) {
+        if ($size < 0 || $size > (int) config('maintenance.temporary_upload_max_bytes')) {
             throw ValidationException::withMessages([
                 'product_image' => 'The upload must be 5 MB or smaller.',
             ]);
         }
+
+        return $expectedExtension;
+    }
+
+    /** @return array{int, int} */
+    private function previewGlobalRoom(int $incomingSize): array
+    {
+        $currentSize = $this->sizeOf($this->rootPath());
+        $limit = (int) config('maintenance.temporary_upload_global_limit_bytes');
+
+        if (($currentSize + $incomingSize) <= $limit) {
+            return [$currentSize, 0];
+        }
+
+        $target = (int) config('maintenance.temporary_upload_global_cleanup_bytes');
+        $purgeCount = 0;
+        foreach ($this->filesSortedOldestFirst() as $file) {
+            if ($currentSize <= $target) {
+                break;
+            }
+
+            $currentSize -= $file->getSize();
+            $purgeCount++;
+        }
+
+        if (($currentSize + $incomingSize) > $limit) {
+            throw ValidationException::withMessages([
+                'product_image' => 'Temporary upload storage is full. Please try again shortly.',
+            ]);
+        }
+
+        return [$currentSize, $purgeCount];
     }
 
     private function makeGlobalRoom(int $incomingSize): void
