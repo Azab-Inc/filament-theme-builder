@@ -1,76 +1,85 @@
-# FTB-027 MCP Capability Report
+# FTB-027 MCP Capability Hardening Report
 
 ## Status
 
-Implemented a safe, preview-only MCP capability for the completed FTB-027
-upload boundary. FTB-027 remains `done`; this work does **not** claim full MCP
-mutation coverage.
+FTB-027 remains `done`. The upload MCP capability remains preview-only: no
+binary mutation coverage is claimed.
 
-## Implemented contract
+## Hardened contract
 
-- Tool: `showcase_anonymous_upload_preview`, registered through Laravel Boost's
-  `boost.mcp.tools.include` configuration.
-- Inputs are limited to `operation`, `filename`, `mime_type`, `size_bytes`,
-  optional `confirmed`, and an opaque `confirmation_token`.
-- Preview derives the owner from the authenticated Laravel MCP request. It
-  rejects unauthenticated calls and arbitrary owner overrides.
-- Preview delegates validation and dry-run owner/global quota decisions to
-  `TemporaryUploadStorage::preview()`. It creates no files, directories, or
-  cleanup side effects.
-- Preview returns an opaque five-minute confirmation token when metadata is
-  accepted.
-- Commit requires `confirmed=true` and a token matching the authenticated
-  owner, metadata, and expiry. A valid confirmed commit returns the explicit
-  `unsupported_upload_input` refusal because no safe binary upload transport
-  exists in the installed MCP contract.
-- The tool rejects filesystem paths, base64, raw content, and arbitrary owner
-  fields. SVG, executable, disallowed MIME/extension pairs, oversize files,
-  and quota violations use the same storage-boundary rules as the UI.
+- Accepted arguments are exactly `operation`, `filename`, `mime_type`,
+  `size_bytes`, optional `confirmed`, and optional `confirmation_token`.
+- The published input schema constrains `operation` to `preview|commit`, marks
+  the metadata fields required, and sets `additionalProperties: false`.
+- The handler repeats the boundary: unknown fields (including `executable` and
+  arbitrary extras) are rejected, required fields are not coerced, malformed
+  types/values return `invalid_arguments`, and invalid operations return
+  `invalid_operation`.
+- Owner identity is derived only from the authenticated MCP request. Owner,
+  session-owner, user-id, and auth-user-id override fields are rejected.
+- Preview delegates metadata validation and dry-run quota decisions to
+  `TemporaryUploadStorage` without writing, deleting, or creating directories.
+- The interface accepts metadata only. It does not inspect file bytes or scan
+  contents, so no content-based executable detection is claimed.
+- Confirmed commit still returns `unsupported_upload_input`; no unsafe binary
+  transport or base64/path workaround was added.
 
-## Package/API evidence
+## End-to-end stdio evidence
 
-The running Compose demo contains:
+The test launches the actual Boost local server with `mcp:start laravel-boost`
+and writes newline-delimited JSON-RPC requests to its stdin. It verifies:
 
-- `laravel/boost v2.10.3`
-- `laravel/mcp v1.0.1`
+1. `initialize` succeeds for protocol `2025-11-25`;
+2. `tools/list` returns `showcase_anonymous_upload_preview` with the enum and
+   `additionalProperties: false` schema;
+3. `tools/call` with an owner override is refused as
+   `authentication_required` because stdio has no authenticated caller; the
+   authenticated direct tests separately prove caller-derived ownership and
+   owner/session override rejection.
 
-The installed MCP API supports JSON object tool arguments, tool annotations,
-Boost tool inclusion, and in-process `Boost::tools()` registration tests. It
-does not expose a verified binary upload or resource-input contract suitable
-for safely transferring up to 5 MB into `UploadedFile`. Base64 and filesystem
-path workarounds were intentionally not implemented.
+## Reproducible verification
 
-## TDD evidence
+Command:
 
-The red phase was observed before implementation:
+```sh
+docker compose -f compose.dev.yaml exec -T demo-php \
+  php artisan test tests/Feature/Mcp/TemporaryUploadMcpToolTest.php
+```
 
-- storage tests failed with `TemporaryUploadStorage::preview()` undefined;
-- MCP tests failed with `App\\Mcp\\Tools\\PreviewTemporaryUpload` missing.
+Output:
 
-The green tests cover:
+```text
+PASS Tests\Feature\Mcp\TemporaryUploadMcpToolTest
+Tests: 9 passed (44 assertions)
+```
 
-- allowed metadata preview;
-- rejected SVG metadata;
-- five-megabyte boundary;
-- owner quota rejection;
-- no preview mutation or deletion;
-- authentication and owner override rejection;
-- Boost registration through the installed MCP server;
-- explicit confirmation requirement;
-- stale confirmation rejection;
-- truthful unsupported binary commit response.
+This includes the actual stdio `initialize`, `tools/list`, and `tools/call`
+exchange; it is not an in-process registration-only assertion.
 
-## Remaining limitation/risk
+Other verification commands and their results are recorded in the completion
+message for this fix:
 
-AI clients cannot currently commit a new upload through MCP. This is an
-intentional refusal rather than an authorization bypass. A future commit tool
-requires a verified MCP binary/resource transport and must still construct an
-`UploadedFile` and call `TemporaryUploadStorage::store()` after revalidating
-the authenticated owner, token, metadata, MIME, extension, and quotas.
+```sh
+docker compose -f compose.dev.yaml exec -T demo-php \
+  php artisan test tests/Feature/Mcp/TemporaryUploadMcpToolTest.php \
+  tests/Feature/Uploads/TemporaryUploadStorageTest.php
+# Tests: 25 passed (75 assertions)
 
-The focused feature/MCP/storage tests, Pint, PHPStan, Compose health, and
-upload Playwright check pass. A full `php artisan test` run still has unrelated
-baseline failures in the containerized test layout: repository-root inventory
-files are not mounted at `/var/www` for existing inventory assertions, and an
-existing maintenance-output assertion expects a different cleanup message.
-Those failures were not changed by this capability.
+docker compose -f compose.dev.yaml exec -T demo-php vendor/bin/pint --test
+# PASS — 273 files
+
+docker compose -f compose.dev.yaml exec -T demo-php vendor/bin/phpstan analyse
+# [OK] No errors
+
+docker compose -f compose.dev.yaml ps --format '{{.Service}} {{.State}} {{.Health}}'
+# builder-vite running healthy
+# demo-php running healthy
+# demo-vite running healthy
+# gateway running
+
+COMPOSE_E2E=1 DEMO_BASE_URL=http://127.0.0.1:4175 \
+  npx playwright test e2e/demo-showcase.spec.ts --grep 'safe document uploads'
+# 1 passed
+```
+
+No dependencies or `.playwright-mcp/` files were added.

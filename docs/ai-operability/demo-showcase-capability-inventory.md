@@ -53,15 +53,24 @@ no purpose-built tool exists.
 
 ## Upload MCP evidence boundary
 
-`showcase_anonymous_upload_preview` accepts only a client filename, declared MIME
-type, and size. It derives ownership from the authenticated MCP request and
-rejects owner overrides, paths, filesystem references, base64, and content
-fields. The preview calls the same `TemporaryUploadStorage` validation and
-quota decision boundary used by the UI, but performs no writes or cleanup.
+`showcase_anonymous_upload_preview` accepts exactly `operation`, `filename`,
+`mime_type`, and `size_bytes`, plus the defined confirmation fields
+`confirmed` and `confirmation_token`. Its schema uses `operation: preview|commit`
+and rejects additional properties. The handler repeats those checks, including
+native argument types, so owner/session overrides, executable-like fields,
+paths, filesystem references, base64, and content fields are refused rather
+than ignored. Ownership is derived only from the authenticated MCP request.
+The preview calls the same `TemporaryUploadStorage` validation and quota
+decision boundary used by the UI, but performs no writes or cleanup. It accepts
+metadata only: it does not inspect or scan file contents and therefore makes no
+content-based executable-file claim.
 
 The installed Laravel Boost v2.10.3 / Laravel MCP v1.0.1 contract exposes JSON
 object arguments and has no verified safe binary upload/resource-input contract.
-Consequently, a confirmed commit returns `unsupported_upload_input`; no MCP
-mutation coverage is claimed. A future binary transport must be added only if
-it can preserve the same authenticated owner, validation, quota, and storage
-boundary.
+Consequently, an authenticated confirmed commit returns
+`unsupported_upload_input`, while an unauthenticated stdio call returns
+`authentication_required`; no MCP mutation coverage is claimed. Direct tests
+and the actual `mcp:start laravel-boost` stdio transport verify registration,
+schema discovery, initialization, tool calling, and owner/session override
+refusal. A future binary transport must be added only if it can preserve the
+same authenticated owner, validation, quota, and storage boundary.
