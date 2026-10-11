@@ -23,7 +23,33 @@ describe('Filament foundation inventory', () => {
       expect(entry.compatibility).toBe('filament-5.9')
       expect(source).toContain(entry.evidence.needle)
       expect(baseline).toContain('"filament/filament": "^5.9"')
+      expect(entry.evidence.reason).toBeTruthy()
+      for (const absent of entry.evidence.absent ?? []) expect(source).not.toContain(absent)
     }
+  })
+
+  it('ties every preview mapping to its exact emitted variable or selector', () => {
+    for (const entry of FILAMENT_FOUNDATION_INVENTORY.filter((entry) => entry.mapping === 'preview-emulatable')) {
+      expect(entry.variable ?? entry.selector).toBeTruthy()
+      if (entry.id.endsWith('.base')) expect(entry.evidence.needle).toBe(entry.variable)
+      else expect(entry.evidence.needle).toBe('--primary-${shade}')
+    }
+  })
+
+  it('does not treat unrelated bridge evidence as a page-surface mapping', () => {
+    const mapping = lookupFoundationMapping('surface.page')
+
+    expect(mapping).toMatchObject({ mapping: 'unmapped' })
+    expect(mapping?.evidence.reason).toMatch(/no verified .*page surface/i)
+    expect(mapping?.variable).toBeUndefined()
+    expect(mapping?.selector).toBeUndefined()
+  })
+
+  it('does not treat panel sidebar configuration as density CSS evidence', () => {
+    const mapping = lookupFoundationMapping('density')
+
+    expect(mapping).toMatchObject({ mapping: 'unmapped' })
+    expect(mapping?.evidence.reason).toMatch(/no verified .*spacing|sidebar.*variable|rule/i)
   })
 
   it('contains no invented Filament variable tokens', () => {

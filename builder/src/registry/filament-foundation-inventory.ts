@@ -10,6 +10,8 @@ export type FoundationInventoryEntry = {
     readonly source: string
     readonly baseline: string
     readonly needle: string
+    readonly reason: string
+    readonly absent?: readonly string[]
   }
 }
 
@@ -17,7 +19,6 @@ const BRIDGE_SOURCE = 'demo/resources/views/filament/preview-bridge.blade.php'
 const REGISTRY_SOURCE = 'builder/src/registry/theme-registry.ts'
 const E2E_SOURCE = 'e2e/demo-panel.spec.ts'
 const BRANDING_SOURCE = 'demo/tests/Feature/Filament/PanelBrandingNavigationTest.php'
-const PANEL_SOURCE = 'demo/app/Providers/Filament/AdminPanelProvider.php'
 const BASELINE_SOURCE = 'demo/composer.json'
 
 const VARIABLE_ENTRIES: readonly FoundationInventoryEntry[] = [
@@ -26,14 +27,14 @@ const VARIABLE_ENTRIES: readonly FoundationInventoryEntry[] = [
     compatibility: 'filament-5.9',
     mapping: 'preview-emulatable',
     variable: '--ftb-primary',
-    evidence: { source: BRIDGE_SOURCE, baseline: BASELINE_SOURCE, needle: '--ftb-primary' },
+    evidence: { source: BRIDGE_SOURCE, baseline: BASELINE_SOURCE, needle: '--ftb-primary', reason: 'The preview bridge emits this application-owned primary variable.' },
   },
   ...[50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map((shade) => ({
     id: `palette.primary.shades.${shade}`,
     compatibility: 'filament-5.9' as const,
     mapping: 'preview-emulatable' as const,
     variable: `--primary-${shade}`,
-    evidence: { source: BRIDGE_SOURCE, baseline: BASELINE_SOURCE, needle: '--primary-${shade}' },
+    evidence: { source: BRIDGE_SOURCE, baseline: BASELINE_SOURCE, needle: '--primary-${shade}', reason: 'The preview bridge emits this application-owned shade template.' },
   })),
 ]
 
@@ -49,21 +50,32 @@ const SELECTOR_ENTRIES: readonly FoundationInventoryEntry[] = ([
   compatibility: 'filament-5.9',
   mapping: 'export-only',
   selector,
-  evidence: { source, baseline: BASELINE_SOURCE, needle },
+  evidence: { source, baseline: BASELINE_SOURCE, needle, reason: `The tracked runtime test/source records ${selector}.` },
 }))
 
 const RUNTIME_ENTRIES: readonly FoundationInventoryEntry[] = [
   {
     id: 'density',
     compatibility: 'filament-5.9',
-    mapping: 'runtime-refresh-required',
-    evidence: { source: PANEL_SOURCE, baseline: BASELINE_SOURCE, needle: 'sidebarCollapsibleOnDesktop' },
+    mapping: 'unmapped',
+    evidence: {
+      source: 'demo/resources/css/app.css',
+      baseline: BASELINE_SOURCE,
+      needle: '@theme',
+      absent: ['--spacing', '--sidebar-width', '--collapsed-sidebar-width'],
+      reason: 'No verified Filament density variable or rule is present in the committed runtime CSS; density remains unmapped.',
+    },
   },
   {
     id: 'surface.page',
     compatibility: 'filament-5.9',
     mapping: 'unmapped',
-    evidence: { source: BRIDGE_SOURCE, baseline: BASELINE_SOURCE, needle: '--ftb-primary' },
+    evidence: {
+      source: BRIDGE_SOURCE,
+      baseline: BASELINE_SOURCE,
+      needle: '--ftb-primary',
+      reason: 'The bridge evidence is unrelated to page surfaces; no verified page surface selector or variable is available.',
+    },
   },
 ]
 
