@@ -126,7 +126,7 @@
                 if (mappings.length === 0) return true;
                 const style = document.getElementById(styleId) ?? document.createElement('style');
                 style.id = styleId;
-                style.textContent = `:root { ${mappings.map((mapping) => `${mapping.variable}: ${mapping.value};`).join(' ')} }`;
+                style.textContent = `:root { color-scheme: ${message.projection.mode}; ${mappings.map((mapping) => `${mapping.variable}: ${mapping.value};`).join(' ')} }`;
                 document.head.append(style);
                 window.dispatchEvent(new CustomEvent('ftb:theme:updated', { detail: message.theme }));
                 return true;

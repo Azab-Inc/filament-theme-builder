@@ -179,25 +179,43 @@ test.describe("foundation preview integration", () => {
   }) => {
     const requestedUrls: string[] = [];
     const builderRequestedUrls: string[] = [];
+    const navigationRequests: string[] = [];
+    const mutationRequests: string[] = [];
     page.on("request", (request) => requestedUrls.push(request.url()));
     page.on("request", (request) => {
       if (request.frame() === page.mainFrame())
         builderRequestedUrls.push(request.url());
+      if (request.isNavigationRequest()) navigationRequests.push(request.url());
+      if (request.method() !== "GET") mutationRequests.push(request.url());
     });
 
     await page.goto(composeBaseUrl);
+    const previewFrame = page.frame({ url: /\/demo\/admin/ });
+    expect(previewFrame).toBeTruthy();
     await expect(
       page.getByRole("heading", { name: "Foundations" }),
     ).toBeVisible();
 
-    await expect(page.getByLabel("Primary palette base")).toBeVisible();
+    await expect(page.locator("#primary-palette-base")).toBeVisible();
     await expect(page.getByLabel("Primary shade 500 override")).toBeVisible();
+    await expect(page.locator("#spacing-1")).toBeVisible();
+    await expect(page.locator("#border-default-light")).toBeVisible();
+    await expect(page.locator("#border-strong-light")).toBeVisible();
+    await expect(page.locator("#text-primary-light")).toBeVisible();
+    await expect(page.locator("#text-muted-light")).toBeVisible();
+    await expect(page.locator("#text-disabled-light")).toBeVisible();
+    await expect(page.getByLabel("Body font type")).toBeVisible();
+    await expect(page.getByLabel("Body font name")).toBeVisible();
     await expect(
       page.getByText("generated", { exact: true }).first(),
     ).toBeVisible();
-    await expect(page.getByText(/unmapped:/).first()).toBeVisible();
+    await expect(
+      page.getByText("unmapped", { exact: true }).first(),
+    ).toBeVisible();
+    navigationRequests.length = 0;
+    mutationRequests.length = 0;
 
-    await page.getByLabel("Primary palette base").fill("#0f766e");
+    await page.locator("#primary-palette-base").fill("#0f766e");
     await page.getByLabel("Primary shade 500 override").fill("#123456");
     await expect(
       page.getByText("explicit", { exact: true }).first(),
@@ -209,6 +227,51 @@ test.describe("foundation preview integration", () => {
     await expect(
       page.getByRole("button", { name: "Dark mode" }),
     ).toHaveAttribute("aria-pressed", "true");
+    await expect
+      .poll(() =>
+        previewFrame!.evaluate(() =>
+          getComputedStyle(document.documentElement)
+            .getPropertyValue("color-scheme")
+            .trim(),
+        ),
+      )
+      .toBe("dark");
+    await page.getByRole("button", { name: "Light mode" }).click();
+    await expect
+      .poll(() =>
+        previewFrame!.evaluate(() =>
+          getComputedStyle(document.documentElement)
+            .getPropertyValue("color-scheme")
+            .trim(),
+        ),
+      )
+      .toBe("light");
+
+    await page.locator("#spacing-1").fill("20");
+    await page
+      .getByRole("button", { name: "Reset spacing 1", exact: true })
+      .click();
+    await expect(page.locator("#spacing-1")).toHaveValue("4");
+    await page.locator("#border-default-light").fill("#123456");
+    await page
+      .getByRole("button", { name: "Reset border default light" })
+      .click();
+    await expect(page.locator("#border-default-light")).toHaveValue(
+      "var(--gray-200)",
+    );
+    await page.locator("#text-muted-light").fill("#123456");
+    await page.getByRole("button", { name: "Reset text muted light" }).click();
+    await expect(page.locator("#text-muted-light")).toHaveValue(
+      "var(--gray-500)",
+    );
+
+    await page.getByLabel("Body font type").selectOption("curated:Inter");
+    await expect(page.getByLabel("Body font name")).toHaveValue("Inter");
+    await page.getByLabel("Body font type").selectOption("custom");
+    await page.getByLabel("Body font name").fill("Editorial Sans");
+    await page.getByRole("button", { name: "Reset body font" }).click();
+    await expect(page.getByLabel("Body font name")).toHaveValue("System");
+
     await page.getByRole("button", { name: "Compact density" }).click();
     await expect(page.locator("#density")).toHaveValue("compact");
     await page.getByRole("button", { name: "Spacious density" }).click();
@@ -220,14 +283,14 @@ test.describe("foundation preview integration", () => {
     await page.locator("#shadow").selectOption("lg");
     await page.getByRole("button", { name: "Reset body font" }).click();
     await expect(page.getByLabel("Body font name")).toHaveValue("System");
+    expect(navigationRequests).toEqual([]);
+    expect(mutationRequests).toEqual([]);
 
     await expect
       .poll(() => page.evaluate(() => localStorage.getItem("ftb-theme")))
       .toContain('"radius":"lg"');
     await page.reload();
-    await expect(page.getByLabel("Primary palette base")).toHaveValue(
-      "#0f766e",
-    );
+    await expect(page.locator("#primary-palette-base")).toHaveValue("#0f766e");
     await expect(page.locator("#density")).toHaveValue("spacious");
     await expect(page.locator("#radius")).toHaveValue("lg");
     await expect(page.locator("#border-width")).toHaveValue("2");

@@ -2,8 +2,15 @@
 import { computed, onBeforeUnmount, onMounted, ref, toRaw, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 
-import type { Density, PaletteName, PaletteShade, ThemeMode } from '@/models/foundations.model'
+import type {
+  Density,
+  FontChoice,
+  PaletteName,
+  PaletteShade,
+  ThemeMode,
+} from '@/models/foundations.model'
 import { PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
+import { createDefaultFoundationState } from '@/services/foundation-defaults'
 import { useThemeStore } from '@/stores/theme'
 
 const previewUrl = import.meta.env.VITE_DEMO_URL ?? '/demo/admin'
@@ -15,10 +22,42 @@ const paletteShades = PALETTE_SHADES
 const activeMode = ref<ThemeMode>('light')
 const surfaceNames = ['page', 'sidebar', 'topbar', 'card', 'elevated', 'input'] as const
 const typographyNames = ['body', 'heading', 'mono'] as const
+const borderNames = ['default', 'strong'] as const
+const textNames = ['primary', 'muted', 'disabled'] as const
 const radiusOptions = ['none', 'sm', 'md', 'lg', 'xl', 'full'] as const
 const shadowOptions = ['none', 'sm', 'md', 'lg', 'xl'] as const
+const fontChoices: ReadonlyArray<{ value: string; label: string; font?: FontChoice }> = [
+  {
+    value: 'system',
+    label: 'System',
+    font: { kind: 'system', name: 'System', family: 'ui-sans-serif, system-ui, sans-serif' },
+  },
+  {
+    value: 'system-mono',
+    label: 'System Mono',
+    font: {
+      kind: 'system',
+      name: 'System Mono',
+      family:
+        'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    },
+  },
+  {
+    value: 'curated:Inter',
+    label: 'Inter',
+    font: { kind: 'curated', name: 'Inter', family: 'Inter', provider: 'google-fonts' },
+  },
+  {
+    value: 'curated:Roboto',
+    label: 'Roboto',
+    font: { kind: 'curated', name: 'Roboto', family: 'Roboto', provider: 'google-fonts' },
+  },
+  { value: 'custom', label: 'Custom family' },
+]
+const defaultFoundation = createDefaultFoundationState()
 const foundation = computed(() => theme.theme.foundations)
 const resolvedFoundation = computed(() => theme.resolveFoundation(activeMode.value))
+const spacingNames = computed(() => Object.keys(foundation.value.spacing))
 const primaryColor = computed({
   get: () => theme.theme.colors.primary,
   set: (color: string) => theme.setPrimaryColor(color),
@@ -56,6 +95,8 @@ watch(
   { deep: true },
 )
 
+watch(activeMode, postTheme)
+
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
   postTheme()
@@ -75,6 +116,10 @@ function setPaletteBase(name: PaletteName, event: Event): void {
   theme.setPaletteBase(name, (event.target as HTMLInputElement).value)
 }
 
+function resetPaletteBase(name: PaletteName): void {
+  reset(`palettes.${name}.base`)
+}
+
 function shadeValue(name: PaletteName, shade: PaletteShade): string {
   return foundation.value.palettes[name].overrides[shade] ?? ''
 }
@@ -90,6 +135,29 @@ function paletteStatus(name: PaletteName, shade: PaletteShade): 'generated' | 'e
 
 function setMode(mode: ThemeMode): void {
   activeMode.value = mode
+}
+
+function statusFor(
+  path: string,
+): 'generated' | 'inherited' | 'explicit' | 'unmapped' | 'compatibility' {
+  if (path === 'text.disabled' || path === 'surfaces.page') return 'unmapped'
+  if (path === 'density') return 'compatibility'
+  if (/^palettes\.[^.]+\.shades\./.test(path)) return 'generated'
+  const current = getPath(foundation.value, path)
+  const defaultValue = getPath(defaultFoundation, path)
+  return JSON.stringify(current) === JSON.stringify(defaultValue) ? 'inherited' : 'explicit'
+}
+
+function getPath(root: Record<string, unknown>, path: string): unknown {
+  return path
+    .split('.')
+    .reduce<unknown>(
+      (value, key) =>
+        value !== null && typeof value === 'object' && key in value
+          ? (value as Record<string, unknown>)[key]
+          : undefined,
+      root,
+    )
 }
 
 function setDensity(value: Density): void {
@@ -108,6 +176,23 @@ function setFontName(name: 'body' | 'heading' | 'mono', event: Event): void {
   const value = (event.target as HTMLInputElement).value.trim()
   if (!value) return
   theme.setFoundation(`typography.${name}`, { kind: 'custom', name: value, family: value })
+}
+
+function fontSelection(name: 'body' | 'heading' | 'mono'): string {
+  const font = foundation.value.typography[name]
+  if (font.kind === 'custom') return 'custom'
+  if (font.kind === 'curated') return `curated:${font.name}`
+  return font.name === 'System Mono' ? 'system-mono' : 'system'
+}
+
+function setFontChoice(name: 'body' | 'heading' | 'mono', event: Event): void {
+  const selection = (event.target as HTMLSelectElement).value
+  const choice = fontChoices.find((font) => font.value === selection)
+  if (choice?.font) theme.setFoundation(`typography.${name}`, choice.font)
+}
+
+function setModeValue(path: string, event: Event): void {
+  theme.setFoundation(`${path}.${activeMode.value}`, (event.target as HTMLInputElement).value)
 }
 
 function fontName(name: 'body' | 'heading' | 'mono'): string {
@@ -140,7 +225,7 @@ function reset(path: string): void {
 
       <fieldset>
         <legend>Color palettes</legend>
-        <div v-for="name in paletteNames" :key="name" class="foundation-control">
+        <div v-for="name in paletteNames" :key="name" class="foundation-row">
           <label :for="`${name}-palette-base`">{{ name }} palette base</label>
           <input
             :id="`${name}-palette-base`"
@@ -148,12 +233,16 @@ function reset(path: string): void {
             :value="foundation.palettes[name].base"
             @input="setPaletteBase(name, $event)"
           />
-          <span class="foundation-status">generated</span>
-          <label
-            v-for="shade in paletteShades"
-            :key="`${name}-${shade}`"
-            :for="`${name}-shade-${shade}`"
-            >{{ name }} shade {{ shade }} override
+          <span role="status" aria-live="polite">{{ statusFor(`palettes.${name}.base`) }}</span>
+          <button
+            type="button"
+            :aria-label="`Reset ${name} palette base`"
+            @click="resetPaletteBase(name)"
+          >
+            Reset
+          </button>
+          <template v-for="shade in paletteShades" :key="`${name}-${shade}`">
+            <label :for="`${name}-shade-${shade}`">{{ name }} shade {{ shade }} override</label>
             <input
               :id="`${name}-shade-${shade}`"
               type="text"
@@ -161,7 +250,7 @@ function reset(path: string): void {
               :value="shadeValue(name, shade)"
               @input="setPaletteShade(name, shade, $event)"
             />
-            <span class="foundation-status">{{ paletteStatus(name, shade) }}</span>
+            <span role="status" aria-live="polite">{{ paletteStatus(name, shade) }}</span>
             <button
               type="button"
               :aria-label="`Reset ${name} shade ${shade}`"
@@ -169,13 +258,13 @@ function reset(path: string): void {
             >
               Reset
             </button>
-          </label>
+          </template>
         </div>
       </fieldset>
 
       <fieldset>
-        <legend>Surfaces and modes</legend>
-        <div class="foundation-mode" role="group" aria-label="Preview mode">
+        <legend>Surfaces, borders, text, and modes</legend>
+        <div role="group" aria-label="Preview mode">
           <button
             type="button"
             aria-label="Light mode"
@@ -193,20 +282,15 @@ function reset(path: string): void {
             Dark
           </button>
         </div>
-        <label v-for="name in surfaceNames" :key="name" :for="`${name}-surface`"
-          >{{ name }} surface ({{ activeMode }})
+        <div v-for="name in surfaceNames" :key="name" class="foundation-row">
+          <label :for="`${name}-surface`">{{ name }} surface {{ activeMode }}</label>
           <input
             :id="`${name}-surface`"
             type="text"
             :value="resolvedFoundation.surfaces[name]"
-            @input="
-              theme.setFoundation(
-                `surfaces.${name}.${activeMode}`,
-                ($event.target as HTMLInputElement).value,
-              )
-            "
+            @input="setModeValue(`surfaces.${name}`, $event)"
           />
-          <span class="foundation-status">inherited</span>
+          <span role="status" aria-live="polite">{{ statusFor(`surfaces.${name}`) }}</span>
           <button
             type="button"
             :aria-label="`Reset ${name} surface`"
@@ -214,22 +298,60 @@ function reset(path: string): void {
           >
             Reset
           </button>
-        </label>
-        <p class="foundation-status">unmapped: disabled text remains an export/runtime concern.</p>
+        </div>
+        <div v-for="name in borderNames" :key="name" class="foundation-row">
+          <label :for="`border-${name}-${activeMode}`">border {{ name }} {{ activeMode }}</label>
+          <input
+            :id="`border-${name}-${activeMode}`"
+            type="text"
+            :aria-label="`Border ${name} ${activeMode}`"
+            :value="resolvedFoundation.borders[name]"
+            @input="setModeValue(`borders.${name}`, $event)"
+          />
+          <span role="status" aria-live="polite">{{ statusFor(`borders.${name}`) }}</span>
+          <button
+            type="button"
+            :aria-label="`Reset border ${name} ${activeMode}`"
+            @click="reset(`borders.${name}.${activeMode}`)"
+          >
+            Reset
+          </button>
+        </div>
+        <div v-for="name in textNames" :key="name" class="foundation-row">
+          <label :for="`text-${name}-${activeMode}`">text {{ name }} {{ activeMode }}</label>
+          <input
+            :id="`text-${name}-${activeMode}`"
+            type="text"
+            :aria-label="`Text ${name} ${activeMode}`"
+            :value="resolvedFoundation.text[name]"
+            @input="setModeValue(`text.${name}`, $event)"
+          />
+          <span role="status" aria-live="polite">{{ statusFor(`text.${name}`) }}</span>
+          <button
+            type="button"
+            :aria-label="`Reset text ${name} ${activeMode}`"
+            @click="reset(`text.${name}.${activeMode}`)"
+          >
+            Reset
+          </button>
+        </div>
       </fieldset>
 
       <fieldset>
         <legend>Typography</legend>
-        <label v-for="name in typographyNames" :key="name" :for="`${name}-font-name`"
-          >{{ name }} font name
-          <input
-            :id="`${name}-font-name`"
-            type="text"
-            :aria-label="`${name} font name`"
-            :value="fontName(name)"
-            @input="setFontName(name, $event)"
-          />
-          <span class="foundation-status">inherited</span>
+        <div v-for="name in typographyNames" :key="name" class="foundation-row">
+          <label :for="`${name}-font-kind`">{{ name }} font type</label>
+          <select
+            :id="`${name}-font-kind`"
+            :aria-label="`${name} font type`"
+            :value="fontSelection(name)"
+            @change="setFontChoice(name, $event)"
+          >
+            <option v-for="choice in fontChoices" :key="choice.value" :value="choice.value">
+              {{ choice.label }}
+            </option>
+          </select>
+          <span role="status" aria-live="polite">{{ statusFor(`typography.${name}`) }}</span>
           <button
             type="button"
             :aria-label="`Reset ${name} font`"
@@ -237,16 +359,22 @@ function reset(path: string): void {
           >
             Reset
           </button>
-        </label>
-        <p class="foundations__hint">
-          Font names are stored only; the builder never loads or hosts font files.
-        </p>
+          <label :for="`${name}-font-name`">{{ name }} font name</label>
+          <input
+            :id="`${name}-font-name`"
+            type="text"
+            :aria-label="`${name} font name`"
+            :value="fontName(name)"
+            @input="setFontName(name, $event)"
+          />
+        </div>
+        <p>Font names are stored only; the builder never loads or hosts font files.</p>
       </fieldset>
 
       <fieldset>
         <legend>Layout foundations</legend>
-        <label for="density"
-          >Density
+        <div class="foundation-row">
+          <label for="density">Density</label>
           <select
             id="density"
             :value="foundation.density"
@@ -256,19 +384,42 @@ function reset(path: string): void {
             <option value="default">Default</option>
             <option value="spacious">Spacious</option>
           </select>
-        </label>
-        <button type="button" aria-label="Compact density" @click="setDensity('compact')">
-          Compact
-        </button>
-        <button type="button" aria-label="Default density" @click="setDensity('default')">
-          Default
-        </button>
-        <button type="button" aria-label="Spacious density" @click="setDensity('spacious')">
-          Spacious
-        </button>
-        <span class="foundation-status">compatibility: runtime-refresh-required</span>
-        <label for="radius"
-          >Radius
+          <span role="status" aria-live="polite">{{ statusFor('density') }}</span>
+          <button type="button" aria-label="Reset density" @click="reset('density')">Reset</button>
+        </div>
+        <div role="group" aria-label="Density presets">
+          <button type="button" aria-label="Compact density" @click="setDensity('compact')">
+            Compact
+          </button>
+          <button type="button" aria-label="Default density" @click="setDensity('default')">
+            Default
+          </button>
+          <button type="button" aria-label="Spacious density" @click="setDensity('spacious')">
+            Spacious
+          </button>
+        </div>
+        <div v-for="key in spacingNames" :key="key" class="foundation-row">
+          <label :for="`spacing-${key.replace('.', '-')}`">Spacing {{ key }}</label>
+          <input
+            :id="`spacing-${key.replace('.', '-')}`"
+            type="number"
+            min="0"
+            max="256"
+            :aria-label="`Spacing ${key}`"
+            :value="foundation.spacing[key]"
+            @input="setNumberFoundation(`spacing.${key}`, $event)"
+          />
+          <span role="status" aria-live="polite">{{ statusFor(`spacing.${key}`) }}</span>
+          <button
+            type="button"
+            :aria-label="`Reset spacing ${key}`"
+            @click="reset(`spacing.${key}`)"
+          >
+            Reset
+          </button>
+        </div>
+        <div class="foundation-row">
+          <label for="radius">Radius</label>
           <select
             id="radius"
             :value="foundation.radius"
@@ -276,10 +427,11 @@ function reset(path: string): void {
           >
             <option v-for="value in radiusOptions" :key="value" :value="value">{{ value }}</option>
           </select>
+          <span role="status" aria-live="polite">{{ statusFor('radius') }}</span>
           <button type="button" aria-label="Reset radius" @click="reset('radius')">Reset</button>
-        </label>
-        <label for="border-width"
-          >Border width
+        </div>
+        <div class="foundation-row">
+          <label for="border-width">Border width</label>
           <input
             id="border-width"
             type="number"
@@ -288,12 +440,13 @@ function reset(path: string): void {
             :value="foundation.borderWidth"
             @input="setNumberFoundation('borderWidth', $event)"
           />
+          <span role="status" aria-live="polite">{{ statusFor('borderWidth') }}</span>
           <button type="button" aria-label="Reset border width" @click="reset('borderWidth')">
             Reset
           </button>
-        </label>
-        <label for="shadow"
-          >Shadow
+        </div>
+        <div class="foundation-row">
+          <label for="shadow">Shadow</label>
           <select
             id="shadow"
             :value="foundation.shadow"
@@ -301,8 +454,9 @@ function reset(path: string): void {
           >
             <option v-for="value in shadowOptions" :key="value" :value="value">{{ value }}</option>
           </select>
+          <span role="status" aria-live="polite">{{ statusFor('shadow') }}</span>
           <button type="button" aria-label="Reset shadow" @click="reset('shadow')">Reset</button>
-        </label>
+        </div>
       </fieldset>
     </section>
     <iframe
@@ -320,44 +474,6 @@ function reset(path: string): void {
   display: flex;
   flex-direction: column;
   height: 100vh;
-}
-
-.foundations {
-  max-height: 45vh;
-  overflow: auto;
-  padding: 0 1rem 1rem;
-}
-
-.foundations fieldset {
-  display: grid;
-  gap: 0.5rem;
-  margin: 0 0 0.75rem;
-  border: 1px solid #e4e4e7;
-  padding: 0.75rem;
-}
-
-.foundations label,
-.foundation-control {
-  display: grid;
-  grid-template-columns: minmax(8rem, 1fr) minmax(8rem, 1fr) auto auto;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.8rem;
-}
-
-.foundation-control {
-  display: contents;
-}
-
-.foundation-status {
-  color: #71717a;
-  font-size: 0.7rem;
-  text-transform: lowercase;
-}
-
-.foundations__hint {
-  color: #71717a;
-  font-size: 0.75rem;
 }
 
 .preview-shell__header {

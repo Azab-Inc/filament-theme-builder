@@ -33,6 +33,15 @@ describe('App', () => {
     expect(wrapper.get('select[aria-label="Density"], select#density')).toBeTruthy()
     expect(wrapper.get('#body-font-name')).toBeTruthy()
     expect(wrapper.get('button[aria-label="Reset radius"]')).toBeTruthy()
+    expect(wrapper.get('#spacing-1')).toBeTruthy()
+    expect(wrapper.get('#border-default-light')).toBeTruthy()
+    expect(wrapper.get('#border-strong-light')).toBeTruthy()
+    expect(wrapper.get('#text-primary-light')).toBeTruthy()
+    expect(wrapper.get('#text-muted-light')).toBeTruthy()
+    expect(wrapper.get('#text-disabled-light')).toBeTruthy()
+    expect(wrapper.get('#body-font-kind')).toBeTruthy()
+    expect(wrapper.find('[role="status"]').exists()).toBe(true)
+    expect(wrapper.find('label button').exists()).toBe(false)
     expect(wrapper.get('iframe').attributes('title')).toBe('Filament preview')
   })
 
@@ -46,5 +55,33 @@ describe('App', () => {
     expect(wrapper.get('#body-font-name').element).toHaveProperty('value', 'Editorial Sans')
     expect(wrapper.get('button[aria-label="Dark mode"]').attributes('aria-pressed')).toBe('true')
     expect(wrapper.get('#density').element).toHaveProperty('value', 'compact')
+  })
+
+  it('renders every exposed foundation control with an individual reset', async () => {
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+    await wrapper.get('button[aria-label="Light mode"]').trigger('click')
+
+    for (const control of [
+      'primary palette base',
+      'success palette base',
+      'warning palette base',
+      'danger palette base',
+      'info palette base',
+      'gray palette base',
+      'density',
+      'spacing 1',
+      'border default light',
+      'border strong light',
+      'text primary light',
+      'text muted light',
+      'text disabled light',
+      'page surface',
+      'body font',
+      'radius',
+      'border width',
+      'shadow',
+    ]) {
+      expect(wrapper.find(`[aria-label="Reset ${control}"]`).exists(), control).toBe(true)
+    }
   })
 })
