@@ -1,14 +1,19 @@
 import { computed, onScopeDispose, ref, toRaw, watch } from 'vue'
 import { defineStore } from 'pinia'
 
-import type { ThemeState } from '@/models/theme.model'
+import type { ResolveRequest, ResolveResult, ThemeOverride, ThemeState, ThemeStateV2 } from '@/models/theme.model'
+import { createThemeRegistry } from '@/registry/theme-registry'
+import { resolveThemeValue } from '@/services/theme-resolver'
+import { deserializeTheme } from '@/services/theme-serialization'
+import { validateThemeOverride } from '@/services/theme-validation'
 
 const storageKey = 'ftb-theme'
-const defaultTheme: ThemeState = { schemaVersion: 1, colors: { primary: '#6366f1' } }
+const registry = createThemeRegistry()
+const defaultTheme: ThemeStateV2 = { schemaVersion: 2, colors: { primary: '#6366f1' }, overrides: [] }
 
 export const useThemeStore = defineStore('theme', () => {
-  const theme = ref<ThemeState>(restoreTheme())
-  const history = [structuredClone(toRaw(theme.value))]
+  const theme = ref<ThemeStateV2>(restoreTheme())
+  const history = [snapshot(theme.value)]
   const historyIndex = ref(0)
   let applyingHistory = false
   let saveTimer: ReturnType<typeof setTimeout> | undefined
@@ -16,13 +21,13 @@ export const useThemeStore = defineStore('theme', () => {
   watch(theme, (value) => {
     if (!applyingHistory && !sameTheme(history[historyIndex.value]!, value)) {
       history.splice(historyIndex.value + 1)
-      history.push(structuredClone(toRaw(value)))
+      history.push(snapshot(value))
       historyIndex.value = history.length - 1
     }
     if (saveTimer) clearTimeout(saveTimer)
     saveTimer = setTimeout(() => {
       try {
-        localStorage.setItem(storageKey, JSON.stringify(value))
+        localStorage.setItem(storageKey, JSON.stringify(toRaw(value)))
       } catch {
         // Storage may be unavailable or full; editing remains usable.
       }
@@ -34,7 +39,7 @@ export const useThemeStore = defineStore('theme', () => {
     if (saveTimer) clearTimeout(saveTimer)
   })
 
-  function applyTheme(value: ThemeState): void {
+  function applyTheme(value: ThemeStateV2): void {
     applyingHistory = true
     theme.value = structuredClone(value)
     applyingHistory = false
@@ -47,6 +52,28 @@ export const useThemeStore = defineStore('theme', () => {
     setPrimaryColor(color: string): void {
       if (!/^#[\da-f]{6}$/i.test(color) || color === theme.value.colors.primary) return
       theme.value = { ...theme.value, colors: { ...theme.value.colors, primary: color.toLowerCase() } }
+    },
+    setOverride(override: ThemeOverride): void {
+      const candidate = structuredClone(override)
+      if (!validateThemeOverride(candidate, registry).valid) return
+
+      const overrides = theme.value.overrides.filter((existing) => !sameOverrideKey(existing, candidate))
+      overrides.push(candidate)
+      theme.value = { ...theme.value, overrides }
+    },
+    resetOverride(request: ResolveRequest): void {
+      const scope = deepestScope(request)
+      const overrides = theme.value.overrides.filter((override) => !matchesRequest(override, request, scope))
+      if (overrides.length === theme.value.overrides.length) return
+      theme.value = { ...theme.value, overrides }
+    },
+    resolve(request: ResolveRequest): ResolveResult {
+      const explicit = theme.value.overrides.some((override) => override.targetId === request.targetId && override.controlId === request.controlId)
+      if (!explicit && request.targetId === 'global.primary' && request.controlId === 'primary') {
+        const legacyState: ThemeState = { schemaVersion: 1, colors: { primary: theme.value.colors.primary } }
+        return resolveThemeValue(legacyState, registry, request)
+      }
+      return resolveThemeValue(theme.value, registry, request)
     },
     undo(): void {
       if (historyIndex.value > 0) {
@@ -63,12 +90,12 @@ export const useThemeStore = defineStore('theme', () => {
   }
 })
 
-function restoreTheme(): ThemeState {
+function restoreTheme(): ThemeStateV2 {
   try {
     const value = typeof localStorage === 'undefined' ? null : localStorage.getItem(storageKey)
     if (value) {
-      const parsed: unknown = JSON.parse(value)
-      if (isThemeState(parsed)) return structuredClone(parsed)
+      const restored = deserializeTheme(value, registry)
+      if (restored.valid) return migrateToCurrent(restored.state)
     }
   } catch {
     // Invalid or unavailable persisted data falls back to a safe default.
@@ -76,13 +103,44 @@ function restoreTheme(): ThemeState {
   return structuredClone(defaultTheme)
 }
 
-function isThemeState(value: unknown): value is ThemeState {
-  if (typeof value !== 'object' || value === null) return false
-  const candidate = value as Partial<ThemeState>
-  return candidate.schemaVersion === 1 && typeof candidate.colors?.primary === 'string'
-    && /^#[\da-f]{6}$/i.test(candidate.colors.primary)
+function migrateToCurrent(state: ThemeState): ThemeStateV2 {
+  if (state.schemaVersion === 2) return structuredClone(state)
+  return {
+    schemaVersion: 2,
+    colors: { primary: state.colors.primary },
+    overrides: [],
+  }
 }
 
-function sameTheme(left: ThemeState, right: ThemeState): boolean {
-  return left.schemaVersion === right.schemaVersion && left.colors.primary === right.colors.primary
+function deepestScope(request: ResolveRequest): ThemeOverride['scope'] {
+  if (request.stateId !== undefined) return 'state'
+  if (request.variantId !== undefined) return 'variant'
+  if (request.componentId !== undefined) return 'component'
+  return 'global'
+}
+
+function sameOverrideKey(left: ThemeOverride, right: ThemeOverride): boolean {
+  return left.targetId === right.targetId
+    && left.controlId === right.controlId
+    && left.scope === right.scope
+    && left.componentId === right.componentId
+    && left.variantId === right.variantId
+    && left.stateId === right.stateId
+}
+
+function matchesRequest(override: ThemeOverride, request: ResolveRequest, scope: ThemeOverride['scope']): boolean {
+  return override.targetId === request.targetId
+    && override.controlId === request.controlId
+    && override.scope === scope
+    && override.componentId === request.componentId
+    && override.variantId === request.variantId
+    && override.stateId === request.stateId
+}
+
+function sameTheme(left: ThemeStateV2, right: ThemeStateV2): boolean {
+  return JSON.stringify(left) === JSON.stringify(right)
+}
+
+function snapshot(value: ThemeStateV2): ThemeStateV2 {
+  return structuredClone(JSON.parse(JSON.stringify(toRaw(value))) as ThemeStateV2)
 }
