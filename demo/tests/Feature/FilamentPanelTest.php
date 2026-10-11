@@ -32,7 +32,14 @@ class FilamentPanelTest extends TestCase
             ->assertSee('!allowedOrigins.includes(event.origin)', false)
             ->assertSee("'ftb:theme:update'", false)
             ->assertSee('allowedOrigins.includes(event.origin)', false)
-            ->assertSee('event.source !== window.parent', false);
+            ->assertSee('event.source !== window.parent', false)
+            ->assertSee('ftb:preview-compatibility', false)
+            ->assertSee('projection.schemaVersion !== 1', false)
+            ->assertSee("projection.compatibility !== 'filament-5.9'", false)
+            ->assertSee("mapping.mapping !== 'preview-emulatable'", false)
+            ->assertSee('!previewVariables.has(mapping.variable)', false)
+            ->assertSee("message.theme.customCss !== ''", false)
+            ->assertSee('message.theme.schemaVersion === 3', false);
     }
 
     public function test_showcase_index_is_public_but_focused_showcase_pages_require_authentication(): void
