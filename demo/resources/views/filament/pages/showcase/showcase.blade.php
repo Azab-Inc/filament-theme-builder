@@ -39,6 +39,16 @@
         </x-filament::section>
 
         <x-filament::section
+            heading="Demo lifecycle"
+            aria-label="Demo reset notice"
+            description="Demo data resets every 10 minutes."
+        >
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+                Changes to showcase records and temporary uploads are disposable. Persistent shared themes are kept separately.
+            </p>
+        </x-filament::section>
+
+        <x-filament::section
             heading="Controlled tenant presentation"
             description="A safe presentation-only fixture for a future tenant switcher."
             class="lg:col-span-2"

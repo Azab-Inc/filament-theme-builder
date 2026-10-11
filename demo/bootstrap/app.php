@@ -14,7 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withSchedule(function (Schedule $schedule): void {
-        $schedule->command('demo:reset')->everyTenMinutes();
+        $schedule->command('demo:reset')->everyTenMinutes()->withoutOverlapping();
         $schedule->command('shares:cleanup-expired')->everyTenMinutes();
         $schedule->command('uploads:cleanup')->everyTenMinutes();
     })

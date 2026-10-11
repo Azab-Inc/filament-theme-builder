@@ -105,6 +105,19 @@ final class TemporaryUploadStorage
         return $deleted;
     }
 
+    public function clearAll(): int
+    {
+        $deleted = 0;
+
+        foreach ($this->files() as $file) {
+            if (unlink($file->getPathname())) {
+                $deleted++;
+            }
+        }
+
+        return $deleted;
+    }
+
     private function validateMetadata(string $filename, string $mime, int $size): string
     {
         $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));

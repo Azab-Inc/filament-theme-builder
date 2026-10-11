@@ -717,7 +717,7 @@ Allow the public demo to exercise real Filament upload UI while constraining fil
 
 ## FTB-028 — Reset demo state every ten minutes without breaking the showcase
 
-**Status:** ready-for-agent  
+**Status:** in-progress
 **Blocked by:** [FTB-009A](#ftb-009), [FTB-027](#ftb-027)
 
 ### What to build

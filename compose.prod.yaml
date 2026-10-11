@@ -16,6 +16,10 @@ services:
       APP_KEY: ${APP_KEY:-}
       DB_CONNECTION: sqlite
       DB_DATABASE: /var/lib/demo/database.sqlite
+      DEMO_SNAPSHOT_PATH: /var/www/html/database/demo-snapshot.sqlite
+      DEMO_RESET_LOCK_PATH: /var/lib/demo/demo-reset.lock
+      TEMP_UPLOADS_PATH: /var/www/html/storage/app/private/tmp
+      SHARES_DATABASE: /var/lib/shares/shares.sqlite
     volumes: &runtime-volumes
       - demo_db:/var/lib/demo
       - demo_storage:/var/www/html/storage/app/private
@@ -37,6 +41,10 @@ services:
       APP_KEY: ${APP_KEY:-}
       DB_CONNECTION: sqlite
       DB_DATABASE: /var/lib/demo/database.sqlite
+      DEMO_SNAPSHOT_PATH: /var/www/html/database/demo-snapshot.sqlite
+      DEMO_RESET_LOCK_PATH: /var/lib/demo/demo-reset.lock
+      TEMP_UPLOADS_PATH: /var/www/html/storage/app/private/tmp
+      SHARES_DATABASE: /var/lib/shares/shares.sqlite
       OCTANE_SERVER: frankenphp
     volumes: *runtime-volumes
     depends_on:

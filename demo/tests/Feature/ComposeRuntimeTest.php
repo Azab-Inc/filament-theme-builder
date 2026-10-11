@@ -36,8 +36,18 @@ class ComposeRuntimeTest extends TestCase
         }
     }
 
+    public function test_demo_reset_schedule_is_single_instance_safe(): void
+    {
+        $this->artisan('schedule:list')
+            ->expectsOutputToContain('php artisan demo:reset')
+            ->expectsOutputToContain('*/10 * * * *')
+            ->assertExitCode(0);
+    }
+
     public function test_maintenance_commands_are_observable_when_their_domain_storage_is_unconfigured(): void
     {
+        Config::set('maintenance.demo_snapshot_path', '');
+
         $this->artisan('demo:reset')
             ->expectsOutputToContain('skipped')
             ->assertExitCode(0);

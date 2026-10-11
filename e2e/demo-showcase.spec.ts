@@ -55,6 +55,7 @@ test.describe('demo showcase panel identity and navigation', () => {
     await expect(showcaseTabs.getByRole('link', { name: 'Forms & Schemas', exact: true })).toBeVisible()
     await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toContainText('Showcase')
     await expect(page.getByRole('link', { name: 'Showcase', exact: true })).toHaveAttribute('aria-current', 'page')
+    await expect(page.getByRole('region', { name: 'Demo reset notice' })).toContainText('Demo data resets every 10 minutes')
 
     await page.setViewportSize({ width: 390, height: 844 })
     await expect(page.getByRole('heading', { name: 'Showcase', exact: true })).toBeVisible()
