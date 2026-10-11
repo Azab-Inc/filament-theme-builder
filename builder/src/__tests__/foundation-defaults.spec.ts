@@ -26,10 +26,16 @@ describe('foundation defaults', () => {
     expect(state.palettes.danger.base).toBe('#ef4444')
     expect(state.palettes.info.base).toBe('#3b82f6')
     expect(state.palettes.gray.base).toBe('#6b7280')
-    expect(state.palettes.primary.shades).toEqual({})
+    for (const palette of Object.values(state.palettes)) {
+      expect(Object.keys(palette.shades).map(Number)).toEqual(PALETTE_SHADES)
+      expect(Object.values(palette.shades)).toEqual(Array(PALETTE_SHADES.length).fill(palette.base))
+    }
     expect(state.typography.body).toEqual({ kind: 'system', name: 'System', family: 'ui-sans-serif, system-ui, sans-serif' })
     expect(state.typography.heading).toEqual(state.typography.body)
     expect(state.typography.mono).toEqual({ kind: 'system', name: 'System Mono', family: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' })
+    expect(state.typography.body).not.toBe(state.typography.heading)
+    expect(state.typography.body).not.toBe(state.typography.mono)
+    expect(state.typography.heading).not.toBe(state.typography.mono)
     expect(state.surfaces.page).toEqual({ light: 'var(--gray-50)', dark: 'var(--gray-900)' })
     expect(state.surfaces.sidebar).toEqual({ light: '#ffffff', dark: 'var(--gray-800)' })
     expect(state.surfaces.topbar).toEqual({ light: '#ffffff', dark: 'var(--gray-800)' })
@@ -80,5 +86,14 @@ describe('foundation defaults', () => {
     expect(second.foundations.surfaces.page.dark).toBe('var(--gray-900)')
     expect(second.foundations.typography.body.name).toBe('System')
     expect(createDefaultFoundationState().palettes.primary.base).toBe('#6366f1')
+  })
+
+  it('keeps font choices independently mutable within a default foundation state', () => {
+    const state = createDefaultFoundationState()
+
+    state.typography.body.name = 'Body override'
+
+    expect(state.typography.heading.name).toBe('System')
+    expect(state.typography.mono.name).toBe('System Mono')
   })
 })

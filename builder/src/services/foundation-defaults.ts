@@ -1,5 +1,5 @@
-import type { Density, DensityPreset, FoundationState, FoundationStateV3, PaletteName } from '@/models/foundations.model'
-import { PALETTE_NAMES } from '@/models/foundations.model'
+import type { Density, DensityPreset, FoundationState, FoundationStateV3, PaletteName, PaletteShade } from '@/models/foundations.model'
+import { PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
 
 const PALETTE_BASES: Record<PaletteName, string> = {
   primary: '#6366f1',
@@ -16,6 +16,12 @@ const SYSTEM_BODY_FONT = Object.freeze({
   family: 'ui-sans-serif, system-ui, sans-serif',
 })
 
+const SYSTEM_HEADING_FONT = Object.freeze({
+  kind: 'system' as const,
+  name: 'System',
+  family: 'ui-sans-serif, system-ui, sans-serif',
+})
+
 const SYSTEM_MONO_FONT = Object.freeze({
   kind: 'system' as const,
   name: 'System Mono',
@@ -23,7 +29,14 @@ const SYSTEM_MONO_FONT = Object.freeze({
 })
 
 const FOUNDATION_DEFAULTS: FoundationState = deepFreeze({
-  palettes: Object.fromEntries(PALETTE_NAMES.map((name) => [name, { base: PALETTE_BASES[name], shades: {}, overrides: {} }])) as FoundationState['palettes'],
+  palettes: Object.fromEntries(PALETTE_NAMES.map((name) => {
+    const base = PALETTE_BASES[name]
+
+    // Until Task 2 supplies generated shades, base-valued entries make the full canonical key set explicit without inventing colors.
+    const shades = Object.fromEntries(PALETTE_SHADES.map((shade) => [shade, base])) as Record<PaletteShade, string>
+
+    return [name, { base, shades, overrides: {} }]
+  })) as FoundationState['palettes'],
   surfaces: {
     page: { light: 'var(--gray-50)', dark: 'var(--gray-900)' },
     sidebar: { light: '#ffffff', dark: 'var(--gray-800)' },
@@ -43,7 +56,7 @@ const FOUNDATION_DEFAULTS: FoundationState = deepFreeze({
   },
   typography: {
     body: SYSTEM_BODY_FONT,
-    heading: SYSTEM_BODY_FONT,
+    heading: SYSTEM_HEADING_FONT,
     mono: SYSTEM_MONO_FONT,
   },
   spacing: { '0': 0, px: 1, '0.5': 2, '1': 4, '1.5': 6, '2': 8, '3': 12, '4': 16, '6': 24, '8': 32 },
