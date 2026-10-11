@@ -14,7 +14,7 @@
 
 ## Dependency map
 
-Demo-showcase delivery order: **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015**. The demo-complete gate is not yet satisfied: FTB-011/013/014/015 are in progress, with showcase slices implemented but acceptance criteria still outstanding; FTB-009A/B/010 are done. FTB-012 remains partial solely for theme-density integration and is not a blocker. Remaining builder feature work remains blocked by this gate, completion of FTB-016/017/018, and FTB-003. Operational FTB-027/028 remain separate pending demo work and retain their independent statuses/prerequisites. Phase 1 owns the branded existing dashboard shell, four commerce widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and representative badges. FTB-015 owns the Showcase navigation/index, search/profile/authentication/tenant surfaces and integrates (does not duplicate) Phase 1 widgets/navigation. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
+Demo-showcase delivery order: **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015**. The demo-complete gate is not yet satisfied: FTB-011/013/014/015 are in progress, with showcase slices implemented but acceptance criteria still outstanding; FTB-009A/B/010 are done. FTB-012 remains partial solely for theme-density integration and is not a blocker. Remaining builder feature work remains blocked by this gate, completion of FTB-016/017/018, and FTB-003. Operational FTB-027 is complete; FTB-028 remains separate pending demo work with its independent status/prerequisites. Phase 1 owns the branded existing dashboard shell, four commerce widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and representative badges. FTB-015 owns the Showcase navigation/index, search/profile/authentication/tenant surfaces and integrates (does not duplicate) Phase 1 widgets/navigation. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
 
 ```text
 FTB-001
@@ -693,7 +693,7 @@ Make export a complete handoff from the visual builder into a user's real Filame
 
 ## FTB-027 — Make demo uploads real but safely bounded
 
-**Status:** in-progress
+**Status:** done
 **Blocked by:** [FTB-002](#ftb-002)
 
 ### What to build
@@ -702,14 +702,14 @@ Allow the public demo to exercise real Filament upload UI while constraining fil
 
 ### Acceptance criteria
 
-- [ ] JPEG, PNG, WebP, and PDF uploads are accepted.
-- [ ] Other file types are rejected.
-- [ ] Maximum upload size is 5 MB per file.
-- [ ] Maximum temporary storage attributable to one anonymous user is 25 MB.
-- [ ] Global temporary upload storage never intentionally exceeds 500 MB.
-- [ ] When storage approaches the ceiling, oldest files are purged until usage is approximately 400 MB.
-- [ ] Upload paths cannot execute uploaded content as application code.
-- [ ] Quota/error states are understandable in the UI.
+- [x] JPEG, PNG, WebP, and PDF uploads are accepted.
+- [x] Other file types are rejected.
+- [x] Maximum upload size is 5 MB per file.
+- [x] Maximum temporary storage attributable to one anonymous user is 25 MB.
+- [x] Global temporary upload storage never intentionally exceeds 500 MB.
+- [x] When storage approaches the ceiling, oldest files are purged until usage is approximately 400 MB.
+- [x] Upload paths cannot execute uploaded content as application code.
+- [x] Quota/error states are understandable in the UI.
 
 ---
 

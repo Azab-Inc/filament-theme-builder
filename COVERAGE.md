@@ -57,6 +57,22 @@ Identifier: `nested-resource`
 - `e2e/smoke.spec.ts` covers the builder iframe, public panel, login/logout,
   preview message origin filtering, and Compose gateway/API/asset behavior.
 
+## FTB-027 upload safety coverage
+
+Identifier: `ftb-027-upload-safety`
+
+- `TemporaryUploadStorageTest` covers all four allowed MIME/extension pairs,
+  rejected PHP/SVG/executable pairs, the 5 MB service boundary, anonymous
+  owner quota, oldest-first global purge, generated private paths, and file
+  permissions using real temporary files.
+- `MaintenanceConfigurationTest` asserts the production defaults of 5 MB per
+  file, 25 MB per anonymous owner, 500 MB global storage, 400 MB cleanup
+  target, and the private default root.
+- `FilamentPanelTest` proves the anonymous upload fixture is public while the
+  broader forms showcase remains protected.
+- `e2e/demo-showcase.spec.ts` covers invalid MIME feedback and, on the explicit
+  test-safe Compose limits, anonymous quota and oversized-file UI errors.
+
 Relation Managers and Nested Resources are deliberately recorded as separate
 categories above; neither substitutes for a core entity resource.
 

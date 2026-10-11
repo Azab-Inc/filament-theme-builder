@@ -11,10 +11,10 @@
 - `docs/ai-operability/demo-showcase-capability-inventory.md` — records the UI-only anonymous upload capability and its shared safety boundary.
 - `demo/app/Console/Commands/CleanupTemporaryUploadsCommand.php` — delegates recursive cleanup to the storage boundary.
 - `demo/config/maintenance.php` — private default storage path and 5 MB / 25 MB / 500 MB / 400 MB limits.
-- `demo/tests/Feature/Uploads/TemporaryUploadStorageTest.php` — real temporary-files regression coverage.
+- `demo/tests/Feature/Uploads/TemporaryUploadStorageTest.php` and `demo/tests/Feature/Uploads/MaintenanceConfigurationTest.php` — real temporary-files and production-default regression coverage.
 - `demo/tests/Feature/Filament/Showcase/FormsShowcaseTest.php` — Livewire/page regression assertions for the real upload field and helper text.
 - `e2e/demo-showcase.spec.ts` — Playwright coverage for accepted PDF upload, rejected executable MIME/type, and existing forms behavior.
-- `TICKETS.md` — FTB-027 status changed to `in-progress`.
+- `TICKETS.md` — FTB-027 status changed to `done`, with all eight acceptance criteria checked off.
 
 `.playwright-mcp/` was not modified.
 
@@ -70,7 +70,7 @@ curl --fail --silent http://127.0.0.1:4175/api/health
 
 ## Unresolved criteria
 
-FTB-027 remains `in-progress` in `TICKETS.md`. The original unresolved browser quota concern is addressed through the explicit test-safe Compose override below; the exact production-sized 25 MB browser run is intentionally not used because the review contract permits an equivalent configured boundary. The showcase page itself requires the seeded demo login, so the browser evidence exercises the same owner-quota path with the authenticated demo session rather than an unauthenticated route.
+The exact production-sized 25 MB browser run is intentionally not used because the review contract permits an equivalent configured boundary. The browser evidence uses the public `/demo/admin/anonymous-upload` fixture after clearing cookies, so the owner is the anonymous browser session, not an authenticated user. Production defaults remain asserted separately by `MaintenanceConfigurationTest`.
 
 ## Round 1 review fix
 
@@ -130,3 +130,41 @@ COMPOSE_E2E=1 DEMO_UPLOAD_TEST_LIMITS=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 D
 The test-safe overrides are explicit in the command and retain production defaults when omitted.
 
 The focused covering PHP suite passed after Round 2, along with Pint, PHPStan, Compose config validation, default-limit verification, and health checks. The full `php artisan test` run had three unrelated baseline failures in existing AI-operability assertions/path assumptions: the ticket-sequence assertion, the inventory assertion when resolved from the container's `/var/www` path, and the existing commerce inventory path assertion. The newly added public-route test and all upload/forms/runtime tests passed.
+
+## Final acceptance audit
+
+All eight FTB-027 criteria are now evidenced:
+
+1. All four allowed formats: `TemporaryUploadStorageTest` data set `jpeg`, `png`, `webp`, and `pdf`; native FileUpload MIME list.
+2. Rejected types: data sets for PHP, SVG, and executable MIME/extension pairs; Playwright invalid-type feedback.
+3. 5 MB per-file limit: production-default configuration assertion, service boundary test, and anonymous UI oversize feedback using the explicit test-safe equivalent boundary.
+4. 25 MB anonymous-user quota: production-default configuration assertion, service quota test, and cookie-cleared anonymous Playwright submission flow using the explicit test-safe equivalent boundary.
+5. 500 MB global ceiling: production-default configuration assertion and bounded global-capacity service path.
+6. Approximately 400 MB purge target: oldest-first real-file purge test verifies the old file is removed and usage is bounded.
+7. Non-executable storage: private default root, generated allowlisted extensions, random safe paths, and `0640` file permissions are asserted.
+8. Understandable UI errors: anonymous Playwright assertions cover quota and oversize messages; invalid MIME feedback is also asserted.
+
+No acceptance gaps remain. The full-suite failures documented above are unrelated existing AI-operability path/contract failures and do not affect the FTB-027 covering tests.
+
+## Final audit verification
+
+```text
+docker compose -f compose.dev.yaml run --rm --no-deps demo-php php artisan test tests/Feature/Uploads/MaintenanceConfigurationTest.php
+PASS — 2 tests, 6 assertions
+
+docker compose -f compose.dev.yaml run --rm --no-deps -e TEMP_UPLOADS_PATH=/tmp/ftb-no-default-upload-path demo-php php artisan test tests/Feature/ComposeRuntimeTest.php
+PASS — 7 tests, 24 assertions
+
+docker compose -f compose.dev.yaml run --rm --no-deps demo-php vendor/bin/pint --test ...
+PASS — 10 files
+
+docker compose -f compose.dev.yaml run --rm --no-deps demo-php vendor/bin/phpstan analyse --memory-limit=512M
+[OK] No errors
+
+TEMP_UPLOAD_OWNER_QUOTA_BYTES=12288 TEMP_UPLOAD_MAX_BYTES=16384 docker compose -f compose.dev.yaml up -d
+COMPOSE_E2E=1 DEMO_UPLOAD_TEST_LIMITS=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 DEMO_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/demo-showcase.spec.ts --grep "temporary quota|five megabyte"
+2 passed
+
+docker compose -f compose.dev.yaml up -d && docker compose -f compose.dev.yaml ps && curl --fail --silent http://127.0.0.1:4175/api/health
+All Compose services healthy/running; {"status":"ok"}
+```

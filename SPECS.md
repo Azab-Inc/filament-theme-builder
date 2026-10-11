@@ -8,7 +8,7 @@
 
 This is the implementation contract. PRD.md defines the product problem and outcomes. TICKETS.md contains the executable vertical slices. Each section below links to the ticket or tickets that implement it.
 
-Remaining builder feature work follows the demo-complete gate recorded in TICKETS.md and remains blocked: FTB-009A/B/010 are done, while FTB-011/013/014/015 are in progress because their implemented showcase slices do not satisfy all acceptance criteria (including registry/inheritance, coverage, and forced-state work). FTB-012 remains partial only for theme-density integration and is not a blocker. FTB-016/017/018 requirements must also be resolved before builder work resumes. Operational FTB-027/028 remain separate pending demo work with independent status/prerequisites.
+Remaining builder feature work follows the demo-complete gate recorded in TICKETS.md and remains blocked: FTB-009A/B/010 are done, while FTB-011/013/014/015 are in progress because their implemented showcase slices do not satisfy all acceptance criteria (including registry/inheritance, coverage, and forced-state work). FTB-012 remains partial only for theme-density integration and is not a blocker. FTB-016/017/018 requirements must also be resolved before builder work resumes. Operational FTB-027 is complete; FTB-028 remains separate pending demo work with its independent status/prerequisites.
 
 ## 1. Repository and application boundary
 
