@@ -14,7 +14,7 @@
 
 ## Dependency map
 
-Demo-showcase delivery order: **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015**. The demo-complete gate is satisfied when FTB-009A/B/010/011/013/014/015 are done; FTB-012 remains partial solely for theme-density integration and is not a blocker. Remaining builder feature work remains blocked by this gate and FTB-003. FTB-016/017/018 and operational FTB-027/028 remain separate pending demo work. Phase 1 owns the branded existing dashboard shell, four commerce widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and representative badges. FTB-015 owns the Showcase navigation/index, search/profile/authentication/tenant surfaces and integrates (does not duplicate) Phase 1 widgets/navigation. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
+Demo-showcase delivery order: **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015**. The demo-complete gate is not yet satisfied: FTB-011/013/014/015 are in progress, with showcase slices implemented but acceptance criteria still outstanding; FTB-009A/B/010 are done. FTB-012 remains partial solely for theme-density integration and is not a blocker. Remaining builder feature work remains blocked by this gate, completion of FTB-016/017/018, and FTB-003. Operational FTB-027/028 remain separate pending demo work and retain their independent statuses/prerequisites. Phase 1 owns the branded existing dashboard shell, four commerce widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and representative badges. FTB-015 owns the Showcase navigation/index, search/profile/authentication/tenant surfaces and integrates (does not duplicate) Phase 1 widgets/navigation. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
 
 ```text
 FTB-001
@@ -314,7 +314,7 @@ Use the e-commerce model to demonstrate Filament relationship UI as real workflo
 
 ## FTB-011 — Cover Forms and Schemas visually
 
-**Status:** done
+**Status:** in-progress
 **Blocked by:** [FTB-005](#ftb-005), [FTB-006](#ftb-006), [FTB-002](#ftb-002)
 
 ### What to build
@@ -331,6 +331,8 @@ Create a Forms & Schemas showcase containing every visually distinct first-party
 - [ ] Duplicate API permutations that render identically are not added just to inflate coverage.
 
 Implementation: `0aac781` (`Feature: add forms and schemas showcase`); verification: [`FormsShowcaseTest`](./demo/tests/Feature/Filament/Showcase/FormsShowcaseTest.php), `e2e/demo-showcase.spec.ts`.
+
+Remaining: complete full first-party form/schema fixture and registry coverage, including representative inheritance demonstration; do not mark the unfinished criteria above complete prematurely.
 
 ---
 
@@ -364,7 +366,7 @@ Implementation: `293b7aa` (`Feature: add tables showcase fixtures`); verificatio
 
 ## FTB-013 — Cover Infolists visually
 
-**Status:** done
+**Status:** in-progress
 **Blocked by:** [FTB-005](#ftb-005), [FTB-006](#ftb-006), [FTB-002](#ftb-002)
 
 ### What to build
@@ -381,13 +383,15 @@ Create an Infolists showcase containing every visually distinct first-party entr
 
 Implementation: `31c4110` (`Feature: add infolists showcase fixtures`); verification: [`InfolistsShowcaseTest`](./demo/tests/Feature/Filament/Showcase/InfolistsShowcaseTest.php), `e2e/demo-showcase.spec.ts`.
 
+Remaining: complete visually distinct first-party entry/layout coverage and registry coverage, then verify light/dark and global foundation behavior; do not mark unfinished criteria complete prematurely.
+
 ---
 
 <a id="ftb-014"></a>
 
 ## FTB-014 — Cover Actions, Modals, and Notifications visually
 
-**Status:** done
+**Status:** in-progress
 **Blocked by:** [FTB-005](#ftb-005), [FTB-006](#ftb-006), [FTB-002](#ftb-002)
 
 ### What to build
@@ -404,13 +408,15 @@ Create showcase fixtures and registry coverage for Filament actions, buttons, dr
 
 Implementation: `ca160d1` (`Feature: add actions modals and notifications showcase`); verification: [`ActionsShowcaseTest`](./demo/tests/Feature/Filament/Showcase/ActionsShowcaseTest.php), `e2e/demo-showcase.spec.ts`.
 
+Remaining: complete registry component/variant/state coverage and deterministic forced-visible notification/modal support; do not mark unfinished criteria complete prematurely.
+
 ---
 
 <a id="ftb-015"></a>
 
 ## FTB-015 — Cover Widgets, Navigation, Search, and auth/tenant UI
 
-**Status:** done
+**Status:** in-progress
 **Blocked by:** [FTB-005](#ftb-005), [FTB-006](#ftb-006), [FTB-002](#ftb-002)
 
 ### What to build
@@ -428,6 +434,8 @@ Add visually distinct first-party widgets, sidebar/topbar/navigation patterns, g
 - [ ] The showcase does not require visitors to actually belong to tenants or maintain personal accounts.
 
 Implementation: `388c545` (`Feature: integrate Filament showcase navigation surfaces`); verification: [`NavigationShowcaseTest`](./demo/tests/Feature/Filament/Showcase/NavigationShowcaseTest.php), `e2e/demo-showcase.spec.ts`.
+
+Remaining: complete full surface registry coverage and remaining widget/navigation/auth/tenant acceptance criteria; FTB-016 owns deterministic forced states. Do not mark unfinished criteria complete prematurely.
 
 ---
 
