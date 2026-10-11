@@ -25,3 +25,19 @@
 ## Concerns
 
 - The generated `.playwright-mcp/` directory and existing `progress.md` modification were not part of this task and were not staged.
+
+## Review fixes
+
+- Replaced static notification articles with native Filament notifications triggered by page actions. Browser coverage now verifies native placement, success/danger/warning/info status classes, title/body/actions, close behavior, persistent metadata, and transient duration without sleeps.
+- Removed the custom loading target so Filament's generated action loading indicator targets the real `mountAction('loading')` request. Browser coverage verifies the native loading attributes and target indicator.
+- Expanded modal coverage for native header/description content, large and medium widths, footer submit/cancel/extra actions, slide-over presentation, read-only infolist content, and absence of a submit action in the read-only modal.
+- Added focus containment and restoration assertions for Escape and close behavior, while preserving cancel-versus-submit validation coverage and read-only defaults.
+
+## Review-fix verification
+
+- `cd demo && php artisan test --filter=ActionsShowcaseTest`: passed, 5 tests / 81 assertions.
+- `cd demo && php artisan test`: passed, 103 tests / 1127 assertions.
+- `cd demo && ./vendor/bin/pint --test`: passed.
+- `cd demo && ./vendor/bin/phpstan analyse`: passed, 0 errors.
+- `npx playwright test e2e/demo-showcase.spec.ts --grep 'actions|notifications' --workers=1`: passed, 3 tests.
+- `npx playwright test e2e/demo-showcase.spec.ts --workers=1`: passed, 15 tests.

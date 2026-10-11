@@ -90,7 +90,6 @@ class ActionsShowcase extends Page
                 ->disabled(),
             Action::make('loading')
                 ->label('Loading action')
-                ->livewireTarget('loading')
                 ->action(function (): void {
                     $this->notify('Loading fixture completed.', 'success');
                 }),

@@ -376,6 +376,10 @@ test.describe('actions and notifications showcase', () => {
       await expect(page.getByText(label, { exact: true })).toBeVisible()
     }
     await expect(page.getByRole('button', { name: 'Disabled action' })).toBeDisabled()
+    const loadingAction = page.getByRole('button', { name: 'Loading action' })
+    await expect(loadingAction).toHaveAttribute('wire:loading.attr', 'disabled')
+    await expect(loadingAction).toHaveAttribute('wire:click', "mountAction('loading')")
+    await expect(loadingAction.locator('[wire\\:target="mountAction(\'loading\')"]')).toBeAttached()
     await expect(page.getByRole('button', { name: 'Icon-only action' })).toHaveAttribute('aria-label', 'Icon-only action')
     await expect(page.getByRole('button', { name: 'Tooltip action' })).toHaveAttribute('x-tooltip', /Explains this fixture action/)
     await expect(page.getByRole('button', { name: 'Action group' })).toBeVisible()
@@ -387,9 +391,11 @@ test.describe('actions and notifications showcase', () => {
     await page.getByRole('button', { name: 'Confirmation modal' }).click()
     const confirmation = page.locator('.fi-modal.fi-modal-open')
     await expect(confirmation).toContainText('This fixture is read-only.')
+    expect(await confirmation.evaluate((element) => element.contains(document.activeElement))).toBe(true)
     await expect(page.getByRole('button', { name: /Cancel/ })).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(page.locator('.fi-modal.fi-modal-open')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Confirmation modal' })).toBeFocused()
 
     await page.getByRole('button', { name: 'Form modal' }).click()
     const formDialog = page.locator('.fi-modal.fi-modal-open')
@@ -410,18 +416,38 @@ test.describe('actions and notifications showcase', () => {
     const details = page.locator('.fi-modal.fi-modal-open')
     await expect(details.locator('.fi-modal-window')).toHaveClass(/fi-width-md/)
     await expect(details).toContainText('DEMO-ACTION-001')
+    await expect(details).not.toContainText('Submit')
     await expect(details.getByRole('button')).toHaveCount(2)
     await details.getByRole('button', { name: /Close/ }).last().click()
+    await expect(page.getByRole('button', { name: 'Read-only details' })).toBeFocused()
   })
 
   test('shows deterministic notification statuses and content without relying on toast timing', async ({ page }) => {
     await page.goto(`${demoBaseUrl}/demo/admin/notifications-showcase`)
     await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible()
-    for (const title of ['Success notification', 'Danger notification', 'Warning notification', 'Info notification', 'Persistent fixture notification', 'Transient fixture notification']) {
-      await expect(page.getByText(title, { exact: true })).toBeVisible()
+    for (const [button, status, title, body] of [
+      ['Show success notification', 'success', 'Success notification', 'A successful local fixture event.'],
+      ['Show danger notification', 'danger', 'Danger notification', 'A dangerous local fixture event.'],
+      ['Show warning notification', 'warning', 'Warning notification', 'A warning local fixture event.'],
+      ['Show info notification', 'info', 'Info notification', 'An informational local fixture event.'],
+    ] as const) {
+      await page.getByRole('button', { name: button }).click()
+      await expect(page.locator('.fi-no.fi-align-right.fi-vertical-align-start')).toBeVisible()
+      const notification = page.locator(`.fi-no-notification.fi-status-${status}`).last()
+      await expect(notification).toContainText(title)
+      await expect(notification).toContainText(body)
+      await notification.getByRole('button', { name: /close/i }).click()
     }
-    await page.getByRole('button', { name: 'Show success notification' }).click()
-    await expect(page.getByText('Last notification: Success notification', { exact: true })).toBeVisible()
-    await expect(page.locator('.fi-no')).toContainText('A successful local fixture event.')
+
+    await page.getByRole('button', { name: 'Show persistent notification' }).click()
+    const persistent = page.locator('.fi-no-notification').filter({ hasText: 'Persistent fixture notification' })
+    await expect(persistent).toHaveAttribute('x-data', /duration.*persistent/)
+    await expect(persistent).toBeVisible()
+    await persistent.getByRole('button', { name: /close/i }).click()
+
+    await page.getByRole('button', { name: 'Show transient notification' }).click()
+    const transient = page.locator('.fi-no-notification').filter({ hasText: 'Transient fixture notification' })
+    await expect(transient).toHaveAttribute('x-data', /duration.*5000/)
+    await expect(transient).toBeVisible()
   })
 })
