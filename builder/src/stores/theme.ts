@@ -1,4 +1,4 @@
-import { computed, onScopeDispose, ref, toRaw, watch } from 'vue'
+import { computed, onScopeDispose, readonly, ref, toRaw, watch } from 'vue'
 import { defineStore } from 'pinia'
 
 import type { Density, PaletteName, PaletteShade, ResolvedFoundation, ThemeMode } from '@/models/foundations.model'
@@ -53,7 +53,7 @@ export const useThemeStore = defineStore('theme', () => {
   }
 
   return {
-    theme,
+    theme: readonly(theme),
     canUndo: computed(() => historyIndex.value > 0),
     canRedo: computed(() => historyIndex.value < history.length - 1),
     setPrimaryColor(color: string): void {

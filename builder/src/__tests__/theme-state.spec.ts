@@ -178,6 +178,20 @@ describe('theme state', () => {
     expect(store.theme.foundations.palettes.primary.shades[500]).toBe(original)
   })
 
+  it('prevents callers from mutating exposed canonical state directly', () => {
+    vi.useFakeTimers()
+    const store = useThemeStore()
+    const original = store.theme.foundations.palettes.primary.shades[500]
+
+    const changed = Reflect.set(store.theme.foundations.palettes.primary.shades, 500, '#ffffff')
+
+    expect(changed).toBe(true)
+    expect(store.theme.foundations.palettes.primary.shades[500]).toBe(original)
+    expect(store.canUndo).toBe(false)
+    vi.advanceTimersByTime(300)
+    expect(localStorage.getItem('ftb-theme')).toBeNull()
+  })
+
   it('keeps palette derivation consistent when a base is changed through setFoundation', () => {
     const store = useThemeStore()
 
