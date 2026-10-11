@@ -72,9 +72,42 @@ describe('validateFoundationState', () => {
     }, 'duplicate-override', 'overrides[1]')
   })
 
+  it.each([
+    ['overrides[0].targetId', { targetId: 12 }],
+    ['overrides[0].scope', { scope: 'invalid' }],
+    ['overrides[0].value', { value: { unsafe: true } }],
+    ['overrides[0].componentId', { componentId: 12 }],
+  ])('rejects malformed override field at %s', (path, change) => {
+    const state = validState()
+    const override = { targetId: 'button.primary', controlId: 'background', scope: 'global', value: '#123456', ...change }
+
+    expectError({
+      schemaVersion: 3,
+      colors: { primary: '#6366f1' },
+      foundations: state,
+      customCss: '',
+      overrides: [override],
+    }, 'invalid-value', path)
+  })
+
+  it.each(['<style>body{color:red}</style>', '<script>alert(1)</script>', 'url(https://example.test)', '@import url(font.css)', 'body { color: red; }'])('rejects unsafe custom CSS %s', (customCss) => {
+    const state = validState()
+
+    expectError({ schemaVersion: 3, colors: { primary: '#6366f1' }, foundations: state, customCss, overrides: [] }, 'invalid-value', 'customCss')
+  })
+
+  it('rejects missing required foundation sections and fixed-spacing violations', () => {
+    const state = validState()
+    const { text: _text, ...missingText } = state
+    expectError(missingText, 'invalid-value', 'text')
+    expectError({ ...state, spacing: { ...state.spacing, '9': 36 } }, 'unknown-key', 'spacing.9')
+    expectError({ ...state, spacing: { ...state.spacing, '4': -1 } }, 'invalid-value', 'spacing.4')
+    expectError({ ...state, spacing: { ...state.spacing, '4': 257 } }, 'invalid-value', 'spacing.4')
+  })
+
   it('rejects unsupported mapping identifiers without coercing them', () => {
-    expect(validateFoundationMapping('surface.page')).toMatchObject({ valid: false, code: 'unsupported-mapping', path: 'mapping' })
-    expect(validateFoundationMapping('palette.primary.base')).toMatchObject({ valid: true })
+    expect(validateFoundationMapping('mapping.does-not-exist', validState())).toMatchObject({ valid: false, code: 'unsupported-mapping', path: 'mapping' })
+    expect(validateFoundationMapping('palette.primary.base', validState())).toMatchObject({ valid: true, mapping: { mapping: 'preview-emulatable' } })
   })
 
   it('keeps the canonical palette and shade allowlists explicit', () => {
