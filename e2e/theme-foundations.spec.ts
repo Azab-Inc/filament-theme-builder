@@ -133,9 +133,10 @@ test.describe("foundation preview integration", () => {
     const message = (
       mapping: Record<string, unknown>,
       mode: "light" | "dark",
+      overrides: Record<string, unknown>[] = [],
     ) =>
       page.evaluate(
-        ({ mapping, mode, targetOrigin, foundations }) => {
+        ({ mapping, mode, targetOrigin, foundations, overrides }) => {
           const target = document.querySelector<HTMLIFrameElement>(
             'iframe[title="Filament preview"]',
           )!.contentWindow!;
@@ -147,7 +148,7 @@ test.describe("foundation preview integration", () => {
                 schemaVersion: 3,
                 colors: { primary: "#6366f1" },
                 foundations,
-                overrides: [],
+                overrides,
                 customCss: "",
               },
               projection: {
@@ -160,7 +161,7 @@ test.describe("foundation preview integration", () => {
             targetOrigin,
           );
         },
-        { mapping, mode, targetOrigin, foundations: validFoundations },
+        { mapping, mode, targetOrigin, foundations: validFoundations, overrides },
       );
 
     await message(
@@ -180,6 +181,45 @@ test.describe("foundation preview integration", () => {
       )
       .toBe(0);
     expect(await previewFrame!.locator("#ftb-managed-theme").count()).toBe(0);
+
+    await message(
+      {
+        id: "palette.primary.base",
+        mapping: "preview-emulatable",
+        variable: "--ftb-primary",
+        value: "#0f766e",
+      },
+      "light",
+      [{
+        targetId: "button.primary",
+        controlId: "background",
+        scope: "global",
+        componentId: "button",
+        value: "#0f766e",
+      }],
+    );
+    await expect
+      .poll(() => previewFrame!.evaluate(() => Number(document.body.dataset.acceptedMessages)))
+      .toBe(0);
+
+    await message(
+      {
+        id: "palette.primary.base",
+        mapping: "preview-emulatable",
+        variable: "--ftb-primary",
+        value: "#0f766e",
+      },
+      "light",
+      [{
+        targetId: "button.primary",
+        controlId: "background",
+        scope: "global",
+        value: "not-a-color",
+      }],
+    );
+    await expect
+      .poll(() => previewFrame!.evaluate(() => Number(document.body.dataset.acceptedMessages)))
+      .toBe(0);
 
     await message(
       { id: "density", mapping: "unmapped", value: "compact" },

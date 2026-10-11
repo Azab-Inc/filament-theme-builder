@@ -45,6 +45,9 @@ class FilamentPanelTest extends TestCase
             ->assertDontSee('message.theme.foundations.explicitPaths', false)
             ->assertSee('Number.isFinite', false)
             ->assertSee('fontAllowlist', false)
+            ->assertSee('validateOverrideScope', false)
+            ->assertSee('controlDefinitions', false)
+            ->assertSee('isValidOverrideValue', false)
             ->assertSee("mapping.mapping !== 'preview-emulatable'", false)
             ->assertSee('detail: { compatibility: message.projection.compatibility, mode: message.projection.mode, unmapped }', false);
     }

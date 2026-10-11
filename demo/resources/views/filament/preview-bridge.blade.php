@@ -19,11 +19,12 @@
             ['Roboto', 'Roboto'],
         ]);
         const systemMonoFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
-        const overrideIdentities = new Set([
-            'button.primary\u0000background',
-            'button.secondary\u0000background',
-            'global.primary\u0000primary',
+        const controlDefinitions = new Map([
+            ['button.primary\u0000background', { type: 'color', component: 'button', variants: ['primary', 'secondary'], states: ['default', 'hover'] }],
+            ['button.secondary\u0000background', { type: 'color', component: 'button', variants: ['primary', 'secondary'], states: ['default', 'hover'] }],
+            ['global.primary\u0000primary', { type: 'color', component: undefined, variants: [], states: [] }],
         ]);
+        const overrideIdentities = new Set(controlDefinitions.keys());
         const previewMappingTuples = new Map([
             ['palette.primary.base', '--ftb-primary'],
             ...palette.map((shade) => [`palette.primary.shades.${shade}`, `--primary-${shade}`]),
@@ -125,11 +126,31 @@
             }
 
             if (Object.keys(override).some((key) => !['targetId', 'controlId', 'scope', 'componentId', 'variantId', 'stateId', 'value'].includes(key))) return false;
-            if (!overrideIdentities.has(`${override.targetId}\u0000${override.controlId}`)) return false;
+            const identity = `${override.targetId}\u0000${override.controlId}`;
+            const definition = controlDefinitions.get(identity);
+            if (!overrideIdentities.has(identity) || !definition || !validateOverrideScope(override, definition) || !isValidOverrideValue(override.value, definition)) return false;
 
             return ['componentId', 'variantId', 'stateId'].every((key) =>
                 override[key] === undefined || isSafeToken(override[key]),
             );
+        }
+
+        function validateOverrideScope(override, definition) {
+            const hasComponent = Object.prototype.hasOwnProperty.call(override, 'componentId');
+            const hasVariant = Object.prototype.hasOwnProperty.call(override, 'variantId');
+            const hasState = Object.prototype.hasOwnProperty.call(override, 'stateId');
+            if (override.scope === 'global') return !hasComponent && !hasVariant && !hasState;
+            if (override.scope === 'component') return hasComponent && !hasVariant && !hasState && override.componentId === definition.component;
+            if (override.scope === 'variant') return hasComponent && hasVariant && !hasState && override.componentId === definition.component && definition.variants.includes(override.variantId);
+            if (override.scope === 'state') return hasComponent && hasVariant && hasState && override.componentId === definition.component && definition.variants.includes(override.variantId) && definition.states.includes(override.stateId);
+            return false;
+        }
+
+        function isValidOverrideValue(value, definition) {
+            if (definition.type === 'color') return typeof value === 'string' && /^#[\da-f]{6}$/i.test(value);
+            if (definition.type === 'number') return typeof value === 'number' && Number.isFinite(value);
+            if (definition.type === 'boolean') return typeof value === 'boolean';
+            return definition.type === 'string' && typeof value === 'string' && /^[A-Za-z0-9 .,_-]{1,100}$/.test(value);
         }
 
         function isAcceptedProjection(projection) {
