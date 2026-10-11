@@ -56,7 +56,7 @@ final class ProductEditorForm
                         ->label('Product image')
                         ->helperText('JPEG, PNG, WebP, or PDF up to 5 MB')
                         ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
-                        ->maxSize(5120)
+                        ->maxSize((int) ceil((int) config('maintenance.temporary_upload_max_bytes') / 1024))
                         ->disk('local')
                         ->directory('demo-uploads')
                         ->saveUploadedFileUsing(static function (TemporaryUploadedFile $file): string {

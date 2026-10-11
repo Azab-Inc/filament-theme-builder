@@ -1,6 +1,7 @@
 import { expect, test, type Page, type StorageState } from '@playwright/test'
 
 const demoBaseUrl = process.env.DEMO_BASE_URL ?? 'http://127.0.0.1:4174'
+const uploadBoundaryTestsEnabled = process.env.DEMO_UPLOAD_TEST_LIMITS === '1'
 
 let authState: StorageState
 
@@ -246,6 +247,12 @@ test.describe('demo showcase panel identity and navigation', () => {
 test.describe('forms and schemas showcase', () => {
   test.describe.configure({ mode: 'serial' })
 
+  async function uploadFile(page: Page, file: { name: string; mimeType: string; buffer: Buffer }): Promise<void> {
+    const uploadResponse = page.waitForResponse((response) => response.url().includes('/livewire-') && !response.url().endsWith('/update'))
+    await page.locator('input[type="file"]').setInputFiles(file)
+    expect((await uploadResponse).status()).toBe(200)
+  }
+
   test.beforeEach(async ({ page }) => {
     await useAuthenticatedSession(page)
     await page.goto(`${demoBaseUrl}/demo/admin/forms-showcase`)
@@ -288,12 +295,49 @@ test.describe('forms and schemas showcase', () => {
 
   test('accepts safe document uploads and explains rejected files', async ({ page }) => {
     const upload = page.locator('input[type="file"]')
-    await upload.setInputFiles({ name: 'fixture.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 fixture') })
+    await uploadFile(page, { name: 'fixture.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 fixture') })
     await expect(page.getByRole('group', { name: 'fixture.pdf' })).toBeVisible()
 
     await upload.setInputFiles({ name: 'payload.php', mimeType: 'application/x-php', buffer: Buffer.from('<?php echo "no";') })
     await expect(page.getByText('File of invalid type', { exact: true })).toBeVisible()
     await expect(page.getByText('Expects image/jpeg, image/png, image/webp or application/pdf', { exact: true })).toBeVisible()
+  })
+
+  test('reports the temporary quota after a valid upload is submitted', async ({ page }) => {
+    test.skip(!uploadBoundaryTestsEnabled, 'Run with the explicit Compose test-safe upload limits.')
+
+    const upload = page.locator('input[type="file"]')
+    const save = page.getByRole('button', { name: /save fixture/i })
+    const pdf = (name: string) => ({
+      name,
+      mimeType: 'application/pdf',
+      buffer: Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(8192 - 9, 120)]),
+    })
+
+    await uploadFile(page, pdf('first.pdf'))
+    await expect(page.getByRole('group', { name: 'first.pdf' })).toBeVisible()
+    const firstSave = page.waitForResponse((response) => response.url().includes('/livewire-') && response.url().endsWith('/update'))
+    await save.click()
+    expect((await firstSave).status()).toBe(200)
+
+    await page.reload()
+    await uploadFile(page, pdf('second.pdf'))
+    await expect(page.getByRole('group', { name: 'second.pdf' })).toBeVisible()
+    await save.click()
+    await expect(page.getByText('Your temporary upload space is full. Remove a file before uploading another.', { exact: true })).toBeVisible()
+  })
+
+  test('reports the five megabyte limit for oversized uploads', async ({ page }) => {
+    test.skip(!uploadBoundaryTestsEnabled, 'Run with the explicit Compose test-safe upload limits.')
+
+    const upload = page.locator('input[type="file"]')
+    await upload.setInputFiles({
+      name: 'oversized.pdf',
+      mimeType: 'application/pdf',
+      buffer: Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(32768 - 9, 120)]),
+    })
+    await expect(page.getByText('File is too large', { exact: true })).toBeVisible()
+    await expect(page.getByText('Maximum file size is 16 KB', { exact: true })).toBeVisible()
   })
 
   test('shows named product, customer, and order fixtures with distinct native layouts', async ({ page }) => {

@@ -9,6 +9,7 @@ use Filament\Pages\Page;
 use Filament\Panel;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Validation\ValidationException;
 use LogicException;
 use UnitEnum;
 
@@ -73,6 +74,13 @@ class FormsShowcase extends Page
     public function save(): void
     {
         $this->showcaseForm()->validate();
+
+        try {
+            $this->showcaseForm()->getState();
+        } catch (ValidationException $exception) {
+            $message = $exception->errors()['product_image'][0] ?? 'The upload could not be saved.';
+            $this->addError('data.product_image', $message);
+        }
     }
 
     protected function showcaseForm(): Schema
