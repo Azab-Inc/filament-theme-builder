@@ -4,10 +4,39 @@
         const allowedOrigins = configuredOrigins.length > 0 ? configuredOrigins : [window.location.origin];
         const palette = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
         const styleId = 'ftb-managed-theme';
+        const safeToken = /^[a-z\d_.-]{1,100}$/i;
+
+        function isRecord(value) {
+            return value !== null && typeof value === 'object' && !Array.isArray(value);
+        }
+
+        function isSafeOverride(override) {
+            if (!isRecord(override) || !safeToken.test(override.targetId ?? '') ||
+                !safeToken.test(override.controlId ?? '') ||
+                !['global', 'component', 'variant', 'state'].includes(override.scope) ||
+                !['string', 'number', 'boolean'].includes(typeof override.value)) {
+                return false;
+            }
+
+            return ['componentId', 'variantId', 'stateId'].every((key) =>
+                override[key] === undefined || safeToken.test(override[key]),
+            );
+        }
+
+        function isAcceptedTheme(message) {
+            if (!isRecord(message) || message.type !== 'ftb:theme:update' || message.schemaVersion !== 1 ||
+                !isRecord(message.theme) || ![1, 2].includes(message.theme.schemaVersion) ||
+                !isRecord(message.theme.colors) ||
+                !/^#[\da-f]{6}$/i.test(message.theme.colors.primary ?? '')) {
+                return false;
+            }
+
+            return message.theme.schemaVersion === 1 ||
+                (Array.isArray(message.theme.overrides) && message.theme.overrides.every(isSafeOverride));
+        }
 
         function updateTheme(message) {
-            if (message?.type !== 'ftb:theme:update' || message.schemaVersion !== 1 ||
-                message.theme?.schemaVersion !== 1 || !/^#[\da-f]{6}$/i.test(message.theme?.colors?.primary ?? '')) {
+            if (!isAcceptedTheme(message)) {
                 return false;
             }
 

@@ -35,6 +35,16 @@ class FilamentPanelTest extends TestCase
             ->assertSee('event.source !== window.parent', false);
     }
 
+    public function test_preview_bridge_accepts_the_current_sparse_state_contract_without_interpolating_overrides(): void
+    {
+        $content = $this->get('/demo/admin')->getContent();
+
+        $this->assertStringContainsString('![1, 2].includes(message.theme.schemaVersion)', $content);
+        $this->assertStringContainsString('Array.isArray(message.theme.overrides)', $content);
+        $this->assertStringNotContainsString('message.theme.overrides.map', $content);
+        $this->assertStringNotContainsString('message.theme.overrides.join', $content);
+    }
+
     public function test_showcase_index_is_public_but_focused_showcase_pages_require_authentication(): void
     {
         $this->get('/demo/admin/showcase')->assertOk()->assertSee('Showcase');

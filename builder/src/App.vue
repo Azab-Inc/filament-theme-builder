@@ -20,7 +20,7 @@ function postTheme(): void {
   target.postMessage({
     type: 'ftb:theme:update',
     schemaVersion: 1,
-    theme: structuredClone(toRaw(theme.theme)),
+    theme: structuredClone(JSON.parse(JSON.stringify(toRaw(theme.theme)))),
   }, targetOrigin)
 }
 

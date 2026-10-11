@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 
+const composeBaseUrl = process.env.COMPOSE_BASE_URL ?? 'http://127.0.0.1:4175'
+
 test('builder embeds the Filament preview', async ({ page }) => {
   await page.goto('http://127.0.0.1:4173')
 
@@ -46,6 +48,32 @@ test('builder embeds the Filament preview', async ({ page }) => {
   await expect.poll(() => page.frameLocator('iframe[title="Filament preview"]')
     .locator('html').evaluate((element) => getComputedStyle(element).getPropertyValue('--ftb-primary').trim(),
     )).toBe('#0f766e')
+})
+
+test('builder primary color updates a native Filament control in the iframe', async ({ page }) => {
+  test.skip(process.env.COMPOSE_E2E !== '1', 'requires a running Compose stack')
+
+  await page.addInitScript(() => localStorage.removeItem('ftb-theme'))
+  await page.goto(composeBaseUrl)
+  const previewFrame = page.frame({ url: /\/demo\/admin/ })
+  expect(previewFrame).toBeTruthy()
+  const nativePrimaryBadge = previewFrame!.locator('.fi-badge.fi-color-primary').first()
+  await expect(nativePrimaryBadge).toBeVisible()
+  const initialNativeColor = await nativePrimaryBadge.evaluate((element) => getComputedStyle(element).color)
+  const initialColor = await previewFrame!.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--primary-400').trim(),
+  )
+
+  await page.getByLabel('Primary color').fill('#0f766e')
+
+  await expect.poll(() => previewFrame!.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--primary-400').trim(),
+  )).toBe('rgb(159 200 197)')
+  await expect.poll(() => nativePrimaryBadge.evaluate((element) => getComputedStyle(element).color))
+    .not.toBe(initialNativeColor)
+  expect(await previewFrame!.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--primary-400').trim(),
+  )).not.toBe(initialColor)
 })
 
 test('Filament admin login renders', async ({ page }) => {
@@ -107,7 +135,14 @@ test('preview bridge dispatches only for configured allowed origins', async ({ p
       theme: { schemaVersion: 1, colors: { primary: '#0f766e' } },
     }, 'http://127.0.0.1:4174')
   })
-  await expect.poll(() => preview!.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(1)
+  await page.evaluate(() => {
+    const previewFrame = document.querySelector<HTMLIFrameElement>('iframe[name="preview-frame"]')!
+    previewFrame.contentWindow!.postMessage({
+      type: 'ftb:theme:update', schemaVersion: 1,
+      theme: { schemaVersion: 2, colors: { primary: '#0f766e' }, overrides: [] },
+    }, 'http://127.0.0.1:4174')
+  })
+  await expect.poll(() => preview!.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(2)
   await page.evaluate(() => {
     const previewFrame = document.querySelector<HTMLIFrameElement>('iframe[name="preview-frame"]')!
     for (const data of [null, 'not-an-object', { type: 'ftb:theme:update', schemaVersion: 2 }, {
@@ -118,7 +153,7 @@ test('preview bridge dispatches only for configured allowed origins', async ({ p
     }
   })
   await page.waitForTimeout(100)
-  expect(await preview!.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(1)
+  expect(await preview!.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(2)
   expect(await preview!.locator('#ftb-managed-theme').evaluate((style) => style.textContent))
     .toContain('#0f766e')
 
@@ -196,8 +231,6 @@ test('demo credentials authenticate and logout returns to public preview', async
   await page.reload()
   await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible()
 })
-
-const composeBaseUrl = process.env.COMPOSE_BASE_URL ?? 'http://127.0.0.1:4175'
 
 test('compose gateway serves builder and same-origin Filament', async ({ page }) => {
   test.skip(process.env.COMPOSE_E2E !== '1', 'requires a running Compose stack')
