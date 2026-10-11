@@ -175,7 +175,7 @@ Expand the editor from the first color edit into the complete global foundation 
 
 ## FTB-006 — Implement the semantic theme-control registry and inheritance
 
-**Status:** ready-for-agent  
+**Status:** done
 **Blocked by:** [FTB-003](#ftb-003)
 
 ### What to build
@@ -184,15 +184,17 @@ Create the version-aware registry that maps semantic Filament UI concepts to sta
 
 ### Acceptance criteria
 
-- [ ] Registry entries have stable semantic IDs independent of display labels.
-- [ ] Entries can declare one or more Filament selectors and supported controls.
-- [ ] Registry metadata records the Filament compatibility baseline.
-- [ ] Theme values inherit Global → Component → Variant → State.
-- [ ] Child controls default to Inherit.
-- [ ] Resetting an override returns it to inherited behavior rather than copying the parent value.
-- [ ] Minimal export can distinguish inherited values from explicit overrides.
-- [ ] A representative component demonstrates all four inheritance levels.
-- [ ] Registry lookup can resolve an element to a semantic theme target.
+- [x] Registry entries have stable semantic IDs independent of display labels. Evidence: `builder/src/__tests__/theme-registry.spec.ts` — “keeps labels independent from stable semantic IDs” checks stable IDs and labels.
+- [x] Entries can declare one or more Filament selectors and supported controls. Evidence: `builder/src/__tests__/theme-registry.spec.ts` — registry metadata and malformed selector/control tests.
+- [x] Registry metadata records the Filament compatibility baseline. Evidence: `builder/src/__tests__/theme-registry.spec.ts` — compatibility rejection and conflicting-baseline tests.
+- [x] Theme values inherit Global → Component → Variant → State. Evidence: `builder/src/__tests__/theme-resolver.spec.ts` — “resolves Global → Component → Variant → State and nearest parent fallback”.
+- [x] Child controls default to Inherit. Evidence: `builder/src/__tests__/theme-state.spec.ts` — “stores Inherit as absence and reset removes only the selected override”.
+- [x] Resetting an override returns it to inherited behavior rather than copying the parent value. Evidence: `builder/src/__tests__/theme-state.spec.ts` — reset resolves to legacy global after override removal; `builder/src/__tests__/theme-resolver.spec.ts` — inheritance resolution and explicit-equal-value tests.
+- [x] Minimal export can distinguish inherited values from explicit overrides. Evidence: `builder/src/__tests__/theme-serialization.spec.ts` — “minimal serialization keeps only sparse explicit overrides” checks explicit-equal child retention and inherited-copy absence.
+- [x] A representative component demonstrates all four inheritance levels. Evidence: `builder/src/__tests__/theme-resolver.spec.ts` — the `button.primary.background` fixture resolves global, component, variant, and state contributions. This is a tested domain example, not a user-visible UI demonstration.
+- [x] Registry lookup can resolve an element to a semantic theme target. Evidence: `builder/src/__tests__/theme-registry.spec.ts` — unique selector matches to `button.primary`, `button.secondary`, and `global.primary`, alongside deterministic no-match and ambiguous results.
+
+FTB-006 evidence is limited to the tested registry, resolver, serialization, migration, persistence, and history domain contract. It does not claim a user-visible Inspector or full theme-editor UI; Inspector behavior remains FTB-007.
 
 ---
 
