@@ -178,6 +178,7 @@
                     return false;
                 }
                 if (mapping.mapping === 'preview-emulatable') {
+                    if (Object.prototype.hasOwnProperty.call(mapping, 'selector') && mapping.id !== 'density') return false;
                     if (mapping.id === 'density') {
                         if (mapping.selector !== tableDensitySelector || mapping.variable !== undefined ||
                             typeof mapping.value !== 'string' || !tableDensityValues.has(mapping.value)) return false;

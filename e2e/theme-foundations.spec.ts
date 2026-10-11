@@ -335,6 +335,47 @@ test.describe("foundation preview integration", () => {
       ),
     ).toBe("dark");
     expect(await previewFrame!.locator("#ftb-managed-theme").count()).toBe(0);
+    const acceptedBeforeDensityChecks = await previewFrame!.evaluate(() => Number(document.body.dataset.acceptedMessages));
+
+    await message(
+      {
+        id: "palette.primary.base",
+        mapping: "preview-emulatable",
+        variable: "--ftb-primary",
+        value: "#0f766e",
+      },
+      "light",
+    );
+    await expect
+      .poll(() => previewFrame!.evaluate(() => Number(document.body.dataset.acceptedMessages)))
+      .toBe(acceptedBeforeDensityChecks + 1);
+
+    await message(
+      {
+        id: "palette.primary.base",
+        mapping: "preview-emulatable",
+        variable: "--ftb-primary",
+        selector: ".attacker-controlled",
+        value: "#0f766e",
+      },
+      "light",
+    );
+    await expect
+      .poll(() => previewFrame!.evaluate(() => Number(document.body.dataset.acceptedMessages)))
+      .toBe(acceptedBeforeDensityChecks + 1);
+
+    await message(
+      {
+        id: "density",
+        mapping: "preview-emulatable",
+        selector: ".fi-ta",
+        value: "compact",
+      },
+      "light",
+    );
+    await expect
+      .poll(() => previewFrame!.evaluate(() => Number(document.body.dataset.acceptedMessages)))
+      .toBe(acceptedBeforeDensityChecks + 2);
   });
 
   test("edits, resets, and persists the foundations editor without loading fonts", async ({
