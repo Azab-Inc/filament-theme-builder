@@ -2,8 +2,9 @@
 
 namespace App\Filament\Pages\Showcase\Forms;
 
+use App\Support\Uploads\TemporaryUploadStorage;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -14,6 +15,7 @@ use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Wizard;
 use Filament\Schemas\Components\Wizard\Step;
 use Illuminate\Contracts\Support\Htmlable;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 final class ProductEditorForm
 {
@@ -50,9 +52,19 @@ final class ProductEditorForm
                     DatePicker::make('product_launch_date')
                         ->label('Product launch date')
                         ->required(),
-                    Placeholder::make('product_image')
+                    FileUpload::make('product_image')
                         ->label('Product image')
-                        ->content('Local preview only; JPEG/PNG; not stored'),
+                        ->helperText('JPEG, PNG, WebP, or PDF up to 5 MB')
+                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
+                        ->maxSize(5120)
+                        ->disk('local')
+                        ->directory('demo-uploads')
+                        ->saveUploadedFileUsing(static function (TemporaryUploadedFile $file): string {
+                            return app(TemporaryUploadStorage::class)->store(
+                                $file,
+                                (string) (auth()->id() ?? session()->getId()),
+                            );
+                        }),
                     Textarea::make('product_long_text')
                         ->label('Long text fixture')
                         ->default('A long deterministic fixture paragraph keeps the showcase readable while exercising long-form text treatment without relying on persisted content.')

@@ -693,7 +693,7 @@ Make export a complete handoff from the visual builder into a user's real Filame
 
 ## FTB-027 — Make demo uploads real but safely bounded
 
-**Status:** ready-for-agent  
+**Status:** in-progress
 **Blocked by:** [FTB-002](#ftb-002)
 
 ### What to build

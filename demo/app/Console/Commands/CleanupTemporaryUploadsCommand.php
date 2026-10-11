@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Support\Uploads\TemporaryUploadStorage;
 use Illuminate\Console\Command;
 
 class CleanupTemporaryUploadsCommand extends Command
@@ -20,14 +21,7 @@ class CleanupTemporaryUploadsCommand extends Command
             return self::SUCCESS;
         }
 
-        $cutoff = now()->subHours((int) config('maintenance.temporary_upload_retention_hours'))->getTimestamp();
-        $deleted = 0;
-
-        foreach (glob($directory.'/*') ?: [] as $path) {
-            if (is_file($path) && filemtime($path) !== false && filemtime($path) <= $cutoff && unlink($path)) {
-                $deleted++;
-            }
-        }
+        $deleted = app(TemporaryUploadStorage::class)->cleanupExpired();
 
         $this->info("Temporary upload cleanup removed {$deleted} file(s).");
 

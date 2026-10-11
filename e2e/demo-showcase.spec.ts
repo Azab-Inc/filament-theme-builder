@@ -264,8 +264,9 @@ test.describe('forms and schemas showcase', () => {
     await expect(page.getByLabel('Product availability')).toBeChecked()
     await expect(page.getByLabel('Product launch date')).toHaveValue('2026-10-10')
     await expect(page.getByLabel('Product reference')).toBeDisabled()
-    await expect(page.getByText('Local preview only; JPEG/PNG; not stored', { exact: true })).toBeVisible()
-    await expect(page.locator('input[type="file"]')).toHaveCount(0)
+    await expect(page.getByText('JPEG, PNG, WebP, or PDF up to 5 MB', { exact: true })).toBeVisible()
+    await expect(page.locator('input[type="file"]')).toHaveCount(1)
+    await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /image\/jpeg/)
     await expect(page.getByLabel('Street address')).toHaveValue('14 Market Street')
     await expect(page.getByLabel('Contact email')).toHaveValue('hello@example.test')
     await expect(page.getByLabel('Order status')).toHaveValue('pending')
@@ -285,6 +286,16 @@ test.describe('forms and schemas showcase', () => {
     expect(darkControlStyle).not.toEqual(lightControlStyle)
   })
 
+  test('accepts safe document uploads and explains rejected files', async ({ page }) => {
+    const upload = page.locator('input[type="file"]')
+    await upload.setInputFiles({ name: 'fixture.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 fixture') })
+    await expect(page.getByRole('group', { name: 'fixture.pdf' })).toBeVisible()
+
+    await upload.setInputFiles({ name: 'payload.php', mimeType: 'application/x-php', buffer: Buffer.from('<?php echo "no";') })
+    await expect(page.getByText('File of invalid type', { exact: true })).toBeVisible()
+    await expect(page.getByText('Expects image/jpeg, image/png, image/webp or application/pdf', { exact: true })).toBeVisible()
+  })
+
   test('shows named product, customer, and order fixtures with distinct native layouts', async ({ page }) => {
     await expect(page.getByText('ProductEditorForm', { exact: true })).toBeVisible()
     await expect(page.getByText('CustomerContactForm', { exact: true })).toBeVisible()
@@ -294,7 +305,7 @@ test.describe('forms and schemas showcase', () => {
     await expect(page.getByText('Tabbed form layout', { exact: true })).toBeVisible()
     await expect(page.getByLabel('Product name')).toHaveValue('Considered Field Notebook')
     await expect(page.getByLabel('Product price')).toHaveValue('24')
-    await expect(page.getByText('Local preview only; JPEG/PNG; not stored', { exact: true })).toBeVisible()
+    await expect(page.getByText('JPEG, PNG, WebP, or PDF up to 5 MB', { exact: true })).toBeVisible()
     await expect(page.getByLabel('Street address')).toHaveValue('14 Market Street')
     await expect(page.getByLabel('Contact email')).toHaveValue('hello@example.test')
     await expect(page.getByLabel('Order status')).toHaveValue('pending')
