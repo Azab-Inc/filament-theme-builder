@@ -2,13 +2,13 @@
 
 **Status:** Approved architectural direction  
 **Specification:** [SPECS.md](../../../SPECS.md), especially §§14–20, 35, and 41  
-**Tickets:** FTB-002, FTB-003, FTB-009, FTB-010, FTB-027, FTB-028
+**Tickets:** FTB-002, FTB-003, FTB-009A, FTB-009B, FTB-010, FTB-011–018, FTB-027, FTB-028
 
 ## Context
 
-The demo currently provides the FTB-002 shell: a public, embeddable Filament panel with login and the preview bridge hook. It does not yet provide the e-commerce domain or the resource and relationship workflows required by SPECS §§14–16. The current model surface is limited to the shell's user model; existing upload-cleanup and demo-reset commands are partial operational foundations, not proof that FTB-027/028 are complete.
+The demo has the FTB-002 shell, FTB-009A domain, FTB-009B core resources, FTB-010 relationship workflows, and showcase slices FTB-011 and FTB-013–015. FTB-012 is partial: only theme-density integration remains. FTB-027/028 remain pending operational work; existing cleanup/reset commands do not prove those tickets complete.
 
-FTB-003 is done and provides the first builder edit end to end. The next milestone is deliberately **demo-first**: make the preview a realistic, coherent Filament application before resuming additional builder feature work.
+FTB-003 is done and provides the first builder edit end to end. The approved **demo-first** milestone has since delivered the listed demo-complete gate. FTB-012 remains partial only for theme-density integration; FTB-016/017/018 and operational FTB-027/028 remain pending demo work.
 
 ## Approved milestone sequence
 
@@ -32,7 +32,7 @@ These may proceed in parallel with domain/resource work where prerequisites allo
 
 ## Builder sequencing gate
 
-After FTB-003, all remaining builder feature work is blocked until **FTB-009A, FTB-009B, and FTB-010 are complete**. This gate ensures later editor, inspector, and showcase work targets the real demo surface and its actual relationships rather than placeholder data. FTB-027/028 operational work is parallel and does not replace or relax this gate. Do not reinterpret this sequencing decision as changing the ticket dependency graph without updating the authoritative tickets/specification.
+After FTB-003, remaining builder feature work is blocked until **FTB-009A, FTB-009B, FTB-010, FTB-011, FTB-013, FTB-014, and FTB-015 are done**. FTB-012 is explicitly partial only for theme-density integration and does not block the next builder phase. FTB-016/017/018 and operational FTB-027/028 remain separate pending demo work, not prerequisites to this gate.
 
 ## Documentation
 

@@ -8,6 +8,8 @@
 
 This is the implementation contract. PRD.md defines the product problem and outcomes. TICKETS.md contains the executable vertical slices. Each section below links to the ticket or tickets that implement it.
 
+Remaining builder feature work follows the demo-complete gate recorded in TICKETS.md: FTB-009A, FTB-009B, FTB-010, FTB-011, FTB-013, FTB-014, and FTB-015 are required; FTB-012 is partial only for theme-density integration and is not a blocker. FTB-016/017/018 and operational FTB-027/028 are separate pending demo work.
+
 ## 1. Repository and application boundary
 
 The project is one repository containing two sibling applications:
@@ -250,7 +252,7 @@ Relationships deliberately cover BelongsTo, HasMany, BelongsToMany, polymorphic 
 
 Seed data must look realistic while remaining deterministic enough for screenshot tests.
 
-**Tickets:** [FTB-009](./TICKETS.md#ftb-009)
+**Tickets:** [FTB-009A](./TICKETS.md#ftb-009), [FTB-009B](./TICKETS.md#ftb-009b)
 
 ## 15. Relation Managers and Nested Resources
 

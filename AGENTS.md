@@ -35,7 +35,7 @@ Use test-driven development for every feature and bug fix: write the test first,
 
 ### Demo-first implementation gate
 
-After FTB-003, builder feature tickets remain blocked until FTB-009A (demo domain), FTB-009B (core resources), and FTB-010 (relationship UI) are complete, in that order. FTB-027/028 are parallel operational tickets outside the current plan; they do not relax or gate this sequence.
+After FTB-003, remaining builder feature work stays blocked until the demo-complete gate is satisfied: FTB-009A (demo domain), FTB-009B (core resources), FTB-010 (relationship UI), FTB-011 (forms/schemas), FTB-013 (infolists), FTB-014 (actions/modals/notifications), and FTB-015 (widgets/navigation/search/auth/tenant UI) must be done. FTB-012 (tables) is explicitly partial; only theme-density integration remains, and it does not block the next builder phase. FTB-016/017/018 and operational FTB-027/028 remain separate pending demo work and are not prerequisites for this gate. Preserve TDD and Playwright requirements above for all feature work.
 
 ## More Specific Instructions
 
