@@ -14,6 +14,32 @@ import { projectFoundations } from '@/services/foundation-projection'
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
 
 describe('Filament foundation inventory', () => {
+  it('classifies every FTB-005 control exactly once', () => {
+    const expected = [
+      ...['primary', 'success', 'warning', 'danger', 'info', 'gray'].flatMap((palette) => [
+        `palette.${palette}.base`,
+        ...[50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map((shade) => `palette.${palette}.shades.${shade}`),
+      ]),
+      ...['page', 'sidebar', 'topbar', 'card', 'elevated', 'input'].map((name) => `surface.${name}`),
+      ...['default', 'strong'].map((name) => `border.${name}`),
+      ...['primary', 'muted', 'disabled'].map((name) => `text.${name}`),
+      'typography.body', 'typography.heading', 'typography.mono',
+      ...['0', 'px', '0.5', '1', '1.5', '2', '3', '4', '6', '8'].map((key) => `spacing.${key}`),
+      'density', 'radius', 'borderWidth', 'shadow',
+    ]
+
+    for (const id of expected) expect(lookupFoundationMapping(id)).toBeDefined()
+    expect(new Set(expected.map((id) => lookupFoundationMapping(id)?.id)).size).toBe(expected.length)
+  })
+
+  it('records an absence reason for every unverified classification', () => {
+    for (const entry of FILAMENT_FOUNDATION_INVENTORY) {
+      if (entry.mapping === 'export-only' || entry.mapping === 'unmapped') {
+        expect(entry.evidence.reason).toMatch(/.+/)
+        expect(entry.evidence.absent?.length ?? 0).toBeGreaterThan(0)
+      }
+    }
+  })
   it('is frozen at the collection and entry levels', () => {
     expect(Object.isFrozen(FILAMENT_FOUNDATION_INVENTORY)).toBe(true)
     for (const entry of FILAMENT_FOUNDATION_INVENTORY) expect(Object.isFrozen(entry)).toBe(true)
@@ -37,8 +63,8 @@ describe('Filament foundation inventory', () => {
       (entry) => entry.mapping === 'preview-emulatable',
     )) {
       expect(entry.variable ?? entry.selector).toBeTruthy()
-      if (entry.id.endsWith('.base')) expect(entry.evidence.needle).toBe(entry.variable)
-      else expect(entry.evidence.needle).toBe('--primary-${shade}')
+       if (entry.id.endsWith('.base')) expect(entry.evidence.needle).toBe(entry.variable)
+       else expect(entry.evidence.needle).toBe('--primary-${shade}')
     }
   })
 

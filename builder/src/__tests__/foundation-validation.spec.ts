@@ -17,6 +17,36 @@ function expectError(value: unknown, code: string, path: string): void {
 describe('validateFoundationState', () => {
   it('accepts the typed default foundation state', () => {
     expect(validateFoundationState(validState())).toMatchObject({ valid: true })
+    expect('explicitPaths' in validState()).toBe(false)
+  })
+
+  it('accepts a complete versioned V3 payload with canonical nested records', () => {
+    const state = validState()
+
+    expect(validateFoundationState({
+      schemaVersion: 3,
+      colors: { primary: state.palettes.primary.base },
+      foundations: state,
+      overrides: [],
+      customCss: '',
+    })).toMatchObject({ valid: true })
+  })
+
+  it('rejects a V3 payload when any required foundation record is missing', () => {
+    const state = validState()
+    const { surfaces: _surfaces, ...missingSurfaces } = state
+
+    expectError({
+      schemaVersion: 3,
+      colors: { primary: state.palettes.primary.base },
+      foundations: missingSurfaces,
+      overrides: [],
+      customCss: '',
+    }, 'invalid-value', 'foundations.surfaces')
+  })
+
+  it('rejects explicitPaths because provenance is reconstructed from canonical overrides', () => {
+    expectError({ ...validState(), explicitPaths: [] }, 'unknown-key', 'explicitPaths')
   })
 
   it.each([

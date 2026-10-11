@@ -13,6 +13,11 @@ export type FontChoice =
   | { kind: 'curated'; name: string; family: string; provider: 'google-fonts' }
   | { kind: 'custom'; name: string; family: string }
 
+export const CURATED_FONT_CHOICES = Object.freeze([
+  { name: 'Inter', family: 'Inter', provider: 'google-fonts' as const },
+  { name: 'Roboto', family: 'Roboto', provider: 'google-fonts' as const },
+])
+
 export type PaletteState = {
   base: string
   shades: Partial<Record<PaletteShade, string>>
@@ -30,7 +35,6 @@ export type FoundationState = {
   radius: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
   borderWidth: number
   shadow: 'none' | 'sm' | 'md' | 'lg' | 'xl'
-  explicitPaths: string[]
 }
 
 export type ResolvedFoundation = Omit<FoundationState, 'surfaces' | 'borders' | 'text'> & {

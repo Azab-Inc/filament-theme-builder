@@ -1,6 +1,30 @@
 import { expect, test } from "@playwright/test";
 
 const composeBaseUrl = process.env.COMPOSE_BASE_URL ?? "http://127.0.0.1:4175";
+const foundationShades = Object.fromEntries(
+  [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map((shade) => [shade, "#6366f1"]),
+);
+const validFoundations = {
+  palettes: Object.fromEntries(
+    ["primary", "success", "warning", "danger", "info", "gray"].map((name) => [
+      name,
+      { base: "#6366f1", shades: foundationShades, overrides: {} },
+    ]),
+  ),
+  surfaces: Object.fromEntries(["page", "sidebar", "topbar", "card", "elevated", "input"].map((name) => [name, { light: "#ffffff", dark: "#111827" }])),
+  borders: { default: { light: "#e5e7eb", dark: "#374151" }, strong: { light: "#d1d5db", dark: "#4b5563" } },
+  text: { primary: { light: "#111827", dark: "#f9fafb" }, muted: { light: "#6b7280", dark: "#9ca3af" }, disabled: { light: "#9ca3af", dark: "#6b7280" } },
+  typography: {
+    body: { kind: "system", name: "System", family: "ui-sans-serif, system-ui, sans-serif" },
+    heading: { kind: "system", name: "System", family: "ui-sans-serif, system-ui, sans-serif" },
+    mono: { kind: "system", name: "System Mono", family: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace" },
+  },
+  spacing: { "0": 0, px: 1, "0.5": 2, "1": 4, "1.5": 6, "2": 8, "3": 12, "4": 16, "6": 24, "8": 32 },
+  density: "default",
+  radius: "md",
+  borderWidth: 1,
+  shadow: "sm",
+};
 
 test.describe("foundation preview integration", () => {
   test.skip(
@@ -111,7 +135,7 @@ test.describe("foundation preview integration", () => {
       mode: "light" | "dark",
     ) =>
       page.evaluate(
-        ({ mapping, mode, targetOrigin }) => {
+        ({ mapping, mode, targetOrigin, foundations }) => {
           const target = document.querySelector<HTMLIFrameElement>(
             'iframe[title="Filament preview"]',
           )!.contentWindow!;
@@ -122,7 +146,7 @@ test.describe("foundation preview integration", () => {
               theme: {
                 schemaVersion: 3,
                 colors: { primary: "#6366f1" },
-                foundations: {},
+                foundations,
                 overrides: [],
                 customCss: "",
               },
@@ -136,7 +160,7 @@ test.describe("foundation preview integration", () => {
             targetOrigin,
           );
         },
-        { mapping, mode, targetOrigin },
+        { mapping, mode, targetOrigin, foundations: validFoundations },
       );
 
     await message(

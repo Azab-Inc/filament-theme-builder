@@ -154,14 +154,14 @@ describe('theme state', () => {
     expect(store.theme.foundations.surfaces.page.light).toBe('#fef3c7')
   })
 
-  it('records explicit foundation provenance even when the value equals its default', () => {
+  it('does not persist a separate explicit foundation provenance list', () => {
     const store = useThemeStore()
 
     store.setFoundation('surfaces.page.light', '#ffffff')
 
-    expect(store.theme.foundations.explicitPaths).toContain('surfaces.page.light')
+    expect('explicitPaths' in store.theme.foundations).toBe(false)
     store.resetFoundation('surfaces.page.light')
-    expect(store.theme.foundations.explicitPaths).not.toContain('surfaces.page.light')
+    expect('explicitPaths' in store.theme.foundations).toBe(false)
   })
 
   it('resets a custom typography foundation value to its system choice', () => {

@@ -9,8 +9,9 @@ import type {
   PaletteShade,
   ThemeMode,
 } from '@/models/foundations.model'
-import { PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
+import { CURATED_FONT_CHOICES, PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
 import { createDefaultFoundationState } from '@/services/foundation-defaults'
+import { lookupFoundationMapping } from '@/registry/filament-foundation-inventory'
 import { useThemeStore } from '@/stores/theme'
 
 const previewUrl = import.meta.env.VITE_DEMO_URL ?? '/demo/admin'
@@ -42,16 +43,11 @@ const fontChoices: ReadonlyArray<{ value: string; label: string; font?: FontChoi
         'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
     },
   },
-  {
-    value: 'curated:Inter',
-    label: 'Inter',
-    font: { kind: 'curated', name: 'Inter', family: 'Inter', provider: 'google-fonts' },
-  },
-  {
-    value: 'curated:Roboto',
-    label: 'Roboto',
-    font: { kind: 'curated', name: 'Roboto', family: 'Roboto', provider: 'google-fonts' },
-  },
+  ...CURATED_FONT_CHOICES.map((font) => ({
+    value: `curated:${font.name}`,
+    label: font.name,
+    font: { kind: 'curated' as const, ...font },
+  })),
   { value: 'custom', label: 'Custom family' },
 ]
 const defaultFoundation = createDefaultFoundationState()
@@ -129,28 +125,38 @@ function setPaletteShade(name: PaletteName, shade: PaletteShade, event: Event): 
   if (value) theme.setPaletteShadeOverride(name, shade, value)
 }
 
-function paletteStatus(name: PaletteName, shade: PaletteShade): 'generated' | 'explicit' {
-  return foundation.value.palettes[name].overrides[shade] ? 'explicit' : 'generated'
+function paletteStatus(name: PaletteName, shade: PaletteShade): string {
+  return statusFor(`palettes.${name}.shades.${shade}`)
 }
 
 function setMode(mode: ThemeMode): void {
   activeMode.value = mode
 }
 
-function statusFor(
-  path: string,
-): 'generated' | 'inherited' | 'explicit' | 'unmapped' | 'compatibility' {
-  if (/^palettes\.[^.]+\.shades\./.test(path)) return 'generated'
-  const unmapped = path === 'text.disabled' || path === 'surfaces.page'
+function statusFor(path: string): string {
+  const inventory = lookupFoundationMapping(mappingIdFor(path))
+  if (!inventory) return 'unmapped'
+  if (inventory.mapping !== 'preview-emulatable') return inventory.mapping
+
   const provenancePath = /^(surfaces|borders|text)\./.test(path)
     ? `${path}.${activeMode.value}`
     : path
-  if (!unmapped && foundation.value.explicitPaths.includes(provenancePath)) return 'explicit'
-  if (unmapped) return 'unmapped'
-  if (path === 'density') return 'compatibility'
+  const paletteShade = /^palettes\.([^.]+)\.shades\.(\d+)$/.exec(path)
+  if (paletteShade) {
+    const palette = foundation.value.palettes[paletteShade[1] as PaletteName]
+    return palette?.overrides[Number(paletteShade[2]) as PaletteShade] ? 'explicit' : 'generated'
+  }
   const current = getPath(foundation.value, provenancePath)
   const defaultValue = getPath(defaultFoundation, provenancePath)
   return JSON.stringify(current) === JSON.stringify(defaultValue) ? 'inherited' : 'explicit'
+}
+
+function mappingIdFor(path: string): string {
+  const palette = /^palettes\.([^.]+)\.(base|shades)(?:\.(\d+))?$/.exec(path)
+  if (palette) return `palette.${palette[1]}.${palette[2]}${palette[3] ? `.${palette[3]}` : ''}`
+  const mode = /^(surfaces|borders|text)\.([^.]+)$/.exec(path)
+  if (mode) return `${mode[1] === 'surfaces' ? 'surface' : mode[1]!.slice(0, -1)}.${mode[2]}`
+  return path
 }
 
 function getPath(root: Record<string, unknown>, path: string): unknown {

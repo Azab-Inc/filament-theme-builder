@@ -63,13 +63,13 @@ describe('App', () => {
     )
   })
 
-  it('reports an explicit status when a user writes the current default value', async () => {
+  it('reports inherited status when a user writes the current default value', async () => {
     const wrapper = mount(App, { global: { plugins: [createPinia()] } })
     const input = wrapper.get('#primary-palette-base')
 
     await input.setValue('#6366f1')
 
-    expect(input.element.nextElementSibling?.textContent).toBe('explicit')
+    expect(input.element.nextElementSibling?.textContent).toBe('inherited')
   })
 
   it('keeps typography as names-only state and supports density and mode controls', async () => {

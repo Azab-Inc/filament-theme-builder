@@ -4,6 +4,7 @@ import type {
   PaletteShade,
 } from '@/models/foundations.model'
 import { PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
+import { CURATED_FONT_CHOICES } from '@/models/foundations.model'
 import type { ThemeOverride, ThemeScope, ThemeValue } from '@/models/theme.model'
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { lookupFoundationMapping, type FoundationInventoryEntry } from '@/registry/filament-foundation-inventory'
@@ -99,7 +100,7 @@ function validateOverride(value: unknown, path: string): { valid: true; override
 
 function validateFoundationRecord(value: unknown, path: string): FoundationValidationResult {
   if (!isRecord(value)) return invalid('invalid-value', path || 'state', 'Foundation state must be an object')
-  const keys = checkKeys(value, ['palettes', 'surfaces', 'borders', 'text', 'typography', 'spacing', 'density', 'radius', 'borderWidth', 'shadow', 'explicitPaths'], ['palettes', 'surfaces', 'borders', 'text', 'typography', 'spacing', 'density', 'radius', 'borderWidth', 'shadow', 'explicitPaths'], path)
+  const keys = checkKeys(value, ['palettes', 'surfaces', 'borders', 'text', 'typography', 'spacing', 'density', 'radius', 'borderWidth', 'shadow'], ['palettes', 'surfaces', 'borders', 'text', 'typography', 'spacing', 'density', 'radius', 'borderWidth', 'shadow'], path)
   if (keys) return keys
 
   const paletteResult = validatePaletteCollection(value.palettes, join(path, 'palettes'))
@@ -133,9 +134,6 @@ function validateFoundationRecord(value: unknown, path: string): FoundationValid
   if (!isOneOf(RADII, value.radius)) return invalid('invalid-value', join(path, 'radius'), 'Unsupported radius')
   if (!isOneOf(SHADOWS, value.shadow)) return invalid('invalid-value', join(path, 'shadow'), 'Unsupported shadow')
   if (!isFiniteNumber(value.borderWidth) || value.borderWidth < 0 || value.borderWidth > 8) return invalid('invalid-value', join(path, 'borderWidth'), 'Border width must be finite and between 0 and 8')
-  if (!Array.isArray(value.explicitPaths) || value.explicitPaths.some((entry) => typeof entry !== 'string' || !/^[A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*$/.test(entry)) || new Set(value.explicitPaths).size !== value.explicitPaths.length) {
-    return invalid('invalid-value', join(path, 'explicitPaths'), 'Explicit foundation paths must be unique safe paths')
-  }
   return { valid: true, state: value as FoundationState }
 }
 
@@ -188,7 +186,11 @@ function validateFont(value: unknown, path: string): ValidationError | undefined
   if (!isSafeFontName(value.name)) return invalid('unsafe-font', join(path, 'name'), 'Unsafe font name')
   const trustedSystemMono = value.kind === 'system' && value.family === SYSTEM_MONO_FALLBACK
   if (typeof value.family !== 'string' || (!trustedSystemMono && (!SAFE_FONT_FAMILY.test(value.family) || /url\s*\(|@import|[\u0000-\u001f\u007f"']/.test(value.family)))) return invalid('unsafe-font', join(path, 'family'), 'Unsafe font family')
-  if (value.kind === 'curated' && value.provider !== 'google-fonts') return invalid('unsafe-font', join(path, 'provider'), 'Unsupported font provider')
+  if (value.kind === 'curated') {
+    const curated = CURATED_FONT_CHOICES.find((choice) => choice.name === value.name && choice.family === value.family)
+    if (value.provider !== 'google-fonts' || !curated) return invalid('unsafe-font', path, 'Curated font is not allowlisted')
+  }
+  if (value.kind === 'custom' && value.name !== value.family) return invalid('unsafe-font', path, 'Custom fonts must use a safe name-only family')
   return undefined
 }
 

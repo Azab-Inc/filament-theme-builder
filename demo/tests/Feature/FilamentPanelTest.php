@@ -41,6 +41,10 @@ class FilamentPanelTest extends TestCase
             ->assertSee('!previewVariables.has(mapping.variable)', false)
             ->assertSee("message.theme.customCss !== ''", false)
             ->assertSee('message.theme.schemaVersion === 3', false)
+            ->assertSee('isFoundationRecord(message.theme.foundations)', false)
+            ->assertDontSee('message.theme.foundations.explicitPaths', false)
+            ->assertSee('Number.isFinite', false)
+            ->assertSee('fontAllowlist', false)
             ->assertSee("mapping.mapping !== 'preview-emulatable'", false)
             ->assertSee('detail: { compatibility: message.projection.compatibility, mode: message.projection.mode, unmapped }', false);
     }

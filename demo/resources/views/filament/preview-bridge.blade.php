@@ -7,7 +7,22 @@
         const safeToken = /^[a-z\d_.-]{1,100}$/i;
         const foundationKeys = new Set([
             'palettes', 'surfaces', 'borders', 'text', 'typography',
-            'spacing', 'density', 'radius', 'borderWidth', 'shadow', 'explicitPaths',
+            'spacing', 'density', 'radius', 'borderWidth', 'shadow',
+        ]);
+        const paletteNames = ['primary', 'success', 'warning', 'danger', 'info', 'gray'];
+        const surfaceNames = ['page', 'sidebar', 'topbar', 'card', 'elevated', 'input'];
+        const borderNames = ['default', 'strong'];
+        const textNames = ['primary', 'muted', 'disabled'];
+        const spacingNames = ['0', 'px', '0.5', '1', '1.5', '2', '3', '4', '6', '8'];
+        const fontAllowlist = new Map([
+            ['Inter', 'Inter'],
+            ['Roboto', 'Roboto'],
+        ]);
+        const systemMonoFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+        const overrideIdentities = new Set([
+            'button.primary\u0000background',
+            'button.secondary\u0000background',
+            'global.primary\u0000primary',
         ]);
         const previewMappingTuples = new Map([
             ['palette.primary.base', '--ftb-primary'],
@@ -24,6 +39,16 @@
             ['density', 'unmapped'],
             ['surface.page', 'unmapped'],
         ]);
+        for (const name of paletteNames) {
+            inventoryMappings.set(`palette.${name}.base`, name === 'primary' ? 'preview-emulatable' : 'export-only');
+            for (const shade of palette) inventoryMappings.set(`palette.${name}.shades.${shade}`, name === 'primary' ? 'preview-emulatable' : 'export-only');
+        }
+        for (const name of surfaceNames) inventoryMappings.set(`surface.${name}`, 'unmapped');
+        for (const name of borderNames) inventoryMappings.set(`border.${name}`, 'export-only');
+        for (const name of textNames) inventoryMappings.set(`text.${name}`, 'export-only');
+        for (const name of ['body', 'heading', 'mono']) inventoryMappings.set(`typography.${name}`, 'runtime-refresh-required');
+        for (const name of spacingNames) inventoryMappings.set(`spacing.${name}`, 'unmapped');
+        for (const name of ['density', 'radius', 'borderWidth', 'shadow']) inventoryMappings.set(name, 'unmapped');
         const previewVariables = new Set(previewMappingTuples.values());
 
         function isRecord(value) {
@@ -34,6 +59,62 @@
             return typeof value === 'string' && safeToken.test(value);
         }
 
+        function exactKeys(value, required) {
+            return isRecord(value) && Object.keys(value).length === required.length &&
+                required.every((key) => Object.prototype.hasOwnProperty.call(value, key));
+        }
+
+        function isHex(value) {
+            return typeof value === 'string' && /^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(value);
+        }
+
+        function isFoundationColor(value) {
+            return isHex(value) || (typeof value === 'string' && /^var\(--(?:primary|success|warning|danger|info|gray)-(?:50|100|200|300|400|500|600|700|800|900|950)\)$/.test(value));
+        }
+
+        function isFiniteNumber(value) {
+            return typeof value === 'number' && Number.isFinite(value);
+        }
+
+        function isSafeFont(value) {
+            if (!isRecord(value) || !['system', 'curated', 'custom'].includes(value.kind) ||
+                typeof value.name !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9 .,_-]{0,99}$/.test(value.name) || typeof value.family !== 'string' ||
+                (value.family !== systemMonoFamily && !/^[A-Za-z0-9][A-Za-z0-9 .,_-]*$/.test(value.family))) return false;
+            if (value.kind === 'curated') return exactKeys(value, ['kind', 'name', 'family', 'provider']) &&
+                value.provider === 'google-fonts' && fontAllowlist.get(value.name) === value.family;
+            return exactKeys(value, ['kind', 'name', 'family']) && (value.kind !== 'custom' || value.name === value.family);
+        }
+
+        function isFoundationRecord(foundations) {
+            if (!exactKeys(foundations, [...foundationKeys])) return false;
+            if (!exactKeys(foundations.palettes, paletteNames) ||
+                !exactKeys(foundations.surfaces, surfaceNames) ||
+                !exactKeys(foundations.borders, borderNames) ||
+                !exactKeys(foundations.text, textNames) ||
+                !exactKeys(foundations.typography, ['body', 'heading', 'mono']) ||
+                !exactKeys(foundations.spacing, spacingNames) ||
+                !['compact', 'default', 'spacious'].includes(foundations.density) ||
+                !['none', 'sm', 'md', 'lg', 'xl', 'full'].includes(foundations.radius) ||
+                !['none', 'sm', 'md', 'lg', 'xl'].includes(foundations.shadow) ||
+                !isFiniteNumber(foundations.borderWidth) || foundations.borderWidth < 0 || foundations.borderWidth > 8) return false;
+            for (const name of paletteNames) {
+                const paletteState = foundations.palettes[name];
+                if (!exactKeys(paletteState, ['base', 'shades', 'overrides']) || !isHex(paletteState.base) ||
+                    !exactKeys(paletteState.shades, palette.map(String)) || !isRecord(paletteState.overrides)) return false;
+                for (const shade of palette) {
+                    if (!isHex(paletteState.shades[shade]) || (paletteState.overrides[shade] !== undefined && !isHex(paletteState.overrides[shade]))) return false;
+                }
+                if (Object.keys(paletteState.overrides).some((shade) => !palette.includes(Number(shade)) || !isHex(paletteState.overrides[shade]))) return false;
+            }
+            for (const collection of [foundations.surfaces, foundations.borders, foundations.text]) {
+                for (const value of Object.values(collection)) {
+                    if (!exactKeys(value, ['light', 'dark']) || !isFoundationColor(value.light) || !isFoundationColor(value.dark)) return false;
+                }
+            }
+            if (!Object.values(foundations.typography).every(isSafeFont)) return false;
+            return Object.values(foundations.spacing).every((value) => isFiniteNumber(value) && value >= 0 && value <= 256);
+        }
+
         function isSafeOverride(override) {
             if (!isRecord(override) || !isSafeToken(override.targetId) ||
                 !isSafeToken(override.controlId) || typeof override.scope !== 'string' ||
@@ -42,6 +123,9 @@
                 !['string', 'number', 'boolean'].includes(typeof override.value)) {
                 return false;
             }
+
+            if (Object.keys(override).some((key) => !['targetId', 'controlId', 'scope', 'componentId', 'variantId', 'stateId', 'value'].includes(key))) return false;
+            if (!overrideIdentities.has(`${override.targetId}\u0000${override.controlId}`)) return false;
 
             return ['componentId', 'variantId', 'stateId'].every((key) =>
                 override[key] === undefined || isSafeToken(override[key]),
@@ -95,8 +179,8 @@
                     !hasOnlyKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss']) ||
                     !hasOnlyKeys(message.theme.colors, ['primary']) ||
                     !isRecord(message.theme.colors) || !/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(message.theme.colors.primary) ||
-                    !hasOnlyFoundationKeys(message.theme.foundations) || !Array.isArray(message.theme.overrides) ||
-                    !message.theme.overrides.every(isSafeOverride) ||
+                    !isFoundationRecord(message.theme.foundations) || !Array.isArray(message.theme.overrides) ||
+                    !message.theme.overrides.every(isSafeOverride) || new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size !== message.theme.overrides.length ||
                     message.theme.customCss !== '' || !isAcceptedProjection(message.projection)) {
                     return false;
                 }
