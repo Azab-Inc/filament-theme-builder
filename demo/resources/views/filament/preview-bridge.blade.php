@@ -10,24 +10,29 @@
             return value !== null && typeof value === 'object' && !Array.isArray(value);
         }
 
+        function isSafeToken(value) {
+            return typeof value === 'string' && safeToken.test(value);
+        }
+
         function isSafeOverride(override) {
-            if (!isRecord(override) || !safeToken.test(override.targetId ?? '') ||
-                !safeToken.test(override.controlId ?? '') ||
+            if (!isRecord(override) || !isSafeToken(override.targetId) ||
+                !isSafeToken(override.controlId) || typeof override.scope !== 'string' ||
                 !['global', 'component', 'variant', 'state'].includes(override.scope) ||
+                (typeof override.value === 'number' && !Number.isFinite(override.value)) ||
                 !['string', 'number', 'boolean'].includes(typeof override.value)) {
                 return false;
             }
 
             return ['componentId', 'variantId', 'stateId'].every((key) =>
-                override[key] === undefined || safeToken.test(override[key]),
+                override[key] === undefined || isSafeToken(override[key]),
             );
         }
 
         function isAcceptedTheme(message) {
             if (!isRecord(message) || message.type !== 'ftb:theme:update' || message.schemaVersion !== 1 ||
                 !isRecord(message.theme) || ![1, 2].includes(message.theme.schemaVersion) ||
-                !isRecord(message.theme.colors) ||
-                !/^#[\da-f]{6}$/i.test(message.theme.colors.primary ?? '')) {
+                !isRecord(message.theme.colors) || typeof message.theme.colors.primary !== 'string' ||
+                !/^#[\da-f]{6}$/i.test(message.theme.colors.primary)) {
                 return false;
             }
 

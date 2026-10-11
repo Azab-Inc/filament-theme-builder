@@ -98,8 +98,12 @@ test('Filament preview is public and embeddable', async ({ page }) => {
 })
 
 test('preview bridge dispatches only for configured allowed origins', async ({ page }) => {
-  const demoOrigin = 'http://127.0.0.1:4174'
-  await page.goto('http://127.0.0.1:4173')
+  const composePreview = process.env.COMPOSE_E2E === '1'
+  const demoOrigin = composePreview ? composeBaseUrl : 'http://127.0.0.1:4174'
+  const builderOrigin = composePreview ? composeBaseUrl : 'http://127.0.0.1:4173'
+  const pageErrors: Error[] = []
+  page.on('pageerror', (error) => pageErrors.push(error))
+  await page.goto(builderOrigin)
   await page.setContent(`
     <iframe name="preview-frame" src="${demoOrigin}/demo/admin"></iframe>
     <iframe name="same-origin-child" src="${demoOrigin}/demo/admin/login"></iframe>
@@ -120,44 +124,95 @@ test('preview bridge dispatches only for configured allowed origins', async ({ p
     })
   })
 
-  await page.evaluate(() => {
+  await page.evaluate((origin) => {
     const previewFrame = document.querySelector<HTMLIFrameElement>('iframe[name="preview-frame"]')!
     previewFrame.contentWindow!.postMessage({
       type: 'ftb:theme:update', schemaVersion: 1,
       theme: { schemaVersion: 1, colors: { primary: '#0f766e' } },
-    }, 'http://127.0.0.1:4174')
-  })
+    }, origin)
+  }, demoOrigin)
   const sameOriginChild = page.frame({ name: 'same-origin-child' })
   expect(sameOriginChild).toBeTruthy()
-  await sameOriginChild!.evaluate(() => {
+  await sameOriginChild!.evaluate((origin) => {
     window.parent.frames['preview-frame']!.postMessage({
       type: 'ftb:theme:update', schemaVersion: 1,
       theme: { schemaVersion: 1, colors: { primary: '#0f766e' } },
-    }, 'http://127.0.0.1:4174')
-  })
-  await page.evaluate(() => {
+    }, origin)
+  }, demoOrigin)
+  await page.evaluate((origin) => {
     const previewFrame = document.querySelector<HTMLIFrameElement>('iframe[name="preview-frame"]')!
     previewFrame.contentWindow!.postMessage({
       type: 'ftb:theme:update', schemaVersion: 1,
       theme: { schemaVersion: 2, colors: { primary: '#0f766e' }, overrides: [] },
-    }, 'http://127.0.0.1:4174')
-  })
+    }, origin)
+  }, demoOrigin)
   await expect.poll(() => preview!.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(2)
-  await page.evaluate(() => {
+  await page.evaluate((origin) => {
     const previewFrame = document.querySelector<HTMLIFrameElement>('iframe[name="preview-frame"]')!
-    for (const data of [null, 'not-an-object', { type: 'ftb:theme:update', schemaVersion: 2 }, {
-      type: 'ftb:theme:update', schemaVersion: 1,
-      theme: { schemaVersion: 1, colors: { primary: 'url(javascript:alert(1))' } },
-    }]) {
-      previewFrame.contentWindow!.postMessage(data, 'http://127.0.0.1:4174')
+    const validOverride = {
+      targetId: 'button.primary', controlId: 'background', scope: 'variant',
+      componentId: 'button', variantId: 'primary', value: '#0f766e',
     }
-  })
+    const malformedOverrides = [
+      { ...validOverride, targetId: ['button.primary'] },
+      { ...validOverride, targetId: null },
+      { ...validOverride, targetId: 42 },
+      { ...validOverride, controlId: ['background'] },
+      { ...validOverride, controlId: null },
+      { ...validOverride, controlId: 42 },
+      { ...validOverride, componentId: ['button'] },
+      { ...validOverride, componentId: null },
+      { ...validOverride, componentId: 42 },
+      { ...validOverride, variantId: ['primary'] },
+      { ...validOverride, variantId: null },
+      { ...validOverride, variantId: 42 },
+      { ...validOverride, stateId: ['hover'] },
+      { ...validOverride, stateId: null },
+      { ...validOverride, stateId: 42 },
+      { ...validOverride, scope: ['variant'] },
+      { ...validOverride, scope: null },
+      { ...validOverride, scope: 42 },
+      { ...validOverride, value: NaN },
+      { ...validOverride, value: Infinity },
+      { ...validOverride, value: -Infinity },
+    ]
+    const payloads = [
+      null,
+      'not-an-object',
+      { type: 'ftb:theme:update', schemaVersion: 2 },
+      { type: 'ftb:theme:update', schemaVersion: 1,
+        theme: { schemaVersion: 1, colors: { primary: ['#dc2626'] } } },
+      { type: 'ftb:theme:update', schemaVersion: 1,
+        theme: { schemaVersion: 1, colors: { primary: null } } },
+      { type: 'ftb:theme:update', schemaVersion: 1,
+        theme: { schemaVersion: 1, colors: { primary: 42 } } },
+      ...malformedOverrides.map((overrides) => ({
+        type: 'ftb:theme:update', schemaVersion: 1,
+        theme: { schemaVersion: 2, colors: { primary: '#dc2626' }, overrides: [overrides] },
+      })),
+    ]
+    for (const data of payloads) {
+      previewFrame.contentWindow!.postMessage(data, origin)
+    }
+  }, demoOrigin)
   await page.waitForTimeout(100)
   expect(await preview!.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(2)
   expect(await preview!.locator('#ftb-managed-theme').evaluate((style) => style.textContent))
     .toContain('#0f766e')
+  expect(pageErrors).toEqual([])
 
-  await page.goto('http://localhost:4173')
+  await page.evaluate((origin) => {
+    const previewFrame = document.querySelector<HTMLIFrameElement>('iframe[name="preview-frame"]')!
+    previewFrame.contentWindow!.postMessage({
+      type: 'ftb:theme:update', schemaVersion: 1,
+      theme: { schemaVersion: 2, colors: { primary: '#dc2626' }, overrides: [] },
+    }, origin)
+  }, demoOrigin)
+  await expect.poll(() => preview!.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(3)
+  expect(await preview!.locator('#ftb-managed-theme').evaluate((style) => style.textContent))
+    .toContain('#dc2626')
+
+  await page.goto(builderOrigin.replace('127.0.0.1', 'localhost'))
   await page.setContent(`
     <iframe name="cross-origin-preview" src="${demoOrigin}/demo/admin"></iframe>
   `)
@@ -176,13 +231,13 @@ test('preview bridge dispatches only for configured allowed origins', async ({ p
       document.body.dataset.acceptedMessages = String(Number(document.body.dataset.acceptedMessages) + 1)
     })
   })
-  await page.evaluate(() => {
+  await page.evaluate((origin) => {
     const previewFrame = document.querySelector<HTMLIFrameElement>('iframe[name="cross-origin-preview"]')!
     previewFrame.contentWindow!.postMessage({
       type: 'ftb:theme:update', schemaVersion: 1,
       theme: { schemaVersion: 1, colors: { primary: '#0f766e' } },
-    }, 'http://127.0.0.1:4174')
-  })
+    }, origin)
+  }, demoOrigin)
   await expect.poll(() => crossOriginPreview!.evaluate(() => Number(document.body.dataset.receivedMessages))).toBe(1)
   await page.waitForTimeout(100)
   expect(await crossOriginPreview!.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(0)

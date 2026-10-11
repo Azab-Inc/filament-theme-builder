@@ -33,3 +33,35 @@ once v2 overrides were present because `toRaw` only unwraps the root object.
 - The normal non-Compose Playwright security command could not start its local
   web servers because the host demo install is missing `Laravel\\Boost`; the
   canonical Compose stack remained healthy and the focused regression passed.
+
+## Round 1 malformed-value hardening
+
+The ordinary preview bridge integration test now sends malformed primary values,
+all v2 identity fields as arrays/null/numbers, malformed scopes, and NaN/Infinity
+through the trusted parent `postMessage` path. It asserts no page errors, no
+managed-style mutation, and a subsequent valid v2 update.
+
+### Exact verification commands and output
+
+```text
+COMPOSE_E2E=1 npx playwright test e2e/smoke.spec.ts -g 'preview bridge dispatches only'
+1 passed
+
+COMPOSE_E2E=1 npx playwright test e2e/smoke.spec.ts -g 'builder primary color updates a native Filament control|preview bridge dispatches only'
+2 passed
+
+(cd builder && npm run type-check && npm run test:unit -- --run && npm run build)
+type-check passed; 5 files / 38 tests passed; Vite build passed
+
+docker compose -f compose.dev.yaml exec -T demo-php php artisan test --filter=FilamentPanelTest
+7 passed (33 assertions)
+
+docker compose -f compose.dev.yaml exec -T demo-php vendor/bin/pint --test
+277 files passed
+
+docker compose -f compose.dev.yaml exec -T demo-php vendor/bin/phpstan analyse
+[OK] No errors
+
+curl -fsS http://127.0.0.1:4175/api/health
+{"status":"ok"}
+```
