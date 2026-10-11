@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "laravel": {
+      "type": "local",
+      "command": [
+        "docker",
+        "compose",
+        "-f",
+        "./demo/compose.yaml",
+        "exec",
+        "-T",
+        "laravel.test",
+        "php",
+        "artisan",
+        "boost:mcp"
+      ],
+      "enabled": true
+    }
+  }
+}
