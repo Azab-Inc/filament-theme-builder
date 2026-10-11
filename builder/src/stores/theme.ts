@@ -34,7 +34,7 @@ export const useThemeStore = defineStore('theme', () => {
     if (saveTimer) clearTimeout(saveTimer)
     saveTimer = setTimeout(() => {
       try {
-        localStorage.setItem(storageKey, JSON.stringify(toRaw(value)))
+        localStorage.setItem(storageKey, JSON.stringify(serializeTheme(value)))
       } catch {
         // Storage may be unavailable or full; editing remains usable.
       }
@@ -74,6 +74,7 @@ export const useThemeStore = defineStore('theme', () => {
       theme.value = { ...theme.value, overrides }
     },
     setFoundation(path: string, value: unknown): void {
+      if (isDerivedShadePath(path)) return
       const candidate = cloneTheme(theme.value)
       if (!setPath(candidate.foundations as unknown as Record<string, unknown>, path, value)) return
       if (!validateFoundationState(candidate.foundations).valid) return
@@ -81,6 +82,7 @@ export const useThemeStore = defineStore('theme', () => {
       theme.value = candidate
     },
     resetFoundation(path: string): void {
+      if (isDerivedShadePath(path)) return
       const defaults = createDefaultFoundationState()
       const value = getPath(defaults as unknown as Record<string, unknown>, path)
       if (value === undefined) return
@@ -167,8 +169,9 @@ function restoreTheme(): ThemeStateV3 {
     if (value) {
       const parsed: unknown = JSON.parse(value)
       if (isVersionThree(parsed)) {
-        const validation = validateFoundationState(parsed)
-        if (validation.valid) return structuredClone(parsed)
+        const normalized = normalizeTheme(parsed)
+        const validation = validateFoundationState(normalized)
+        if (validation.valid) return normalized
       } else {
         const restored = deserializeTheme(parsed, registry)
         if (restored.valid) return migrateToCurrent(restored.state)
@@ -185,12 +188,28 @@ function migrateToCurrent(state: ThemeState): ThemeStateV3 {
   const current = createDefaultThemeState()
   current.colors.primary = legacy.colors.primary
   current.foundations.palettes.primary.base = legacy.colors.primary
-  current.foundations.palettes.primary.shades = applyPaletteOverrides(
-    generatePalette(legacy.colors.primary),
-    current.foundations.palettes.primary.overrides,
-  )
   current.overrides = structuredClone(legacy.overrides)
+  normalizePalettes(current)
   return current
+}
+
+function normalizeTheme(value: ThemeStateV3): ThemeStateV3 {
+  const normalized = cloneTheme(value)
+  normalizePalettes(normalized)
+  return normalized
+}
+
+function normalizePalettes(value: ThemeStateV3): void {
+  value.colors.primary = value.foundations.palettes.primary.base
+  for (const palette of Object.values(value.foundations.palettes)) rebuildPalette(palette)
+}
+
+function serializeTheme(value: ThemeStateV3): unknown {
+  const serialized = cloneTheme(value)
+  for (const palette of Object.values(serialized.foundations.palettes)) {
+    delete (palette as unknown as { shades?: Record<number, string> }).shades
+  }
+  return serialized
 }
 
 function deepestScope(request: ResolveRequest): ThemeOverride['scope'] {
@@ -241,6 +260,10 @@ function syncPalette(theme: ThemeStateV3, path: string): void {
   const palette = theme.foundations.palettes[name]
   rebuildPalette(palette)
   if (name === 'primary') theme.colors.primary = palette.base
+}
+
+function isDerivedShadePath(path: string): boolean {
+  return /^palettes\.(primary|success|warning|danger|info|gray)\.shades(?:\.|$)/.test(path)
 }
 
 function toLegacyTheme(value: ThemeStateV3): ThemeStateV2 {

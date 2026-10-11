@@ -1,5 +1,6 @@
-import type { Density, DensityPreset, FoundationState, FoundationStateV3, PaletteName, PaletteShade } from '@/models/foundations.model'
-import { PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
+import type { Density, DensityPreset, FoundationState, FoundationStateV3, PaletteName } from '@/models/foundations.model'
+import { PALETTE_NAMES } from '@/models/foundations.model'
+import { generatePalette } from '@/services/palette-generator'
 
 const PALETTE_BASES: Record<PaletteName, string> = {
   primary: '#6366f1',
@@ -32,8 +33,7 @@ const FOUNDATION_DEFAULTS: FoundationState = deepFreeze({
   palettes: Object.fromEntries(PALETTE_NAMES.map((name) => {
     const base = PALETTE_BASES[name]
 
-    // Until Task 2 supplies generated shades, base-valued entries make the full canonical key set explicit without inventing colors.
-    const shades = Object.fromEntries(PALETTE_SHADES.map((shade) => [shade, base])) as Record<PaletteShade, string>
+    const shades = generatePalette(base)
 
     return [name, { base, shades, overrides: {} }]
   })) as FoundationState['palettes'],

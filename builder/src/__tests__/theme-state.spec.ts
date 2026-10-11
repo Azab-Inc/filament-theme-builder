@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createPinia, setActivePinia } from 'pinia'
-import { PALETTE_SHADES } from '@/models/foundations.model'
+import { PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
 import type { ResolveRequest, ThemeOverride } from '@/models/theme.model'
+import { createDefaultThemeState } from '@/services/foundation-defaults'
+import { generatePalette } from '@/services/palette-generator'
 import { useThemeStore } from '@/stores/theme'
 
 const createThemeState = useThemeStore
@@ -36,6 +38,11 @@ describe('theme state', () => {
     expect(theme.theme.schemaVersion).toBe(3)
     expect(theme.theme.colors.primary).toBe('#6366f1')
     expect(theme.theme.overrides).toEqual([])
+    for (const name of PALETTE_NAMES) {
+      expect(theme.theme.foundations.palettes[name].shades).toEqual(
+        generatePalette(theme.theme.foundations.palettes[name].base),
+      )
+    }
     theme.setPrimaryColor('#0f766e')
     expect(theme.theme.colors.primary).toBe('#0f766e')
   })
@@ -55,7 +62,9 @@ describe('theme state', () => {
     theme.setPrimaryColor('#0f766e')
     expect(localStorage.getItem('ftb-theme')).toBeNull()
     vi.advanceTimersByTime(300)
-    expect(JSON.parse(localStorage.getItem('ftb-theme')!)).toEqual(theme.theme)
+    const persisted = JSON.parse(localStorage.getItem('ftb-theme')!)
+    expect(persisted.colors).toEqual(theme.theme.colors)
+    expect(persisted.foundations.palettes.primary.shades).toBeUndefined()
 
     setActivePinia(createPinia())
     expect(createThemeState().theme.colors.primary).toBe('#0f766e')
@@ -100,6 +109,11 @@ describe('theme state', () => {
     expect(store.theme.overrides).toEqual([])
     expect(store.theme.customCss).toBe('')
     expect(store.theme.foundations.palettes.primary.base).toBe('#0f766e')
+    for (const name of PALETTE_NAMES) {
+      expect(store.theme.foundations.palettes[name].shades).toEqual(
+        generatePalette(store.theme.foundations.palettes[name].base),
+      )
+    }
   })
 
   it('migrates version-2 primary and overrides without losing either', () => {
@@ -115,6 +129,11 @@ describe('theme state', () => {
     expect(store.theme.colors.primary).toBe('#0f766e')
     expect(store.theme.foundations.palettes.primary.base).toBe('#0f766e')
     expect(store.theme.overrides).toEqual([primaryButtonVariantOverride])
+    for (const name of PALETTE_NAMES) {
+      expect(store.theme.foundations.palettes[name].shades).toEqual(
+        generatePalette(store.theme.foundations.palettes[name].base),
+      )
+    }
   })
 
   it('sets and resets one foundation control as one sparse history mutation', () => {
@@ -148,6 +167,15 @@ describe('theme state', () => {
     store.resetPaletteShade('primary', 50)
     expect(store.theme.foundations.palettes.primary.overrides).not.toHaveProperty('50')
     expect(store.theme.foundations.palettes.primary.shades[50]).not.toBe('#ffffff')
+  })
+
+  it('rejects direct writes to generated palette shades', () => {
+    const store = useThemeStore()
+    const original = store.theme.foundations.palettes.primary.shades[500]
+
+    store.setFoundation('palettes.primary.shades.500', '#ffffff')
+
+    expect(store.theme.foundations.palettes.primary.shades[500]).toBe(original)
   })
 
   it('keeps palette derivation consistent when a base is changed through setFoundation', () => {
@@ -195,7 +223,22 @@ describe('theme state', () => {
     vi.advanceTimersByTime(299)
     expect(localStorage.getItem('ftb-theme')).toBeNull()
     vi.advanceTimersByTime(1)
-    expect(JSON.parse(localStorage.getItem('ftb-theme')!)).toEqual(store.theme)
+    const persisted = JSON.parse(localStorage.getItem('ftb-theme')!)
+    for (const name of PALETTE_NAMES) {
+      expect(persisted.foundations.palettes[name].shades).toBeUndefined()
+      expect(persisted.foundations.palettes[name].base).toBe(store.theme.foundations.palettes[name].base)
+    }
+  })
+
+  it('normalizes forged persisted shades from canonical palette inputs', () => {
+    const forged = createDefaultThemeState()
+    forged.foundations.palettes.primary.base = '#0f766e'
+    forged.foundations.palettes.primary.shades[500] = '#ffffff'
+    localStorage.setItem('ftb-theme', JSON.stringify(forged))
+
+    const store = useThemeStore()
+
+    expect(store.theme.foundations.palettes.primary.shades).toEqual(generatePalette('#0f766e'))
   })
 
   it('falls back to an editable default when persisted V3 state is invalid', () => {
@@ -268,8 +311,10 @@ describe('theme state', () => {
       value: '#4f46e5',
     })
     vi.advanceTimersByTime(300)
-    expect(JSON.parse(localStorage.getItem('ftb-theme')!)).toEqual(store.theme)
-    expect(JSON.parse(localStorage.getItem('ftb-theme')!).overrides).not.toContainEqual(expect.objectContaining({ scope: 'state', value: '#4f46e5' }))
+    const persisted = JSON.parse(localStorage.getItem('ftb-theme')!)
+    expect(persisted.overrides).toEqual(store.theme.overrides)
+    expect(persisted.foundations.palettes.primary.shades).toBeUndefined()
+    expect(persisted.overrides).not.toContainEqual(expect.objectContaining({ scope: 'state', value: '#4f46e5' }))
   })
 
   it('ignores invalid persisted overrides and leaves editing usable', () => {

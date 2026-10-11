@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_FOUNDATION_CONTROL_MAPPINGS, PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
 import { createDefaultFoundationState, createDefaultThemeState, densityPreset } from '@/services/foundation-defaults'
+import { generatePalette } from '@/services/palette-generator'
 
 describe('foundation defaults', () => {
   it('exposes the six supported palettes and eleven shade keys', () => {
@@ -28,7 +29,7 @@ describe('foundation defaults', () => {
     expect(state.palettes.gray.base).toBe('#6b7280')
     for (const palette of Object.values(state.palettes)) {
       expect(Object.keys(palette.shades).map(Number)).toEqual(PALETTE_SHADES)
-      expect(Object.values(palette.shades)).toEqual(Array(PALETTE_SHADES.length).fill(palette.base))
+      expect(palette.shades).toEqual(generatePalette(palette.base))
     }
     expect(state.typography.body).toEqual({ kind: 'system', name: 'System', family: 'ui-sans-serif, system-ui, sans-serif' })
     expect(state.typography.heading).toEqual(state.typography.body)
