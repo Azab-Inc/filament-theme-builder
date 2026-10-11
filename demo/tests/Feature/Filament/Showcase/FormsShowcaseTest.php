@@ -27,6 +27,8 @@ class FormsShowcaseTest extends TestCase
             ->assertSee('Wizard steps layout')
             ->assertSee('Tabbed form layout')
             ->assertSee('Product image')
+            ->assertSee('Local preview only; JPEG/PNG; not stored')
+            ->assertDontSee('type="file"')
             ->assertSee('Street address')
             ->assertSee('Order status');
     }
@@ -44,12 +46,24 @@ class FormsShowcaseTest extends TestCase
                 'product_category' => 'stationery',
                 'product_available' => true,
                 'product_launch_date' => '2026-10-10',
-                'product_image' => null,
+                'product_image' => 'Local preview only; JPEG/PNG; not stored',
+                'product_long_text' => 'A long deterministic fixture paragraph keeps the showcase readable while exercising long-form text treatment without relying on persisted content.',
                 'street_address' => '14 Market Street',
                 'contact_email' => 'hello@example.test',
                 'order_status' => 'pending',
             ])
             ->assertSee('Product description');
+    }
+
+    public function test_forms_showcase_rejects_long_text_overflow(): void
+    {
+        $this->seed();
+        $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
+
+        Livewire::test(FormsShowcase::class)
+            ->fillForm(['product_long_text' => str_repeat('Overflow fixture text. ', 20)])
+            ->call('save')
+            ->assertHasFormErrors(['product_long_text' => 'max']);
     }
 
     public function test_forms_showcase_rejects_invalid_contact_email(): void
@@ -92,6 +106,7 @@ class FormsShowcaseTest extends TestCase
             ->assertSee('Product availability')
             ->assertSee('Product launch date')
             ->assertSee('Product image')
+            ->assertSee('Local preview only; JPEG/PNG; not stored')
             ->assertSee('Street address')
             ->assertSee('Contact email')
             ->assertSee('Order status');
@@ -109,7 +124,7 @@ class FormsShowcaseTest extends TestCase
                 'product_category' => 'stationery',
                 'product_available' => true,
                 'product_launch_date' => '2026-10-10',
-                'product_image' => null,
+                'product_image' => 'Local preview only; JPEG/PNG; not stored',
                 'street_address' => '14 Market Street',
                 'contact_email' => 'hello@example.test',
                 'order_status' => 'pending',

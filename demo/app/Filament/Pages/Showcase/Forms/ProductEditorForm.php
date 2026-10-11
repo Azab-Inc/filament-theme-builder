@@ -3,7 +3,7 @@
 namespace App\Filament\Pages\Showcase\Forms;
 
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -50,15 +50,14 @@ final class ProductEditorForm
                     DatePicker::make('product_launch_date')
                         ->label('Product launch date')
                         ->required(),
-                    FileUpload::make('product_image')
+                    Placeholder::make('product_image')
                         ->label('Product image')
-                        ->disk('local')
-                        ->directory('showcase-fixtures')
-                        ->visibility('private')
-                        ->image()
-                        ->acceptedFileTypes(['image/jpeg', 'image/png'])
-                        ->maxSize(2048)
-                        ->nullable(),
+                        ->content('Local preview only; JPEG/PNG; not stored'),
+                    Textarea::make('product_long_text')
+                        ->label('Long text fixture')
+                        ->default('A long deterministic fixture paragraph keeps the showcase readable while exercising long-form text treatment without relying on persisted content.')
+                        ->rows(4)
+                        ->maxLength(240),
                 ])
                 ->columns(2),
             Section::make('Wizard steps layout')

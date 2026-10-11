@@ -44,6 +44,7 @@ class FormsShowcase extends Page
             'product_image' => null,
             'product_sku' => 'NOTEBOOK-001',
             'product_description' => 'A considered notebook for field notes and small observations.',
+            'product_long_text' => 'A long deterministic fixture paragraph keeps the showcase readable while exercising long-form text treatment without relying on persisted content.',
             'product_compare_price' => '28.00',
             'product_notes' => null,
             'street_address' => '14 Market Street',

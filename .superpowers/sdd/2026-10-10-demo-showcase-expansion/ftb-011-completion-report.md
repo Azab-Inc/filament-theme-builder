@@ -69,9 +69,9 @@ in app/Filament/Support/EntityResourceTable.php on line 81
 
 ## Assumptions and safety
 
-- “Upload representation” means a native `FileUpload` control configured for
-  private local storage, restricted to JPEG/PNG, with no upload package and no
-  arbitrary SVG handling.
+- “Upload representation” is a native dependency-free `Placeholder` labelled
+  for product image coverage; it describes JPEG/PNG preview handling without
+  exposing a file input or writing to storage.
 - Showcase submissions remain validation-only and do not persist records or
   uploaded files.
 - Existing campaign-specific controls were replaced as requested by the
@@ -89,3 +89,50 @@ in app/Filament/Support/EntityResourceTable.php on line 81
   and any remaining acceptance coverage are completed elsewhere.
 - The unrelated `EntityResourceTable::filtersFor()` redeclaration must be fixed
   separately before the entire PHP suite can pass.
+
+## Fix round 1
+
+### Reviewer findings addressed
+
+1. Replaced the real local-storage `FileUpload` with a native Filament
+   `Placeholder` containing `Local preview only; JPEG/PNG; not stored`. The
+   browser test asserts the representation is visible and that no file input is
+   rendered, eliminating filesystem persistence from this showcase path.
+2. Restored `product_long_text` as a deterministic, visible text area with a
+   max-length rule. PHP covers its seeded value and overflow validation;
+   Playwright covers the visible prefilled long-text state.
+
+### Changed files
+
+- `demo/app/Filament/Pages/Showcase/Forms/ProductEditorForm.php`
+- `demo/app/Filament/Pages/Showcase/FormsShowcase.php`
+- `demo/tests/Feature/Filament/Showcase/FormsShowcaseTest.php`
+- `e2e/demo-showcase.spec.ts`
+- This report
+
+### Red-first evidence
+
+- PHP failed before implementation because the response still contained the
+  file input, the placeholder text was absent, and `product_long_text` was not
+  a schema component.
+- Playwright failed before implementation because the safe upload text was
+  absent; after the first implementation it exposed the missing hydrated
+  long-text value, which was corrected by keeping the long-text field in the
+  always-visible Section/grid layout.
+
+### Fix-round verification
+
+- `php artisan test tests/Feature/Filament/Showcase/FormsShowcaseTest.php`
+  - 7 tests, 7 passed, 72 assertions.
+- `npx playwright test e2e/demo-showcase.spec.ts --grep 'forms and schemas showcase'`
+  - 4 tests passed.
+- `vendor/bin/pint --test`
+  - Passed.
+- `vendor/bin/phpstan analyse app/Filament/Pages/Showcase tests/Feature/Filament/Showcase/FormsShowcaseTest.php`
+  - Passed with 0 errors.
+- `git diff --check`
+  - Passed.
+
+FTB-006 registry/inheritance and FTB-016 forced-state controls remain out of
+scope. The unrelated full-suite `EntityResourceTable::filtersFor()` fatal
+remains unchanged.
