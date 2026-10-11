@@ -6,6 +6,15 @@ import { createThemeRegistry, validateRegistry } from '@/registry/theme-registry
 import { deserializeTheme, serializeTheme } from '@/services/theme-serialization'
 
 const registry = createThemeRegistry()
+const expandedRegistry: FilamentRegistry = validateRegistry(registry.entries.map((entry) => entry.id === 'button.primary'
+  ? {
+      ...entry,
+      controls: [
+        ...entry.controls,
+        { id: 'label', valueType: 'string' as const, defaultValue: 'Primary button' },
+      ],
+    }
+  : entry))
 const primaryScope: ResolveRequest = {
   targetId: 'button.primary',
   controlId: 'background',
@@ -49,6 +58,16 @@ const themeWithGlobalAndVariant: ThemeState = {
   colors: { primary: '#6366f1' },
   overrides: [globalOverride, variantOverride],
 }
+const expandedTheme: ThemeState = {
+  schemaVersion: 2,
+  colors: { primary: '#6366f1' },
+  overrides: [globalOverride, variantOverride, {
+    targetId: 'button.primary',
+    controlId: 'label',
+    scope: 'global',
+    value: 'Configured button',
+  }],
+}
 const invalidTheme: ThemeState = {
   ...themeWithGlobalAndVariant,
   overrides: [{ ...globalOverride, value: 'not-a-color' }],
@@ -73,12 +92,18 @@ describe('theme serialization', () => {
     expect(result.state.overrides).not.toContainEqual(inheritedStateCopy)
   })
 
-  it('fully-explicit serialization materializes inherited values from the shared resolver', () => {
-    const result = serializeTheme(themeWithGlobalAndVariant, registry, primaryScope, 'fully-explicit')
+  it('fully-explicit serialization materializes every supported control and scope', () => {
+    const result = serializeTheme(expandedTheme, expandedRegistry, primaryScope, 'fully-explicit')
 
     expect(result).toEqual(expect.objectContaining({ valid: true, mode: 'fully-explicit' }))
     if (!result.valid) throw new Error(result.error)
+    expect(result.state.overrides).toHaveLength(16)
+    expect(result.state.overrides).toContainEqual(expect.objectContaining({ controlId: 'background', scope: 'global', value: '#334155' }))
+    expect(result.state.overrides).toContainEqual(expect.objectContaining({ controlId: 'background', scope: 'component', value: '#334155' }))
+    expect(result.state.overrides).toContainEqual(expect.objectContaining({ controlId: 'background', scope: 'variant', variantId: 'secondary', value: '#334155' }))
     expect(result.state.overrides).toContainEqual(expect.objectContaining({ scope: 'state', value: '#4f46e5' }))
+    expect(result.state.overrides).toContainEqual(expect.objectContaining({ controlId: 'label', scope: 'global', value: 'Configured button' }))
+    expect(result.state.overrides).toContainEqual(expect.objectContaining({ controlId: 'label', scope: 'state', variantId: 'secondary', stateId: 'default', value: 'Configured button' }))
     expect(result.state.overrides).not.toContainEqual(expect.objectContaining({ value: undefined }))
   })
 
@@ -92,5 +117,11 @@ describe('theme serialization', () => {
     if (!serialized.valid) throw new Error(serialized.error)
 
     expect(deserializeTheme(JSON.stringify(serialized.state), registry)).toEqual({ valid: true, state: serialized.state })
+  })
+
+  it('rejects malformed runtime input before state validation', () => {
+    expect(deserializeTheme('{"schemaVersion":2,"colors":null,"overrides":[]}', registry)).toMatchObject({ valid: false, error: expect.stringMatching(/invalid/i) })
+    expect(deserializeTheme('[]', registry)).toMatchObject({ valid: false, error: expect.stringMatching(/invalid/i) })
+    expect(deserializeTheme('{not-json', registry)).toMatchObject({ valid: false, error: expect.stringMatching(/invalid/i) })
   })
 })

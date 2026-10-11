@@ -1,4 +1,4 @@
-import type { FilamentRegistry } from '@/models/theme-registry.model'
+import type { FilamentRegistry, RegistryEntry } from '@/models/theme-registry.model'
 import type { ResolveRequest, ThemeOverride, ThemeScope, ThemeState, ThemeStateV2 } from '@/models/theme.model'
 import { resolveThemeValue } from '@/services/theme-resolver'
 import { validateThemeState } from '@/services/theme-validation'
@@ -25,14 +25,12 @@ export function serializeTheme(
   const currentState = toVersionTwo(state)
   if (mode === 'minimal') return { valid: true, mode, state: currentState }
 
-  const resolved = resolveThemeValue(currentState, registry, scope)
-  if (resolved.status === 'unresolved') {
-    return { valid: false, mode, error: `Unresolved value for ${resolved.targetId}.${resolved.controlId}` }
-  }
+  const explicitOverrides = materializeSupportedOverrides(currentState, registry, scope)
+  if (!explicitOverrides.valid) return { valid: false, mode, error: explicitOverrides.error }
 
-  const explicitState: ThemeState = {
+  const explicitState: ThemeStateV2 = {
     ...currentState,
-    overrides: [createExplicitOverride(scope, resolved.value)],
+    overrides: explicitOverrides.overrides,
   }
   const explicitValidation = validateThemeState(explicitState, registry)
   if (!explicitValidation.valid) return { valid: false, mode, error: explicitValidation.invalidOverrides[0]?.error ?? 'Invalid fully-explicit theme state' }
@@ -49,9 +47,49 @@ export function deserializeTheme(input: unknown, registry: FilamentRegistry): Th
     }
   }
 
-  const validation = validateThemeState(parsed as ThemeState, registry)
+  if (!isThemeStateShape(parsed)) return { valid: false, error: 'Invalid theme state' }
+
+  const validation = validateThemeState(parsed, registry)
   if (!validation.valid) return { valid: false, error: validation.invalidOverrides[0]?.error ?? 'Invalid theme state' }
   return { valid: true, state: validation.state }
+}
+
+function materializeSupportedOverrides(
+  state: ThemeStateV2,
+  registry: FilamentRegistry,
+  scope: ResolveRequest,
+): { valid: true; overrides: ThemeOverride[] } | { valid: false; error: string } {
+  const entry = registry.entries.find(({ id }) => id === scope.targetId)
+  if (!entry) return { valid: false, error: `Unresolved value for ${scope.targetId}.${scope.controlId}` }
+
+  const componentId = scope.componentId ?? entry.family
+  const requests = supportedRequests(entry, scope.targetId, componentId)
+  const overrides: ThemeOverride[] = []
+
+  for (const request of requests) {
+    const resolved = resolveThemeValue(state, registry, request)
+    if (resolved.status === 'unresolved') {
+      return { valid: false, error: `Unresolved value for ${resolved.targetId}.${resolved.controlId}` }
+    }
+    overrides.push(createExplicitOverride(request, resolved.value))
+  }
+
+  return { valid: true, overrides }
+}
+
+function supportedRequests(entry: RegistryEntry, targetId: string, componentId: string): ResolveRequest[] {
+  const requests: ResolveRequest[] = []
+  for (const control of entry.controls) {
+    requests.push({ targetId, controlId: control.id })
+    requests.push({ targetId, controlId: control.id, componentId })
+    for (const variantId of entry.variants) {
+      requests.push({ targetId, controlId: control.id, componentId, variantId })
+      for (const stateId of entry.states) {
+        requests.push({ targetId, controlId: control.id, componentId, variantId, stateId })
+      }
+    }
+  }
+  return requests
 }
 
 function toVersionTwo(state: ThemeState): ThemeStateV2 {
@@ -87,4 +125,14 @@ function getDeepestScope(scope: ResolveRequest): ThemeScope {
   if (scope.variantId !== undefined) return 'variant'
   if (scope.componentId !== undefined) return 'component'
   return 'global'
+}
+
+function isThemeStateShape(value: unknown): value is ThemeState {
+  if (!isRecord(value) || (value.schemaVersion !== 1 && value.schemaVersion !== 2)) return false
+  if (!isRecord(value.colors) || typeof value.colors.primary !== 'string') return false
+  return value.schemaVersion === 1 || Array.isArray(value.overrides)
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

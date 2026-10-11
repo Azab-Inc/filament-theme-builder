@@ -21,3 +21,13 @@
 - Version-1 states are normalized to the version-2 domain representation with a legacy global override.
 - CSS/PHP export formats and store integration remain intentionally out of scope.
 - The unrelated pre-existing `.gitignore` modification was preserved.
+
+## Fix round 1
+
+- RED: expanded serialization coverage failed because fully-explicit output emitted one override instead of all supported controls and scope combinations; malformed-input assertions also preceded the runtime-shape guard.
+- GREEN: fully-explicit output now enumerates every control across global, component, variant, and state representations for the selected registry target, resolving every value through `resolveThemeValue()`.
+- Deserialization now checks the parsed runtime shape before calling the shared state validator and rejects malformed JSON/domain values without unchecked casts.
+- Focused serialization tests passed: `1` file, `5` tests.
+- Full unit suite passed: `5` files, `27` tests.
+- Type check passed: `npm run type-check`.
+- Production build passed: `npm run build`.
