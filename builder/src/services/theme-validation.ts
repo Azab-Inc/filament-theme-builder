@@ -1,4 +1,5 @@
 import type { FilamentRegistry, RegistryControl, RegistryEntry } from '@/models/theme-registry.model'
+import { SUPPORTED_FILAMENT_COMPATIBILITY } from '@/registry/theme-registry'
 import type { ThemeOverride, ThemeScope, ThemeState, ThemeValue } from '@/models/theme.model'
 
 export type ThemeValidationContext = {
@@ -107,7 +108,7 @@ function validOptionalIdentifiers(override: Record<string, unknown>): boolean {
 }
 
 function isCompatibilityBaseline(value: unknown): value is string {
-  return typeof value === 'string' && /^\d+\.x$/.test(value)
+  return value === SUPPORTED_FILAMENT_COMPATIBILITY
 }
 
 function isValidControlValue(value: unknown, control: RegistryControl): value is ThemeValue {

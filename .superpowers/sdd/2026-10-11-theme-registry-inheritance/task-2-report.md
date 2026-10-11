@@ -37,3 +37,13 @@
 - Tightened default and quarantine assertions to verify exact values and contextual invalid override results.
 - RED: focused resolver tests failed with precedence, compatibility, and runtime validation gaps before implementation.
 - GREEN: focused resolver tests passed: `1` file, `8` tests.
+
+## Fix round 2
+
+- Added a failing regression assertion for a uniformly unsupported `4.x` registry baseline.
+- Added the shared `SUPPORTED_FILAMENT_COMPATIBILITY` contract constant and used it for registry metadata and baseline validation, preserving verified `5.x` behavior.
+- RED: focused resolver tests failed with a uniformly `4.x` registry because syntax-only validation accepted it.
+- GREEN: focused resolver tests passed: `1` file, `8` tests.
+- Full unit suite passed: `4` files, `22` tests.
+- Type check passed: `npm run type-check`.
+- Production build passed: `npm run build`.

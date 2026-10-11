@@ -50,10 +50,14 @@ describe('theme validation and resolution', () => {
   })
 
   it('rejects unsupported or mismatched registry compatibility baselines', () => {
+    const unsupportedRegistry = {
+      entries: registry.entries.map((entry) => ({ ...entry, filamentCompatibility: '4.x' })),
+    } as FilamentRegistry
     const mismatchedRegistry = {
       entries: registry.entries.map((entry, index) => index === 0 ? { ...entry, filamentCompatibility: '4.x' } : entry),
     } as FilamentRegistry
 
+    expect(validateThemeOverride(global('#334155'), unsupportedRegistry)).toMatchObject({ valid: false, error: expect.stringMatching(/unsupported.*compatibility.*baseline/i) })
     expect(validateThemeOverride(global('#334155'), mismatchedRegistry)).toMatchObject({ valid: false, error: expect.stringMatching(/compatibility.*baseline/i) })
     expect(validateThemeOverride(global('#334155'), { entries: [{ ...registry.entries[0], filamentCompatibility: 'future' }] } as FilamentRegistry)).toMatchObject({ valid: false, error: expect.stringMatching(/compatibility.*baseline/i) })
   })

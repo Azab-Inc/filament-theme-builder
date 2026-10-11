@@ -10,6 +10,7 @@ import type {
 const valueTypes: readonly RegistryValueType[] = ['boolean', 'color', 'number', 'string']
 const compatibilityPattern = /^(\d+)\.x$/
 const versionPattern = /^(\d+)(?:\.\d+){0,2}$/
+export const SUPPORTED_FILAMENT_COMPATIBILITY = '5.x'
 
 const primaryButton: RegistryEntry = {
   id: 'button.primary',
@@ -26,7 +27,7 @@ const primaryButton: RegistryEntry = {
   ],
   variants: ['primary', 'secondary'],
   states: ['default', 'hover'],
-  filamentCompatibility: '5.x',
+  filamentCompatibility: SUPPORTED_FILAMENT_COMPATIBILITY,
 }
 
 const secondaryButton: RegistryEntry = {
@@ -51,7 +52,7 @@ const legacyPrimary: RegistryEntry = {
   ],
   variants: [],
   states: [],
-  filamentCompatibility: '5.x',
+  filamentCompatibility: SUPPORTED_FILAMENT_COMPATIBILITY,
 }
 
 export function createThemeRegistry(): FilamentRegistry {
