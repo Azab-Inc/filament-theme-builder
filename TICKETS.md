@@ -717,7 +717,7 @@ Allow the public demo to exercise real Filament upload UI while constraining fil
 
 ## FTB-028 — Reset demo state every ten minutes without breaking the showcase
 
-**Status:** in-progress
+**Status:** done
 **Blocked by:** [FTB-009A](#ftb-009), [FTB-027](#ftb-027)
 
 ### What to build
@@ -726,14 +726,14 @@ Restore the demo from a known-good SQLite snapshot every ten minutes, clean temp
 
 ### Acceptance criteria
 
-- [ ] A deterministic known-good demo database snapshot exists.
-- [ ] Scheduler restoration runs every ten minutes.
-- [ ] Restoration is atomic enough that normal visitors do not see a half-restored database.
-- [ ] Temporary demo uploads are removed during cleanup.
-- [ ] The UI displays Demo data resets every 10 minutes.
-- [ ] Destructive actions that could make the showcase unusable are simulated or constrained.
-- [ ] Create/edit/action UI still behaves realistically enough for theming.
-- [ ] Automated tests verify reset behavior.
+- [x] A deterministic known-good demo database snapshot exists.
+- [x] Scheduler restoration runs every ten minutes.
+- [x] Restoration is atomic enough that normal visitors do not see a half-restored database.
+- [x] Temporary demo uploads are removed during cleanup.
+- [x] The UI displays Demo data resets every 10 minutes.
+- [x] Destructive actions that could make the showcase unusable are simulated or constrained.
+- [x] Create/edit/action UI still behaves realistically enough for theming.
+- [x] Automated tests verify reset behavior.
 
 ---
 
