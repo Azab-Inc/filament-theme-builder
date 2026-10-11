@@ -20,53 +20,102 @@ class FormsShowcaseTest extends TestCase
         $this->get('/demo/admin/forms-showcase')
             ->assertOk()
             ->assertSee('Forms & Schemas')
-            ->assertSee('Campaign brief')
-            ->assertSee('Wizard')
-            ->assertSee('Repeater')
-            ->assertSee('Content blocks')
-            ->assertSee('Editorial notes')
-            ->assertSee('Tabs and sections')
-            ->assertSee('Conditional details')
-            ->assertSee('Disabled fixture')
-            ->assertSee('Prefilled fixture');
+            ->assertSee('ProductEditorForm')
+            ->assertSee('CustomerContactForm')
+            ->assertSee('OrderStatusForm')
+            ->assertSee('Section / grid layout')
+            ->assertSee('Wizard steps layout')
+            ->assertSee('Tabbed form layout')
+            ->assertSee('Product image')
+            ->assertSee('Street address')
+            ->assertSee('Order status');
     }
 
-    public function test_forms_showcase_uses_deterministic_prefilled_optional_and_long_text_states(): void
+    public function test_forms_showcase_uses_deterministic_prefilled_optional_and_contact_states(): void
     {
         $this->seed();
         $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
 
         Livewire::test(FormsShowcase::class)
             ->assertFormSet([
-                'campaign_name' => 'Autumn studio launch',
-                'audience' => 'Independent makers',
-                'show_details' => true,
-                'optional_note' => null,
-                'filled_fixture' => 'Local deterministic value',
-                'long_text' => 'A long local fixture paragraph demonstrates how editorial copy remains readable while the form stays scannable.',
+                'product_name' => 'Considered Field Notebook',
+                'product_reference' => 'FIXTURE-PRODUCT-001',
+                'product_price' => '24.00',
+                'product_category' => 'stationery',
+                'product_available' => true,
+                'product_launch_date' => '2026-10-10',
+                'product_image' => null,
+                'street_address' => '14 Market Street',
+                'contact_email' => 'hello@example.test',
+                'order_status' => 'pending',
             ])
-            ->assertSee('Long text fixture');
+            ->assertSee('Product description');
     }
 
-    public function test_forms_showcase_rejects_long_text_overflow_instead_of_silently_truncating_it(): void
+    public function test_forms_showcase_rejects_invalid_contact_email(): void
     {
         $this->seed();
         $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
 
         Livewire::test(FormsShowcase::class)
-            ->fillForm(['long_text' => str_repeat('Overflow fixture text. ', 10)])
+            ->fillForm(['contact_email' => 'not-an-email'])
             ->call('save')
-            ->assertHasFormErrors(['long_text' => 'max']);
+            ->assertHasFormErrors(['contact_email' => 'email']);
     }
 
-    public function test_forms_showcase_server_validation_rejects_missing_required_campaign_name(): void
+    public function test_forms_showcase_server_validation_rejects_missing_required_order_status(): void
     {
         $this->seed();
         $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
 
         Livewire::test(FormsShowcase::class)
-            ->fillForm(['campaign_name' => ''])
+            ->fillForm(['order_status' => ''])
             ->call('save')
-            ->assertHasFormErrors(['campaign_name' => 'required']);
+            ->assertHasFormErrors(['order_status' => 'required']);
+    }
+
+    public function test_forms_showcase_exposes_named_product_customer_and_order_fixtures(): void
+    {
+        $this->seed();
+        $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
+
+        $this->get('/demo/admin/forms-showcase')
+            ->assertOk()
+            ->assertSee('ProductEditorForm')
+            ->assertSee('CustomerContactForm')
+            ->assertSee('OrderStatusForm')
+            ->assertSee('Section / grid layout')
+            ->assertSee('Wizard steps layout')
+            ->assertSee('Tabbed form layout')
+            ->assertSee('Product price')
+            ->assertSee('Product category')
+            ->assertSee('Product availability')
+            ->assertSee('Product launch date')
+            ->assertSee('Product image')
+            ->assertSee('Street address')
+            ->assertSee('Contact email')
+            ->assertSee('Order status');
+    }
+
+    public function test_forms_showcase_prefills_named_fixture_values_and_validates_order_status(): void
+    {
+        $this->seed();
+        $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
+
+        Livewire::test(FormsShowcase::class)
+            ->assertFormSet([
+                'product_name' => 'Considered Field Notebook',
+                'product_price' => '24.00',
+                'product_category' => 'stationery',
+                'product_available' => true,
+                'product_launch_date' => '2026-10-10',
+                'product_image' => null,
+                'street_address' => '14 Market Street',
+                'contact_email' => 'hello@example.test',
+                'order_status' => 'pending',
+            ])
+            ->fillForm(['order_status' => ''])
+            ->call('save')
+            ->assertHasFormErrors(['order_status' => 'required']);
     }
 }

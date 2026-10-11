@@ -2,22 +2,12 @@
 
 namespace App\Filament\Pages\Showcase;
 
-use Filament\Forms\Components\Builder;
-use Filament\Forms\Components\Builder\Block;
-use Filament\Forms\Components\Checkbox;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
+use App\Filament\Pages\Showcase\Forms\CustomerContactForm;
+use App\Filament\Pages\Showcase\Forms\OrderStatusForm;
+use App\Filament\Pages\Showcase\Forms\ProductEditorForm;
 use Filament\Pages\Page;
 use Filament\Panel;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Tabs;
-use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Components\Wizard;
-use Filament\Schemas\Components\Wizard\Step;
 use Filament\Schemas\Schema;
 use LogicException;
 use UnitEnum;
@@ -45,20 +35,25 @@ class FormsShowcase extends Page
     public function mount(): void
     {
         $this->showcaseForm()->fill([
-            'campaign_name' => 'Autumn studio launch',
-            'audience' => 'Independent makers',
-            'show_details' => true,
-            'optional_note' => null,
-            'long_text' => 'A long local fixture paragraph demonstrates how editorial copy remains readable while the form stays scannable.',
-            'filled_fixture' => 'Local deterministic value',
-            'channels' => [
-                ['channel' => 'Email', 'budget' => '1200'],
-            ],
-            'content_blocks' => [
-                ['type' => 'headline', 'data' => ['headline' => 'Make room for considered work']],
-            ],
-            'editorial_notes' => '<p>Keep the launch focused, useful, and unmistakably local.</p>',
-            'disabled_fixture' => 'Read-only local value',
+            'product_name' => 'Considered Field Notebook',
+            'product_reference' => 'FIXTURE-PRODUCT-001',
+            'product_price' => '24.00',
+            'product_category' => 'stationery',
+            'product_available' => true,
+            'product_launch_date' => '2026-10-10',
+            'product_image' => null,
+            'product_sku' => 'NOTEBOOK-001',
+            'product_description' => 'A considered notebook for field notes and small observations.',
+            'product_compare_price' => '28.00',
+            'product_notes' => null,
+            'street_address' => '14 Market Street',
+            'city' => 'Brighton',
+            'region' => 'East Sussex',
+            'postal_code' => 'BN1 1AA',
+            'contact_email' => 'hello@example.test',
+            'contact_phone' => '+44 20 7946 0958',
+            'order_status' => 'pending',
+            'order_status_note' => 'Awaiting payment confirmation.',
         ]);
     }
 
@@ -66,114 +61,10 @@ class FormsShowcase extends Page
     {
         return $schema
             ->components([
-                Section::make('Campaign brief')
-                    ->description('A deterministic, request-scoped fixture for schema composition.')
-                    ->schema([
-                        TextInput::make('campaign_name')
-                            ->label('Campaign name')
-                            ->required()
-                            ->maxLength(120),
-                        TextInput::make('audience')
-                            ->label('Audience')
-                            ->required(),
-                        TextInput::make('disabled_fixture')
-                            ->label('Disabled fixture')
-                            ->disabled(),
-                        TextInput::make('filled_fixture')
-                            ->label('Prefilled fixture')
-                            ->default('Local deterministic value'),
-                        Textarea::make('optional_note')
-                            ->label('Optional note')
-                            ->nullable(),
-                        Textarea::make('long_text')
-                            ->label('Long text fixture')
-                            ->rows(4)
-                            ->maxLength(180),
-                    ])
-                    ->columns(2),
-                Wizard::make([
-                    Step::make('Plan')
-                        ->description('Required values and focus order')
-                        ->schema([
-                            TextInput::make('plan_reference')
-                                ->label('Plan reference')
-                                ->default('DEMO-CAMPAIGN-001')
-                                ->required(),
-                        ]),
-                    Step::make('Build')
-                        ->description('Repeatable and block-based content')
-                        ->schema([
-                            TextInput::make('build_reference')
-                                ->label('Build reference')
-                                ->default('DEMO-BUILD-001'),
-                        ]),
-                    Step::make('Review')
-                        ->description('Long-form editorial content')
-                        ->schema([
-                            Textarea::make('review_reference')
-                                ->label('Review reference')
-                                ->default('DEMO-REVIEW-001'),
-                        ]),
-                ])
-                    ->label('Wizard')
-                    ->persistStepInQueryString('form-step'),
-                Section::make('Repeater')
-                    ->schema([
-                        Repeater::make('channels')
-                            ->label('Channels')
-                            ->schema([
-                                TextInput::make('channel')->required(),
-                                TextInput::make('budget')->numeric()->required(),
-                            ])
-                            ->itemLabel(fn (array $state): ?string => $state['channel'] ?? null)
-                            ->defaultItems(1)
-                            ->columns(2),
-                    ]),
-                Section::make('Content blocks')
-                    ->schema([
-                        Builder::make('content_blocks')
-                            ->label('Content blocks')
-                            ->blocks([
-                                Block::make('headline')
-                                    ->label('Headline block')
-                                    ->schema([
-                                        TextInput::make('headline')->required(),
-                                    ]),
-                                Block::make('quote')
-                                    ->label('Quote block')
-                                    ->schema([
-                                        Textarea::make('quote')->required(),
-                                    ]),
-                            ])
-                            ->blockPickerColumns(2)
-                            ->reorderable(false),
-                    ]),
-                Section::make('Editorial notes')
-                    ->schema([
-                        RichEditor::make('editorial_notes')
-                            ->label('Editorial notes')
-                            ->toolbarButtons(['bold', 'italic', 'bulletList', 'orderedList', 'link']),
-                    ]),
-                Tabs::make('Tabs and sections')
-                    ->tabs([
-                        Tab::make('Overview')
-                            ->schema([
-                                Toggle::make('show_details')
-                                    ->label('Show conditional details')
-                                    ->live(),
-                                Checkbox::make('is_featured')
-                                    ->label('Featured fixture')
-                                    ->default(true),
-                            ]),
-                        Tab::make('Conditional')
-                            ->schema([
-                                Textarea::make('conditional_details')
-                                    ->label('Conditional details')
-                                    ->default('Local conditional details')
-                                    ->visible(fn (Get $get): bool => (bool) $get('show_details'))
-                                    ->required(fn (Get $get): bool => (bool) $get('show_details')),
-                            ]),
-                    ]),
+                Section::make('ProductEditorForm')
+                    ->schema(ProductEditorForm::components()),
+                ...CustomerContactForm::components(),
+                ...OrderStatusForm::components(),
             ])
             ->statePath('data');
     }
