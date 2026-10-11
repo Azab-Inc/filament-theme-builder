@@ -57,41 +57,30 @@ const legacyPrimary: RegistryEntry = {
   filamentCompatibility: SUPPORTED_FILAMENT_COMPATIBILITY,
 }
 
-const formColorPattern = /^#[\da-f]{6}$/i
-
-function formControl(): RegistryControl {
-  return {
-    id: 'background',
-    valueType: 'color',
-    constraints: { pattern: formColorPattern },
-    defaultValue: '#ffffff',
-  }
-}
-
-function formEntry(id: string, label: string, selectors: readonly string[], states: readonly string[]): RegistryEntry {
+function formEntry(id: string, label: string, selectors: readonly string[]): RegistryEntry {
   return {
     id,
     label,
     family: 'form',
     selectors,
-    controls: [formControl()],
-    variants: ['default'],
-    states,
+    controls: [],
+    variants: [],
+    states: [],
     filamentCompatibility: SUPPORTED_FILAMENT_COMPATIBILITY,
   }
 }
 
 const formEntries: readonly RegistryEntry[] = [
-  formEntry('form.control.date', 'Date control', ['.fi-fo-date-time-picker'], ['default', 'hover', 'focus', 'disabled']),
-  formEntry('form.control.file-upload', 'File upload control', ['.fi-fo-file-upload'], ['default', 'hover', 'focus', 'disabled']),
-  formEntry('form.control.select', 'Select control', ['.fi-fo-select', '.fi-select-input'], ['default', 'hover', 'focus', 'disabled']),
-  formEntry('form.control.text', 'Text control', ['.fi-fo-text-input', '.fi-input'], ['default', 'hover', 'focus', 'disabled']),
-  formEntry('form.control.textarea', 'Textarea control', ['.fi-fo-textarea'], ['default', 'hover', 'focus', 'disabled']),
-  formEntry('form.control.toggle', 'Toggle control', ['.fi-fo-toggle', '.fi-toggle'], ['default', 'hover', 'focus', 'disabled']),
-  formEntry('form.field', 'Form field', ['.fi-fo-field'], ['default', 'hover', 'focus', 'disabled']),
-  formEntry('form.layout.tabs', 'Tabs layout', ['.fi-tabs', '.fi-tabs-item'], ['default']),
-  formEntry('form.layout.wizard', 'Wizard layout', ['.fi-sc-wizard', '.fi-sc-wizard-header-step-btn', '.fi-sc-wizard-step'], ['default']),
-  formEntry('form.section', 'Section layout', ['.fi-section'], ['default']),
+  formEntry('form.control.date', 'Date control', ['.fi-fo-date-time-picker']),
+  formEntry('form.control.file-upload', 'File upload control', ['.fi-fo-file-upload']),
+  formEntry('form.control.select', 'Select control', ['.fi-fo-select', '.fi-select-input']),
+  formEntry('form.control.text', 'Text control', ['.fi-fo-text-input', '.fi-input']),
+  formEntry('form.control.textarea', 'Textarea control', ['.fi-fo-textarea']),
+  formEntry('form.control.toggle', 'Toggle control', ['.fi-fo-toggle', '.fi-toggle']),
+  formEntry('form.field', 'Form field', ['.fi-fo-field']),
+  formEntry('form.layout.tabs', 'Tabs layout', ['.fi-tabs', '.fi-tabs-item']),
+  formEntry('form.layout.wizard', 'Wizard layout', ['.fi-sc-wizard', '.fi-sc-wizard-header-step-btn', '.fi-sc-wizard-step']),
+  formEntry('form.section', 'Section layout', ['.fi-section']),
 ]
 
 export function createThemeRegistry(): FilamentRegistry {
@@ -136,7 +125,7 @@ function validateEntry(entry: RegistryEntry, ids: Set<string>): void {
   if (!Array.isArray(entry.selectors) || entry.selectors.length === 0 || entry.selectors.some((selector) => !isSelector(selector))) {
     throw new Error(`Invalid selectors for ${entry.id}`)
   }
-  if (!Array.isArray(entry.controls) || entry.controls.length === 0) throw new Error(`Controls are required for ${entry.id}`)
+  if (!Array.isArray(entry.controls)) throw new Error(`Controls must be an array for ${entry.id}`)
   validateUniqueKeys(entry.variants, 'variants', entry.id)
   validateUniqueKeys(entry.states, 'states', entry.id)
   if (!compatibilityPattern.test(entry.filamentCompatibility)) throw new Error(`Invalid compatibility metadata for ${entry.id}`)

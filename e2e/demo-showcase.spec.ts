@@ -372,24 +372,39 @@ test.describe('forms and schemas showcase', () => {
   })
 
   test('exposes the registered shared form selectors in the real Filament markup', async ({ page }) => {
-    for (const selector of [
-      '.fi-section',
-      '.fi-fo-field',
-      '.fi-fo-text-input',
-      '.fi-fo-select',
-      '.fi-select-input',
-      '.fi-fo-toggle',
-      '.fi-fo-date-time-picker',
-      '.fi-fo-textarea',
-      '.fi-fo-file-upload',
-      '.fi-sc-wizard',
-      '.fi-sc-wizard-header-step-btn',
-      '.fi-sc-wizard-step',
-      '.fi-tabs',
-      '.fi-tabs-item',
-    ]) {
-      await expect(page.locator(selector).first(), selector).toBeVisible()
-    }
+    const productSection = page.locator('.fi-section').filter({ hasText: 'ProductEditorForm' }).first()
+    await expect(productSection).toBeVisible()
+    await expect(productSection.getByRole('heading', { name: 'ProductEditorForm', exact: true })).toBeVisible()
+
+    const productNameField = page.locator('.fi-fo-field').filter({ has: page.getByLabel('Product name') }).first()
+    await expect(productNameField).toContainText('Product name')
+    await expect(productNameField.getByRole('textbox', { name: 'Product name' })).toHaveValue('Considered Field Notebook')
+
+    const productNameTextInput = page.locator('.fi-fo-text-input').filter({ has: page.getByLabel('Product name') }).first()
+    await expect(productNameTextInput.getByLabel('Product name')).toHaveValue('Considered Field Notebook')
+    await expect(productNameTextInput.locator('.fi-input').first()).toBeVisible()
+
+    const productSelectField = page.locator('.fi-fo-select').filter({ has: page.getByLabel('Product category') }).first()
+    await expect(productSelectField.getByRole('combobox', { name: 'Product category' })).toHaveValue('stationery')
+    await expect(productSelectField.locator('.fi-select-input').first()).toHaveValue('stationery')
+
+    await expect(page.getByLabel('Product availability')).toHaveRole('switch')
+    await expect(page.locator('.fi-fo-toggle').first()).toHaveRole('switch')
+    await expect(page.locator('.fi-fo-date-time-picker').filter({ has: page.getByLabel('Product launch date') }).first().getByLabel('Product launch date')).toHaveValue('2026-10-10')
+    await expect(page.locator('.fi-fo-textarea').filter({ has: page.getByLabel('Long text fixture') }).first().getByLabel('Long text fixture')).toBeVisible()
+    const productUpload = page.locator('.fi-fo-file-upload').filter({ hasText: 'Drag & Drop your files' }).first()
+    await expect(productUpload).toHaveRole('group')
+    await expect(productUpload).toContainText('Browse Files')
+    await expect(page.getByLabel('Product image')).toHaveCount(1)
+
+    const productWizard = page.locator('.fi-sc-wizard').filter({ has: page.getByRole('list', { name: 'Product wizard' }) }).first()
+    await expect(productWizard.getByRole('list', { name: 'Product wizard' })).toBeVisible()
+    await expect(productWizard.locator('.fi-sc-wizard-header-step-btn').filter({ hasText: 'Details' })).toBeDisabled()
+    await expect(productWizard.locator('.fi-sc-wizard-step').filter({ has: page.getByLabel('Product SKU') })).toBeVisible()
+
+    const productTabs = page.getByRole('tablist', { name: 'Product tabs' })
+    await expect(productTabs).toHaveClass(/fi-tabs/)
+    await expect(productTabs.locator('.fi-tabs-item').filter({ hasText: 'Pricing' })).toHaveAttribute('aria-selected', 'true')
 
     await expect(page.getByText('ProductEditorForm', { exact: true })).toBeVisible()
     await expect(page.getByText('CustomerContactForm', { exact: true })).toBeVisible()
@@ -418,6 +433,7 @@ test.describe('forms and schemas showcase', () => {
     await page.locator('form').filter({ has: page.getByRole('button', { name: /save fixture/i }) }).evaluate((form) => { (form as HTMLFormElement).noValidate = true })
     await page.getByRole('button', { name: /save fixture/i }).click()
     await expect(page.getByText('The order status field is required.')).toBeVisible()
+    await expect(page.locator('.fi-fo-field').filter({ has: page.getByLabel('Order status') }).locator('.fi-fo-select.fi-invalid')).toHaveCount(1)
 
     await page.getByLabel('Product name').focus()
     await page.keyboard.press('Tab')

@@ -96,8 +96,8 @@ describe('theme registry', () => {
     ])
     expect(forms.find((entry) => entry.id === 'form.layout.tabs')?.selectors).toEqual(['.fi-tabs', '.fi-tabs-item'])
     expect(forms.find((entry) => entry.id === 'form.control.select')?.selectors).toEqual(['.fi-fo-select', '.fi-select-input'])
-    expect(forms.every((entry) => entry.controls.some((control) => control.id === 'background'))).toBe(true)
-    expect(forms.find((entry) => entry.id === 'form.control.text')?.states).toEqual(['default', 'hover', 'focus', 'disabled'])
+    expect(forms.every((entry) => entry.controls.length === 0)).toBe(true)
+    expect(forms.every((entry) => entry.variants.length === 0 && entry.states.length === 0)).toBe(true)
   })
 
   it('returns unique, no-match, and ambiguous lookup results deterministically', () => {
@@ -134,6 +134,14 @@ describe('theme registry', () => {
     }
 
     expect(lookupRegistryEntry(registry, { selectors: ['ProductEditorForm'], filamentVersion: '5.9' })).toEqual({ status: 'no-match' })
+  })
+
+  it('allows selector-only surfaces without inventing controls or state metadata', () => {
+    const registry = createThemeRegistry()
+
+    expect(registry.entries.filter((entry) => entry.family === 'form').every((entry) => {
+      return entry.controls.length === 0 && entry.variants.length === 0 && entry.states.length === 0
+    })).toBe(true)
   })
 
   it('rejects lookup when the active Filament compatibility baseline is unsupported', () => {

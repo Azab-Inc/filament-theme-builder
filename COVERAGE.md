@@ -131,10 +131,15 @@ Builder registry slice evidence (2026-10-12): shared targets are
 `form.layout.wizard` (`.fi-sc-wizard`, `.fi-sc-wizard-header-step-btn`,
 `.fi-sc-wizard-step`), and `form.layout.tabs` (`.fi-tabs`, `.fi-tabs-item`).
 Selectors were verified against the running demo's Filament `v5.9.0` markup by
-`e2e/demo-showcase.spec.ts`; registry and lookup evidence are in
-`builder/src/__tests__/theme-registry.spec.ts`, with inheritance evidence in
-`builder/src/__tests__/theme-resolver.spec.ts`. Fixture names remain evidence
-only; no forced-state controls or editor behavior is claimed.
+role/label/context assertions in `e2e/demo-showcase.spec.ts`; registry and
+lookup evidence are in `builder/src/__tests__/theme-registry.spec.ts`. These
+production form entries are selector-only coverage: they intentionally expose
+empty controls, variants, and states because no native Filament theme control
+mapping has been proven. Resolver/reset/parent-change behavior uses the
+separate `form.test.fixture` in `builder/src/__tests__/theme-resolver.spec.ts`;
+that deterministic fixture is test-only and does not claim native Filament
+themability. Fixture names remain evidence only; no forced-state controls or
+editor behavior is claimed.
 - **FTB-012 tables:** `TablesShowcase` provides a compact read-only
   `ProductsTableFixture` backed by deterministic seeded products and order
   counts, plus native `OrdersTableFixture` and `InventoryTableFixture` widgets.

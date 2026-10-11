@@ -1,12 +1,23 @@
 import { describe, expect, it } from 'vitest'
 
-import type { FilamentRegistry } from '@/models/theme-registry.model'
+import type { FilamentRegistry, RegistryEntry } from '@/models/theme-registry.model'
 import type { ResolveRequest, ThemeOverride, ThemeState } from '@/models/theme.model'
-import { createThemeRegistry } from '@/registry/theme-registry'
+import { createThemeRegistry, validateRegistry } from '@/registry/theme-registry'
 import { resolveThemeValue } from '@/services/theme-resolver'
 import { validateThemeOverride, validateThemeState } from '@/services/theme-validation'
 
 const registry: FilamentRegistry = createThemeRegistry()
+const formResolverFixture: RegistryEntry = {
+  id: 'form.test.fixture',
+  label: 'Resolver test fixture',
+  family: 'form',
+  selectors: ['.fi-test-form-control'],
+  controls: [{ id: 'background', valueType: 'color', constraints: { pattern: /^#[\da-f]{6}$/i } }],
+  variants: ['default', 'alternate'],
+  states: ['focus', 'disabled'],
+  filamentCompatibility: '5.x',
+}
+const resolverRegistry = validateRegistry([...registry.entries, formResolverFixture])
 const requestFor = (variantId?: string, stateId?: string): ResolveRequest => ({ targetId: 'button.primary', controlId: 'background', componentId: 'button', variantId, stateId })
 const global = (value: string): ThemeOverride => ({ targetId: 'button.primary', controlId: 'background', scope: 'global', value })
 const component = (value: string): ThemeOverride => ({ targetId: 'button.primary', controlId: 'background', scope: 'component', componentId: 'button', value })
@@ -38,24 +49,33 @@ describe('theme validation and resolution', () => {
     expect(resolveThemeValue(emptyTheme, registry, requestWithoutDefault)).toMatchObject({ status: 'invalid-request', targetId: 'button.primary', controlId: 'border' })
   })
 
-  it('resolves form control inheritance without adding fixture-specific targets or forced states', () => {
+  it('resolves a separate deterministic form fixture across all inheritance levels', () => {
     const request: ResolveRequest = {
-      targetId: 'form.control.text',
+      targetId: 'form.test.fixture',
       controlId: 'background',
       componentId: 'form',
       variantId: 'default',
       stateId: 'focus',
     }
     const state = withOverrides(
-      { targetId: 'form.control.text', controlId: 'background', scope: 'global', value: '#111827' },
-      { targetId: 'form.control.text', controlId: 'background', scope: 'component', componentId: 'form', value: '#1f2937' },
-      { targetId: 'form.control.text', controlId: 'background', scope: 'variant', componentId: 'form', variantId: 'default', value: '#374151' },
-      { targetId: 'form.control.text', controlId: 'background', scope: 'state', componentId: 'form', variantId: 'default', stateId: 'focus', value: '#4b5563' },
+      { targetId: 'form.test.fixture', controlId: 'background', scope: 'global', value: '#111827' },
+      { targetId: 'form.test.fixture', controlId: 'background', scope: 'component', componentId: 'form', value: '#1f2937' },
+      { targetId: 'form.test.fixture', controlId: 'background', scope: 'variant', componentId: 'form', variantId: 'default', value: '#374151' },
+      { targetId: 'form.test.fixture', controlId: 'background', scope: 'state', componentId: 'form', variantId: 'default', stateId: 'focus', value: '#4b5563' },
     )
 
-    expect(resolveThemeValue(state, registry, request)).toEqual({ status: 'resolved', value: '#4b5563', source: 'state' })
-    expect(resolveThemeValue(state, registry, { ...request, stateId: 'disabled' })).toEqual({ status: 'resolved', value: '#374151', source: 'variant' })
-    expect(resolveThemeValue(state, registry, { ...request, targetId: 'form.control.text', stateId: 'server-validation' })).toMatchObject({ status: 'invalid-request' })
+    expect(resolveThemeValue(state, resolverRegistry, request)).toEqual({ status: 'resolved', value: '#4b5563', source: 'state' })
+    expect(resolveThemeValue(state, resolverRegistry, { ...request, stateId: 'disabled' })).toEqual({ status: 'resolved', value: '#374151', source: 'variant' })
+    expect(resolveThemeValue(state, resolverRegistry, { ...request, targetId: 'form.control.text', stateId: 'server-validation' })).toMatchObject({ status: 'invalid-request' })
+  })
+
+  it('resets the form fixture child and follows a changed parent without copying values', () => {
+    const parent: ThemeOverride = { targetId: 'form.test.fixture', controlId: 'background', scope: 'component', componentId: 'form', value: '#1f2937' }
+    const child: ThemeOverride = { targetId: 'form.test.fixture', controlId: 'background', scope: 'variant', componentId: 'form', variantId: 'default', value: '#374151' }
+    const request: ResolveRequest = { targetId: 'form.test.fixture', controlId: 'background', componentId: 'form', variantId: 'default' }
+
+    expect(resolveThemeValue(withOverrides(parent, child), resolverRegistry, request)).toMatchObject({ value: '#374151', source: 'variant' })
+    expect(resolveThemeValue(withOverrides({ ...parent, value: '#0f766e' }), resolverRegistry, request)).toMatchObject({ value: '#0f766e', source: 'component' })
   })
 
   it('rejects unknown IDs, controls, unsupported keys, invalid values, and incompatible baselines', () => {
