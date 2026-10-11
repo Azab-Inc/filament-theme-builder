@@ -98,6 +98,105 @@ test.describe("foundation preview integration", () => {
     expect(mutationRequests).toEqual([]);
   });
 
+  test("changes native Products, Orders, and Inventory table density immediately without requests", async ({
+    page,
+  }) => {
+    const navigationRequests: string[] = [];
+    const mutationRequests: string[] = [];
+    page.on("request", (request) => {
+      if (request.isNavigationRequest()) navigationRequests.push(request.url());
+      if (request.method() !== "GET") mutationRequests.push(request.url());
+    });
+
+    await page.goto(`${composeBaseUrl}/demo/admin/login`);
+    await page.locator("#form\\.email").fill("user");
+    await page.locator("#form\\.password").fill("password");
+    await page.locator("#form").evaluate((form) => form.requestSubmit());
+    await expect(page).toHaveURL(`${composeBaseUrl}/demo/admin`);
+    await page.goto(composeBaseUrl);
+    await expect(page.getByRole("heading", { name: "Filament Theme Builder" })).toBeVisible();
+    await page.evaluate((tablesUrl) => {
+      document.querySelector<HTMLIFrameElement>('iframe[title="Filament preview"]')!.src = tablesUrl;
+    }, `${composeBaseUrl}/demo/admin/tables-showcase`);
+    await expect
+      .poll(() => page.frames().find((frame) => /\/demo\/admin\/tables-showcase/.test(frame.url()))?.url() ?? "")
+      .toContain("/demo/admin/tables-showcase");
+    const previewFrame = page.frame({ url: /\/demo\/admin\/tables-showcase/ });
+    expect(previewFrame).toBeTruthy();
+    await expect(previewFrame!.locator(".fi-ta")).toHaveCount(3);
+
+    const iframe = page.locator('iframe[title="Filament preview"]');
+    const initialIframeUrl = await iframe.getAttribute("src");
+    const densityEvents = await previewFrame!.evaluate(() => {
+      document.body.dataset.tableDensityEvents = "0";
+      window.addEventListener("ftb:theme:updated", () => {
+        document.body.dataset.tableDensityEvents = String(
+          Number(document.body.dataset.tableDensityEvents) + 1,
+        );
+      });
+      return Number(document.body.dataset.tableDensityEvents);
+    });
+    expect(densityEvents).toBe(0);
+
+    const measure = () =>
+      previewFrame!.evaluate(() =>
+        Array.from(document.querySelectorAll(".fi-ta")).map((root) => ({
+          heading: root.querySelector(".fi-ta-header-heading")?.textContent?.trim(),
+          container: root.querySelector(".fi-ta-ctn")!.getBoundingClientRect().height,
+          header: root.querySelector(".fi-ta-header")!.getBoundingClientRect().height,
+          headerCell: root.querySelector(".fi-ta-header-cell")!.getBoundingClientRect().height,
+          row: root.querySelector("tbody tr:not(.fi-ta-group-header-row)")!.getBoundingClientRect().height,
+        })),
+      );
+
+    const expectedHeadings = [
+      "Showcase products",
+      "Orders table fixture",
+      "Inventory table fixture",
+    ];
+    const defaultMeasurements = await measure();
+    expect(defaultMeasurements.map(({ heading }) => heading)).toEqual(expectedHeadings);
+
+    navigationRequests.length = 0;
+    mutationRequests.length = 0;
+    await page.getByRole("button", { name: "Compact density" }).click();
+    await expect(page.locator("#density")).toHaveValue("compact");
+    await expect
+      .poll(() => previewFrame!.evaluate(() => Number(document.body.dataset.tableDensityEvents)))
+      .toBe(1);
+    const compactMeasurements = await measure();
+
+    await page.getByRole("button", { name: "Default density" }).click();
+    await expect(page.locator("#density")).toHaveValue("default");
+    await expect
+      .poll(() => previewFrame!.evaluate(() => Number(document.body.dataset.tableDensityEvents)))
+      .toBe(2);
+    const restoredMeasurements = await measure();
+
+    await page.getByRole("button", { name: "Spacious density" }).click();
+    await expect(page.locator("#density")).toHaveValue("spacious");
+    await expect
+      .poll(() => previewFrame!.evaluate(() => Number(document.body.dataset.tableDensityEvents)))
+      .toBe(3);
+    const spaciousMeasurements = await measure();
+
+    for (const index of [0, 1, 2]) {
+      expect(compactMeasurements[index]!.container).toBeLessThan(defaultMeasurements[index]!.container);
+      expect(defaultMeasurements[index]!.container).toBe(restoredMeasurements[index]!.container);
+      expect(restoredMeasurements[index]!.container).toBeLessThan(spaciousMeasurements[index]!.container);
+      expect(compactMeasurements[index]!.header).toBeLessThan(defaultMeasurements[index]!.header);
+      expect(defaultMeasurements[index]!.header).toBeLessThan(spaciousMeasurements[index]!.header);
+      expect(compactMeasurements[index]!.headerCell).toBeLessThan(defaultMeasurements[index]!.headerCell);
+      expect(defaultMeasurements[index]!.headerCell).toBeLessThan(spaciousMeasurements[index]!.headerCell);
+      expect(compactMeasurements[index]!.row).toBeLessThan(defaultMeasurements[index]!.row);
+      expect(defaultMeasurements[index]!.row).toBeLessThan(spaciousMeasurements[index]!.row);
+    }
+
+    expect(await iframe.getAttribute("src")).toBe(initialIframeUrl);
+    expect(navigationRequests).toEqual([]);
+    expect(mutationRequests).toEqual([]);
+  });
+
   test("rejects forged inventory tuples and reports unmapped mode compatibility in the actual iframe", async ({
     page,
   }) => {
@@ -222,14 +321,14 @@ test.describe("foundation preview integration", () => {
       .toBe(0);
 
     await message(
-      { id: "density", mapping: "unmapped", value: "compact" },
+      { id: "radius", mapping: "unmapped", value: "lg" },
       "dark",
     );
     await expect
       .poll(() =>
         previewFrame!.evaluate(() => document.body.dataset.compatibilityNotice),
       )
-      .toContain("density");
+      .toContain("radius");
     expect(
       await previewFrame!.evaluate(
         () => JSON.parse(document.body.dataset.compatibilityNotice!).mode,

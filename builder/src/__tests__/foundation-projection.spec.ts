@@ -63,8 +63,9 @@ describe('Filament foundation inventory', () => {
       (entry) => entry.mapping === 'preview-emulatable',
     )) {
       expect(entry.variable ?? entry.selector).toBeTruthy()
-       if (entry.id.endsWith('.base')) expect(entry.evidence.needle).toBe(entry.variable)
-       else expect(entry.evidence.needle).toBe('--primary-${shade}')
+      if (entry.id === 'density') expect(entry.evidence.needle).toBe('.fi-ta')
+      else if (entry.id.endsWith('.base')) expect(entry.evidence.needle).toBe(entry.variable)
+      else expect(entry.evidence.needle).toBe('--primary-${shade}')
     }
   })
 
@@ -77,11 +78,14 @@ describe('Filament foundation inventory', () => {
     expect(mapping?.selector).toBeUndefined()
   })
 
-  it('does not treat panel sidebar configuration as density CSS evidence', () => {
+  it('records the verified native table density CSS evidence', () => {
     const mapping = lookupFoundationMapping('density')
 
-    expect(mapping).toMatchObject({ mapping: 'unmapped' })
-    expect(mapping?.evidence.reason).toMatch(/no verified .*spacing|sidebar.*variable|rule/i)
+    expect(mapping).toMatchObject({
+      mapping: 'preview-emulatable',
+      selector: '.fi-ta',
+    })
+    expect(mapping?.evidence.reason).toMatch(/native Filament table density/i)
   })
 
   it('contains no invented Filament variable tokens', () => {
@@ -108,6 +112,7 @@ describe('Filament foundation inventory', () => {
         '.fi-badge',
         '.fi-logo-light',
         '.fi-logo-dark',
+        '.fi-ta',
       ]),
     )
   })
@@ -169,11 +174,27 @@ describe('Filament foundation inventory', () => {
     expect(JSON.stringify(projectFoundations(state, 'dark'))).not.toMatch(/url\(|@import|font/i)
   })
 
+  it.each(['compact', 'default', 'spacious'] as const)('projects %s table density with the verified selector', (density) => {
+    const state = createDefaultFoundationState()
+    state.density = density
+
+    expect(projectFoundations(state, 'light').mappings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'density',
+          mapping: 'preview-emulatable',
+          selector: '.fi-ta',
+          value: density,
+        }),
+      ]),
+    )
+  })
+
   it('does not project unmapped controls or arbitrary selectors', () => {
     const projection = projectFoundations(createDefaultFoundationState(), 'light')
 
     expect(projection.mappings.some((mapping) => mapping.id === 'surface.page')).toBe(false)
-    expect(projection.mappings.every((mapping) => mapping.selector === undefined)).toBe(true)
+    expect(projection.mappings.filter((mapping) => mapping.id !== 'density').every((mapping) => mapping.selector === undefined)).toBe(true)
   })
 
   it('keeps every preview tuple tied to the inventory id and variable', () => {
@@ -184,8 +205,13 @@ describe('Filament foundation inventory', () => {
       expect(inventory).toMatchObject({
         id: mapping.id,
         mapping: 'preview-emulatable',
-        variable: mapping.variable,
       })
+      if (mapping.id === 'density') {
+        expect(mapping.selector).toBe('.fi-ta')
+        expect(mapping.variable).toBeUndefined()
+      } else {
+        expect(mapping.variable).toBe(inventory?.variable)
+      }
     }
   })
 

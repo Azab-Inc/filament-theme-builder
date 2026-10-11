@@ -21,6 +21,7 @@ export function projectFoundations(state: FoundationState, mode: ThemeMode): Fou
 }
 
 function foundationValue(state: FoundationState, id: string): string | number {
+  if (id === 'density') return state.density
   if (id === 'palette.primary.base') return state.palettes.primary.base
 
   const shade = id.match(

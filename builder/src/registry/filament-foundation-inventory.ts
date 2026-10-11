@@ -38,10 +38,12 @@ function entry(id: string, mapping: FoundationMapping, options: Partial<Pick<Fou
       source: BRIDGE_SOURCE,
       baseline: BASELINE_SOURCE,
       needle: preview
-        ? (options.variable?.startsWith('--primary-') ? '--primary-${shade}' : options.variable ?? '')
+        ? (options.variable?.startsWith('--primary-') ? '--primary-${shade}' : options.variable ?? options.selector ?? '')
         : 'ftb:theme:update',
       reason: preview
-        ? 'The preview bridge emits this exact application-owned variable.'
+        ? options.selector === '.fi-ta'
+          ? 'The preview bridge emits this exact native Filament table density selector contract.'
+          : 'The preview bridge emits this exact application-owned variable.'
         : absenceReason,
       ...(preview ? {} : { absent: ABSENT }),
     },
@@ -68,7 +70,7 @@ CONTROL_ENTRIES.push(
   entry('typography.heading', 'runtime-refresh-required'),
   entry('typography.mono', 'runtime-refresh-required'),
   ...['0', 'px', '0.5', '1', '1.5', '2', '3', '4', '6', '8'].map((key) => entry(`spacing.${key}`, 'unmapped')),
-  entry('density', 'unmapped'),
+  entry('density', 'preview-emulatable', { selector: '.fi-ta' }),
   entry('radius', 'unmapped'),
   entry('borderWidth', 'unmapped'),
   entry('shadow', 'unmapped'),

@@ -364,9 +364,9 @@ Create a Tables showcase and realistic table fixtures covering all visually dist
 - [x] Row selection, bulk actions, row actions, and reorder support are represented where installed; read-only actions require confirmation and do not mutate seeded records.
 - [x] Empty and loading states, invalid filters, missing image/relationship data, long names, mobile layout, and selection reset are covered deterministically.
 - [x] Coverage is registered in `COVERAGE.md` with Livewire and Playwright sources for table surfaces, rows, headers, controls, and relevant states.
-- [ ] Table density/spacing changes visibly respond to theme controls.
+- [x] Table density/spacing changes visibly respond to theme controls. Evidence: `builder/src/__tests__/foundation-projection.spec.ts` covers the verified `.fi-ta` projection tuple, and `e2e/theme-foundations.spec.ts` verifies Compact/Default/Spacious changes on the native Products/Orders/Inventory tables in the Compose preview iframe without reload or non-GET traffic. The bridge uses only verified Filament 5.9 `.fi-ta-header`, `.fi-ta-header-cell`, `.fi-ta-text`, `.fi-ta-icon`, `.fi-ta-image`, and `.fi-ta-cell.fi-ta-selection-cell` selectors.
 
-The native tables and interaction contract are implemented. The remaining density/theme-control criterion belongs to the later theme integration work and is intentionally not claimed here.
+The native tables and interaction contract are implemented. Density integration is limited to the evidence-backed table selectors above; unrelated Filament controls remain unchanged and FTB-011 partial/native themability gaps are not claimed here.
 
 Implementation: `293b7aa` (`Feature: add tables showcase fixtures`); verification: [`TablesShowcaseTest`](./demo/tests/Feature/Filament/Showcase/TablesShowcaseTest.php), `e2e/demo-showcase.spec.ts`.
 

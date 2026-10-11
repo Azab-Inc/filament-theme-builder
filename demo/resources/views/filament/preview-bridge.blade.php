@@ -29,15 +29,22 @@
             ['palette.primary.base', '--ftb-primary'],
             ...palette.map((shade) => [`palette.primary.shades.${shade}`, `--primary-${shade}`]),
         ]);
+        const tableDensitySelector = '.fi-ta';
+        const tableDensityValues = new Set(['compact', 'default', 'spacious']);
+        const tableDensitySpacing = {
+            compact: { header: '12px', headerCell: '10px', row: '12px' },
+            default: { header: '16px', headerCell: '14px', row: '16px' },
+            spacious: { header: '20px', headerCell: '18px', row: '20px' },
+        };
         const inventoryMappings = new Map([
             ...Array.from(previewMappingTuples.keys()).map((id) => [id, 'preview-emulatable']),
+            ['density', 'preview-emulatable'],
             ['global.primary', 'export-only'],
             ['button.primary', 'export-only'],
             ['button.secondary', 'export-only'],
             ['badge', 'export-only'],
             ['logo.light', 'export-only'],
             ['logo.dark', 'export-only'],
-            ['density', 'unmapped'],
             ['surface.page', 'unmapped'],
         ]);
         for (const name of paletteNames) {
@@ -49,7 +56,7 @@
         for (const name of textNames) inventoryMappings.set(`text.${name}`, 'export-only');
         for (const name of ['body', 'heading', 'mono']) inventoryMappings.set(`typography.${name}`, 'runtime-refresh-required');
         for (const name of spacingNames) inventoryMappings.set(`spacing.${name}`, 'unmapped');
-        for (const name of ['density', 'radius', 'borderWidth', 'shadow']) inventoryMappings.set(name, 'unmapped');
+        for (const name of ['radius', 'borderWidth', 'shadow']) inventoryMappings.set(name, 'unmapped');
         const previewVariables = new Set(previewMappingTuples.values());
 
         function isRecord(value) {
@@ -167,14 +174,18 @@
                     !['string', 'number'].includes(typeof mapping.value) ||
                     (typeof mapping.value === 'number' && !Number.isFinite(mapping.value)) ||
                     (typeof mapping.value === 'string' && (/url\s*\(|@import|<|>|[\u0000-\u001f]/i.test(mapping.value))) ||
-                    Object.keys(mapping).some((key) => !['id', 'mapping', 'variable', 'value'].includes(key))) {
+                    Object.keys(mapping).some((key) => !['id', 'mapping', 'selector', 'variable', 'value'].includes(key))) {
                     return false;
                 }
-                if (mapping.mapping === 'preview-emulatable' &&
-                    (previewMappingTuples.get(mapping.id) !== mapping.variable ||
-                    typeof mapping.variable !== 'string' || !previewVariables.has(mapping.variable) ||
-                    typeof mapping.value !== 'string' || !/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(mapping.value))) {
-                    return false;
+                if (mapping.mapping === 'preview-emulatable') {
+                    if (mapping.id === 'density') {
+                        if (mapping.selector !== tableDensitySelector || mapping.variable !== undefined ||
+                            typeof mapping.value !== 'string' || !tableDensityValues.has(mapping.value)) return false;
+                    } else if (previewMappingTuples.get(mapping.id) !== mapping.variable ||
+                        typeof mapping.variable !== 'string' || !previewVariables.has(mapping.variable) ||
+                        typeof mapping.value !== 'string' || !/#[\da-f]{6}(?:[\da-f]{2})?$/i.test(mapping.value)) {
+                        return false;
+                    }
                 }
                 if (mapping.mapping !== 'preview-emulatable' && mapping.variable !== undefined) return false;
                 ids.add(mapping.id);
@@ -231,7 +242,20 @@
                 if (mappings.length === 0) return true;
                 const style = document.getElementById(styleId) ?? document.createElement('style');
                 style.id = styleId;
-                style.textContent = `:root { color-scheme: ${message.projection.mode}; ${mappings.map((mapping) => `${mapping.variable}: ${mapping.value};`).join(' ')} }`;
+                const paletteMappings = mappings.filter((mapping) => mapping.id !== 'density');
+                const densityMapping = mappings.find((mapping) => mapping.id === 'density');
+                const densityCss = densityMapping === undefined ? '' : (() => {
+                    const spacing = tableDensitySpacing[densityMapping.value];
+                    return `
+                        ${tableDensitySelector} .fi-ta-header { padding-block: ${spacing.header}; }
+                        ${tableDensitySelector} .fi-ta-header-cell { padding-block: ${spacing.headerCell}; }
+                        ${tableDensitySelector} .fi-ta-text,
+                        ${tableDensitySelector} .fi-ta-icon,
+                        ${tableDensitySelector} .fi-ta-image,
+                        ${tableDensitySelector} .fi-ta-cell.fi-ta-selection-cell { padding-block: ${spacing.row}; }
+                    `;
+                })();
+                style.textContent = `:root { color-scheme: ${message.projection.mode}; ${paletteMappings.map((mapping) => `${mapping.variable}: ${mapping.value};`).join(' ')} }${densityCss}`;
                 document.head.append(style);
                 window.dispatchEvent(new CustomEvent('ftb:theme:updated', { detail: message.theme }));
                 return true;

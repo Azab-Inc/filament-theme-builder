@@ -98,7 +98,7 @@ domain, resources, and relationship workflows.
 | `dashboard.recent-orders` | planned | `RecentOrdersWidget` | Compact table with status and money columns | Seeded orders and customers | Seeded result set | Dashboard feature tests |
 | `dashboard.low-stock` | planned | `LowStockWidget` | Threshold/status badge presentation | Seeded inventory and products | Seeded low-stock rows | Dashboard feature tests |
 | `showcase.forms` | partial | `/demo/admin/forms-showcase` (`ShowcaseFormsPage`, implemented as `FormsShowcase`) | Named product, customer, and order schemas with Section/grid, Fieldset/Grid, Wizard, Tabs, Repeater, Radio, and ToggleButtons layouts; native text, price, select, toggle, date, private local image representation, address/contact, nested contact, and status validation controls | Fixed non-persisting fixture data | Filled, disabled, optional-null, server-validation, nested validation, long-text, and keyboard-focus behavior in the native page; no forced-state controls | `FormsShowcaseTest`; `e2e/demo-showcase.spec.ts` (`forms and schemas`) |
-| `showcase.tables` | implemented | `ShowcaseTablesPage` → `/demo/admin/tables-showcase` (`TablesShowcase`) | Responsive native product table with image/text/badge/icon columns, grouping, summaries, controls, and safe read-only actions | Seeded demo products with order counts and nullable supplier/image relationships | Empty, loading, invalid-filter, missing-related-data, long-name, and selected-row reset states | `TablesShowcaseTest`; `e2e/demo-showcase.spec.ts` (`tables`) |
+| `showcase.tables` | implemented | `ShowcaseTablesPage` → `/demo/admin/tables-showcase` (`TablesShowcase`) | Responsive native product table with image/text/badge/icon columns, grouping, summaries, controls, safe read-only actions, and verified density spacing | Seeded demo products with order counts and nullable supplier/image relationships | Empty, loading, invalid-filter, missing-related-data, long-name, selected-row reset, and Compact/Default/Spacious density preview | `TablesShowcaseTest`; `e2e/demo-showcase.spec.ts` (`tables`); `e2e/theme-foundations.spec.ts` (`native ... table density`) |
 | `showcase.infolists` | planned | `ShowcaseInfolistsPage` | Order, customer, and product detail entries/layouts | Seeded customer/order/product records | Null and representative value presentation | Showcase feature tests |
 | `showcase.actions` | planned | `ShowcaseActionsPage` | Order/product actions, destructive confirmation, open modal | Fixed non-production fixture records | `ActionLoadingState`, `ModalOpenState` | Showcase feature tests |
 | `showcase.notifications` | planned | `OrderStatusNotification`, `InventoryWarningNotification`, `ActionFailureNotification` | Success/warning/danger styles and layout variants | Fixed message payloads | `NotificationVisibleState`; no persistence | Showcase feature tests |
@@ -151,7 +151,14 @@ editor behavior is claimed.
   The fixtures own search/sort/filter/group/pagination/summary/column-toggle,
   selection/bulk-action, row-action, isolated reorder, responsive,
   empty/loading, and missing relationship/image samples without duplicating
-  CRUD.
+  CRUD. Compose Playwright verified Filament 5.9 table spacing selectors are
+  `.fi-ta`, `.fi-ta-ctn`, `.fi-ta-header`, `.fi-ta-header-cell`, `.fi-ta-row`,
+  `.fi-ta-cell`, `.fi-ta-text`, `.fi-ta-icon`, and `.fi-ta-image`; the bridge
+  maps only `.fi-ta-header`, `.fi-ta-header-cell`, `.fi-ta-text`,
+  `.fi-ta-icon`, `.fi-ta-image`, and `.fi-ta-cell.fi-ta-selection-cell`.
+  Compact/Default/Spacious changes are measured on the native Products,
+  Orders, and Inventory fixtures in `e2e/theme-foundations.spec.ts` without
+  reloads or non-GET requests. No global Filament density variable is claimed.
 - **FTB-013 infolists:** `ShowcaseInfolistsPage` provides `OrderDetailsInfolist`,
   `CustomerProfileInfolist`, and `ProductDetailsInfolist`.
 - **FTB-014 actions/notifications:** `ShowcaseActionsPage` provides
