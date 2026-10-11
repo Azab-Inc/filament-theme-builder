@@ -32,6 +32,54 @@ test.describe('demo showcase panel identity and navigation', () => {
     await useAuthenticatedSession(page)
   })
 
+  test('public showcase index groups real pages and exposes native presentation surfaces', async ({ page }) => {
+    await page.context().clearCookies()
+    await page.goto(`${demoBaseUrl}/demo/admin/showcase`)
+    await expect(page.getByRole('heading', { name: 'Showcase', exact: true })).toBeVisible()
+
+    for (const [label, href] of [
+      ['Dashboard', '/demo/admin'],
+      ['Forms & Schemas', '/demo/admin/forms-showcase'],
+      ['Tables', '/demo/admin/tables-showcase'],
+      ['Infolists', '/demo/admin/infolists-showcase'],
+      ['Actions & Modals', '/demo/admin/actions-showcase'],
+      ['Notifications', '/demo/admin/notifications-showcase'],
+    ] as const) {
+      await expect(page.getByRole('link', { name: label, exact: true }).first()).toHaveAttribute('href', new RegExp(`${href.replaceAll('/', '\\/')}$`))
+    }
+
+    await expect(page.getByRole('region', { name: 'Controlled tenant presentation' })).toContainText('No tenant is persisted')
+    await expect(page.locator('.fi-page-sub-navigation-tabs')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Showcase', exact: true })).toHaveAttribute('aria-current', 'page')
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(page.getByRole('heading', { name: 'Showcase', exact: true })).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Controlled tenant presentation' })).toBeVisible()
+  })
+
+  test('native search keyboard shortcut opens an accessible search surface and profile controls remain available', async ({ page }) => {
+    await page.keyboard.press('Control+K')
+    const search = page.locator('.fi-global-search input[type="search"]')
+    await expect(search).toBeFocused()
+    await search.fill('DEMO-ORDER-1001')
+    await expect(page.locator('.fi-global-search-results-ctn')).toBeVisible()
+    await expect(page.locator('.fi-global-search-result-heading')).toContainText('DEMO-ORDER-1001')
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.fi-global-search-results-ctn')).toBeHidden()
+
+    await page.getByRole('button', { name: /user menu|demo user|user/i }).first().click()
+    await expect(page.getByRole('link', { name: 'Profile', exact: true })).toBeVisible()
+    await expect(page.getByRole('navigation', { name: 'Topbar' }).getByRole('button', { name: 'Sign out', exact: true })).toBeVisible()
+  })
+
+  test('sidebar is collapsible while active navigation and deterministic badges remain discoverable', async ({ page }) => {
+    const collapse = page.getByRole('button', { name: /collapse sidebar/i })
+    await expect(collapse).toBeVisible()
+    await collapse.click()
+    await expect(page.getByRole('button', { name: /expand sidebar/i })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Products', exact: true })).toBeVisible()
+  })
+
   test('branding uses the independent local identity in light and dark modes', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' })
     await page.reload()

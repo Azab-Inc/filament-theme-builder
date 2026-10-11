@@ -35,6 +35,12 @@ class FilamentPanelTest extends TestCase
             ->assertSee('event.source !== window.parent', false);
     }
 
+    public function test_showcase_index_is_public_but_focused_showcase_pages_require_authentication(): void
+    {
+        $this->get('/demo/admin/showcase')->assertOk()->assertSee('Showcase');
+        $this->get('/demo/admin/forms-showcase')->assertRedirect('/demo/admin/login');
+    }
+
     public function test_profile_page_requires_authentication_and_allows_seeded_demo_user(): void
     {
         $this->get('/demo/admin/profile')
