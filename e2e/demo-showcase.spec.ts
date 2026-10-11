@@ -363,3 +363,65 @@ test.describe('infolists showcase', () => {
     await expect(showcase.getByRole('textbox')).toHaveCount(0)
   })
 })
+
+test.describe('actions and notifications showcase', () => {
+  test.beforeEach(async ({ page }) => {
+    await useAuthenticatedSession(page)
+  })
+
+  test('shows native action variants, grouped actions, tooltips, and disabled/loading semantics', async ({ page }) => {
+    await page.goto(`${demoBaseUrl}/demo/admin/actions-showcase`)
+    await expect(page.getByRole('heading', { name: 'Actions & Modals' })).toBeVisible()
+    for (const label of ['Primary action', 'Danger action', 'Success action', 'Warning action', 'Info action', 'Gray action', 'Outline action', 'Disabled action', 'Loading action', 'Tooltip action']) {
+      await expect(page.getByText(label, { exact: true })).toBeVisible()
+    }
+    await expect(page.getByRole('button', { name: 'Disabled action' })).toBeDisabled()
+    await expect(page.getByRole('button', { name: 'Icon-only action' })).toHaveAttribute('aria-label', 'Icon-only action')
+    await expect(page.getByRole('button', { name: 'Tooltip action' })).toHaveAttribute('x-tooltip', /Explains this fixture action/)
+    await expect(page.getByRole('button', { name: 'Action group' })).toBeVisible()
+  })
+
+  test('opens confirmation, form, slide-over, and read-only infolist modals accessibly', async ({ page }) => {
+    await page.goto(`${demoBaseUrl}/demo/admin/actions-showcase`)
+
+    await page.getByRole('button', { name: 'Confirmation modal' }).click()
+    const confirmation = page.locator('.fi-modal.fi-modal-open')
+    await expect(confirmation).toContainText('This fixture is read-only.')
+    await expect(page.getByRole('button', { name: /Cancel/ })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.fi-modal.fi-modal-open')).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Form modal' }).click()
+    const formDialog = page.locator('.fi-modal.fi-modal-open')
+    await expect(formDialog.locator('.fi-modal-window')).toHaveClass(/fi-width-lg/)
+    await expect(formDialog).toContainText('Form modal')
+    await expect(formDialog.getByLabel('Fixture note')).toBeVisible()
+    await formDialog.locator('form').evaluate((form) => { (form as HTMLFormElement).noValidate = true })
+    await formDialog.getByRole('button', { name: /Submit fixture/ }).click()
+    await expect(formDialog).toContainText('The fixture note field is required.')
+    await expect(formDialog.getByRole('button', { name: /Save and review/ })).toBeVisible()
+    await formDialog.getByRole('button', { name: /Cancel/ }).click()
+
+    await page.getByRole('button', { name: 'Slide-over form' }).click()
+    await expect(page.locator('.fi-modal.fi-modal-open')).toHaveClass(/fi-modal-slide-over/)
+    await page.getByRole('button', { name: /Cancel/ }).click()
+
+    await page.getByRole('button', { name: 'Read-only details' }).click()
+    const details = page.locator('.fi-modal.fi-modal-open')
+    await expect(details.locator('.fi-modal-window')).toHaveClass(/fi-width-md/)
+    await expect(details).toContainText('DEMO-ACTION-001')
+    await expect(details.getByRole('button')).toHaveCount(2)
+    await details.getByRole('button', { name: /Close/ }).last().click()
+  })
+
+  test('shows deterministic notification statuses and content without relying on toast timing', async ({ page }) => {
+    await page.goto(`${demoBaseUrl}/demo/admin/notifications-showcase`)
+    await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible()
+    for (const title of ['Success notification', 'Danger notification', 'Warning notification', 'Info notification', 'Persistent fixture notification', 'Transient fixture notification']) {
+      await expect(page.getByText(title, { exact: true })).toBeVisible()
+    }
+    await page.getByRole('button', { name: 'Show success notification' }).click()
+    await expect(page.getByText('Last notification: Success notification', { exact: true })).toBeVisible()
+    await expect(page.locator('.fi-no')).toContainText('A successful local fixture event.')
+  })
+})
