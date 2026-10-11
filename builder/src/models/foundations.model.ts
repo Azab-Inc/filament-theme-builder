@@ -32,6 +32,12 @@ export type FoundationState = {
   shadow: 'none' | 'sm' | 'md' | 'lg' | 'xl'
 }
 
+export type ResolvedFoundation = Omit<FoundationState, 'surfaces' | 'borders' | 'text'> & {
+  surfaces: Record<'page' | 'sidebar' | 'topbar' | 'card' | 'elevated' | 'input', string>
+  borders: Record<'default' | 'strong', string>
+  text: Record<'primary' | 'muted' | 'disabled', string>
+}
+
 export type FoundationStateV3 = {
   schemaVersion: 3
   colors: { primary: string }

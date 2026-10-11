@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createPinia, setActivePinia } from 'pinia'
+import { PALETTE_SHADES } from '@/models/foundations.model'
 import type { ResolveRequest, ThemeOverride } from '@/models/theme.model'
 import { useThemeStore } from '@/stores/theme'
 
@@ -32,7 +33,9 @@ describe('theme state', () => {
   it('creates a versioned default state and changes the primary color', () => {
     const theme = createThemeState()
 
-    expect(theme.theme).toEqual({ schemaVersion: 2, colors: { primary: '#6366f1' }, overrides: [] })
+    expect(theme.theme.schemaVersion).toBe(3)
+    expect(theme.theme.colors.primary).toBe('#6366f1')
+    expect(theme.theme.overrides).toEqual([])
     theme.setPrimaryColor('#0f766e')
     expect(theme.theme.colors.primary).toBe('#0f766e')
   })
@@ -92,9 +95,122 @@ describe('theme state', () => {
   it('migrates version-1 colors.primary into the current state without losing the color', () => {
     localStorage.setItem('ftb-theme', JSON.stringify({ schemaVersion: 1, colors: { primary: '#0f766e' } }))
     const store = useThemeStore()
-    expect(store.theme.schemaVersion).toBe(2)
+    expect(store.theme.schemaVersion).toBe(3)
     expect(store.theme.colors.primary).toBe('#0f766e')
     expect(store.theme.overrides).toEqual([])
+    expect(store.theme.customCss).toBe('')
+    expect(store.theme.foundations.palettes.primary.base).toBe('#0f766e')
+  })
+
+  it('migrates version-2 primary and overrides without losing either', () => {
+    localStorage.setItem('ftb-theme', JSON.stringify({
+      schemaVersion: 2,
+      colors: { primary: '#0f766e' },
+      overrides: [primaryButtonVariantOverride],
+    }))
+
+    const store = useThemeStore()
+
+    expect(store.theme.schemaVersion).toBe(3)
+    expect(store.theme.colors.primary).toBe('#0f766e')
+    expect(store.theme.foundations.palettes.primary.base).toBe('#0f766e')
+    expect(store.theme.overrides).toEqual([primaryButtonVariantOverride])
+  })
+
+  it('sets and resets one foundation control as one sparse history mutation', () => {
+    const store = useThemeStore()
+    const original = store.theme.foundations.surfaces.page.light
+
+    store.setFoundation('surfaces.page.light', '#fef3c7')
+    expect(store.theme.foundations.surfaces.page.light).toBe('#fef3c7')
+
+    store.undo()
+    expect(store.theme.foundations.surfaces.page.light).toBe(original)
+    store.redo()
+    expect(store.theme.foundations.surfaces.page.light).toBe('#fef3c7')
+
+    store.resetFoundation('surfaces.page.light')
+    expect(store.theme.foundations.surfaces.page.light).toBe(original)
+    store.undo()
+    expect(store.theme.foundations.surfaces.page.light).toBe('#fef3c7')
+  })
+
+  it('retains a palette shade override when the base changes and resets only that shade', () => {
+    const store = useThemeStore()
+    const generated = store.theme.foundations.palettes.primary.shades[50]
+
+    store.setPaletteShadeOverride('primary', 50, '#ffffff')
+    store.setPaletteBase('primary', '#0f766e')
+
+    expect(store.theme.foundations.palettes.primary.overrides[50]).toBe('#ffffff')
+    expect(store.theme.foundations.palettes.primary.shades[100]).not.toBe(generated)
+
+    store.resetPaletteShade('primary', 50)
+    expect(store.theme.foundations.palettes.primary.overrides).not.toHaveProperty('50')
+    expect(store.theme.foundations.palettes.primary.shades[50]).not.toBe('#ffffff')
+  })
+
+  it('keeps palette derivation consistent when a base is changed through setFoundation', () => {
+    const store = useThemeStore()
+
+    store.setFoundation('palettes.primary.base', '#0f766e')
+
+    expect(store.theme.colors.primary).toBe('#0f766e')
+    expect(store.theme.foundations.palettes.primary.shades[500]).toBe('#0f766e')
+  })
+
+  it('resolves the selected light or dark value without copying it into canonical state', () => {
+    const store = useThemeStore()
+    store.setFoundation('surfaces.page.light', '#fff7ed')
+    store.setFoundation('surfaces.page.dark', '#431407')
+
+    expect(store.resolveFoundation('light').surfaces.page).toBe('#fff7ed')
+    expect(store.resolveFoundation('dark').surfaces.page).toBe('#431407')
+    expect(store.theme.foundations.surfaces.page).toEqual({ light: '#fff7ed', dark: '#431407' })
+  })
+
+  it.each(['compact', 'default', 'spacious'] as const)('sets the %s density value', (density) => {
+    const store = useThemeStore()
+    store.setDensity(density)
+    expect(store.theme.foundations.density).toBe(density)
+  })
+
+  it('derives a validated preview without storing projection data', () => {
+    const store = useThemeStore()
+    const projection = store.previewFoundation('dark')
+
+    expect(projection.schemaVersion).toBe(1)
+    expect(projection.mode).toBe('dark')
+    expect(store.theme).not.toHaveProperty('projection')
+    expect(PALETTE_SHADES).toHaveLength(11)
+  })
+
+  it('persists the canonical version-3 state after one debounce', () => {
+    vi.useFakeTimers()
+    const store = useThemeStore()
+    store.setDensity('compact')
+    store.setFoundation('surfaces.card.dark', '#111827')
+
+    expect(localStorage.getItem('ftb-theme')).toBeNull()
+    vi.advanceTimersByTime(299)
+    expect(localStorage.getItem('ftb-theme')).toBeNull()
+    vi.advanceTimersByTime(1)
+    expect(JSON.parse(localStorage.getItem('ftb-theme')!)).toEqual(store.theme)
+  })
+
+  it('falls back to an editable default when persisted V3 state is invalid', () => {
+    localStorage.setItem('ftb-theme', JSON.stringify({
+      schemaVersion: 3,
+      colors: { primary: '#6366f1' },
+      foundations: { density: 'invalid' },
+      overrides: [],
+      customCss: '',
+    }))
+
+    const store = useThemeStore()
+    expect(store.theme.schemaVersion).toBe(3)
+    expect(store.theme.foundations.density).toBe('default')
+    expect(() => store.setDensity('spacious')).not.toThrow()
   })
 
   it('uses the canonical primary color for component, variant, and state resolution without overrides', () => {
@@ -117,7 +233,9 @@ describe('theme state', () => {
       overrides: [primaryButtonVariantOverride, { ...primaryButtonVariantOverride, value: '#dc2626' }],
     }))
 
-    expect(useThemeStore().theme).toEqual({ schemaVersion: 2, colors: { primary: '#6366f1' }, overrides: [] })
+    expect(useThemeStore().theme.schemaVersion).toBe(3)
+    expect(useThemeStore().theme.colors.primary).toBe('#6366f1')
+    expect(useThemeStore().theme.overrides).toEqual([])
   })
 
   it('stores Inherit as absence and reset removes only the selected override', () => {

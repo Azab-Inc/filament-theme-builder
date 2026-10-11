@@ -1,8 +1,14 @@
 import { computed, onScopeDispose, ref, toRaw, watch } from 'vue'
 import { defineStore } from 'pinia'
 
+import type { Density, PaletteName, PaletteShade, ResolvedFoundation, ThemeMode } from '@/models/foundations.model'
+import { PALETTE_SHADES } from '@/models/foundations.model'
+import { createDefaultFoundationState, createDefaultThemeState } from '@/services/foundation-defaults'
+import { projectFoundations } from '@/services/foundation-projection'
+import { validateFoundationState } from '@/services/foundation-validation'
+import { applyPaletteOverrides, generatePalette } from '@/services/palette-generator'
 import { migrateThemeState } from '@/models/theme.model'
-import type { ResolveRequest, ResolveResult, ThemeOverride, ThemeState, ThemeStateV2 } from '@/models/theme.model'
+import type { ResolveRequest, ResolveResult, ThemeOverride, ThemeState, ThemeStateV2, ThemeStateV3 } from '@/models/theme.model'
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { resolveThemeValue } from '@/services/theme-resolver'
 import { deserializeTheme } from '@/services/theme-serialization'
@@ -10,10 +16,10 @@ import { validateThemeOverride } from '@/services/theme-validation'
 
 const storageKey = 'ftb-theme'
 const registry = createThemeRegistry()
-const defaultTheme: ThemeStateV2 = { schemaVersion: 2, colors: { primary: '#6366f1' }, overrides: [] }
+const defaultTheme = createDefaultThemeState()
 
 export const useThemeStore = defineStore('theme', () => {
-  const theme = ref<ThemeStateV2>(restoreTheme())
+  const theme = ref<ThemeStateV3>(restoreTheme())
   const history = [snapshot(theme.value)]
   const historyIndex = ref(0)
   let applyingHistory = false
@@ -40,7 +46,7 @@ export const useThemeStore = defineStore('theme', () => {
     if (saveTimer) clearTimeout(saveTimer)
   })
 
-  function applyTheme(value: ThemeStateV2): void {
+  function applyTheme(value: ThemeStateV3): void {
     applyingHistory = true
     theme.value = structuredClone(value)
     applyingHistory = false
@@ -52,7 +58,12 @@ export const useThemeStore = defineStore('theme', () => {
     canRedo: computed(() => historyIndex.value < history.length - 1),
     setPrimaryColor(color: string): void {
       if (!/^#[\da-f]{6}$/i.test(color) || color === theme.value.colors.primary) return
-      theme.value = { ...theme.value, colors: { ...theme.value.colors, primary: color.toLowerCase() } }
+      const candidate = cloneTheme(theme.value)
+      candidate.colors.primary = color.toLowerCase()
+      const palette = candidate.foundations.palettes.primary
+      palette.base = candidate.colors.primary
+      rebuildPalette(candidate.foundations.palettes.primary)
+      theme.value = candidate
     },
     setOverride(override: ThemeOverride): void {
       const candidate = structuredClone(override)
@@ -62,6 +73,70 @@ export const useThemeStore = defineStore('theme', () => {
       overrides.push(candidate)
       theme.value = { ...theme.value, overrides }
     },
+    setFoundation(path: string, value: unknown): void {
+      const candidate = cloneTheme(theme.value)
+      if (!setPath(candidate.foundations as unknown as Record<string, unknown>, path, value)) return
+      if (!validateFoundationState(candidate.foundations).valid) return
+      syncPalette(candidate, path)
+      theme.value = candidate
+    },
+    resetFoundation(path: string): void {
+      const defaults = createDefaultFoundationState()
+      const value = getPath(defaults as unknown as Record<string, unknown>, path)
+      if (value === undefined) return
+      const candidate = cloneTheme(theme.value)
+      if (!setPath(candidate.foundations as unknown as Record<string, unknown>, path, value)) return
+      if (!validateFoundationState(candidate.foundations).valid) return
+      syncPalette(candidate, path)
+      theme.value = candidate
+    },
+    setPaletteBase(name: PaletteName, value: string): void {
+      if (!/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(value)) return
+      const candidate = cloneTheme(theme.value)
+      const palette = candidate.foundations.palettes[name]
+      palette.base = value.toLowerCase()
+      rebuildPalette(palette)
+      if (name === 'primary') candidate.colors.primary = palette.base
+      if (!validateFoundationState(candidate.foundations).valid) return
+      theme.value = candidate
+    },
+    setPaletteShadeOverride(name: PaletteName, shade: PaletteShade, value: string): void {
+      if (!PALETTE_SHADES.includes(shade) || !/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(value)) return
+      const candidate = cloneTheme(theme.value)
+      const palette = candidate.foundations.palettes[name]
+      palette.overrides[shade] = value.toLowerCase()
+      rebuildPalette(palette)
+      if (!validateFoundationState(candidate.foundations).valid) return
+      theme.value = candidate
+    },
+    resetPaletteShade(name: PaletteName, shade: PaletteShade): void {
+      if (!PALETTE_SHADES.includes(shade)) return
+      const candidate = cloneTheme(theme.value)
+      const palette = candidate.foundations.palettes[name]
+      delete palette.overrides[shade]
+      rebuildPalette(palette)
+      if (!validateFoundationState(candidate.foundations).valid) return
+      theme.value = candidate
+    },
+    setDensity(value: Density): void {
+      if (value !== 'compact' && value !== 'default' && value !== 'spacious') return
+      const candidate = cloneTheme(theme.value)
+      candidate.foundations.density = value
+      if (!validateFoundationState(candidate.foundations).valid) return
+      theme.value = candidate
+    },
+    resolveFoundation(mode: ThemeMode): ResolvedFoundation {
+      const foundations = structuredClone(JSON.parse(JSON.stringify(toRaw(theme.value.foundations))))
+      return {
+        ...foundations,
+        surfaces: selectMode(foundations.surfaces, mode),
+        borders: selectMode(foundations.borders, mode),
+        text: selectMode(foundations.text, mode),
+      }
+    },
+    previewFoundation(mode: ThemeMode) {
+      return projectFoundations(theme.value.foundations, mode)
+    },
     resetOverride(request: ResolveRequest): void {
       const scope = deepestScope(request)
       const overrides = theme.value.overrides.filter((override) => !matchesRequest(override, request, scope))
@@ -69,7 +144,7 @@ export const useThemeStore = defineStore('theme', () => {
       theme.value = { ...theme.value, overrides }
     },
     resolve(request: ResolveRequest): ResolveResult {
-      return resolveThemeValue(theme.value, registry, request)
+      return resolveThemeValue(toLegacyTheme(theme.value), registry, request)
     },
     undo(): void {
       if (historyIndex.value > 0) {
@@ -86,12 +161,18 @@ export const useThemeStore = defineStore('theme', () => {
   }
 })
 
-function restoreTheme(): ThemeStateV2 {
+function restoreTheme(): ThemeStateV3 {
   try {
     const value = typeof localStorage === 'undefined' ? null : localStorage.getItem(storageKey)
     if (value) {
-      const restored = deserializeTheme(value, registry)
-      if (restored.valid) return migrateToCurrent(restored.state)
+      const parsed: unknown = JSON.parse(value)
+      if (isVersionThree(parsed)) {
+        const validation = validateFoundationState(parsed)
+        if (validation.valid) return structuredClone(parsed)
+      } else {
+        const restored = deserializeTheme(parsed, registry)
+        if (restored.valid) return migrateToCurrent(restored.state)
+      }
     }
   } catch {
     // Invalid or unavailable persisted data falls back to a safe default.
@@ -99,8 +180,17 @@ function restoreTheme(): ThemeStateV2 {
   return structuredClone(defaultTheme)
 }
 
-function migrateToCurrent(state: ThemeState): ThemeStateV2 {
-  return migrateThemeState(state)
+function migrateToCurrent(state: ThemeState): ThemeStateV3 {
+  const legacy = migrateThemeState(state)
+  const current = createDefaultThemeState()
+  current.colors.primary = legacy.colors.primary
+  current.foundations.palettes.primary.base = legacy.colors.primary
+  current.foundations.palettes.primary.shades = applyPaletteOverrides(
+    generatePalette(legacy.colors.primary),
+    current.foundations.palettes.primary.overrides,
+  )
+  current.overrides = structuredClone(legacy.overrides)
+  return current
 }
 
 function deepestScope(request: ResolveRequest): ThemeOverride['scope'] {
@@ -128,10 +218,64 @@ function matchesRequest(override: ThemeOverride, request: ResolveRequest, scope:
     && override.stateId === request.stateId
 }
 
-function sameTheme(left: ThemeStateV2, right: ThemeStateV2): boolean {
+function sameTheme(left: ThemeStateV3, right: ThemeStateV3): boolean {
   return JSON.stringify(left) === JSON.stringify(right)
 }
 
-function snapshot(value: ThemeStateV2): ThemeStateV2 {
-  return structuredClone(JSON.parse(JSON.stringify(toRaw(value))) as ThemeStateV2)
+function snapshot(value: ThemeStateV3): ThemeStateV3 {
+  return structuredClone(JSON.parse(JSON.stringify(toRaw(value))) as ThemeStateV3)
+}
+
+function cloneTheme(value: ThemeStateV3): ThemeStateV3 {
+  return structuredClone(JSON.parse(JSON.stringify(toRaw(value))) as ThemeStateV3)
+}
+
+function rebuildPalette(palette: ThemeStateV3['foundations']['palettes'][PaletteName]): void {
+  palette.shades = applyPaletteOverrides(generatePalette(palette.base), palette.overrides)
+}
+
+function syncPalette(theme: ThemeStateV3, path: string): void {
+  const match = /^palettes\.(primary|success|warning|danger|info|gray)\.(base|overrides)(?:\.|$)/.exec(path)
+  if (!match) return
+  const name = match[1] as PaletteName
+  const palette = theme.foundations.palettes[name]
+  rebuildPalette(palette)
+  if (name === 'primary') theme.colors.primary = palette.base
+}
+
+function toLegacyTheme(value: ThemeStateV3): ThemeStateV2 {
+  return {
+    schemaVersion: 2,
+    colors: { primary: value.colors.primary },
+    overrides: structuredClone(JSON.parse(JSON.stringify(toRaw(value.overrides)))),
+  }
+}
+
+function getPath(root: Record<string, unknown>, path: string): unknown {
+  return path.split('.').reduce<unknown>((value, key) => isRecord(value) ? value[key] : undefined, root)
+}
+
+function setPath(root: Record<string, unknown>, path: string, value: unknown): boolean {
+  const keys = path.split('.')
+  const leaf = keys.pop()
+  if (!leaf || keys.length === 0) return false
+  let target: Record<string, unknown> = root
+  for (const key of keys) {
+    if (!isRecord(target[key])) return false
+    target = target[key]
+  }
+  target[leaf] = value
+  return true
+}
+
+function selectMode<T>(values: Record<string, { light: T; dark: T }>, mode: ThemeMode): Record<string, T> {
+  return Object.fromEntries(Object.entries(values).map(([key, value]) => [key, value[mode]]))
+}
+
+function isVersionThree(value: unknown): value is ThemeStateV3 {
+  return isRecord(value) && value.schemaVersion === 3
+}
+
+function isRecord(value: unknown): value is Record<string, any> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
