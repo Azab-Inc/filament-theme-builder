@@ -53,21 +53,23 @@ describe('theme registry', () => {
 
     expect(registry.entries.find((entry) => entry.id === 'button.primary')?.label).toBe('Primary button')
     expect(registry.entries.map((entry) => entry.id)).toEqual(['button.primary', 'button.secondary', 'global.primary'])
+    expect(registry.entries.find((entry) => entry.id === 'button.primary')?.selectors).toEqual(['.fi-btn.fi-color-primary'])
+    expect(registry.entries.find((entry) => entry.id === 'button.secondary')?.selectors).toEqual(['.fi-icon-btn.fi-topbar-open-sidebar-btn'])
   })
 
   it('returns unique, no-match, and ambiguous lookup results deterministically', () => {
     const registry = createThemeRegistry()
     const testRegistry = createTestRegistry()
 
-    expect(lookupRegistryEntry(registry, { selectors: ['.fi-btn'], filamentVersion: '5.0' })).toMatchObject({ status: 'matched', entry: { id: 'button.primary' } })
-    expect(lookupRegistryEntry(registry, { selectors: ['.fi-icon-btn'], filamentVersion: '5.0' })).toMatchObject({ status: 'matched', entry: { id: 'button.secondary' } })
+    expect(lookupRegistryEntry(registry, { selectors: ['.fi-btn.fi-color-primary'], filamentVersion: '5.0' })).toMatchObject({ status: 'matched', entry: { id: 'button.primary' } })
+    expect(lookupRegistryEntry(registry, { selectors: ['.fi-icon-btn.fi-topbar-open-sidebar-btn'], filamentVersion: '5.0' })).toMatchObject({ status: 'matched', entry: { id: 'button.secondary' } })
     expect(lookupRegistryEntry(registry, { selectors: ['.fi-color-primary'], filamentVersion: '5.0' })).toMatchObject({ status: 'matched', entry: { id: 'global.primary' } })
     expect(lookupRegistryEntry(registry, { selectors: ['.not-a-filament-selector'], filamentVersion: '5.0' })).toEqual({ status: 'no-match' })
     expect(lookupRegistryEntry(testRegistry, { selectors: ['.fi-shared'], filamentVersion: '5.0' })).toMatchObject({ status: 'ambiguous', candidateIds: ['button.primary', 'button.secondary'] })
   })
 
   it('rejects lookup when the active Filament compatibility baseline is unsupported', () => {
-    expect(lookupRegistryEntry(createThemeRegistry(), { selectors: ['.fi-btn'], filamentVersion: '4.0' })).toEqual({ status: 'incompatible', required: '5.x' })
+    expect(lookupRegistryEntry(createThemeRegistry(), { selectors: ['.fi-btn.fi-color-primary'], filamentVersion: '4.0' })).toEqual({ status: 'incompatible', required: '5.x' })
   })
 
   it('rejects registries whose candidates declare conflicting compatibility baselines', () => {

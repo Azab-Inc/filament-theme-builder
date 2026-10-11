@@ -15,7 +15,7 @@ const primaryButton: RegistryEntry = {
   id: 'button.primary',
   label: 'Primary button',
   family: 'button',
-  selectors: ['.fi-btn'],
+  selectors: ['.fi-btn.fi-color-primary'],
   controls: [
     {
       id: 'background',
@@ -32,7 +32,7 @@ const secondaryButton: RegistryEntry = {
   ...primaryButton,
   id: 'button.secondary',
   label: 'Secondary button',
-  selectors: ['.fi-icon-btn'],
+  selectors: ['.fi-icon-btn.fi-topbar-open-sidebar-btn'],
 }
 
 const legacyPrimary: RegistryEntry = {
@@ -122,7 +122,7 @@ function validateUniqueKeys(keys: readonly string[], field: string, entryId: str
 }
 
 function isSelector(value: unknown): value is string {
-  return typeof value === 'string' && value === value.trim() && /^\.fi-[A-Za-z0-9_-]+$/.test(value)
+  return typeof value === 'string' && value === value.trim() && /^(?:\.fi-[A-Za-z0-9_-]+)+$/.test(value)
 }
 
 function isValidControlValue(value: unknown, control: RegistryControl): boolean {

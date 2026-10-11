@@ -34,3 +34,12 @@
 - Registry validation now checks typed/default values, finite numeric metadata, deterministic ID ordering, and a single compatibility baseline across entries. This makes incompatible lookup requirements deterministic rather than selecting an arbitrary candidate requirement.
 - RED: `npm run test:unit -- src/__tests__/theme-registry.spec.ts --run` failed with 2 failing regression tests for unsafe selectors/default metadata and conflicting compatibility baselines.
 - GREEN: the same command passed: `1` test file, `6` tests passed.
+
+## Fix round 2
+
+- Playwright inspected the real demo at `http://127.0.0.1:4175`. On `/demo/admin/login`, `.fi-btn.fi-color-primary` matched exactly one visible `<button>` with accessible name `Sign in`; its parent had `fi-ac fi-width-full` context.
+- On `/demo/admin` at the deterministic 930×700 viewport, `.fi-icon-btn.fi-topbar-open-sidebar-btn` matched exactly one visible `<button>` with accessible name `Expand sidebar`; its parent had `fi-topbar` context. The close/open counterparts are both rendered by Filament and one is hidden based on sidebar state, so the regression controls the viewport and asserts visibility/accessibility rather than accepting hidden DOM matches.
+- The Playwright regression is `e2e/theme-registry-selectors.spec.ts`; it verifies count, visible semantic role, accessible name, and parent context for both selectors.
+- Production metadata now uses `.fi-btn.fi-color-primary` and `.fi-icon-btn.fi-topbar-open-sidebar-btn`; synthetic `.fi-shared` ambiguity remains test-only.
+- RED: `npm run test:unit -- src/__tests__/theme-registry.spec.ts --run` failed with 2 assertions when the new verified selector contract was added before metadata changed.
+- GREEN: focused registry tests passed (`1` file, `6` tests), and `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/theme-registry-selectors.spec.ts` passed (`1` test).
