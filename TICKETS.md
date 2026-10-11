@@ -46,6 +46,7 @@ Coverage/showcase tickets feed FTB-033 visual regression.
 Runtime + persistence + tests feed FTB-034 Jenkins and FTB-035 production.
 All public-alpha prerequisites feed FTB-038.
 Complete first-party coverage feeds FTB-039, then FTB-040.
+FTB-041 is independent and can start immediately.
 ```
 
 ---
@@ -998,3 +999,23 @@ Graduate the project from the 0.x Alpha/Beta lifecycle to the first stable 1.0 r
 - [ ] Public documentation reflects stable 1.0 behavior.
 - [ ] main receives the stable release according to the agreed branch policy.
 - [ ] A 1.0.0 release/tag is created only after the stable branch is verified.
+
+---
+
+<a id="ftb-041"></a>
+
+## FTB-041 — Keep resource navigation count badges synced to the primary color
+
+**Status:** ready-for-agent
+**Blocked by:** None (can start immediately)
+
+### What to build
+
+Keep every resource sidebar count badge visually consistent with the configured primary color, including after navigation and page reload.
+
+### Acceptance criteria
+
+- [ ] All resource sidebar count badges use the primary color consistently.
+- [ ] Badge colors remain correct after navigating between resources.
+- [ ] Badge colors remain correct after reloading the page.
+- [ ] Regression coverage verifies the primary-color styling for all resource sidebar count badges and its stability after navigation and reload.
