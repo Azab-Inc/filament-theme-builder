@@ -24,8 +24,8 @@ there is no domain mutation to expose or authorize.
 | `dashboard.recent-orders` | `RecentOrdersWidget` | read-only | Public dashboard policy; no authenticated identity required | None | No MCP read tool; not available |
 | `dashboard.low-stock` | `LowStockWidget` | read-only | Public dashboard policy; no authenticated identity required | None | No MCP read tool; not available |
 | `showcase.forms` | `ShowcaseFormsPage`: `ProductEditorForm`, `CustomerContactForm`, `OrderStatusForm` | read-only | Public showcase policy; fixture-only values | None | No MCP tool; not available |
-| `showcase.anonymous-uploads` | `/demo/admin/anonymous-upload` (`AnonymousUploadShowcase`) | mutation | Public allowlisted demo fixture; `TemporaryUploadStorage` enforces MIME, extension, per-session quota, global quota, purge, and private storage | No MCP mutation tool; UI-only file mutation remains bounded by the existing server-side storage boundary | No MCP mutation tool; not available |
-| `showcase.anonymous-uploads.mcp-preview` | Laravel Boost `showcase_anonymous_upload_preview` | read-only | Authenticated MCP caller identity is the owner; owner overrides and anonymous MCP calls are rejected; preview delegates to `TemporaryUploadStorage` | Preview returns an opaque five-minute confirmation token; confirmed commit is explicitly refused because binary mutation is not available | No MCP tool for binary mutation; metadata preview available; not available for mutation |
+| `showcase.anonymous-uploads` | `/demo/admin/anonymous-upload` (`AnonymousUploadShowcase`) | mutation | Public authorization is intentionally allowlisted for this demo fixture; `TemporaryUploadStorage` enforces MIME, extension, per-session quota, global quota, purge, and private storage | Explicit user action; UI-only file mutation remains bounded by the existing server-side storage boundary | No MCP mutation tool; not available |
+| `showcase.anonymous-uploads.mcp-preview` | Laravel Boost `showcase_anonymous_upload_preview` | read-only | Authenticated MCP caller identity is the owner; owner overrides and anonymous MCP calls are rejected; preview delegates to `TemporaryUploadStorage` | None | No MCP tool for binary mutation; metadata preview available. A `commit` request requires the opaque five-minute confirmation token, but confirmed binary commit is explicitly refused because safe binary input is unavailable; not available for mutation |
 | `showcase.tables` | `/demo/admin/tables-showcase` (`TablesShowcase`): `ProductsTableFixture`, `OrdersTableFixture`, `InventoryTableFixture` | read-only | Public panel visibility applies to public fixture/read surfaces; existing panel authorization governs any protected resource | None | No MCP read tool; not available |
 | `showcase.tables.read-commerce` | Planned commerce table record view | read-only | Public panel visibility applies to public reads; existing panel authorization governs protected reads; no tenant scope is implied by this inventory | None | No MCP read tool; not available |
 | `showcase.tables.change-commerce-status` | Planned status-change action sample | mutation | If enabled, existing panel authorization and server-side validation must use the applicable resource/domain service and model path | Explicit confirmation before applying status change | No MCP mutation tool; not available |
@@ -56,7 +56,9 @@ no purpose-built tool exists.
 `showcase_anonymous_upload_preview` accepts exactly `operation`, `filename`,
 `mime_type`, and `size_bytes`, plus the defined confirmation fields
 `confirmed` and `confirmation_token`. Its schema uses `operation: preview|commit`
-and rejects additional properties. The handler repeats those checks, including
+and rejects additional properties. A `preview` request is read-only and needs no
+confirmation; only a `commit` request requires the opaque five-minute token. The
+handler repeats those checks, including
 native argument types, so owner/session overrides, executable-like fields,
 paths, filesystem references, base64, and content fields are refused rather
 than ignored. Ownership is derived only from the authenticated MCP request.

@@ -42,6 +42,12 @@ test('development demo container supervises schedule:work with the existing web 
   assert.match(devEntrypoint, /trap shutdown INT TERM EXIT/)
 })
 
+test('development PHP container mounts repository documentation read-only at canonical test paths', () => {
+  assert.match(devCompose, /- \.\/TICKETS\.md:\/var\/www\/TICKETS\.md:ro/)
+  assert.match(devCompose, /- \.\/COVERAGE\.md:\/var\/www\/COVERAGE\.md:ro/)
+  assert.match(devCompose, /- \.\/docs:\/var\/www\/docs:ro/)
+})
+
 // --- Behavioral harness -----------------------------------------------------
 // The assertions above inspect source order; these run the real script against
 // stub `composer`/`php` binaries so the APP_KEY guard is proven, not inferred.

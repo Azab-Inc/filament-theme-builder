@@ -50,6 +50,9 @@ services:
       - TEMP_UPLOAD_MAX_BYTES=${TEMP_UPLOAD_MAX_BYTES:-5242880}
     volumes:
       - ./demo:/var/www/html
+      - ./TICKETS.md:/var/www/TICKETS.md:ro
+      - ./COVERAGE.md:/var/www/COVERAGE.md:ro
+      - ./docs:/var/www/docs:ro
       - ./scripts/compose-dev-entrypoint.sh:/scripts/compose-dev-entrypoint.sh:ro
       - demo_vendor:/var/www/html/vendor
     expose:
