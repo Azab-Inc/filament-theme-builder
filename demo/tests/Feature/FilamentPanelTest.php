@@ -37,9 +37,12 @@ class FilamentPanelTest extends TestCase
             ->assertSee('projection.schemaVersion !== 1', false)
             ->assertSee("projection.compatibility !== 'filament-5.9'", false)
             ->assertSee("mapping.mapping !== 'preview-emulatable'", false)
+            ->assertSee('previewMappingTuples.get(mapping.id) !== mapping.variable', false)
             ->assertSee('!previewVariables.has(mapping.variable)', false)
             ->assertSee("message.theme.customCss !== ''", false)
-            ->assertSee('message.theme.schemaVersion === 3', false);
+            ->assertSee('message.theme.schemaVersion === 3', false)
+            ->assertSee("mapping.mapping !== 'preview-emulatable'", false)
+            ->assertSee('detail: { compatibility: message.projection.compatibility, mode: message.projection.mode, unmapped }', false);
     }
 
     public function test_showcase_index_is_public_but_focused_showcase_pages_require_authentication(): void

@@ -9,10 +9,22 @@
             'palettes', 'surfaces', 'borders', 'text', 'typography',
             'spacing', 'density', 'radius', 'borderWidth', 'shadow',
         ]);
-        const previewVariables = new Set([
-            '--ftb-primary',
-            ...palette.map((shade) => `--primary-${shade}`),
+        const previewMappingTuples = new Map([
+            ['palette.primary.base', '--ftb-primary'],
+            ...palette.map((shade) => [`palette.primary.shades.${shade}`, `--primary-${shade}`]),
         ]);
+        const inventoryMappings = new Map([
+            ...Array.from(previewMappingTuples.keys()).map((id) => [id, 'preview-emulatable']),
+            ['global.primary', 'export-only'],
+            ['button.primary', 'export-only'],
+            ['button.secondary', 'export-only'],
+            ['badge', 'export-only'],
+            ['logo.light', 'export-only'],
+            ['logo.dark', 'export-only'],
+            ['density', 'unmapped'],
+            ['surface.page', 'unmapped'],
+        ]);
+        const previewVariables = new Set(previewMappingTuples.values());
 
         function isRecord(value) {
             return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -46,7 +58,7 @@
             const ids = new Set();
             return projection.mappings.every((mapping) => {
                 if (!isRecord(mapping) || !isSafeToken(mapping.id) || ids.has(mapping.id) ||
-                    !['preview-emulatable', 'runtime-refresh-required', 'export-only', 'unmapped'].includes(mapping.mapping) ||
+                    inventoryMappings.get(mapping.id) !== mapping.mapping ||
                     !['string', 'number'].includes(typeof mapping.value) ||
                     (typeof mapping.value === 'number' && !Number.isFinite(mapping.value)) ||
                     (typeof mapping.value === 'string' && (/url\s*\(|@import|<|>|[\u0000-\u001f]/i.test(mapping.value))) ||
@@ -54,7 +66,8 @@
                     return false;
                 }
                 if (mapping.mapping === 'preview-emulatable' &&
-                    (typeof mapping.variable !== 'string' || !previewVariables.has(mapping.variable) ||
+                    (previewMappingTuples.get(mapping.id) !== mapping.variable ||
+                    typeof mapping.variable !== 'string' || !previewVariables.has(mapping.variable) ||
                     typeof mapping.value !== 'string' || !/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(mapping.value))) {
                     return false;
                 }
@@ -105,7 +118,7 @@
                     .map((mapping) => mapping.id);
                 if (unmapped.length > 0) {
                     window.dispatchEvent(new CustomEvent('ftb:preview-compatibility', {
-                        detail: { compatibility: message.projection.compatibility, unmapped },
+                        detail: { compatibility: message.projection.compatibility, mode: message.projection.mode, unmapped },
                     }));
                 }
 

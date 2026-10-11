@@ -149,4 +149,29 @@ describe('Filament foundation inventory', () => {
     expect(projection.mappings.some((mapping) => mapping.id === 'surface.page')).toBe(false)
     expect(projection.mappings.every((mapping) => mapping.selector === undefined)).toBe(true)
   })
+
+  it('keeps every preview tuple tied to the inventory id and variable', () => {
+    const projection = projectFoundations(createDefaultFoundationState(), 'dark')
+
+    for (const mapping of projection.mappings) {
+      const inventory = lookupFoundationMapping(mapping.id)
+      expect(inventory).toMatchObject({
+        id: mapping.id,
+        mapping: 'preview-emulatable',
+        variable: mapping.variable,
+      })
+    }
+  })
+
+  it('requires bridge compatibility handling for forged tuples and unmapped modes', () => {
+    const bridge = readFileSync(
+      resolve(repositoryRoot, 'demo/resources/views/filament/preview-bridge.blade.php'),
+      'utf8',
+    )
+
+    expect(bridge).toContain('previewMappingTuples')
+    expect(bridge).toContain('previewMappingTuples.get(mapping.id) !== mapping.variable')
+    expect(bridge).toContain("mapping.mapping !== 'preview-emulatable'")
+    expect(bridge).toContain('ftb:preview-compatibility')
+  })
 })

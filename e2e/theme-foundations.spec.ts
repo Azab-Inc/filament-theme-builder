@@ -1,136 +1,176 @@
 import { expect, test } from "@playwright/test";
 
-const demoBaseUrl =
-  process.env.COMPOSE_E2E === "1"
-    ? (process.env.COMPOSE_BASE_URL ?? "http://127.0.0.1:4175")
-    : "http://127.0.0.1:4174";
+const composeBaseUrl = process.env.COMPOSE_BASE_URL ?? "http://127.0.0.1:4175";
 
-test("validated foundation projection updates the preview immediately without reload or network mutation", async ({
-  page,
-}) => {
-  const requests: string[] = [];
-  const mutationUrls: string[] = [];
-  const requestsAfterProjection: Array<{ method: string; url: string }> = [];
-  let projectionSent = false;
-  let navigationRequests = 0;
-  page.on("request", (request) => {
-    requests.push(request.method());
-    if (request.method() !== "GET") mutationUrls.push(request.url());
-    if (projectionSent)
-      requestsAfterProjection.push({
-        method: request.method(),
-        url: request.url(),
+test.describe("foundation preview integration", () => {
+  test.skip(
+    process.env.COMPOSE_E2E !== "1",
+    "requires the canonical Compose stack",
+  );
+
+  test("edits a real builder foundation control and updates the actual preview iframe immediately", async ({
+    page,
+  }) => {
+    const navigationRequests: string[] = [];
+    const mutationRequests: string[] = [];
+    page.on("request", (request) => {
+      if (request.isNavigationRequest()) navigationRequests.push(request.url());
+      if (request.method() !== "GET") mutationRequests.push(request.url());
+    });
+
+    await page.goto(composeBaseUrl);
+    const preview = page.frameLocator('iframe[title="Filament preview"]');
+    await expect(
+      page.getByRole("heading", { name: "Filament Theme Builder" }),
+    ).toBeVisible();
+    await expect(page.getByLabel("Primary color")).toBeVisible();
+    await expect(
+      preview.getByRole("heading", { name: /dashboard/i }),
+    ).toBeVisible();
+
+    const iframe = page.locator('iframe[title="Filament preview"]');
+    const iframeUrl = await iframe.getAttribute("src");
+    expect(new URL(iframeUrl!, page.url()).pathname).toBe("/demo/admin");
+    expect(new URL(iframeUrl!, page.url()).origin).toBe(
+      new URL(composeBaseUrl).origin,
+    );
+
+    const previewFrame = page.frame({ url: /\/demo\/admin/ });
+    expect(previewFrame).toBeTruthy();
+    await previewFrame!.evaluate(() => {
+      document.body.dataset.foundationEvents = "0";
+      window.addEventListener("ftb:theme:updated", () => {
+        document.body.dataset.foundationEvents = String(
+          Number(document.body.dataset.foundationEvents) + 1,
+        );
       });
-    if (request.isNavigationRequest() && request.url().includes("/demo/admin"))
-      navigationRequests += 1;
-  });
-
-  await page.goto(`${demoBaseUrl}/demo/admin`);
-  requests.length = 0;
-  navigationRequests = 0;
-  const baselineMutationUrls = new Set(mutationUrls);
-  projectionSent = true;
-  const accepted = await page.evaluate(() => {
-    document.body.dataset.foundationEvents = "0";
-    window.addEventListener("ftb:theme:updated", () => {
-      document.body.dataset.foundationEvents = String(
-        Number(document.body.dataset.foundationEvents) + 1,
-      );
     });
 
-    window.postMessage(
-      {
-        type: "ftb:theme:update",
-        schemaVersion: 1,
-        theme: {
-          schemaVersion: 3,
-          colors: { primary: "#0f766e" },
-          foundations: {},
-          overrides: [],
-          customCss: "",
-        },
-        projection: {
-          schemaVersion: 1,
-          compatibility: "filament-5.9",
-          mode: "light",
-          mappings: [
-            {
-              id: "palette.primary.base",
-              mapping: "preview-emulatable",
-              variable: "--ftb-primary",
-              value: "#0f766e",
-            },
-          ],
-        },
-      },
-      "*",
-    );
+    navigationRequests.length = 0;
+    mutationRequests.length = 0;
+    await page.getByLabel("Primary color").fill("#0f766e");
 
-    return true;
-  });
-
-  expect(accepted).toBe(true);
-  await expect.poll(() => page.locator("#ftb-managed-theme").count()).toBe(1);
-  await expect
-    .poll(() =>
-      page
-        .locator("html")
-        .evaluate((element) =>
-          getComputedStyle(element).getPropertyValue("--ftb-primary").trim(),
+    await expect
+      .poll(() =>
+        previewFrame!.evaluate(() =>
+          getComputedStyle(document.documentElement)
+            .getPropertyValue("--ftb-primary")
+            .trim(),
         ),
-    )
-    .toBe("#0f766e");
-  await expect
-    .poll(() => page.locator("body").getAttribute("data-foundation-events"))
-    .toBe("1");
-  expect(navigationRequests).toBe(0);
-  expect(
-    requestsAfterProjection
-      .filter(({ method }) => method !== "GET")
-      .map(({ url }) => url)
-      .filter(
-        (url) => !baselineMutationUrls.has(url) && !url.includes("/livewire-"),
-      ),
-  ).toEqual([]);
-});
+      )
+      .toBe("#0f766e");
+    await expect
+      .poll(() => previewFrame!.locator("#ftb-managed-theme").count())
+      .toBe(1);
+    await expect
+      .poll(() =>
+        previewFrame!.evaluate(() =>
+          Number(document.body.dataset.foundationEvents),
+        ),
+      )
+      .toBe(1);
 
-test("unmapped foundation projection reports compatibility instead of emitting guessed CSS", async ({
-  page,
-}) => {
-  await page.goto(`${demoBaseUrl}/demo/admin`);
-  await page.evaluate(() => {
-    document.body.dataset.compatibilityNotice = "";
-    window.addEventListener("ftb:preview-compatibility", (event) => {
-      document.body.dataset.compatibilityNotice = JSON.stringify(
-        (event as CustomEvent).detail,
-      );
-    });
-    window.postMessage(
-      {
-        type: "ftb:theme:update",
-        schemaVersion: 1,
-        theme: {
-          schemaVersion: 3,
-          colors: { primary: "#6366f1" },
-          foundations: {},
-          overrides: [],
-          customCss: "",
-        },
-        projection: {
-          schemaVersion: 1,
-          compatibility: "filament-5.9",
-          mode: "light",
-          mappings: [
-            { id: "surface.page", mapping: "unmapped", value: "#ffffff" },
-          ],
-        },
-      },
-      "*",
-    );
+    expect(navigationRequests).toEqual([]);
+    expect(mutationRequests).toEqual([]);
   });
 
-  await expect
-    .poll(() => page.locator("body").getAttribute("data-compatibility-notice"))
-    .toContain("surface.page");
-  expect(await page.locator("#ftb-managed-theme").count()).toBe(0);
+  test("rejects forged inventory tuples and reports unmapped mode compatibility in the actual iframe", async ({
+    page,
+  }) => {
+    await page.goto(composeBaseUrl);
+    const iframe = page.locator('iframe[title="Filament preview"]');
+    await expect(page.getByLabel("Primary color")).toBeVisible();
+    await expect(
+      page
+        .frameLocator('iframe[title="Filament preview"]')
+        .getByRole("heading", { name: /dashboard/i }),
+    ).toBeVisible();
+
+    const previewFrame = page.frame({ url: /\/demo\/admin/ });
+    expect(previewFrame).toBeTruthy();
+    await previewFrame!.evaluate(() => {
+      document.getElementById("ftb-managed-theme")?.remove();
+      document.body.dataset.acceptedMessages = "0";
+      document.body.dataset.compatibilityNotice = "";
+      window.addEventListener("ftb:preview-message-accepted", () => {
+        document.body.dataset.acceptedMessages = String(
+          Number(document.body.dataset.acceptedMessages) + 1,
+        );
+      });
+      window.addEventListener("ftb:preview-compatibility", (event) => {
+        document.body.dataset.compatibilityNotice = JSON.stringify(
+          (event as CustomEvent).detail,
+        );
+      });
+    });
+
+    const iframeUrl = await iframe.getAttribute("src");
+    const targetOrigin = new URL(iframeUrl!, page.url()).origin;
+    const message = (
+      mapping: Record<string, unknown>,
+      mode: "light" | "dark",
+    ) =>
+      page.evaluate(
+        ({ mapping, mode, targetOrigin }) => {
+          const target = document.querySelector<HTMLIFrameElement>(
+            'iframe[title="Filament preview"]',
+          )!.contentWindow!;
+          target.postMessage(
+            {
+              type: "ftb:theme:update",
+              schemaVersion: 1,
+              theme: {
+                schemaVersion: 3,
+                colors: { primary: "#6366f1" },
+                foundations: {},
+                overrides: [],
+                customCss: "",
+              },
+              projection: {
+                schemaVersion: 1,
+                compatibility: "filament-5.9",
+                mode,
+                mappings: [mapping],
+              },
+            },
+            targetOrigin,
+          );
+        },
+        { mapping, mode, targetOrigin },
+      );
+
+    await message(
+      {
+        id: "palette.primary.base",
+        mapping: "preview-emulatable",
+        variable: "--primary-500",
+        value: "#0f766e",
+      },
+      "light",
+    );
+    await expect
+      .poll(() =>
+        previewFrame!.evaluate(() =>
+          Number(document.body.dataset.acceptedMessages),
+        ),
+      )
+      .toBe(0);
+    expect(await previewFrame!.locator("#ftb-managed-theme").count()).toBe(0);
+
+    await message(
+      { id: "density", mapping: "unmapped", value: "compact" },
+      "dark",
+    );
+    await expect
+      .poll(() =>
+        previewFrame!.evaluate(() => document.body.dataset.compatibilityNotice),
+      )
+      .toContain("density");
+    expect(
+      await previewFrame!.evaluate(
+        () => JSON.parse(document.body.dataset.compatibilityNotice!).mode,
+      ),
+    ).toBe("dark");
+    expect(await previewFrame!.locator("#ftb-managed-theme").count()).toBe(0);
+  });
 });
