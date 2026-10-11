@@ -23,4 +23,28 @@ describe('App', () => {
     expect((colorInput.element as HTMLInputElement).value).toBe('#0f766e')
     expect(wrapper.get('button[aria-label="Undo"]').attributes('disabled')).toBeUndefined()
   })
+
+  it('exposes accessible foundation sections without replacing the preview controls', () => {
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+
+    expect(wrapper.get('h2').text()).toBe('Foundations')
+    expect(wrapper.get('input[aria-label="primary shade 500 override"]')).toBeTruthy()
+    expect(wrapper.get('button[aria-label="Light mode"]').attributes('aria-pressed')).toBe('true')
+    expect(wrapper.get('select[aria-label="Density"], select#density')).toBeTruthy()
+    expect(wrapper.get('#body-font-name')).toBeTruthy()
+    expect(wrapper.get('button[aria-label="Reset radius"]')).toBeTruthy()
+    expect(wrapper.get('iframe').attributes('title')).toBe('Filament preview')
+  })
+
+  it('keeps typography as names-only state and supports density and mode controls', async () => {
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+
+    await wrapper.get('#body-font-name').setValue('Editorial Sans')
+    await wrapper.get('button[aria-label="Dark mode"]').trigger('click')
+    await wrapper.get('button[aria-label="Compact density"]').trigger('click')
+
+    expect(wrapper.get('#body-font-name').element).toHaveProperty('value', 'Editorial Sans')
+    expect(wrapper.get('button[aria-label="Dark mode"]').attributes('aria-pressed')).toBe('true')
+    expect(wrapper.get('#density').element).toHaveProperty('value', 'compact')
+  })
 })

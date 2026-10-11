@@ -281,7 +281,11 @@ function getPath(root: Record<string, unknown>, path: string): unknown {
 function setPath(root: Record<string, unknown>, path: string, value: unknown): boolean {
   const keys = path.split('.')
   const leaf = keys.pop()
-  if (!leaf || keys.length === 0) return false
+  if (!leaf) return false
+  if (keys.length === 0) {
+    root[leaf] = value
+    return true
+  }
   let target: Record<string, unknown> = root
   for (const key of keys) {
     if (!isRecord(target[key])) return false

@@ -173,4 +173,76 @@ test.describe("foundation preview integration", () => {
     ).toBe("dark");
     expect(await previewFrame!.locator("#ftb-managed-theme").count()).toBe(0);
   });
+
+  test("edits, resets, and persists the foundations editor without loading fonts", async ({
+    page,
+  }) => {
+    const requestedUrls: string[] = [];
+    const builderRequestedUrls: string[] = [];
+    page.on("request", (request) => requestedUrls.push(request.url()));
+    page.on("request", (request) => {
+      if (request.frame() === page.mainFrame())
+        builderRequestedUrls.push(request.url());
+    });
+
+    await page.goto(composeBaseUrl);
+    await expect(
+      page.getByRole("heading", { name: "Foundations" }),
+    ).toBeVisible();
+
+    await expect(page.getByLabel("Primary palette base")).toBeVisible();
+    await expect(page.getByLabel("Primary shade 500 override")).toBeVisible();
+    await expect(
+      page.getByText("generated", { exact: true }).first(),
+    ).toBeVisible();
+    await expect(page.getByText(/unmapped:/).first()).toBeVisible();
+
+    await page.getByLabel("Primary palette base").fill("#0f766e");
+    await page.getByLabel("Primary shade 500 override").fill("#123456");
+    await expect(
+      page.getByText("explicit", { exact: true }).first(),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Reset primary shade 500" }).click();
+    await expect(page.getByLabel("Primary shade 500 override")).toHaveValue("");
+
+    await page.getByRole("button", { name: "Dark mode" }).click();
+    await expect(
+      page.getByRole("button", { name: "Dark mode" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Compact density" }).click();
+    await expect(page.locator("#density")).toHaveValue("compact");
+    await page.getByRole("button", { name: "Spacious density" }).click();
+    await expect(page.locator("#density")).toHaveValue("spacious");
+
+    await page.getByLabel("Body font name").fill("Editorial Sans");
+    await page.locator("#radius").selectOption("lg");
+    await page.locator("#border-width").fill("2");
+    await page.locator("#shadow").selectOption("lg");
+    await page.getByRole("button", { name: "Reset body font" }).click();
+    await expect(page.getByLabel("Body font name")).toHaveValue("System");
+
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem("ftb-theme")))
+      .toContain('"radius":"lg"');
+    await page.reload();
+    await expect(page.getByLabel("Primary palette base")).toHaveValue(
+      "#0f766e",
+    );
+    await expect(page.locator("#density")).toHaveValue("spacious");
+    await expect(page.locator("#radius")).toHaveValue("lg");
+    await expect(page.locator("#border-width")).toHaveValue("2");
+    await expect(page.locator("#shadow")).toHaveValue("lg");
+    await expect(page.getByLabel("Body font name")).toHaveValue("System");
+
+    expect(
+      requestedUrls.filter((url) => /fonts\.|googleapis/i.test(url)),
+    ).toEqual([]);
+    expect(
+      builderRequestedUrls.filter((url) =>
+        /\/fonts?\/|\.woff2?(\?|$)|\.ttf(\?|$)|\.otf(\?|$)/i.test(
+          new URL(url).pathname,
+        ),
+      ),
+    ).toEqual([]);
+  });
 });
