@@ -7,7 +7,7 @@
         const safeToken = /^[a-z\d_.-]{1,100}$/i;
         const foundationKeys = new Set([
             'palettes', 'surfaces', 'borders', 'text', 'typography',
-            'spacing', 'density', 'radius', 'borderWidth', 'shadow',
+            'spacing', 'density', 'radius', 'borderWidth', 'shadow', 'explicitPaths',
         ]);
         const previewMappingTuples = new Map([
             ['palette.primary.base', '--ftb-primary'],

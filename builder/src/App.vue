@@ -140,11 +140,16 @@ function setMode(mode: ThemeMode): void {
 function statusFor(
   path: string,
 ): 'generated' | 'inherited' | 'explicit' | 'unmapped' | 'compatibility' {
-  if (path === 'text.disabled' || path === 'surfaces.page') return 'unmapped'
-  if (path === 'density') return 'compatibility'
   if (/^palettes\.[^.]+\.shades\./.test(path)) return 'generated'
-  const current = getPath(foundation.value, path)
-  const defaultValue = getPath(defaultFoundation, path)
+  const unmapped = path === 'text.disabled' || path === 'surfaces.page'
+  const provenancePath = /^(surfaces|borders|text)\./.test(path)
+    ? `${path}.${activeMode.value}`
+    : path
+  if (!unmapped && foundation.value.explicitPaths.includes(provenancePath)) return 'explicit'
+  if (unmapped) return 'unmapped'
+  if (path === 'density') return 'compatibility'
+  const current = getPath(foundation.value, provenancePath)
+  const defaultValue = getPath(defaultFoundation, provenancePath)
   return JSON.stringify(current) === JSON.stringify(defaultValue) ? 'inherited' : 'explicit'
 }
 
@@ -216,16 +221,16 @@ function reset(path: string): void {
       <button type="button" aria-label="Undo" :disabled="!canUndo" @click="undo">Undo</button>
       <button type="button" aria-label="Redo" :disabled="!canRedo" @click="redo">Redo</button>
     </header>
-    <section class="foundations" aria-labelledby="foundations-heading">
+    <section class="foundations grid gap-4" aria-labelledby="foundations-heading">
       <h2 id="foundations-heading">Foundations</h2>
       <p class="foundations__hint">
         Global values are persisted in the theme and projected only when the Filament 5.9
         compatibility inventory supports them.
       </p>
 
-      <fieldset>
+      <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
         <legend>Color palettes</legend>
-        <div v-for="name in paletteNames" :key="name" class="foundation-row">
+        <div v-for="name in paletteNames" :key="name" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
           <label :for="`${name}-palette-base`">{{ name }} palette base</label>
           <input
             :id="`${name}-palette-base`"
@@ -262,7 +267,7 @@ function reset(path: string): void {
         </div>
       </fieldset>
 
-      <fieldset>
+      <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
         <legend>Surfaces, borders, text, and modes</legend>
         <div role="group" aria-label="Preview mode">
           <button
@@ -282,7 +287,7 @@ function reset(path: string): void {
             Dark
           </button>
         </div>
-        <div v-for="name in surfaceNames" :key="name" class="foundation-row">
+        <div v-for="name in surfaceNames" :key="name" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
           <label :for="`${name}-surface`">{{ name }} surface {{ activeMode }}</label>
           <input
             :id="`${name}-surface`"
@@ -299,7 +304,7 @@ function reset(path: string): void {
             Reset
           </button>
         </div>
-        <div v-for="name in borderNames" :key="name" class="foundation-row">
+        <div v-for="name in borderNames" :key="name" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
           <label :for="`border-${name}-${activeMode}`">border {{ name }} {{ activeMode }}</label>
           <input
             :id="`border-${name}-${activeMode}`"
@@ -317,7 +322,7 @@ function reset(path: string): void {
             Reset
           </button>
         </div>
-        <div v-for="name in textNames" :key="name" class="foundation-row">
+        <div v-for="name in textNames" :key="name" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
           <label :for="`text-${name}-${activeMode}`">text {{ name }} {{ activeMode }}</label>
           <input
             :id="`text-${name}-${activeMode}`"
@@ -337,9 +342,9 @@ function reset(path: string): void {
         </div>
       </fieldset>
 
-      <fieldset>
+      <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
         <legend>Typography</legend>
-        <div v-for="name in typographyNames" :key="name" class="foundation-row">
+        <div v-for="name in typographyNames" :key="name" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
           <label :for="`${name}-font-kind`">{{ name }} font type</label>
           <select
             :id="`${name}-font-kind`"
@@ -371,9 +376,9 @@ function reset(path: string): void {
         <p>Font names are stored only; the builder never loads or hosts font files.</p>
       </fieldset>
 
-      <fieldset>
+      <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
         <legend>Layout foundations</legend>
-        <div class="foundation-row">
+        <div class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
           <label for="density">Density</label>
           <select
             id="density"
@@ -398,7 +403,7 @@ function reset(path: string): void {
             Spacious
           </button>
         </div>
-        <div v-for="key in spacingNames" :key="key" class="foundation-row">
+        <div v-for="key in spacingNames" :key="key" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
           <label :for="`spacing-${key.replace('.', '-')}`">Spacing {{ key }}</label>
           <input
             :id="`spacing-${key.replace('.', '-')}`"
@@ -418,7 +423,7 @@ function reset(path: string): void {
             Reset
           </button>
         </div>
-        <div class="foundation-row">
+        <div class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
           <label for="radius">Radius</label>
           <select
             id="radius"
@@ -430,7 +435,7 @@ function reset(path: string): void {
           <span role="status" aria-live="polite">{{ statusFor('radius') }}</span>
           <button type="button" aria-label="Reset radius" @click="reset('radius')">Reset</button>
         </div>
-        <div class="foundation-row">
+        <div class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
           <label for="border-width">Border width</label>
           <input
             id="border-width"
@@ -445,7 +450,7 @@ function reset(path: string): void {
             Reset
           </button>
         </div>
-        <div class="foundation-row">
+        <div class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
           <label for="shadow">Shadow</label>
           <select
             id="shadow"
@@ -469,11 +474,42 @@ function reset(path: string): void {
   </main>
 </template>
 
-<style scoped>
+<style>
 .preview-shell {
   display: flex;
   flex-direction: column;
   height: 100vh;
+}
+
+.foundations {
+  max-height: 45vh;
+  overflow: auto;
+  padding: 0 1rem 1rem;
+}
+
+.foundations > fieldset {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  min-width: 0;
+}
+
+.foundation-row {
+  align-items: center;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(10rem, 1fr) minmax(12rem, 2fr) auto auto;
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .foundations {
+    max-height: 50vh;
+  }
+
+  .foundation-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .preview-shell__header {

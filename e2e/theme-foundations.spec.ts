@@ -195,6 +195,10 @@ test.describe("foundation preview integration", () => {
     await expect(
       page.getByRole("heading", { name: "Foundations" }),
     ).toBeVisible();
+    await expect(page.locator("section.foundations")).toHaveClass(/grid/);
+    await expect(page.locator("fieldset").first()).toHaveCSS("display", "grid");
+    await expect(page.locator(".foundation-row").first()).toHaveCSS("display", "grid");
+    await expect(page.locator(".foundation-row").first()).toHaveCSS("grid-template-columns", /.+/);
 
     await expect(page.locator("#primary-palette-base")).toBeVisible();
     await expect(page.getByLabel("Primary shade 500 override")).toBeVisible();

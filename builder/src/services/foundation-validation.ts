@@ -99,7 +99,7 @@ function validateOverride(value: unknown, path: string): { valid: true; override
 
 function validateFoundationRecord(value: unknown, path: string): FoundationValidationResult {
   if (!isRecord(value)) return invalid('invalid-value', path || 'state', 'Foundation state must be an object')
-  const keys = checkKeys(value, ['palettes', 'surfaces', 'borders', 'text', 'typography', 'spacing', 'density', 'radius', 'borderWidth', 'shadow'], ['palettes', 'surfaces', 'borders', 'text', 'typography', 'spacing', 'density', 'radius', 'borderWidth', 'shadow'], path)
+  const keys = checkKeys(value, ['palettes', 'surfaces', 'borders', 'text', 'typography', 'spacing', 'density', 'radius', 'borderWidth', 'shadow', 'explicitPaths'], ['palettes', 'surfaces', 'borders', 'text', 'typography', 'spacing', 'density', 'radius', 'borderWidth', 'shadow', 'explicitPaths'], path)
   if (keys) return keys
 
   const paletteResult = validatePaletteCollection(value.palettes, join(path, 'palettes'))
@@ -133,6 +133,9 @@ function validateFoundationRecord(value: unknown, path: string): FoundationValid
   if (!isOneOf(RADII, value.radius)) return invalid('invalid-value', join(path, 'radius'), 'Unsupported radius')
   if (!isOneOf(SHADOWS, value.shadow)) return invalid('invalid-value', join(path, 'shadow'), 'Unsupported shadow')
   if (!isFiniteNumber(value.borderWidth) || value.borderWidth < 0 || value.borderWidth > 8) return invalid('invalid-value', join(path, 'borderWidth'), 'Border width must be finite and between 0 and 8')
+  if (!Array.isArray(value.explicitPaths) || value.explicitPaths.some((entry) => typeof entry !== 'string' || !/^[A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*$/.test(entry)) || new Set(value.explicitPaths).size !== value.explicitPaths.length) {
+    return invalid('invalid-value', join(path, 'explicitPaths'), 'Explicit foundation paths must be unique safe paths')
+  }
   return { valid: true, state: value as FoundationState }
 }
 

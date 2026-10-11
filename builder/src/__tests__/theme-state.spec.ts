@@ -154,6 +154,39 @@ describe('theme state', () => {
     expect(store.theme.foundations.surfaces.page.light).toBe('#fef3c7')
   })
 
+  it('records explicit foundation provenance even when the value equals its default', () => {
+    const store = useThemeStore()
+
+    store.setFoundation('surfaces.page.light', '#ffffff')
+
+    expect(store.theme.foundations.explicitPaths).toContain('surfaces.page.light')
+    store.resetFoundation('surfaces.page.light')
+    expect(store.theme.foundations.explicitPaths).not.toContain('surfaces.page.light')
+  })
+
+  it('resets a custom typography foundation value to its system choice', () => {
+    const store = useThemeStore()
+
+    store.setFoundation('typography.body', { kind: 'custom', name: 'Editorial Sans', family: 'Editorial Sans' })
+    store.resetFoundation('typography.body')
+
+    expect(store.theme.foundations.typography.body.name).toBe('System')
+  })
+
+  it('resets typography after other foundation mutations', () => {
+    const store = useThemeStore()
+
+    store.setFoundation('typography.body', { kind: 'custom', name: 'Editorial Sans', family: 'Editorial Sans' })
+    store.setDensity('spacious')
+    store.setFoundation('radius', 'lg')
+    store.setFoundation('borderWidth', '2')
+    store.setFoundation('shadow', 'lg')
+    store.setFoundation('typography.body', { kind: 'custom', name: 'Editorial Sans', family: 'Editorial Sans' })
+    store.resetFoundation('typography.body')
+
+    expect(store.theme.foundations.typography.body.name).toBe('System')
+  })
+
   it('retains a palette shade override when the base changes and resets only that shade', () => {
     const store = useThemeStore()
     const generated = store.theme.foundations.palettes.primary.shades[50]

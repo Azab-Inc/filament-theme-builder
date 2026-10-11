@@ -45,6 +45,33 @@ describe('App', () => {
     expect(wrapper.get('iframe').attributes('title')).toBe('Filament preview')
   })
 
+  it('uses a responsive grid foundation layout contract', () => {
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+
+    expect(wrapper.get('section.foundations').classes()).toEqual(
+      expect.arrayContaining(['grid', 'gap-4']),
+    )
+    expect(wrapper.get('fieldset').classes()).toEqual(
+      expect.arrayContaining(['grid', 'gap-4']),
+    )
+    expect(wrapper.get('.foundation-row').classes()).toEqual(
+      expect.arrayContaining([
+        'grid',
+        'grid-cols-1',
+        'md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]',
+      ]),
+    )
+  })
+
+  it('reports an explicit status when a user writes the current default value', async () => {
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+    const input = wrapper.get('#primary-palette-base')
+
+    await input.setValue('#6366f1')
+
+    expect(input.element.nextElementSibling?.textContent).toBe('explicit')
+  })
+
   it('keeps typography as names-only state and supports density and mode controls', async () => {
     const wrapper = mount(App, { global: { plugins: [createPinia()] } })
 

@@ -30,6 +30,7 @@ export type FoundationState = {
   radius: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
   borderWidth: number
   shadow: 'none' | 'sm' | 'md' | 'lg' | 'xl'
+  explicitPaths: string[]
 }
 
 export type ResolvedFoundation = Omit<FoundationState, 'surfaces' | 'borders' | 'text'> & {

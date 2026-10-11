@@ -62,6 +62,7 @@ export const useThemeStore = defineStore('theme', () => {
       candidate.colors.primary = color.toLowerCase()
       const palette = candidate.foundations.palettes.primary
       palette.base = candidate.colors.primary
+      markExplicit(candidate, 'palettes.primary.base')
       rebuildPalette(candidate.foundations.palettes.primary)
       theme.value = candidate
     },
@@ -78,6 +79,7 @@ export const useThemeStore = defineStore('theme', () => {
       const candidate = cloneTheme(theme.value)
       if (!setPath(candidate.foundations as unknown as Record<string, unknown>, path, value)) return
       if (!validateFoundationState(candidate.foundations).valid) return
+      markExplicit(candidate, path)
       syncPalette(candidate, path)
       theme.value = candidate
     },
@@ -89,6 +91,7 @@ export const useThemeStore = defineStore('theme', () => {
       const candidate = cloneTheme(theme.value)
       if (!setPath(candidate.foundations as unknown as Record<string, unknown>, path, value)) return
       if (!validateFoundationState(candidate.foundations).valid) return
+      candidate.foundations.explicitPaths = candidate.foundations.explicitPaths.filter((entry) => entry !== path)
       syncPalette(candidate, path)
       theme.value = candidate
     },
@@ -97,6 +100,7 @@ export const useThemeStore = defineStore('theme', () => {
       const candidate = cloneTheme(theme.value)
       const palette = candidate.foundations.palettes[name]
       palette.base = value.toLowerCase()
+      markExplicit(candidate, `palettes.${name}.base`)
       rebuildPalette(palette)
       if (name === 'primary') candidate.colors.primary = palette.base
       if (!validateFoundationState(candidate.foundations).valid) return
@@ -124,6 +128,7 @@ export const useThemeStore = defineStore('theme', () => {
       if (value !== 'compact' && value !== 'default' && value !== 'spacious') return
       const candidate = cloneTheme(theme.value)
       candidate.foundations.density = value
+      markExplicit(candidate, 'density')
       if (!validateFoundationState(candidate.foundations).valid) return
       theme.value = candidate
     },
@@ -195,6 +200,7 @@ function migrateToCurrent(state: ThemeState): ThemeStateV3 {
 
 function normalizeTheme(value: ThemeStateV3): ThemeStateV3 {
   const normalized = cloneTheme(value)
+  normalized.foundations.explicitPaths ??= []
   normalizePalettes(normalized)
   return normalized
 }
@@ -293,6 +299,10 @@ function setPath(root: Record<string, unknown>, path: string, value: unknown): b
   }
   target[leaf] = value
   return true
+}
+
+function markExplicit(theme: ThemeStateV3, path: string): void {
+  if (!theme.foundations.explicitPaths.includes(path)) theme.foundations.explicitPaths.push(path)
 }
 
 function selectMode<T>(values: Record<string, { light: T; dark: T }>, mode: ThemeMode): Record<string, T> {
