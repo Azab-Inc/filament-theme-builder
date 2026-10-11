@@ -41,6 +41,8 @@ Ruling: Preserve the exact panel brand `Filament Theme Builder` while allowing f
 
 Ruling: Treat native Filament 5 vendor APIs as authoritative over plan examples — this avoids adding dependencies or fake compatibility layers; the cost if wrong is adapting task interfaces when the installed version differs.
 
+Ruling: Continue FTB-011 with its named native fixture coverage, but do not claim the ticket done until FTB-006 supplies the semantic registry and inheritance contract — the ticket explicitly lists FTB-006 as a blocker and the repository has no usable registry implementation; the cost if wrong is a later fixture/registry integration rework.
+
 Task 1: fix round 1/5 (2 important findings addressed — Phase 1/FTB-015 ownership and concrete fixture contract; commits 68a0005..4d6e9d6)
 
 Task 1: complete (commits 713713f..4d6e9d6, review clean)
@@ -61,6 +63,26 @@ Task 5: fix round 1/5 (3 important and 2 minor findings addressed — long-text,
 
 Task 5: complete (commits fe846ac..6d5d403, review clean)
 
+Task 6: minor (deferred): loading visibility and Orders/Inventory empty states are configured but not fully behaviorally exercised; core table interactions/reorder/isolation and partial ticket status are verified.
+
+Task 6: complete (commits 6d5d403..e3ea07b, review clean with 2 deferred minors)
+
+Task 7: minor (deferred): additional null/missing cases and attempted-mutation rejection are not directly tested; read-only implementation, hostile rich-text escaping, relationship fallbacks, and no-mutation render checks pass.
+
+Task 7: complete (commits e3ea07b..31c4110, review clean)
+
+Task 8: fix round 1/5 (4 important findings addressed — native notification variants, modal/layout semantics, loading behavior, and focus trap/restoration; commits ca160d1..265aa4e)
+
+Task 8: complete (commits 31c4110..265aa4e, review clean)
+
+Task 9: minor (deferred): full normal E2E rerun exceeded the review timeout after 15 passed tests; the implementer reported 33 passed/3 opt-in skips and the scoped review found no new breakage.
+
+Task 9: complete (commits 265aa4e..cc256b2, review clean)
+
 Task 6: implementation complete; FTB-012 remains partial for the deferred theme-density criterion (focused PHP/Playwright, full PHP, Pint, and PHPStan clean; full browser suite has one pre-existing demo-panel navigation failure because it expects exact resource labels not present in the current panel; tables coverage is isolated and passing)
 
 Task 6 review fixes: native isolated reorder mapping, Orders and Inventory fixtures, behavioral interaction coverage, and documentation correction complete; focused/full PHP, focused tables Playwright, Pint, and PHPStan pass. Full browser suite retains the unrelated exact `Products` navigation-label failure.
+
+Task FTB-011 named-fixture slice: fix round 1/5 (2 important findings addressed — non-persisting upload representation and restored long-text coverage; commits 5e887ba..5f01547)
+
+Task FTB-011 named-fixture slice: complete (commits 8bf137e..5f01547, review clean; FTB-006 registry/inheritance blocker remains and FTB-011 is not done)
