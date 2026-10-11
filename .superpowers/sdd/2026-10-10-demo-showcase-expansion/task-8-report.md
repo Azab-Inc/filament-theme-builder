@@ -22,6 +22,19 @@
 - `npx playwright test e2e/demo-showcase.spec.ts --grep 'actions|notifications' --workers=1`: passed, 3 tests.
 - `npx playwright test e2e/demo-showcase.spec.ts --workers=1`: passed, 15 tests.
 
+## Remaining review fixes
+
+- Added a real modal focus-cycle test: Tab and Shift+Tab wrap between the form modal's focusable controls, focus remains inside the modal, and cancel restores focus to the trigger.
+- Added a browser-boundary Livewire loading test. Playwright intercepts the versioned Livewire update request, holds it without application sleeps, verifies the native loading indicator and disabled action state, releases the request, and verifies the indicator disappears and the action is enabled.
+
+## Remaining review-fix verification
+
+- `cd demo && php artisan test`: passed, 103 tests / 1127 assertions.
+- `cd demo && ./vendor/bin/pint --test`: passed.
+- `cd demo && ./vendor/bin/phpstan analyse`: passed, 0 errors.
+- `npx playwright test e2e/demo-showcase.spec.ts --grep 'actions|notifications' --workers=1`: passed, 5 tests.
+- `npx playwright test e2e/demo-showcase.spec.ts --workers=1`: passed, 17 tests.
+
 ## Concerns
 
 - The generated `.playwright-mcp/` directory and existing `progress.md` modification were not part of this task and were not staged.

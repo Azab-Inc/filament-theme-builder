@@ -407,6 +407,7 @@ test.describe('actions and notifications showcase', () => {
     await expect(formDialog).toContainText('The fixture note field is required.')
     await expect(formDialog.getByRole('button', { name: /Save and review/ })).toBeVisible()
     await formDialog.getByRole('button', { name: /Cancel/ }).click()
+    await expect(page.getByRole('button', { name: 'Form modal' })).toBeFocused()
 
     await page.getByRole('button', { name: 'Slide-over form' }).click()
     await expect(page.locator('.fi-modal.fi-modal-open')).toHaveClass(/fi-modal-slide-over/)
@@ -420,6 +421,63 @@ test.describe('actions and notifications showcase', () => {
     await expect(details.getByRole('button')).toHaveCount(2)
     await details.getByRole('button', { name: /Close/ }).last().click()
     await expect(page.getByRole('button', { name: 'Read-only details' })).toBeFocused()
+  })
+
+  test('keeps keyboard focus trapped inside the form modal and wraps in both directions', async ({ page }) => {
+    await page.goto(`${demoBaseUrl}/demo/admin/actions-showcase`)
+    await page.getByRole('button', { name: 'Form modal' }).click()
+
+    const formDialog = page.locator('.fi-modal.fi-modal-open')
+    const focusable = formDialog.locator('input:visible, button:not([tabindex="-1"]):visible')
+    await expect(focusable).not.toHaveCount(0)
+
+    await focusable.first().focus()
+    await page.keyboard.press('Shift+Tab')
+    await expect(focusable.last()).toBeFocused()
+    expect(await formDialog.evaluate((element) => element.contains(document.activeElement))).toBe(true)
+
+    await page.keyboard.press('Tab')
+    await expect(focusable.first()).toBeFocused()
+    expect(await formDialog.evaluate((element) => element.contains(document.activeElement))).toBe(true)
+
+    await page.keyboard.press('Tab')
+    await expect(focusable.nth(1)).toBeFocused()
+    expect(await formDialog.evaluate((element) => element.contains(document.activeElement))).toBe(true)
+
+    await page.keyboard.press('Shift+Tab')
+    await expect(focusable.first()).toBeFocused()
+    await formDialog.getByRole('button', { name: /Cancel/ }).click()
+    await expect(page.getByRole('button', { name: 'Form modal' })).toBeFocused()
+  })
+
+  test('shows native loading indicator during a pending Livewire action request', async ({ page }) => {
+    await page.goto(`${demoBaseUrl}/demo/admin/actions-showcase`)
+
+    let releaseRequest!: () => void
+    let requestIntercepted!: () => void
+    const requestReachedBrowserBoundary = new Promise<void>((resolve) => { requestIntercepted = resolve })
+    const requestReleased = new Promise<void>((resolve) => { releaseRequest = resolve })
+
+    await page.route('**/livewire-*/update', async (route) => {
+      requestIntercepted()
+      await requestReleased
+      await route.continue()
+    })
+
+    const loadingAction = page.getByRole('button', { name: 'Loading action' })
+    const click = loadingAction.click()
+    await requestReachedBrowserBoundary
+
+    const loadingIndicator = loadingAction.locator('.fi-loading-indicator').last()
+    await expect(loadingIndicator).toBeVisible()
+    await expect(loadingAction).toBeDisabled()
+
+    const response = page.waitForResponse((candidate) => candidate.url().includes('/livewire-') && candidate.url().endsWith('/update'))
+    releaseRequest()
+    await response
+    await click
+    await expect(loadingIndicator).toBeHidden()
+    await expect(loadingAction).toBeEnabled()
   })
 
   test('shows deterministic notification statuses and content without relying on toast timing', async ({ page }) => {
