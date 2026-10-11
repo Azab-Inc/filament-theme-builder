@@ -28,3 +28,15 @@ export type ThemeStateV2 = {
 }
 
 export type ThemeState = ThemeStateV1 | ThemeStateV2
+
+export type ResolveRequest = {
+  targetId: string
+  controlId: string
+  componentId?: string
+  variantId?: string
+  stateId?: string
+}
+
+export type ResolveResult =
+  | { status: 'resolved'; value: ThemeValue; source: ThemeScope | 'registry-default' | 'legacy-global' }
+  | { status: 'unresolved'; targetId: string; controlId: string }

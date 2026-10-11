@@ -21,6 +21,7 @@ const primaryButton: RegistryEntry = {
       id: 'background',
       valueType: 'color',
       constraints: { pattern: /^#[\da-f]{6}$/i },
+      defaultValue: '#6366f1',
     },
   ],
   variants: ['primary', 'secondary'],
