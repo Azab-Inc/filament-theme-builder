@@ -10,6 +10,12 @@ identity, branding, content, and presentation. Showcase/dashboard reads remain
 read-only. Forced visual states are presentation-only, in-memory controls and
 must never alter demo records.
 
+Showcase navigation, global search, breadcrumbs, tabs, profile/auth controls,
+and the controlled tenant presentation are read-only or presentation-only
+surfaces. No tenant persistence or tenant membership is used by these surfaces.
+No MCP mutation tool is needed for read-only or presentation-only surfaces;
+there is no domain mutation to expose or authorize.
+
 | Capability | Surface | Operation | Authorization | Confirmation | MCP tool/status |
 | --- | --- | --- | --- | --- | --- |
 | `phase-1` | `DemoShowcaseDashboard`, `ResourceIconSet`, `RepresentativeBadgeSet` | read-only | Public dashboard policy; no authenticated identity required | None | No MCP read tool; not available |
@@ -26,6 +32,8 @@ must never alter demo records.
 | `showcase.actions` | `ShowcaseActionsPage`: `OrderActionsFixture`, `ProductActionsFixture`, `DeleteProductConfirmationModal`, `OrderStatusModal` | presentation-only | No domain mutation; simulated/in-memory fixture only | No confirmation for visual simulation | No MCP mutation tool; not available |
 | `showcase.notifications` | `OrderStatusNotification`, `InventoryWarningNotification`, `ActionFailureNotification` | presentation-only | No domain mutation; fixed message payloads | None | No MCP mutation tool; not available |
 | `showcase.navigation` | `ShowcaseIndexPage`, `ShowcaseSidebarNavigation`, `GlobalSearchSurface`, `ProfileMenuSurface`, `LoginSurface`, `TenantSwitcherSurface` | presentation-only | Existing panel authentication/authorization governs real profile and tenant resources; showcase-only states are synthetic | None | No MCP mutation tool; not available |
+| `showcase.navigation.authenticated-controls` | Global search, breadcrumbs, tabs, profile menu, login/authentication controls | read-only | Existing panel authentication/authorization; public Showcase index remains explicitly allowlisted | None | No MCP read tool; not available |
+| `showcase.navigation.tenant-presentation` | Controlled tenant presentation on `ShowcasePage` | presentation-only | No domain tenant model, membership, session, or persistence is used | None | No MCP mutation tool; not available |
 | `showcase.states` | `ShowcaseStateControls` and named state surfaces | presentation-only | No domain data access or mutation | None | No MCP mutation tool; not available |
 | `panel.icons` | `IconPackConfiguration`, `SemanticResourceIconOverrides` | mutation | Local builder theme state; no server-side panel data permission | No server commit; explicit user action for local edit/export | No MCP tool; not available |
 | `panel.branding` | `PanelBrandingSettings`, PanelProvider/runtime configuration | mutation | Local builder theme state; deployment/runtime configuration remains under project-owner control | Explicit user action before export/application; controlled reload where required | No MCP tool; not available |

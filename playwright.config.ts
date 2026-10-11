@@ -8,7 +8,11 @@ const composeE2e = process.env.COMPOSE_E2E === '1'
 
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: true,
+  // The demo login/session fixture and the seeded SQLite preview are shared
+  // process state; serialize projects so the documented `npm run e2e` command
+  // is deterministic without an ad-hoc worker override.
+  fullyParallel: false,
+  workers: 1,
   reporter: 'list',
   use: {
     ...devices['Desktop Chrome'],

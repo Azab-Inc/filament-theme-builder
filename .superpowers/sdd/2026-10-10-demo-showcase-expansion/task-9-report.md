@@ -40,3 +40,26 @@ showcase pages without a second registry or duplicated widgets/navigation.
 - The repository already contained unrelated worktree changes in
   `.superpowers/sdd/2026-10-10-demo-showcase-expansion/progress.md` and
   `.playwright-mcp/`; they were preserved and are not part of this task.
+
+## Review follow-up
+
+- Added a Livewire/PHP regression that records the navigation request query log,
+  checks for zero writes, verifies no tenant session keys, and asserts the
+  explicit `data-tenant-persistence="none"` contract.
+- Added semantic browser assertions for the global searchbox/results, tabs,
+  breadcrumbs, profile/auth controls, public access, active navigation, badge
+  labels, and mobile sub-navigation/search behavior.
+- Updated the demo-panel integration assertions to accept native resource badge
+  labels without weakening resource identity checks.
+- Set Playwright to one worker in project configuration so `npm run e2e` is the
+  documented stable command; no worker override is required.
+- Added explicit AI-operability inventory rows for authenticated controls and
+  controlled tenant presentation, including the read-only/presentation-only
+  classification and why no MCP mutation tool is needed.
+
+## Follow-up verification
+
+- `cd demo && composer test` — 109 passed, 1195 assertions; Pint and PHPStan
+  passed.
+- `npm run e2e` — 33 passed, 3 compose/production tests skipped by their
+  existing opt-in guards; no failures.

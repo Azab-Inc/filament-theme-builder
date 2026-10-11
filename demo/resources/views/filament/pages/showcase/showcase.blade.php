@@ -43,7 +43,7 @@
             description="A safe presentation-only fixture for a future tenant switcher."
             class="lg:col-span-2"
         >
-            <div role="region" aria-label="Controlled tenant presentation" class="space-y-3">
+            <div role="region" aria-label="Controlled tenant presentation" data-tenant-persistence="none" class="space-y-3">
                 <p class="text-sm text-gray-600 dark:text-gray-300">Demo workspace · Presentation only</p>
                 <p class="text-sm text-gray-600 dark:text-gray-300">
                     No tenant is persisted, switched, or used for authorization in this preview.

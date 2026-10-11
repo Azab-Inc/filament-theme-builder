@@ -17,6 +17,7 @@ use App\Providers\Filament\AdminPanelProvider;
 use Filament\Enums\GlobalSearchPosition;
 use Filament\Panel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -97,5 +98,24 @@ class NavigationShowcaseTest extends TestCase
             ->assertOk()
             ->assertSee('Username: user')
             ->assertSee('Password: password');
+    }
+
+    public function test_showcase_navigation_is_request_scoped_and_does_not_persist_tenant_state(): void
+    {
+        DB::connection()->enableQueryLog();
+
+        $this->get('/demo/admin/showcase')
+            ->assertOk()
+            ->assertSee('data-tenant-persistence="none"', false);
+
+        Livewire::test(ShowcasePage::class)->call('refresh');
+
+        $writes = collect(DB::connection()->getQueryLog())
+            ->filter(fn (array $query): bool => preg_match('/^(insert|update|delete|replace|alter|create|drop|truncate)\s/i', trim($query['query'])) === 1);
+
+        $this->assertCount(0, $writes);
+        $this->assertFalse(filament()->hasTenancy());
+        $this->assertArrayNotHasKey('tenant', session()->all());
+        $this->assertArrayNotHasKey('filament_tenant', session()->all());
     }
 }

@@ -48,12 +48,12 @@ test.describe('demo panel', () => {
       await expect(page.locator('.fi-sidebar-group-label', { hasText: group })).toBeVisible()
     }
     for (const resource of ['Products', 'Categories', 'Orders', 'Customers', 'Suppliers', 'Notes']) {
-      await expect(page.getByRole('link', { name: resource, exact: true })).toBeVisible()
+      await expect(page.getByRole('link', { name: new RegExp(`^${resource}(?: \\d+)?$`) })).toBeVisible()
     }
   })
 
   test('shows product and order records with detail presentation', async ({ authenticatedPage: page }) => {
-    await page.getByRole('link', { name: 'Products', exact: true }).click()
+    await page.getByRole('link', { name: /^Products(?: \d+)?$/ }).click()
     await expect(page.getByRole('heading', { name: /products/i })).toBeVisible()
     await expect(page.getByText('Demo Oak Chair', { exact: true })).toBeVisible()
     await expect(page.getByText('$129.00', { exact: true })).toBeVisible()
@@ -64,14 +64,14 @@ test.describe('demo panel', () => {
     await expect(page.locator('.fi-badge', { hasText: 'Active' }).first()).toBeVisible()
     await expect(page.locator('img[src*="/demo-images/demo-oak-chair.svg"]')).toBeVisible()
 
-    await page.getByRole('link', { name: 'Orders', exact: true }).click()
+    await page.getByRole('link', { name: /^Orders(?: \d+)?$/ }).click()
     await expect(page.getByRole('heading', { name: /orders/i })).toBeVisible()
     await expect(page.getByText('DEMO-ORDER-1001', { exact: true })).toBeVisible()
   })
 
   test('product categories preserve strict attach and detach behavior', async ({ authenticatedPage: page }) => {
 
-    await page.getByRole('link', { name: 'Products', exact: true }).click()
+    await page.getByRole('link', { name: /^Products(?: \d+)?$/ }).click()
     await page.getByText('Demo Oak Chair', { exact: true }).click()
     await page.getByRole('link', { name: 'Edit', exact: true }).click()
     for (const relation of ['Categories', 'Tags', 'Variants']) {
@@ -95,7 +95,7 @@ test.describe('demo panel', () => {
   })
 
   test('product tags preserve strict attach and detach behavior', async ({ authenticatedPage: page }) => {
-    await page.getByRole('link', { name: 'Products', exact: true }).click()
+    await page.getByRole('link', { name: /^Products(?: \d+)?$/ }).click()
     await page.getByText('Demo Oak Chair', { exact: true }).click()
     await page.getByRole('link', { name: 'Edit', exact: true }).click()
     await expect(page.getByRole('tab', { name: 'Tags' })).toBeVisible()
@@ -116,7 +116,7 @@ test.describe('demo panel', () => {
   })
 
   test('customer relationship managers render strict seeded records', async ({ authenticatedPage: page }) => {
-    await page.getByRole('link', { name: 'Customers', exact: true }).click()
+    await page.getByRole('link', { name: /^Customers(?: \d+)?$/ }).click()
     await page.getByText('Avery Demo', { exact: true }).click()
     for (const relation of ['Addresses', 'Orders', 'Reviews']) {
       await expect(page.getByRole('tab', { name: relation })).toBeVisible()
@@ -130,7 +130,7 @@ test.describe('demo panel', () => {
   })
 
   test('nested order items preserve strict parent-scoped rendered records', async ({ authenticatedPage: page }) => {
-    await page.getByRole('link', { name: 'Orders', exact: true }).click()
+    await page.getByRole('link', { name: /^Orders(?: \d+)?$/ }).click()
     await page.getByText('DEMO-ORDER-1001', { exact: true }).click()
     await expect(page.getByRole('link', { name: 'Items', exact: true })).toBeVisible()
     await page.getByRole('link', { name: 'Items', exact: true }).click()

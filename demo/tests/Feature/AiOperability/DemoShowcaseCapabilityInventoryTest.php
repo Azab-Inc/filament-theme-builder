@@ -39,6 +39,10 @@ class DemoShowcaseCapabilityInventoryTest extends TestCase
         $coverage = file_get_contents($root.'/COVERAGE.md');
         $inventory = file_get_contents($root.'/docs/ai-operability/demo-showcase-capability-inventory.md');
 
+        $this->assertStringContainsString('| `showcase.navigation.tenant-presentation` |', $inventory);
+        $this->assertStringContainsString('No tenant persistence or tenant membership is used', $inventory);
+        $this->assertStringContainsString('No MCP mutation tool is needed for read-only or presentation-only surfaces', $inventory);
+
         foreach ([
             'phase-1', 'dashboard.stats', 'dashboard.revenue-orders-chart', 'dashboard.recent-orders',
             'dashboard.low-stock', 'showcase.forms', 'showcase.tables', 'showcase.infolists',

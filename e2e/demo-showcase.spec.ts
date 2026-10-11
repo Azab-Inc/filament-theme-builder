@@ -49,27 +49,40 @@ test.describe('demo showcase panel identity and navigation', () => {
     }
 
     await expect(page.getByRole('region', { name: 'Controlled tenant presentation' })).toContainText('No tenant is persisted')
-    await expect(page.locator('.fi-page-sub-navigation-tabs')).toBeVisible()
+    const showcaseTabs = page.getByRole('navigation', { name: 'Tabs' })
+    await expect(showcaseTabs).toBeVisible()
+    await expect(showcaseTabs.getByRole('link', { name: 'Forms & Schemas', exact: true })).toBeVisible()
+    await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toContainText('Showcase')
     await expect(page.getByRole('link', { name: 'Showcase', exact: true })).toHaveAttribute('aria-current', 'page')
 
     await page.setViewportSize({ width: 390, height: 844 })
     await expect(page.getByRole('heading', { name: 'Showcase', exact: true })).toBeVisible()
     await expect(page.getByRole('region', { name: 'Controlled tenant presentation' })).toBeVisible()
+    const mobileSubNavigation = page.locator('.fi-page-sub-navigation-dropdown button')
+    await expect(mobileSubNavigation).toBeVisible()
+    await mobileSubNavigation.click()
+    await expect(page.getByRole('link', { name: 'Forms & Schemas', exact: true }).last()).toBeVisible()
   })
 
   test('native search keyboard shortcut opens an accessible search surface and profile controls remain available', async ({ page }) => {
     await page.keyboard.press('Control+K')
-    const search = page.locator('.fi-global-search input[type="search"]')
+    const search = page.getByRole('searchbox', { name: 'Global search' })
     await expect(search).toBeFocused()
     await search.fill('DEMO-ORDER-1001')
-    await expect(page.locator('.fi-global-search-results-ctn')).toBeVisible()
-    await expect(page.locator('.fi-global-search-result-heading')).toContainText('DEMO-ORDER-1001')
+    const searchResults = page.getByRole('list').filter({ hasText: 'DEMO-ORDER-1001' }).last()
+    await expect(searchResults).toBeVisible()
+    await expect(searchResults).toContainText('DEMO-ORDER-1001')
     await page.keyboard.press('Escape')
-    await expect(page.locator('.fi-global-search-results-ctn')).toBeHidden()
+    await expect(searchResults).toBeHidden()
 
     await page.getByRole('button', { name: /user menu|demo user|user/i }).first().click()
     await expect(page.getByRole('link', { name: 'Profile', exact: true })).toBeVisible()
     await expect(page.getByRole('navigation', { name: 'Topbar' }).getByRole('button', { name: 'Sign out', exact: true })).toBeVisible()
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.reload()
+    await page.keyboard.press('Control+K')
+    await expect(page.getByRole('searchbox', { name: 'Global search' })).toBeFocused()
   })
 
   test('sidebar is collapsible while active navigation and deterministic badges remain discoverable', async ({ page }) => {
@@ -78,6 +91,27 @@ test.describe('demo showcase panel identity and navigation', () => {
     await collapse.click()
     await expect(page.getByRole('button', { name: /expand sidebar/i })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Products', exact: true })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Dashboard', exact: true })).toHaveAttribute('aria-current', 'page')
+  })
+
+  test('anonymous visitors reach the public index, focused pages redirect to login, and credentials authenticate', async ({ page }) => {
+    await page.context().clearCookies()
+    await page.goto(`${demoBaseUrl}/demo/admin/showcase`)
+    await expect(page.getByRole('heading', { name: 'Showcase', exact: true })).toBeVisible()
+
+    await page.goto(`${demoBaseUrl}/demo/admin/forms-showcase`)
+    await expect(page).toHaveURL(`${demoBaseUrl}/demo/admin/login`)
+    await expect(page.getByLabel(/username/i)).toBeVisible()
+    await expect(page.getByText('Username: user')).toBeVisible()
+    await expect(page.getByText('Password: password')).toBeVisible()
+
+    await page.getByLabel(/username/i).fill('user')
+    await page.getByRole('textbox', { name: /password/i }).fill('password')
+    await page.getByRole('button', { name: /sign in/i }).click()
+    await expect(page).toHaveURL(`${demoBaseUrl}/demo/admin/forms-showcase`)
+    await page.getByRole('button', { name: 'User menu' }).click()
+    await page.getByRole('link', { name: 'Profile', exact: true }).click()
+    await expect(page).toHaveURL(`${demoBaseUrl}/demo/admin/profile`)
   })
 
   test('branding uses the independent local identity in light and dark modes', async ({ page }) => {
