@@ -23,6 +23,7 @@ const primaryButton: RegistryEntry = {
       valueType: 'color',
       constraints: { pattern: /^#[\da-f]{6}$/i },
       defaultValue: '#6366f1',
+      globalValue: 'primary',
     },
   ],
   variants: ['primary', 'secondary'],
@@ -48,6 +49,7 @@ const legacyPrimary: RegistryEntry = {
       valueType: 'color',
       constraints: { pattern: /^#[\da-f]{6}$/i },
       defaultValue: '#6366f1',
+      globalValue: 'primary',
     },
   ],
   variants: [],
@@ -109,7 +111,7 @@ function validateControl(control: RegistryControl, entryId: string): void {
   if (!control || !nonEmptyString(control.id)) throw new Error(`Invalid control metadata for ${entryId}`)
   if (!valueTypes.includes(control.valueType)) throw new Error(`Invalid control type for ${entryId}.${control.id}`)
   const constraints = control.constraints
-  if (constraints?.pattern !== undefined && !(constraints.pattern instanceof RegExp)) throw new Error(`Invalid control constraint for ${entryId}.${control.id}`)
+  if (constraints?.pattern !== undefined && !isPattern(constraints.pattern)) throw new Error(`Invalid control constraint for ${entryId}.${control.id}`)
   if (constraints?.min !== undefined && typeof constraints.min !== 'number') throw new Error(`Invalid control constraint for ${entryId}.${control.id}`)
   if (constraints?.max !== undefined && typeof constraints.max !== 'number') throw new Error(`Invalid control constraint for ${entryId}.${control.id}`)
   if (constraints?.min !== undefined && !Number.isFinite(constraints.min)) throw new Error(`Invalid control constraint for ${entryId}.${control.id}`)
@@ -139,7 +141,7 @@ function isValidControlValue(value: unknown, control: RegistryControl): boolean 
   return typeof value === 'boolean'
 }
 
-function testPattern(pattern: RegExp, value: string): boolean {
+function testPattern(pattern: RegExp | { source: string; flags: string }, value: string): boolean {
   return new RegExp(pattern.source, pattern.flags).test(value)
 }
 
@@ -156,7 +158,10 @@ function isCompatible(required: string, activeVersion: string): boolean {
 function freezeEntry(entry: RegistryEntry): RegistryEntry {
   const controls = entry.controls.map((control) => Object.freeze({
     ...control,
-    constraints: control.constraints ? Object.freeze({ ...control.constraints }) : undefined,
+    constraints: control.constraints ? Object.freeze({
+      ...control.constraints,
+      pattern: control.constraints.pattern ? Object.freeze(patternRepresentation(control.constraints.pattern)) : undefined,
+    }) : undefined,
   }))
   return Object.freeze({
     ...entry,
@@ -165,4 +170,14 @@ function freezeEntry(entry: RegistryEntry): RegistryEntry {
     variants: Object.freeze([...entry.variants]),
     states: Object.freeze([...entry.states]),
   })
+}
+
+function isPattern(value: unknown): boolean {
+  return value instanceof RegExp || (typeof value === 'object' && value !== null
+    && typeof (value as { source?: unknown }).source === 'string'
+    && typeof (value as { flags?: unknown }).flags === 'string')
+}
+
+function patternRepresentation(pattern: RegExp | { source: string; flags: string }): { source: string; flags: string } {
+  return { source: pattern.source, flags: pattern.flags }
 }

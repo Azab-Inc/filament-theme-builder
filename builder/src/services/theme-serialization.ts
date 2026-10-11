@@ -1,7 +1,8 @@
 import type { FilamentRegistry, RegistryEntry } from '@/models/theme-registry.model'
+import { migrateThemeState } from '@/models/theme.model'
 import type { ResolveRequest, ThemeOverride, ThemeScope, ThemeState, ThemeStateV2 } from '@/models/theme.model'
 import { resolveThemeValue } from '@/services/theme-resolver'
-import { validateThemeState } from '@/services/theme-validation'
+import { validateResolveRequest, validateThemeState } from '@/services/theme-validation'
 
 export type ThemeSerializationMode = 'minimal' | 'fully-explicit'
 
@@ -21,6 +22,8 @@ export function serializeTheme(
 ): ThemeSerializationResult {
   const validation = validateThemeState(state, registry)
   if (!validation.valid) return { valid: false, mode, error: validation.invalidOverrides[0]?.error ?? 'Invalid theme state' }
+  const requestValidation = validateResolveRequest(scope, registry)
+  if (!requestValidation.valid) return { valid: false, mode, error: requestValidation.error }
 
   const currentState = toVersionTwo(state)
   if (mode === 'minimal') return { valid: true, mode, state: currentState }
@@ -71,6 +74,7 @@ function materializeSupportedOverrides(
     if (resolved.status === 'unresolved') {
       return { valid: false, error: `Unresolved value for ${resolved.targetId}.${resolved.controlId}` }
     }
+    if (resolved.status !== 'resolved') return { valid: false, error: resolved.error }
     overrides.push(createExplicitOverride(request, resolved.value))
   }
 
@@ -93,17 +97,7 @@ function supportedRequests(entry: RegistryEntry, targetId: string, componentId: 
 }
 
 function toVersionTwo(state: ThemeState): ThemeStateV2 {
-  if (state.schemaVersion === 2) return structuredClone(state)
-  return {
-    schemaVersion: 2,
-    colors: { ...state.colors },
-    overrides: [{
-      targetId: 'global.primary',
-      controlId: 'primary',
-      scope: 'global',
-      value: state.colors.primary,
-    }],
-  }
+  return migrateThemeState(state)
 }
 
 function createExplicitOverride(scope: ResolveRequest, value: ThemeOverride['value']): ThemeOverride {

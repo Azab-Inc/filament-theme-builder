@@ -196,6 +196,8 @@ Create the version-aware registry that maps semantic Filament UI concepts to sta
 
 FTB-006 evidence is limited to the tested registry, resolver, serialization, migration, persistence, and history domain contract. It does not claim a user-visible Inspector or full theme-editor UI; Inspector behavior remains FTB-007.
 
+Remediation evidence: `theme-state.spec.ts` verifies canonical `colors.primary` inheritance without synthetic overrides and duplicate-payload quarantine; `theme-resolver.spec.ts` verifies typed invalid-request/invalid-state results and duplicate identity rejection; `theme-serialization.spec.ts` verifies invalid scope requests are rejected before traversal; `theme-registry.spec.ts` verifies cloned, normalized immutable constraint metadata.
+
 ---
 
 <a id="ftb-007"></a>

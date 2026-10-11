@@ -29,6 +29,15 @@ export type ThemeStateV2 = {
 
 export type ThemeState = ThemeStateV1 | ThemeStateV2
 
+export function migrateThemeState(state: ThemeState): ThemeStateV2 {
+  if (state.schemaVersion === 2) return structuredClone(state)
+  return {
+    schemaVersion: 2,
+    colors: { primary: state.colors.primary },
+    overrides: [],
+  }
+}
+
 export type ResolveRequest = {
   targetId: string
   controlId: string
@@ -38,5 +47,6 @@ export type ResolveRequest = {
 }
 
 export type ResolveResult =
-  | { status: 'resolved'; value: ThemeValue; source: ThemeScope | 'registry-default' | 'legacy-global' }
+  | { status: 'resolved'; value: ThemeValue; source: ThemeScope | 'registry-default' }
   | { status: 'unresolved'; targetId: string; controlId: string }
+  | { status: 'invalid-request' | 'invalid-state'; targetId?: string; controlId?: string; error: string }

@@ -94,6 +94,30 @@ describe('theme state', () => {
     const store = useThemeStore()
     expect(store.theme.schemaVersion).toBe(2)
     expect(store.theme.colors.primary).toBe('#0f766e')
+    expect(store.theme.overrides).toEqual([])
+  })
+
+  it('uses the canonical primary color for component, variant, and state resolution without overrides', () => {
+    const store = useThemeStore()
+    store.setPrimaryColor('#0f766e')
+
+    for (const request of [
+      { targetId: 'button.primary', controlId: 'background', componentId: 'button' },
+      { targetId: 'button.primary', controlId: 'background', componentId: 'button', variantId: 'primary' },
+      { targetId: 'button.primary', controlId: 'background', componentId: 'button', variantId: 'primary', stateId: 'hover' },
+    ]) {
+      expect(store.resolve(request)).toEqual({ status: 'resolved', value: '#0f766e', source: 'global' })
+    }
+  })
+
+  it('rejects duplicate persisted override identities instead of applying either value', () => {
+    localStorage.setItem('ftb-theme', JSON.stringify({
+      schemaVersion: 2,
+      colors: { primary: '#6366f1' },
+      overrides: [primaryButtonVariantOverride, { ...primaryButtonVariantOverride, value: '#dc2626' }],
+    }))
+
+    expect(useThemeStore().theme).toEqual({ schemaVersion: 2, colors: { primary: '#6366f1' }, overrides: [] })
   })
 
   it('stores Inherit as absence and reset removes only the selected override', () => {
@@ -101,7 +125,7 @@ describe('theme state', () => {
     store.setOverride(primaryButtonVariantOverride)
     store.resetOverride(primaryButtonVariantRequest)
     expect(store.theme.overrides).not.toContainEqual(primaryButtonVariantOverride)
-    expect(store.resolve(primaryButtonVariantRequest)).toMatchObject({ source: 'legacy-global' })
+    expect(store.resolve(primaryButtonVariantRequest)).toMatchObject({ source: 'global' })
   })
 
   it('records one sparse edit/reset as one undoable state change and restores exact absence', () => {

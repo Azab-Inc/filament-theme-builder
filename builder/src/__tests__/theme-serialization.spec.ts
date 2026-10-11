@@ -74,7 +74,7 @@ const invalidTheme: ThemeState = {
 }
 const unresolvedRegistry: FilamentRegistry = validateRegistry(registry.entries.map((entry) => ({
   ...entry,
-  controls: entry.controls.map(({ defaultValue: _defaultValue, ...control }) => control),
+  controls: entry.controls.map(({ defaultValue: _defaultValue, globalValue: _globalValue, ...control }) => control),
 })))
 const unresolvedTheme: ThemeState = {
   schemaVersion: 2,
@@ -123,5 +123,17 @@ describe('theme serialization', () => {
     expect(deserializeTheme('{"schemaVersion":2,"colors":null,"overrides":[]}', registry)).toMatchObject({ valid: false, error: expect.stringMatching(/invalid/i) })
     expect(deserializeTheme('[]', registry)).toMatchObject({ valid: false, error: expect.stringMatching(/invalid/i) })
     expect(deserializeTheme('{not-json', registry)).toMatchObject({ valid: false, error: expect.stringMatching(/invalid/i) })
+  })
+
+  it('rejects an invalid serialization scope request before traversal', () => {
+    expect(serializeTheme(themeWithGlobalAndVariant, registry, null as never, 'fully-explicit')).toMatchObject({
+      valid: false,
+      error: expect.stringMatching(/invalid.*request/i),
+    })
+    expect(serializeTheme(themeWithGlobalAndVariant, registry, {
+      targetId: 'button.primary',
+      controlId: 'background',
+      variantId: 'primary',
+    } as never, 'fully-explicit')).toMatchObject({ valid: false, error: expect.stringMatching(/invalid.*request/i) })
   })
 })

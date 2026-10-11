@@ -27,15 +27,15 @@ describe('theme validation and resolution', () => {
   it('resolves Global → Component → Variant → State and nearest parent fallback', () => {
     const state = withOverrides(global('#334155'), component('#475569'), variant('#4f46e5'), stateValue('#4338ca'))
 
-    expect(resolveThemeValue(state, registry, { ...requestFor('default'), componentId: 'other' })).toMatchObject({ status: 'resolved', value: '#334155', source: 'global' })
+    expect(resolveThemeValue(state, registry, requestFor('default'))).toMatchObject({ status: 'invalid-request' })
     expect(resolveThemeValue(state, registry, requestFor('secondary'))).toMatchObject({ value: '#475569', source: 'component' })
-    expect(resolveThemeValue(state, registry, requestFor('primary', 'focus'))).toMatchObject({ value: '#4f46e5', source: 'variant' })
+    expect(resolveThemeValue(state, registry, requestFor('primary', 'focus'))).toMatchObject({ status: 'invalid-request' })
     expect(resolveThemeValue(state, registry, requestFor('primary', 'hover'))).toMatchObject({ value: '#4338ca', source: 'state' })
   })
 
   it('returns registry defaults and unresolved results without inventing values', () => {
-    expect(resolveThemeValue(emptyTheme, registry, requestWithDefault)).toEqual({ status: 'resolved', value: '#6366f1', source: 'registry-default' })
-    expect(resolveThemeValue(emptyTheme, registry, requestWithoutDefault)).toEqual({ status: 'unresolved', targetId: 'button.primary', controlId: 'border' })
+    expect(resolveThemeValue(emptyTheme, registry, requestWithDefault)).toEqual({ status: 'resolved', value: '#6366f1', source: 'global' })
+    expect(resolveThemeValue(emptyTheme, registry, requestWithoutDefault)).toMatchObject({ status: 'invalid-request', targetId: 'button.primary', controlId: 'border' })
   })
 
   it('rejects unknown IDs, controls, unsupported keys, invalid values, and incompatible baselines', () => {
@@ -65,7 +65,7 @@ describe('theme validation and resolution', () => {
   it('uses a valid legacy primary value before the registry default', () => {
     const legacyState: ThemeState = { schemaVersion: 1, colors: { primary: '#123456' } }
 
-    expect(resolveThemeValue(legacyState, registry, { targetId: 'global.primary', controlId: 'primary' })).toEqual({ status: 'resolved', value: '#123456', source: 'legacy-global' })
+    expect(resolveThemeValue(legacyState, registry, { targetId: 'global.primary', controlId: 'primary' })).toEqual({ status: 'resolved', value: '#123456', source: 'global' })
   })
 
   it('preserves explicit equal-to-parent values as explicit', () => {
@@ -76,8 +76,36 @@ describe('theme validation and resolution', () => {
 
   it('does not throw while resolving a quarantined invalid external override', () => {
     expect(() => resolveThemeValue(invalidExternalTheme, registry, requestFor('primary'))).not.toThrow()
-    expect(resolveThemeValue(invalidExternalTheme, registry, requestFor('primary'))).toEqual({ status: 'resolved', value: '#6366f1', source: 'registry-default' })
+    expect(resolveThemeValue(invalidExternalTheme, registry, requestFor('primary'))).toMatchObject({ status: 'invalid-state' })
     expect(validateThemeState(invalidExternalTheme, registry)).toMatchObject({ valid: false, invalidOverrides: [{ targetId: 'button.primary', controlId: 'background', scope: 'global', error: expect.stringMatching(/invalid value/i) }] })
+  })
+
+  it('returns a typed invalid result for malformed or unsupported resolve requests', () => {
+    const requests: unknown[] = [
+      null,
+      [],
+      { targetId: 'button.primary' },
+      { targetId: 'button.primary', controlId: 'background', componentId: 42 },
+      { targetId: 'button.primary', controlId: 'background', variantId: 'primary' },
+      { targetId: 'button.primary', controlId: 'background', extra: true },
+      { targetId: 'button.unknown', controlId: 'background' },
+      { targetId: 'button.primary', controlId: 'background', componentId: 'button', variantId: 'unknown' },
+    ]
+
+    for (const request of requests) {
+      expect(() => resolveThemeValue(emptyTheme, registry, request as never)).not.toThrow()
+      expect(resolveThemeValue(emptyTheme, registry, request as never)).toMatchObject({ status: 'invalid-request' })
+    }
+  })
+
+  it('does not resolve duplicate override identities by array order', () => {
+    const duplicateState = withOverrides(global('#334155'), global('#4f46e5'))
+
+    expect(validateThemeState(duplicateState, registry)).toMatchObject({
+      valid: false,
+      invalidOverrides: expect.arrayContaining([expect.objectContaining({ error: expect.stringMatching(/duplicate.*button\.primary.*background/i) })]),
+    })
+    expect(resolveThemeValue(duplicateState, registry, requestFor('primary'))).toMatchObject({ status: 'invalid-state' })
   })
 
   it('does not mutate state while resolving inherited values', () => {

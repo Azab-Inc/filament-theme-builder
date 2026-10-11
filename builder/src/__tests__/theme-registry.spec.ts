@@ -78,4 +78,26 @@ describe('theme registry', () => {
       { ...buttonEntry, id: 'button.secondary', filamentCompatibility: '4.x' },
     ])).toThrow(/compatibility.*consistent/i)
   })
+
+  it('clones caller metadata so nested mutations cannot change registry behavior', () => {
+    const pattern = /^#[\da-f]{6}$/i
+    const sourceEntry = {
+      ...buttonEntry,
+      selectors: [...buttonEntry.selectors],
+      controls: [{ ...backgroundControl, constraints: { pattern } }],
+      variants: [...buttonEntry.variants],
+      states: [...buttonEntry.states],
+    }
+    const validated = validateRegistry([sourceEntry])
+
+    sourceEntry.selectors[0] = '.fi-mutated'
+    sourceEntry.controls[0]!.constraints!.pattern = /mutated/
+    sourceEntry.variants[0] = 'mutated'
+    pattern.lastIndex = 99
+
+    expect(validated.entries[0]!.selectors).toEqual(['.fi-btn-primary'])
+    expect(validated.entries[0]!.variants).toContain('primary')
+    expect(validated.entries[0]!.controls[0]!.constraints!.pattern).toEqual({ source: '^#[\\da-f]{6}$', flags: 'i' })
+    expect(validated.entries[0]!.controls[0]!.constraints!.pattern).not.toBe(pattern)
+  })
 })

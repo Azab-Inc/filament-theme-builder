@@ -1,6 +1,6 @@
 import type { FilamentRegistry, RegistryControl, RegistryEntry } from '@/models/theme-registry.model'
 import { SUPPORTED_FILAMENT_COMPATIBILITY } from '@/registry/theme-registry'
-import type { ThemeOverride, ThemeScope, ThemeState, ThemeValue } from '@/models/theme.model'
+import type { ResolveRequest, ThemeOverride, ThemeScope, ThemeState, ThemeValue } from '@/models/theme.model'
 
 export type ThemeValidationContext = {
   targetId: string
@@ -20,6 +20,10 @@ export type ThemeOverrideValidationResult =
 export type ThemeStateValidationResult =
   | { valid: true; state: ThemeState; invalidOverrides: [] }
   | { valid: false; state: ThemeState; invalidOverrides: ThemeOverrideValidationFailure[] }
+
+export type ResolveRequestValidationResult =
+  | { valid: true; request: ResolveRequest }
+  | { valid: false; targetId: string; controlId: string; error: string }
 
 export function validateThemeOverride(override: ThemeOverride, registry: FilamentRegistry): ThemeOverrideValidationResult {
   const context: ThemeValidationContext = {
@@ -71,8 +75,50 @@ export function validateThemeState(state: ThemeState, registry: FilamentRegistry
   }
 
   const invalidOverrides = state.overrides.map((override) => validateThemeOverride(override, registry)).filter((result): result is ThemeOverrideValidationFailure => !result.valid)
+  const duplicateIndexes = new Set<number>()
+  const identities = new Map<string, number>()
+  state.overrides.forEach((override, index) => {
+    if (!validateThemeOverride(override, registry).valid) return
+    const identity = overrideIdentity(override)
+    const previous = identities.get(identity)
+    if (previous !== undefined) {
+      duplicateIndexes.add(index)
+      if (!duplicateIndexes.has(previous)) duplicateIndexes.add(previous)
+    } else {
+      identities.set(identity, index)
+    }
+  })
+  for (const index of duplicateIndexes) {
+    const override = state.overrides[index]!
+    invalidOverrides.push(failure({ targetId: override.targetId, controlId: override.controlId, scope: override.scope }, `Duplicate override identity for ${override.targetId}.${override.controlId}`))
+  }
   if (invalidBaseline) invalidOverrides.unshift(invalidBaseline)
   return invalidOverrides.length === 0 ? { valid: true, state, invalidOverrides: [] } : { valid: false, state, invalidOverrides }
+}
+
+export function validateResolveRequest(request: unknown, registry: FilamentRegistry): ResolveRequestValidationResult {
+  const targetId = isObject(request) && typeof request.targetId === 'string' ? request.targetId : ''
+  const controlId = isObject(request) && typeof request.controlId === 'string' ? request.controlId : ''
+  if (!isObject(request) || Array.isArray(request)) return { valid: false, targetId, controlId, error: 'Invalid resolve request' }
+  const allowedKeys = new Set(['targetId', 'controlId', 'componentId', 'variantId', 'stateId'])
+  if (Reflect.ownKeys(request).some((key) => typeof key !== 'string' || !allowedKeys.has(key))) return { valid: false, targetId, controlId, error: 'Invalid resolve request: unsupported key' }
+  if (!nonEmptyString(targetId) || !nonEmptyString(controlId)) return { valid: false, targetId, controlId, error: 'Invalid resolve request identifiers' }
+  if (!validOptionalIdentifiers(request)) return { valid: false, targetId, controlId, error: 'Invalid resolve request identifiers' }
+  const entry = registry.entries.find(({ id }) => id === targetId)
+  if (!entry) return { valid: false, targetId, controlId, error: `Unknown target: ${targetId}` }
+  if (!entry.controls.some(({ id }) => id === controlId)) return { valid: false, targetId, controlId, error: `Unknown control: ${controlId}` }
+  const hasComponent = request.componentId !== undefined
+  const hasVariant = request.variantId !== undefined
+  const hasState = request.stateId !== undefined
+  const componentId = request.componentId as string | undefined
+  const variantId = request.variantId as string | undefined
+  const stateId = request.stateId as string | undefined
+  if (hasVariant && !hasComponent) return { valid: false, targetId, controlId, error: 'Invalid resolve request scope hierarchy' }
+  if (hasState && !hasVariant) return { valid: false, targetId, controlId, error: 'Invalid resolve request scope hierarchy' }
+  if (hasComponent && componentId !== entry.family) return { valid: false, targetId, controlId, error: `Unknown component: ${componentId}` }
+  if (hasVariant && !entry.variants.includes(variantId!)) return { valid: false, targetId, controlId, error: `Unsupported variant: ${variantId}` }
+  if (hasState && !entry.states.includes(stateId!)) return { valid: false, targetId, controlId, error: `Unsupported state: ${stateId}` }
+  return { valid: true, request: request as ResolveRequest }
 }
 
 function validateScope(override: ThemeOverride, entry: RegistryEntry): string | undefined {
@@ -132,4 +178,8 @@ function nonEmptyString(value: unknown): value is string {
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
+}
+
+function overrideIdentity(override: ThemeOverride): string {
+  return [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000')
 }

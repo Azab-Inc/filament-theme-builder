@@ -1,6 +1,7 @@
 import { computed, onScopeDispose, ref, toRaw, watch } from 'vue'
 import { defineStore } from 'pinia'
 
+import { migrateThemeState } from '@/models/theme.model'
 import type { ResolveRequest, ResolveResult, ThemeOverride, ThemeState, ThemeStateV2 } from '@/models/theme.model'
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { resolveThemeValue } from '@/services/theme-resolver'
@@ -68,11 +69,6 @@ export const useThemeStore = defineStore('theme', () => {
       theme.value = { ...theme.value, overrides }
     },
     resolve(request: ResolveRequest): ResolveResult {
-      const explicit = theme.value.overrides.some((override) => override.targetId === request.targetId && override.controlId === request.controlId)
-      if (!explicit && request.targetId === 'global.primary' && request.controlId === 'primary') {
-        const legacyState: ThemeState = { schemaVersion: 1, colors: { primary: theme.value.colors.primary } }
-        return resolveThemeValue(legacyState, registry, request)
-      }
       return resolveThemeValue(theme.value, registry, request)
     },
     undo(): void {
@@ -104,12 +100,7 @@ function restoreTheme(): ThemeStateV2 {
 }
 
 function migrateToCurrent(state: ThemeState): ThemeStateV2 {
-  if (state.schemaVersion === 2) return structuredClone(state)
-  return {
-    schemaVersion: 2,
-    colors: { primary: state.colors.primary },
-    overrides: [],
-  }
+  return migrateThemeState(state)
 }
 
 function deepestScope(request: ResolveRequest): ThemeOverride['scope'] {

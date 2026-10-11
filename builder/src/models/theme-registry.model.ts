@@ -3,7 +3,7 @@ import type { ThemeValue } from '@/models/theme.model'
 export type RegistryValueType = 'color' | 'string' | 'number' | 'boolean'
 
 export type RegistryControlConstraints = {
-  pattern?: RegExp
+  pattern?: RegExp | { source: string; flags: string }
   min?: number
   max?: number
 }
@@ -13,6 +13,7 @@ export type RegistryControl = {
   valueType: RegistryValueType
   constraints?: RegistryControlConstraints
   defaultValue?: ThemeValue
+  globalValue?: 'primary'
 }
 
 export type RegistryEntry = {
