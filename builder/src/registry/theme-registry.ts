@@ -32,7 +32,7 @@ const secondaryButton: RegistryEntry = {
   ...primaryButton,
   id: 'button.secondary',
   label: 'Secondary button',
-  selectors: ['.fi-icon-btn.fi-topbar-open-sidebar-btn'],
+  selectors: ['.fi-btn.fi-outlined'],
 }
 
 const legacyPrimary: RegistryEntry = {

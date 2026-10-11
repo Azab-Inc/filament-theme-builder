@@ -43,3 +43,11 @@
 - Production metadata now uses `.fi-btn.fi-color-primary` and `.fi-icon-btn.fi-topbar-open-sidebar-btn`; synthetic `.fi-shared` ambiguity remains test-only.
 - RED: `npm run test:unit -- src/__tests__/theme-registry.spec.ts --run` failed with 2 assertions when the new verified selector contract was added before metadata changed.
 - GREEN: focused registry tests passed (`1` file, `6` tests), and `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/theme-registry-selectors.spec.ts` passed (`1` test).
+
+## Fix round 3
+
+- Authenticated Compose inspection used the seeded `user` / `password` session before visiting `/demo/admin/actions-showcase` at 930×700. The live DOM contained a genuine neutral/secondary-style `Outline action` button with `.fi-btn.fi-outlined`, parent action context `.fi-ac`, and no sidebar/topbar classes. The sidebar toggle remained an icon-only topbar control and was not used as a semantic button mapping.
+- Production metadata now maps `button.secondary` to `.fi-btn.fi-outlined`; the Playwright regression authenticates before dashboard navigation, gates on `COMPOSE_E2E=1`, sets a deterministic viewport, and verifies count, visible role, accessible name, and action context.
+- RED: `npm run test:unit -- src/__tests__/theme-registry.spec.ts --run` failed with 2 expected assertions while the test contract expected `.fi-btn.fi-outlined` before the registry metadata changed.
+- GREEN: focused registry tests passed (`1` file, `6` tests); `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/theme-registry-selectors.spec.ts` passed (`1` test); full unit suite passed (`3` files, `14` tests); type-check and production build passed.
+- Full Playwright suite was attempted with the active Compose demo URL. The focused registry test passed, but 9 unrelated existing tests failed with `ERR_CONNECTION_REFUSED` against hard-coded builder/demo ports `4173`/`4174`; the active seeded demo was available on `4175`. Three unrelated tests passed and one was skipped.
