@@ -7,10 +7,10 @@
         "docker",
         "compose",
         "-f",
-        "./demo/compose.yaml",
+        "./compose.dev.yaml",
         "exec",
         "-T",
-        "laravel.test",
+        "demo-php",
         "php",
         "artisan",
         "boost:mcp"
