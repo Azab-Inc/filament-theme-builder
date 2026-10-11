@@ -15,7 +15,7 @@ const primaryButton: RegistryEntry = {
   id: 'button.primary',
   label: 'Primary button',
   family: 'button',
-  selectors: ['.fi-btn-primary'],
+  selectors: ['.fi-btn'],
   controls: [
     {
       id: 'background',
@@ -32,14 +32,14 @@ const secondaryButton: RegistryEntry = {
   ...primaryButton,
   id: 'button.secondary',
   label: 'Secondary button',
-  selectors: ['.fi-btn-secondary'],
+  selectors: ['.fi-icon-btn'],
 }
 
 const legacyPrimary: RegistryEntry = {
   id: 'global.primary',
   label: 'Primary color',
   family: 'global',
-  selectors: ['.fi-btn'],
+  selectors: ['.fi-color-primary'],
   controls: [
     {
       id: 'primary',
@@ -65,6 +65,10 @@ export function validateRegistry(entries: readonly RegistryEntry[]): FilamentReg
     ids.add(entry.id)
     return freezeEntry(entry)
   }).sort((left, right) => left.id.localeCompare(right.id))
+
+  if (new Set(validatedEntries.map(({ filamentCompatibility }) => filamentCompatibility)).size !== 1) {
+    throw new Error('Compatibility metadata must be consistent across registry entries')
+  }
 
   return Object.freeze({ entries: Object.freeze(validatedEntries) })
 }
@@ -105,7 +109,10 @@ function validateControl(control: RegistryControl, entryId: string): void {
   if (constraints?.pattern !== undefined && !(constraints.pattern instanceof RegExp)) throw new Error(`Invalid control constraint for ${entryId}.${control.id}`)
   if (constraints?.min !== undefined && typeof constraints.min !== 'number') throw new Error(`Invalid control constraint for ${entryId}.${control.id}`)
   if (constraints?.max !== undefined && typeof constraints.max !== 'number') throw new Error(`Invalid control constraint for ${entryId}.${control.id}`)
+  if (constraints?.min !== undefined && !Number.isFinite(constraints.min)) throw new Error(`Invalid control constraint for ${entryId}.${control.id}`)
+  if (constraints?.max !== undefined && !Number.isFinite(constraints.max)) throw new Error(`Invalid control constraint for ${entryId}.${control.id}`)
   if (constraints?.min !== undefined && constraints?.max !== undefined && constraints.min > constraints.max) throw new Error(`Invalid control constraint for ${entryId}.${control.id}`)
+  if ('defaultValue' in control && !isValidControlValue(control.defaultValue, control)) throw new Error(`Invalid default value for ${entryId}.${control.id}`)
 }
 
 function validateUniqueKeys(keys: readonly string[], field: string, entryId: string): void {
@@ -115,7 +122,22 @@ function validateUniqueKeys(keys: readonly string[], field: string, entryId: str
 }
 
 function isSelector(value: unknown): value is string {
-  return typeof value === 'string' && value.trim().length > 1 && /^[.#[]/.test(value)
+  return typeof value === 'string' && value === value.trim() && /^\.fi-[A-Za-z0-9_-]+$/.test(value)
+}
+
+function isValidControlValue(value: unknown, control: RegistryControl): boolean {
+  if (control.valueType === 'color') return typeof value === 'string' && (!control.constraints?.pattern || testPattern(control.constraints.pattern, value))
+  if (control.valueType === 'string') return typeof value === 'string' && (!control.constraints?.pattern || testPattern(control.constraints.pattern, value))
+  if (control.valueType === 'number') {
+    return typeof value === 'number' && Number.isFinite(value)
+      && (control.constraints?.min === undefined || value >= control.constraints.min)
+      && (control.constraints?.max === undefined || value <= control.constraints.max)
+  }
+  return typeof value === 'boolean'
+}
+
+function testPattern(pattern: RegExp, value: string): boolean {
+  return new RegExp(pattern.source, pattern.flags).test(value)
 }
 
 function nonEmptyString(value: unknown): value is string {

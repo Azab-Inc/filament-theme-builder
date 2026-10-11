@@ -25,3 +25,12 @@
 
 - Store migration, resolver/validation services, serialization, and persistence integration remain intentionally unimplemented for later tasks.
 - The repository contains an unrelated pre-existing `.gitignore` modification, which was not changed.
+
+## Fix round 1
+
+- Runtime verification used Playwright against the rendered preview iframe at `http://127.0.0.1:4175/demo/admin` and the redirected authenticated-preview route. The live DOM contained `.fi-color-primary`; the button route contained `.fi-btn` and `.fi-icon-btn`. `.fi-btn-primary` and `.fi-btn-secondary` matched zero elements.
+- Production metadata now uses only those verified selectors: `button.primary` → `.fi-btn`, `button.secondary` → `.fi-icon-btn`, and `global.primary` → `.fi-color-primary`.
+- Selector validation now accepts only trimmed, simple `.fi-*` class selectors, rejecting empty/whitespace, `. `, `[`, combinators, script-like text, and other non-parseable/unsafe forms.
+- Registry validation now checks typed/default values, finite numeric metadata, deterministic ID ordering, and a single compatibility baseline across entries. This makes incompatible lookup requirements deterministic rather than selecting an arbitrary candidate requirement.
+- RED: `npm run test:unit -- src/__tests__/theme-registry.spec.ts --run` failed with 2 failing regression tests for unsafe selectors/default metadata and conflicting compatibility baselines.
+- GREEN: the same command passed: `1` test file, `6` tests passed.
