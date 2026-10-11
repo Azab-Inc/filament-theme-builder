@@ -9,6 +9,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -60,6 +62,27 @@ final class ProductEditorForm
                         ->maxLength(240),
                 ])
                 ->columns(2),
+            Fieldset::make('Product metadata')
+                ->schema([
+                    Grid::make(2)
+                        ->schema([
+                            Select::make('product_metadata.material')
+                                ->label('Material')
+                                ->options([
+                                    'paper' => 'Paper',
+                                    'canvas' => 'Canvas',
+                                    'leather' => 'Leather',
+                                ])
+                                ->required(),
+                            Select::make('product_metadata.edition')
+                                ->label('Edition')
+                                ->options([
+                                    'standard' => 'Standard',
+                                    'limited' => 'Limited',
+                                ])
+                                ->required(),
+                        ]),
+                ]),
             Section::make('Wizard steps layout')
                 ->schema([
                     Wizard::make([

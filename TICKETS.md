@@ -342,7 +342,7 @@ Create a Forms & Schemas showcase containing every visually distinct first-party
 
 Implementation: `0aac781` (`Feature: add forms and schemas showcase`); verification: [`FormsShowcaseTest`](./demo/tests/Feature/Filament/Showcase/FormsShowcaseTest.php), `e2e/demo-showcase.spec.ts`.
 
-Remaining: complete full first-party form/schema fixture and registry coverage, including representative inheritance demonstration; do not mark the unfinished criteria above complete prematurely.
+Remaining: native fixture and selector-only registry coverage now includes the verified Fieldset/Grid, Repeater, Radio, and ToggleButtons surfaces. FTB-011 remains in-progress because representative Global → Component → Variant → State inheritance has only the honest test-only `form.test.fixture` evidence; native Filament themability and forced-state controls remain outside this slice (FTB-016).
 
 ---
 

@@ -97,7 +97,7 @@ domain, resources, and relationship workflows.
 | `dashboard.revenue-orders-chart` | planned | `RevenueOrdersChartWidget` | Series, axes, legend, tooltips | Seeded order totals and dates | Deterministic seeded chart period | Dashboard feature tests |
 | `dashboard.recent-orders` | planned | `RecentOrdersWidget` | Compact table with status and money columns | Seeded orders and customers | Seeded result set | Dashboard feature tests |
 | `dashboard.low-stock` | planned | `LowStockWidget` | Threshold/status badge presentation | Seeded inventory and products | Seeded low-stock rows | Dashboard feature tests |
-| `showcase.forms` | partial | `/demo/admin/forms-showcase` (`ShowcaseFormsPage`, implemented as `FormsShowcase`) | Named product, customer, and order schemas with Section/grid, Wizard, and Tabs layouts; native text, price, select, toggle, date, private local image representation, address/contact, and status validation controls | Fixed non-persisting fixture data | Filled, disabled, optional-null, server-validation, and keyboard-focus behavior in the native page; no forced-state controls | `FormsShowcaseTest`; `e2e/demo-showcase.spec.ts` (`forms and schemas`) |
+| `showcase.forms` | partial | `/demo/admin/forms-showcase` (`ShowcaseFormsPage`, implemented as `FormsShowcase`) | Named product, customer, and order schemas with Section/grid, Fieldset/Grid, Wizard, Tabs, Repeater, Radio, and ToggleButtons layouts; native text, price, select, toggle, date, private local image representation, address/contact, nested contact, and status validation controls | Fixed non-persisting fixture data | Filled, disabled, optional-null, server-validation, nested validation, long-text, and keyboard-focus behavior in the native page; no forced-state controls | `FormsShowcaseTest`; `e2e/demo-showcase.spec.ts` (`forms and schemas`) |
 | `showcase.tables` | implemented | `ShowcaseTablesPage` → `/demo/admin/tables-showcase` (`TablesShowcase`) | Responsive native product table with image/text/badge/icon columns, grouping, summaries, controls, and safe read-only actions | Seeded demo products with order counts and nullable supplier/image relationships | Empty, loading, invalid-filter, missing-related-data, long-name, and selected-row reset states | `TablesShowcaseTest`; `e2e/demo-showcase.spec.ts` (`tables`) |
 | `showcase.infolists` | planned | `ShowcaseInfolistsPage` | Order, customer, and product detail entries/layouts | Seeded customer/order/product records | Null and representative value presentation | Showcase feature tests |
 | `showcase.actions` | planned | `ShowcaseActionsPage` | Order/product actions, destructive confirmation, open modal | Fixed non-production fixture records | `ActionLoadingState`, `ModalOpenState` | Showcase feature tests |
@@ -115,10 +115,11 @@ domain, resources, and relationship workflows.
   `RepresentativeBadgeSet` are part of this phase's shell contract.
 - **FTB-011 forms:** `ShowcaseFormsPage` (implemented as `FormsShowcase`) provides named `ProductEditorForm`,
   `CustomerContactForm`, and `OrderStatusForm` fixtures. `ProductEditorForm`
-  demonstrates distinct native `SectionGridLayout`, `WizardStepsLayout`, and `TabbedFormLayout` (Section/grid, Wizard steps, and Tabbed form)
-  layouts; its image representation is private local storage restricted to
+  demonstrates distinct native `SectionGridLayout`, `FieldsetGridLayout`, `WizardStepsLayout`,
+  `TabbedFormLayout`, `RepeaterContactLayout`, `RadioContactControl`, and
+  `ToggleButtonsStatusControl` surfaces; its image representation is private local storage restricted to
   JPEG/PNG and submissions are not persisted. The FTB-006 semantic
-  registry/inheritance remains unresolved.
+  registry/inheritance remains unresolved for native themability and inheritance.
 
 Builder registry slice evidence (2026-10-12): shared targets are
 `form.section` (`.fi-section`), `form.field` (`.fi-fo-field`),
@@ -129,7 +130,11 @@ Builder registry slice evidence (2026-10-12): shared targets are
 `form.control.textarea` (`.fi-fo-textarea`),
 `form.control.file-upload` (`.fi-fo-file-upload`),
 `form.layout.wizard` (`.fi-sc-wizard`, `.fi-sc-wizard-header-step-btn`,
-`.fi-sc-wizard-step`), and `form.layout.tabs` (`.fi-tabs`, `.fi-tabs-item`).
+`.fi-sc-wizard-step`), `form.layout.tabs` (`.fi-tabs`, `.fi-tabs-item`),
+`form.control.radio` (`.fi-fo-radio`, `.fi-radio-input`),
+`form.control.toggle-buttons` (`.fi-fo-toggle-buttons`, `.fi-fo-toggle-buttons-input`),
+`form.layout.fieldset` (`.fi-fieldset`), `form.layout.grid` (`.fi-grid`), and
+`form.layout.repeater` (`.fi-fo-repeater`).
 Selectors were verified against the running demo's Filament `v5.9.0` markup by
 role/label/context assertions in `e2e/demo-showcase.spec.ts`; registry and
 lookup evidence are in `builder/src/__tests__/theme-registry.spec.ts`. These

@@ -439,6 +439,26 @@ test.describe('forms and schemas showcase', () => {
     await page.keyboard.press('Tab')
     await expect(page.getByLabel('Product price')).toBeFocused()
   })
+
+  test('shows distinct native fieldset, repeater, radio, and toggle button surfaces', async ({ page }) => {
+    const metadata = page.locator('.fi-fieldset').filter({ hasText: 'Product metadata' }).first()
+    await expect(metadata).toBeVisible()
+    await expect(metadata.locator('.fi-grid')).toHaveCount(2)
+    await expect(metadata.getByLabel('Material')).toHaveValue('paper')
+
+    const contacts = page.locator('.fi-fo-repeater').filter({ hasText: 'Additional contact methods' }).first()
+    await expect(contacts).toBeVisible()
+    await expect(contacts.getByLabel('Contact method')).toHaveValue('Studio')
+    await expect(contacts.getByLabel('Contact value')).toHaveValue('studio@example.test')
+
+    const preferred = page.locator('.fi-fo-field').filter({ hasText: 'Preferred contact method' }).locator('.fi-fo-radio').first()
+    await expect(preferred).toBeVisible()
+    await expect(preferred.getByLabel('Email')).toBeChecked()
+
+    const status = page.locator('.fi-fo-field').filter({ hasText: 'Status presentation' }).locator('.fi-fo-toggle-buttons').first()
+    await expect(status).toBeVisible()
+    await expect(status.getByLabel('Pending', { exact: true })).toBeChecked()
+  })
 })
 
 test.describe('tables showcase', () => {

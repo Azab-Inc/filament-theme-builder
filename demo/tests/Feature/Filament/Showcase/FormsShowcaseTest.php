@@ -133,4 +133,47 @@ class FormsShowcaseTest extends TestCase
             ->call('save')
             ->assertHasFormErrors(['order_status' => 'required']);
     }
+
+    public function test_forms_showcase_contains_distinct_native_fieldset_repeater_radio_and_toggle_button_surfaces(): void
+    {
+        $this->seed();
+        $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
+
+        Livewire::test(FormsShowcase::class)
+            ->assertSee('Product metadata')
+            ->assertSee('Additional contact methods')
+            ->assertSee('Contact method')
+            ->assertSee('Preferred contact method')
+            ->assertSee('Status presentation')
+            ->assertFormSet([
+                'product_metadata' => [
+                    'material' => 'paper',
+                    'edition' => 'standard',
+                ],
+                'preferred_contact_method' => 'email',
+                'status_presentation' => 'pending',
+            ])
+            ->assertSet('data.additional_contacts', function (array $contacts): bool {
+                $contact = array_values($contacts)[0] ?? [];
+
+                return count($contacts) === 1
+                    && ($contact['label'] ?? null) === 'Studio'
+                    && ($contact['value'] ?? null) === 'studio@example.test';
+            });
+    }
+
+    public function test_forms_showcase_validates_nested_contact_rows_without_persisting_them(): void
+    {
+        $this->seed();
+        $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
+
+        Livewire::test(FormsShowcase::class)
+            ->fillForm([
+                'additional_contacts' => [
+                    ['label' => 'Studio', 'value' => 'not-an-email'],
+                ],
+            ])
+            ->call('save')
+            ->assertHasFormErrors(['additional_contacts.0.value' => 'email']);
+    }
 }

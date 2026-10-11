@@ -57,11 +57,16 @@ describe('theme registry', () => {
       'button.secondary',
       'form.control.date',
       'form.control.file-upload',
+      'form.control.radio',
       'form.control.select',
       'form.control.text',
       'form.control.textarea',
       'form.control.toggle',
+      'form.control.toggle-buttons',
       'form.field',
+      'form.layout.fieldset',
+      'form.layout.grid',
+      'form.layout.repeater',
       'form.layout.tabs',
       'form.layout.wizard',
       'form.section',
@@ -78,11 +83,16 @@ describe('theme registry', () => {
     expect(forms.map((entry) => entry.id)).toEqual([
       'form.control.date',
       'form.control.file-upload',
+      'form.control.radio',
       'form.control.select',
       'form.control.text',
       'form.control.textarea',
       'form.control.toggle',
+      'form.control.toggle-buttons',
       'form.field',
+      'form.layout.fieldset',
+      'form.layout.grid',
+      'form.layout.repeater',
       'form.layout.tabs',
       'form.layout.wizard',
       'form.section',
@@ -96,6 +106,11 @@ describe('theme registry', () => {
     ])
     expect(forms.find((entry) => entry.id === 'form.layout.tabs')?.selectors).toEqual(['.fi-tabs', '.fi-tabs-item'])
     expect(forms.find((entry) => entry.id === 'form.control.select')?.selectors).toEqual(['.fi-fo-select', '.fi-select-input'])
+    expect(forms.find((entry) => entry.id === 'form.control.radio')?.selectors).toEqual(['.fi-fo-radio', '.fi-radio-input'])
+    expect(forms.find((entry) => entry.id === 'form.control.toggle-buttons')?.selectors).toEqual(['.fi-fo-toggle-buttons', '.fi-fo-toggle-buttons-input'])
+    expect(forms.find((entry) => entry.id === 'form.layout.fieldset')?.selectors).toEqual(['.fi-fieldset'])
+    expect(forms.find((entry) => entry.id === 'form.layout.grid')?.selectors).toEqual(['.fi-grid'])
+    expect(forms.find((entry) => entry.id === 'form.layout.repeater')?.selectors).toEqual(['.fi-fo-repeater'])
     expect(forms.every((entry) => entry.controls.length === 0)).toBe(true)
     expect(forms.every((entry) => entry.variants.length === 0 && entry.states.length === 0)).toBe(true)
   })

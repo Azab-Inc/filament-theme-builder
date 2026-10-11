@@ -4,6 +4,7 @@ namespace App\Filament\Pages\Showcase\Forms;
 
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Section;
 use Illuminate\Contracts\Support\Htmlable;
 
@@ -29,6 +30,16 @@ final class OrderStatusForm
                         ->label('Status note')
                         ->default('Awaiting payment confirmation.')
                         ->nullable(),
+                    ToggleButtons::make('status_presentation')
+                        ->label('Status presentation')
+                        ->options([
+                            'pending' => 'Pending',
+                            'paid' => 'Paid',
+                            'shipped' => 'Shipped',
+                        ])
+                        ->default('pending')
+                        ->inline()
+                        ->required(),
                 ])
                 ->columns(2),
         ];
