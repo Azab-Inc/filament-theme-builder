@@ -122,6 +122,15 @@ class EntityResourcesTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_customer_and_product_indexes_load_without_duplicate_table_filters(): void
+    {
+        $this->seed();
+        $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
+
+        $this->get('/demo/admin/customers')->assertOk()->assertSee('Customers');
+        $this->get('/demo/admin/products')->assertOk()->assertSee('Products');
+    }
+
     public function test_product_table_presents_status_money_and_public_image(): void
     {
         $this->seed();
