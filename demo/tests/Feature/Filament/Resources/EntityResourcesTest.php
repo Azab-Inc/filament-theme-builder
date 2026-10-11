@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Filament\Resources;
 
+use App\Filament\Resources\Products\ProductResource;
 use App\Filament\Support\EntityResourceTable;
 use App\Models\Address;
 use App\Models\Category;
@@ -276,6 +277,27 @@ class EntityResourcesTest extends TestCase
                 'body' => $body,
             ]);
         }
+    }
+
+    public function test_fixture_delete_actions_are_disabled_but_real_records_remain_deletable(): void
+    {
+        $this->seed();
+        $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
+
+        $fixture = Product::query()->where('sku', 'DEMO-CHAIR-001')->firstOrFail();
+        $ordinary = Product::factory()->create(['is_demo_fixture' => false]);
+
+        $pages = ProductResource::getPages();
+
+        Livewire::test($pages['edit']->getPage(), ['record' => $fixture->getRouteKey()])
+            ->assertActionDisabled('delete');
+
+        Livewire::test($pages['edit']->getPage(), ['record' => $ordinary->getRouteKey()])
+            ->callAction('delete')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('products', ['id' => $fixture->getKey()]);
+        $this->assertDatabaseMissing('products', ['id' => $ordinary->getKey()]);
     }
 
     /** @param array<string, mixed> $overrides */

@@ -47,6 +47,7 @@ class ComposeRuntimeTest extends TestCase
     public function test_maintenance_commands_are_observable_when_their_domain_storage_is_unconfigured(): void
     {
         Config::set('maintenance.demo_snapshot_path', '');
+        Config::set('maintenance.temporary_uploads_path', sys_get_temp_dir().'/missing-demo-uploads-'.bin2hex(random_bytes(6)));
 
         $this->artisan('demo:reset')
             ->expectsOutputToContain('skipped')
@@ -83,8 +84,8 @@ class ComposeRuntimeTest extends TestCase
 
         try {
             $this->artisan('uploads:cleanup')
-                ->expectsOutputToContain('skipped')
-                ->assertExitCode(0);
+                ->expectsOutputToContain('Upload cleanup failed: the configured temporary upload path is not a directory.')
+                ->assertExitCode(1);
         } finally {
             @unlink($path);
         }

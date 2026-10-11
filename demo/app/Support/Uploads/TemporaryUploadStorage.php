@@ -2,6 +2,7 @@
 
 namespace App\Support\Uploads;
 
+use Closure;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\ValidationException;
@@ -18,6 +19,15 @@ final class TemporaryUploadStorage
         'image/webp' => 'webp',
         'application/pdf' => 'pdf',
     ];
+
+    /** @var Closure(string): bool */
+    private readonly Closure $unlink;
+
+    /** @param (Closure(string): bool)|null $unlink */
+    public function __construct(?Closure $unlink = null)
+    {
+        $this->unlink = $unlink ?? static fn (string $path): bool => unlink($path);
+    }
 
     public function store(UploadedFile $file, string $owner): string
     {
@@ -91,31 +101,41 @@ final class TemporaryUploadStorage
         ];
     }
 
-    public function cleanupExpired(): int
+    /** @return array{deleted: int, failed: list<string>} */
+    public function cleanupExpired(): array
     {
         $cutoff = now()->subHours((int) config('maintenance.temporary_upload_retention_hours'))->getTimestamp();
         $deleted = 0;
+        $failed = [];
 
         foreach ($this->files() as $file) {
-            if ($file->getMTime() <= $cutoff && unlink($file->getPathname())) {
-                $deleted++;
+            if ($file->getMTime() <= $cutoff) {
+                if (($this->unlink)($file->getPathname())) {
+                    $deleted++;
+                } else {
+                    $failed[] = $file->getPathname();
+                }
             }
         }
 
-        return $deleted;
+        return ['deleted' => $deleted, 'failed' => $failed];
     }
 
-    public function clearAll(): int
+    /** @return array{deleted: int, failed: list<string>} */
+    public function clearAll(): array
     {
         $deleted = 0;
+        $failed = [];
 
         foreach ($this->files() as $file) {
-            if (unlink($file->getPathname())) {
+            if (($this->unlink)($file->getPathname())) {
                 $deleted++;
+            } else {
+                $failed[] = $file->getPathname();
             }
         }
 
-        return $deleted;
+        return ['deleted' => $deleted, 'failed' => $failed];
     }
 
     private function validateMetadata(string $filename, string $mime, int $size): string

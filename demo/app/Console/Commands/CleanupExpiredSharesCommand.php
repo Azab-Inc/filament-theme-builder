@@ -2,8 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Share;
 use Illuminate\Console\Command;
-use PDO;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Schema;
 
 class CleanupExpiredSharesCommand extends Command
 {
@@ -22,26 +24,29 @@ class CleanupExpiredSharesCommand extends Command
         }
 
         try {
-            $pdo = new PDO('sqlite:'.$database);
-            $tableStatement = $pdo->query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'shares'");
-            $columnsStatement = $pdo->query('PRAGMA table_info(shares)');
+            Config::set('database.connections.shares', [
+                'driver' => 'sqlite',
+                'database' => $database,
+            ]);
 
-            if ($tableStatement === false || $columnsStatement === false) {
-                throw new \RuntimeException('The shares schema could not be inspected.');
-            }
-
-            $table = $tableStatement->fetchColumn();
-            $columns = $columnsStatement->fetchAll(PDO::FETCH_ASSOC);
-
-            if ($table !== 'shares' || ! array_filter($columns, fn (array $column): bool => $column['name'] === 'expires_at')) {
+            if (! Schema::connection('shares')->hasTable('shares') || ! Schema::connection('shares')->hasColumn('shares', 'expires_at')) {
                 throw new \RuntimeException('The shares expiry schema is not available.');
             }
-
-            $deleted = $pdo->exec("DELETE FROM shares WHERE expires_at IS NOT NULL AND expires_at <= datetime('now')");
         } catch (\Throwable) {
             $this->info('Share cleanup skipped: the shares expiry schema is not available.');
 
             return self::SUCCESS;
+        }
+
+        try {
+            $deleted = Share::on('shares')
+                ->whereNotNull('expires_at')
+                ->where('expires_at', '<=', now())
+                ->delete();
+        } catch (\Throwable $exception) {
+            $this->error('Share cleanup failed: '.$exception->getMessage());
+
+            return self::FAILURE;
         }
 
         $this->info("Expired share cleanup removed {$deleted} record(s).");

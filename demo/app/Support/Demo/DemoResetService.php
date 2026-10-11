@@ -22,7 +22,7 @@ final class DemoResetService
         }
 
         $lock = fopen($lockPath, 'c');
-        if ($lock === false || ! flock($lock, LOCK_EX)) {
+        if ($lock === false || ! flock($lock, LOCK_EX | LOCK_NB)) {
             throw new RuntimeException('The demo reset lock could not be acquired.');
         }
 
@@ -41,7 +41,12 @@ final class DemoResetService
                 throw new RuntimeException('The snapshot could not be installed atomically.');
             }
 
-            return ['uploads_deleted' => $this->uploads->clearAll()];
+            $cleanup = $this->uploads->clearAll();
+            if ($cleanup['failed'] !== []) {
+                throw new RuntimeException('Temporary demo upload cleanup failed for: '.implode(', ', $cleanup['failed']));
+            }
+
+            return ['uploads_deleted' => $cleanup['deleted']];
         } finally {
             flock($lock, LOCK_UN);
             fclose($lock);

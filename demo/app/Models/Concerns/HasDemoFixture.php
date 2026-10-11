@@ -12,6 +12,11 @@ trait HasDemoFixture
         static::deleting(static fn (Model $model): ?bool => filter_var($model->getAttribute('is_demo_fixture'), FILTER_VALIDATE_BOOL) ? false : null);
     }
 
+    public function isDemoFixture(): bool
+    {
+        return filter_var($this->getAttribute('is_demo_fixture'), FILTER_VALIDATE_BOOL);
+    }
+
     /** @param Builder<Model> $query
      * @return Builder<Model>
      */

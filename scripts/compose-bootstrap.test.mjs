@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url'
 
 const scriptPath = fileURLToPath(new URL('./compose-bootstrap.sh', import.meta.url))
 const productionEntrypointPath = fileURLToPath(new URL('./compose-production-entrypoint.sh', import.meta.url))
+const devCompose = await readFile(new URL('../compose.dev.yaml', import.meta.url), 'utf8')
+const devEntrypointPath = fileURLToPath(new URL('./compose-dev-entrypoint.sh', import.meta.url))
 const script = await readFile(scriptPath, 'utf8').catch(() => '')
 const productionCompose = await readFile(new URL('../compose.prod.yaml', import.meta.url), 'utf8')
 
@@ -29,6 +31,15 @@ test('bootstrap propagates command failure', () => {
 
 test('production gateway defaults to all interfaces on port 9080 while retaining host configurability', () => {
   assert.match(productionCompose, /\$\{GATEWAY_HOST:-0\.0\.0\.0\}:\$\{GATEWAY_PORT:-9080\}:80/)
+})
+
+test('development demo container supervises schedule:work with the existing web process', async () => {
+  const devEntrypoint = await readFile(devEntrypointPath, 'utf8')
+  assert.match(devCompose, /command: \["\/scripts\/compose-dev-entrypoint\.sh"\]/)
+  assert.match(devCompose, /\.\/scripts\/compose-dev-entrypoint\.sh:\/scripts\/compose-dev-entrypoint\.sh:ro/)
+  assert.match(devEntrypoint, /php artisan schedule:work &/)
+  assert.match(devEntrypoint, /frankenphp php-server -r public\//)
+  assert.match(devEntrypoint, /trap shutdown INT TERM EXIT/)
 })
 
 // --- Behavioral harness -----------------------------------------------------

@@ -243,6 +243,13 @@ test.describe('demo showcase panel identity and navigation', () => {
     await expect(history).toContainText('Shipped')
     await expect(history).not.toHaveText(historyBeforeCancel ?? '')
   })
+
+  test('does not expose destructive deletion for seeded showcase fixtures', async ({ page }) => {
+    await page.goto(`${demoBaseUrl}/demo/admin/products/1/edit`)
+    const deleteAction = page.getByRole('button', { name: /^Delete$/i })
+    await expect(deleteAction).toBeVisible()
+    await expect(deleteAction).toBeDisabled()
+  })
 })
 
 test.describe('forms and schemas showcase', () => {
