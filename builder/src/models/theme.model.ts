@@ -27,6 +27,8 @@ export type ThemeStateV2 = {
   overrides: ThemeOverride[]
 }
 
+export type ThemeStateV3 = import('@/models/foundations.model').FoundationStateV3
+
 export type ThemeState = ThemeStateV1 | ThemeStateV2
 
 export function migrateThemeState(state: ThemeState): ThemeStateV2 {
