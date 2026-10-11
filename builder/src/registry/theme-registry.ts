@@ -57,8 +57,45 @@ const legacyPrimary: RegistryEntry = {
   filamentCompatibility: SUPPORTED_FILAMENT_COMPATIBILITY,
 }
 
+const formColorPattern = /^#[\da-f]{6}$/i
+
+function formControl(): RegistryControl {
+  return {
+    id: 'background',
+    valueType: 'color',
+    constraints: { pattern: formColorPattern },
+    defaultValue: '#ffffff',
+  }
+}
+
+function formEntry(id: string, label: string, selectors: readonly string[], states: readonly string[]): RegistryEntry {
+  return {
+    id,
+    label,
+    family: 'form',
+    selectors,
+    controls: [formControl()],
+    variants: ['default'],
+    states,
+    filamentCompatibility: SUPPORTED_FILAMENT_COMPATIBILITY,
+  }
+}
+
+const formEntries: readonly RegistryEntry[] = [
+  formEntry('form.control.date', 'Date control', ['.fi-fo-date-time-picker'], ['default', 'hover', 'focus', 'disabled']),
+  formEntry('form.control.file-upload', 'File upload control', ['.fi-fo-file-upload'], ['default', 'hover', 'focus', 'disabled']),
+  formEntry('form.control.select', 'Select control', ['.fi-fo-select', '.fi-select-input'], ['default', 'hover', 'focus', 'disabled']),
+  formEntry('form.control.text', 'Text control', ['.fi-fo-text-input', '.fi-input'], ['default', 'hover', 'focus', 'disabled']),
+  formEntry('form.control.textarea', 'Textarea control', ['.fi-fo-textarea'], ['default', 'hover', 'focus', 'disabled']),
+  formEntry('form.control.toggle', 'Toggle control', ['.fi-fo-toggle', '.fi-toggle'], ['default', 'hover', 'focus', 'disabled']),
+  formEntry('form.field', 'Form field', ['.fi-fo-field'], ['default', 'hover', 'focus', 'disabled']),
+  formEntry('form.layout.tabs', 'Tabs layout', ['.fi-tabs', '.fi-tabs-item'], ['default']),
+  formEntry('form.layout.wizard', 'Wizard layout', ['.fi-sc-wizard', '.fi-sc-wizard-header-step-btn', '.fi-sc-wizard-step'], ['default']),
+  formEntry('form.section', 'Section layout', ['.fi-section'], ['default']),
+]
+
 export function createThemeRegistry(): FilamentRegistry {
-  return validateRegistry([primaryButton, secondaryButton, legacyPrimary])
+  return validateRegistry([primaryButton, secondaryButton, legacyPrimary, ...formEntries])
 }
 
 export function validateRegistry(entries: readonly RegistryEntry[]): FilamentRegistry {

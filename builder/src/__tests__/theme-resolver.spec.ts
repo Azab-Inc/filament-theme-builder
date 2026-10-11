@@ -38,6 +38,26 @@ describe('theme validation and resolution', () => {
     expect(resolveThemeValue(emptyTheme, registry, requestWithoutDefault)).toMatchObject({ status: 'invalid-request', targetId: 'button.primary', controlId: 'border' })
   })
 
+  it('resolves form control inheritance without adding fixture-specific targets or forced states', () => {
+    const request: ResolveRequest = {
+      targetId: 'form.control.text',
+      controlId: 'background',
+      componentId: 'form',
+      variantId: 'default',
+      stateId: 'focus',
+    }
+    const state = withOverrides(
+      { targetId: 'form.control.text', controlId: 'background', scope: 'global', value: '#111827' },
+      { targetId: 'form.control.text', controlId: 'background', scope: 'component', componentId: 'form', value: '#1f2937' },
+      { targetId: 'form.control.text', controlId: 'background', scope: 'variant', componentId: 'form', variantId: 'default', value: '#374151' },
+      { targetId: 'form.control.text', controlId: 'background', scope: 'state', componentId: 'form', variantId: 'default', stateId: 'focus', value: '#4b5563' },
+    )
+
+    expect(resolveThemeValue(state, registry, request)).toEqual({ status: 'resolved', value: '#4b5563', source: 'state' })
+    expect(resolveThemeValue(state, registry, { ...request, stateId: 'disabled' })).toEqual({ status: 'resolved', value: '#374151', source: 'variant' })
+    expect(resolveThemeValue(state, registry, { ...request, targetId: 'form.control.text', stateId: 'server-validation' })).toMatchObject({ status: 'invalid-request' })
+  })
+
   it('rejects unknown IDs, controls, unsupported keys, invalid values, and incompatible baselines', () => {
     expect(validateThemeOverride(unknownTarget, registry)).toMatchObject({ valid: false, error: expect.stringMatching(/unknown target/i) })
     expect(validateThemeOverride({ ...unknownTarget, targetId: 'button.primary', controlId: 'border' }, registry)).toMatchObject({ valid: false, error: expect.stringMatching(/unknown control/i) })

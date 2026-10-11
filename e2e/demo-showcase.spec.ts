@@ -371,6 +371,34 @@ test.describe('forms and schemas showcase', () => {
     await expect(page.getByLabel('Order status')).toHaveValue('pending')
   })
 
+  test('exposes the registered shared form selectors in the real Filament markup', async ({ page }) => {
+    for (const selector of [
+      '.fi-section',
+      '.fi-fo-field',
+      '.fi-fo-text-input',
+      '.fi-fo-select',
+      '.fi-select-input',
+      '.fi-fo-toggle',
+      '.fi-fo-date-time-picker',
+      '.fi-fo-textarea',
+      '.fi-fo-file-upload',
+      '.fi-sc-wizard',
+      '.fi-sc-wizard-header-step-btn',
+      '.fi-sc-wizard-step',
+      '.fi-tabs',
+      '.fi-tabs-item',
+    ]) {
+      await expect(page.locator(selector).first(), selector).toBeVisible()
+    }
+
+    await expect(page.getByText('ProductEditorForm', { exact: true })).toBeVisible()
+    await expect(page.getByText('CustomerContactForm', { exact: true })).toBeVisible()
+    await expect(page.getByText('OrderStatusForm', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Product reference')).toBeDisabled()
+    await page.getByLabel('Product name').focus()
+    await expect(page.getByLabel('Product name')).toBeFocused()
+  })
+
   test('interacts with wizard and tabbed product layouts', async ({ page }) => {
     const wizard = page.getByRole('list', { name: 'Product wizard' })
     await expect(wizard).toBeVisible()

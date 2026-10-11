@@ -52,9 +52,52 @@ describe('theme registry', () => {
     const registry = createThemeRegistry()
 
     expect(registry.entries.find((entry) => entry.id === 'button.primary')?.label).toBe('Primary button')
-    expect(registry.entries.map((entry) => entry.id)).toEqual(['button.primary', 'button.secondary', 'global.primary'])
+    expect(registry.entries.map((entry) => entry.id)).toEqual([
+      'button.primary',
+      'button.secondary',
+      'form.control.date',
+      'form.control.file-upload',
+      'form.control.select',
+      'form.control.text',
+      'form.control.textarea',
+      'form.control.toggle',
+      'form.field',
+      'form.layout.tabs',
+      'form.layout.wizard',
+      'form.section',
+      'global.primary',
+    ])
     expect(registry.entries.find((entry) => entry.id === 'button.primary')?.selectors).toEqual(['.fi-btn.fi-color-primary'])
     expect(registry.entries.find((entry) => entry.id === 'button.secondary')?.selectors).toEqual(['.fi-btn.fi-outlined'])
+  })
+
+  it('registers the shared forms and schemas surfaces from the named showcase fixtures', () => {
+    const registry = createThemeRegistry()
+    const forms = registry.entries.filter((entry) => entry.id.startsWith('form.'))
+
+    expect(forms.map((entry) => entry.id)).toEqual([
+      'form.control.date',
+      'form.control.file-upload',
+      'form.control.select',
+      'form.control.text',
+      'form.control.textarea',
+      'form.control.toggle',
+      'form.field',
+      'form.layout.tabs',
+      'form.layout.wizard',
+      'form.section',
+    ])
+    expect(forms.every((entry) => entry.family === 'form' && entry.filamentCompatibility === '5.x')).toBe(true)
+    expect(forms.find((entry) => entry.id === 'form.section')?.selectors).toEqual(['.fi-section'])
+    expect(forms.find((entry) => entry.id === 'form.layout.wizard')?.selectors).toEqual([
+      '.fi-sc-wizard',
+      '.fi-sc-wizard-header-step-btn',
+      '.fi-sc-wizard-step',
+    ])
+    expect(forms.find((entry) => entry.id === 'form.layout.tabs')?.selectors).toEqual(['.fi-tabs', '.fi-tabs-item'])
+    expect(forms.find((entry) => entry.id === 'form.control.select')?.selectors).toEqual(['.fi-fo-select', '.fi-select-input'])
+    expect(forms.every((entry) => entry.controls.some((control) => control.id === 'background'))).toBe(true)
+    expect(forms.find((entry) => entry.id === 'form.control.text')?.states).toEqual(['default', 'hover', 'focus', 'disabled'])
   })
 
   it('returns unique, no-match, and ambiguous lookup results deterministically', () => {
@@ -66,6 +109,31 @@ describe('theme registry', () => {
     expect(lookupRegistryEntry(registry, { selectors: ['.fi-color-primary'], filamentVersion: '5.0' })).toMatchObject({ status: 'matched', entry: { id: 'global.primary' } })
     expect(lookupRegistryEntry(registry, { selectors: ['.not-a-filament-selector'], filamentVersion: '5.0' })).toEqual({ status: 'no-match' })
     expect(lookupRegistryEntry(testRegistry, { selectors: ['.fi-shared'], filamentVersion: '5.0' })).toMatchObject({ status: 'ambiguous', candidateIds: ['button.primary', 'button.secondary'] })
+  })
+
+  it('looks up each registered forms selector without using fixture names or labels', () => {
+    const registry = createThemeRegistry()
+
+    for (const selector of [
+      '.fi-section',
+      '.fi-fo-field',
+      '.fi-fo-text-input',
+      '.fi-fo-select',
+      '.fi-select-input',
+      '.fi-fo-toggle',
+      '.fi-fo-date-time-picker',
+      '.fi-fo-textarea',
+      '.fi-fo-file-upload',
+      '.fi-sc-wizard',
+      '.fi-sc-wizard-header-step-btn',
+      '.fi-sc-wizard-step',
+      '.fi-tabs',
+      '.fi-tabs-item',
+    ]) {
+      expect(lookupRegistryEntry(registry, { selectors: [selector], filamentVersion: '5.9' })).toMatchObject({ status: 'matched' })
+    }
+
+    expect(lookupRegistryEntry(registry, { selectors: ['ProductEditorForm'], filamentVersion: '5.9' })).toEqual({ status: 'no-match' })
   })
 
   it('rejects lookup when the active Filament compatibility baseline is unsupported', () => {

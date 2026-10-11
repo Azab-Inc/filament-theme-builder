@@ -119,6 +119,22 @@ domain, resources, and relationship workflows.
   layouts; its image representation is private local storage restricted to
   JPEG/PNG and submissions are not persisted. The FTB-006 semantic
   registry/inheritance remains unresolved.
+
+Builder registry slice evidence (2026-10-12): shared targets are
+`form.section` (`.fi-section`), `form.field` (`.fi-fo-field`),
+`form.control.text` (`.fi-fo-text-input`, `.fi-input`),
+`form.control.select` (`.fi-fo-select`, `.fi-select-input`),
+`form.control.toggle` (`.fi-fo-toggle`, `.fi-toggle`),
+`form.control.date` (`.fi-fo-date-time-picker`),
+`form.control.textarea` (`.fi-fo-textarea`),
+`form.control.file-upload` (`.fi-fo-file-upload`),
+`form.layout.wizard` (`.fi-sc-wizard`, `.fi-sc-wizard-header-step-btn`,
+`.fi-sc-wizard-step`), and `form.layout.tabs` (`.fi-tabs`, `.fi-tabs-item`).
+Selectors were verified against the running demo's Filament `v5.9.0` markup by
+`e2e/demo-showcase.spec.ts`; registry and lookup evidence are in
+`builder/src/__tests__/theme-registry.spec.ts`, with inheritance evidence in
+`builder/src/__tests__/theme-resolver.spec.ts`. Fixture names remain evidence
+only; no forced-state controls or editor behavior is claimed.
 - **FTB-012 tables:** `TablesShowcase` provides a compact read-only
   `ProductsTableFixture` backed by deterministic seeded products and order
   counts, plus native `OrdersTableFixture` and `InventoryTableFixture` widgets.
