@@ -12,7 +12,7 @@
         };
         const borderSelectors = {
             default: ['.fi-section', '.fi-ta-ctn', '.fi-input', '.fi-select-input', '.fi-fo-textarea'],
-            strong: ['.fi-btn.fi-outlined', '.fi-section-header', '.fi-ta-header'],
+            strong: ['.fi-btn.fi-outlined', '.fi-section', '.fi-ta-header'],
         };
         const textSelectors = {
             primary: ['body', '.fi-body', '.fi-in-text', '.fi-fo-field-label'],
@@ -26,7 +26,7 @@
         };
         const spacingSelectors = {
             '0': ['.fi-sidebar'], px: ['.fi-topbar'], '0.5': ['.fi-btn'], '1': ['.fi-input', '.fi-select-input'],
-            '1.5': ['.fi-section-header'], '2': ['.fi-section'], '3': ['.fi-ta-header'], '4': ['.fi-ta-ctn'],
+            '1.5': ['.fi-section'], '2': ['.fi-section > div'], '3': ['.fi-ta-header'], '4': ['.fi-ta-ctn'],
             '6': ['.fi-modal'], '8': ['.fi-page'],
         };
         const componentSelectors = ['.fi-section', '.fi-ta', '.fi-ta-ctn', '.fi-btn', '.fi-input', '.fi-select-input', '.fi-fo-textarea', '.fi-modal'];
@@ -129,13 +129,13 @@
                     const family = candidate.value.includes(',') ? candidate.value : `"${candidate.value.replaceAll('"', '\\"')}"`;
                     rules.push(`${selectors} { font-family: ${family}; }`);
                 }
-                else if (candidate.property === 'spacing') rules.push(`${selectors} { padding-block: ${cssValue(candidate.value)}; }`);
+                else if (candidate.property === 'spacing') rules.push(`${selectors} { padding-block: ${cssValue(candidate.value)} !important; }`);
                 else if (candidate.property === 'density') {
                     const density = { compact: ['32px', '0.5rem'], default: ['40px', '0.75rem'], spacious: ['48px', '1rem'] }[candidate.value];
                     const table = '.fi-ta';
                     const row = { compact: '12px', default: '16px', spacious: '20px' }[candidate.value];
                     const headerCell = { compact: '10px', default: '14px', spacious: '18px' }[candidate.value];
-                    rules.push(`${table} .fi-ta-header { padding-block: ${density[1]}; } ${table} .fi-ta-header-cell { padding-block: ${headerCell}; } ${table} .fi-ta-text, ${table} .fi-ta-icon, ${table} .fi-ta-image, ${table} .fi-ta-cell.fi-ta-selection-cell { padding-block: ${row}; }`);
+                    rules.push(`${table} .fi-ta-header { padding-block: ${density[1]} !important; } ${table} .fi-ta-header-cell { padding-block: ${headerCell} !important; } ${table} .fi-ta-text, ${table} .fi-ta-icon, ${table} .fi-ta-image, ${table} .fi-ta-cell.fi-ta-selection-cell { padding-block: ${row} !important; }`);
                 } else if (candidate.property === 'radius') rules.push(`${selectors} { border-radius: ${radiusValues[candidate.value]}; }`);
                 else if (candidate.property === 'borderWidth') rules.push(`${selectors} { border-width: ${candidate.value}px; }`);
                 else if (candidate.property === 'shadow') rules.push(`${selectors} { box-shadow: ${shadowValues[candidate.value]}; }`);
