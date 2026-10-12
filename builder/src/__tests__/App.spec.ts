@@ -4,8 +4,92 @@ import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import App from '../App.vue'
 import ThrowawayThemePrototype from '../components/ThrowawayThemePrototype.vue'
+import HoverInspectPrototype from '../components/HoverInspectPrototype.vue'
+import { createDefaultThemeState } from '@/services/foundation-defaults'
 
 describe('App', () => {
+  it('mounts the hover inspector only behind the inspect query gate', () => {
+    window.history.replaceState({}, '', '/?inspect=1&variant=B')
+    const inspected = mount(App, { global: { plugins: [createPinia()] } })
+
+    expect(inspected.find('[data-hover-inspect-prototype="B"]').exists()).toBe(true)
+    expect(inspected.find('[data-prototype]').exists()).toBe(false)
+    inspected.unmount()
+
+    window.history.replaceState({}, '', '/?variant=B')
+    const normal = mount(App, { global: { plugins: [createPinia()] } })
+    expect(normal.find('[data-hover-inspect-prototype]').exists()).toBe(false)
+    expect(normal.get('section.foundations')).toBeTruthy()
+    normal.unmount()
+    window.history.replaceState({}, '', '/')
+  })
+
+  it('models mapped, unmapped, pinned, and keyboard inspection in the prototype', async () => {
+    const wrapper = mount(HoverInspectPrototype, { props: { initialVariant: 'A' } })
+    const widget = wrapper.get('[data-inspect-target="widget"]')
+
+    await widget.trigger('mouseenter')
+    await new Promise((resolve) => setTimeout(resolve, 220))
+    expect(wrapper.get('[data-inspector-details]').text()).toContain('Dashboard stats widget')
+    expect(wrapper.get('[data-editor-highlight]').attributes('data-editor-highlight')).toBe('widgets.stats')
+
+    await widget.trigger('click')
+    await widget.trigger('mouseleave')
+    expect(wrapper.get('[data-inspector-details]').text()).toContain('PINNED INSPECTION')
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await wrapper.vm.$nextTick()
+    await wrapper.get('[data-inspect-target="unmapped"]').trigger('mouseenter')
+    await new Promise((resolve) => setTimeout(resolve, 220))
+    expect(wrapper.get('[data-inspector-details]').text()).toContain('Detected, but not mapped')
+    expect(wrapper.get('[data-inspector-details]').text()).toContain('No editor section is linked')
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('[data-inspector-details]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('switches navigation orientation inside the editor without changing the demo pane', async () => {
+    const wrapper = mount(HoverInspectPrototype, { props: { initialVariant: 'A' } })
+    const demo = wrapper.get('.inspect__demo')
+    const demoMarkup = demo.element.innerHTML
+    const navigation = wrapper.get('.inspect__editor-nav')
+
+    expect(navigation.classes()).toContain('inspect__editor-nav--vertical')
+    expect(wrapper.get('button[aria-pressed="true"]').text()).toBe('Sidebar')
+    expect(wrapper.get('.inspect__workspace').element.children).toHaveLength(2)
+
+    await wrapper.get('button[aria-pressed="false"]').trigger('click')
+
+    expect(wrapper.get('button[aria-pressed="true"]').text()).toBe('Top navigation')
+    expect(wrapper.get('.inspect__editor-nav').classes()).toContain('inspect__editor-nav--horizontal')
+    expect(wrapper.get('.inspect__demo').classes()).toEqual(['inspect__demo'])
+    expect(wrapper.get('.inspect__demo').element.innerHTML).toBe(demoMarkup)
+    expect(wrapper.get('.inspect__workspace').element.children).toHaveLength(2)
+    expect(wrapper.get('.inspect__editor').element.nextElementSibling).toBe(wrapper.get('.inspect__demo-wrap').element)
+    wrapper.unmount()
+  })
+
+  it('delays hover inspection with auto-scroll off and keeps variants shareable', async () => {
+    const wrapper = mount(HoverInspectPrototype, { props: { initialVariant: 'B' } })
+    await wrapper.get('label.inspect__auto-scroll input').setValue(false)
+    await wrapper.get('[data-inspect-target="card"]').trigger('mouseenter')
+    expect(wrapper.find('[data-inspector-details]').exists()).toBe(false)
+    await new Promise((resolve) => setTimeout(resolve, 220))
+    expect(wrapper.get('[data-inspector-details]').text()).toContain('Recent orders card')
+
+    await wrapper.get('button[aria-label="Variant C"]').trigger('click')
+    expect(wrapper.attributes('data-hover-inspect-prototype')).toBe('C')
+    expect(window.location.search).toContain('inspect=1')
+    expect(window.location.search).toContain('variant=C')
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.attributes('data-hover-inspect-prototype')).toBe('B')
+    expect(window.location.search).toContain('variant=B')
+    wrapper.unmount()
+    window.history.replaceState({}, '', '/')
+  })
+
   it('passes the supplied demo URL to the prototype iframe and gives it explicit height', () => {
     const previewUrl = 'http://127.0.0.1:4174/demo/admin'
     const wrapper = mount(ThrowawayThemePrototype, {
@@ -114,13 +198,65 @@ describe('App', () => {
     )
   })
 
-  it('reports inherited status when a user writes the current default value', async () => {
+  it('reports explicit status when a user writes the current default value', async () => {
     const wrapper = mount(App, { global: { plugins: [createPinia()] } })
     const input = wrapper.get('#primary-palette-base')
 
     await input.setValue('#6366f1')
 
-    expect(input.element.nextElementSibling?.textContent).toBe('inherited')
+    expect(input.element.nextElementSibling?.textContent).toBe('explicit')
+  })
+
+  it('shows a per-control error and does not persist an unsupported color reference', async () => {
+    localStorage.clear()
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+    const input = wrapper.get('#sidebar-surface')
+
+    await input.setValue('var(--not-a-tailwind-color)')
+
+    expect(wrapper.get('[role="alert"][data-foundation-error="surfaces.sidebar.light"]').text()).toContain('Unsupported color reference')
+    expect(localStorage.getItem('ftb-theme')).toBeNull()
+  })
+
+  it('clears only the matching validation error when that foundation is reset', async () => {
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+    const sidebar = wrapper.get('#sidebar-surface')
+    const page = wrapper.get('#page-surface')
+
+    await sidebar.setValue('var(--not-a-tailwind-color)')
+    await page.setValue('var(--not-a-tailwind-color)')
+    expect(sidebar.attributes('aria-invalid')).toBe('true')
+    expect(page.attributes('aria-invalid')).toBe('true')
+
+    await wrapper.get('button[aria-label="Reset sidebar surface"]').trigger('click')
+
+    expect(wrapper.find('[data-foundation-error="surfaces.sidebar.light"]').exists()).toBe(false)
+    expect(sidebar.attributes('aria-invalid')).toBeUndefined()
+    expect(wrapper.find('[data-foundation-error="surfaces.page.light"]').exists()).toBe(true)
+    expect(page.attributes('aria-invalid')).toBe('true')
+  })
+
+  it('exposes explicit recovery actions for an archived legacy theme', async () => {
+    const legacy = createDefaultThemeState()
+    delete (legacy.foundations as unknown as { explicitPaths?: string[] }).explicitPaths
+    delete (legacy.foundations as unknown as { provenanceVersion?: number }).provenanceVersion
+    localStorage.setItem('ftb-theme', JSON.stringify(legacy))
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+
+    expect(wrapper.get('[role="alert"]').text()).toContain('legacy customization')
+    expect(wrapper.get('button[aria-label="Restore legacy customization"]')).toBeTruthy()
+    expect(wrapper.get('button[aria-label="Download archived legacy JSON"]')).toBeTruthy()
+    await wrapper.get('button[aria-label="Restore legacy customization"]').trigger('click')
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('offers raw download but disables restoration for malformed archived JSON', async () => {
+    localStorage.setItem('ftb-theme', '{invalid')
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+
+    expect(wrapper.get('[role="alert"]').text()).toContain('not valid JSON')
+    expect((wrapper.get('button[aria-label="Restore legacy customization"]').element as HTMLButtonElement).disabled).toBe(true)
+    expect(wrapper.get('button[aria-label="Download archived legacy JSON"]')).toBeTruthy()
   })
 
   it('keeps typography as names-only state and supports density and mode controls', async () => {

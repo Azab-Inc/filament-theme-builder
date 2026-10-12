@@ -13,11 +13,16 @@ import { CURATED_FONT_CHOICES, PALETTE_NAMES, PALETTE_SHADES } from '@/models/fo
 import { createDefaultFoundationState } from '@/services/foundation-defaults'
 import { lookupFoundationMapping } from '@/registry/filament-foundation-inventory'
 import { serializeCanonicalTheme } from '@/services/theme-serialization'
+import { isExplicitPath } from '@/services/foundation-provenance'
+import { validateFoundationColor } from '@/services/foundation-validation'
 import { useThemeStore } from '@/stores/theme'
 import ThrowawayThemePrototype from '@/components/ThrowawayThemePrototype.vue'
+import HoverInspectPrototype from '@/components/HoverInspectPrototype.vue'
 
 const previewUrl = import.meta.env.VITE_DEMO_URL ?? '/demo/admin'
 const prototypePreviewUrl = import.meta.env.VITE_DEMO_URL ?? 'http://127.0.0.1:4174/demo/admin'
+const inspectMode = new URLSearchParams(window.location.search).get('inspect') === '1'
+const inspectVariant = new URLSearchParams(window.location.search).get('variant') ?? 'A'
 const prototypeMode = new URLSearchParams(window.location.search).get('prototype') === '1'
 const prototypeVariant = new URLSearchParams(window.location.search).get('variant') ?? 'A'
 const theme = useThemeStore()
@@ -26,6 +31,7 @@ const { canUndo, canRedo } = storeToRefs(theme)
 const paletteNames = PALETTE_NAMES
 const paletteShades = PALETTE_SHADES
 const activeMode = ref<ThemeMode>('light')
+const foundationErrors = ref<Record<string, string>>({})
 const surfaceNames = ['page', 'sidebar', 'topbar', 'card', 'elevated', 'input'] as const
 const typographyNames = ['body', 'heading', 'mono'] as const
 const borderNames = ['default', 'strong'] as const
@@ -71,8 +77,9 @@ function postTheme(): void {
   target.postMessage(
     {
       type: 'ftb:theme:update',
-      schemaVersion: 1,
-      theme: structuredClone(JSON.parse(JSON.stringify(toRaw(theme.theme)))),
+       schemaVersion: 1,
+       activeMode: activeMode.value,
+       theme: structuredClone(JSON.parse(JSON.stringify(toRaw(theme.theme)))),
       projection: theme.previewFoundation(activeMode.value),
     },
     targetOrigin,
@@ -153,7 +160,7 @@ function statusFor(path: string): string {
   }
   const current = getPath(foundation.value, provenancePath)
   const defaultValue = getPath(defaultFoundation, provenancePath)
-  return JSON.stringify(current) === JSON.stringify(defaultValue) ? 'inherited' : 'explicit'
+  return isExplicitPath(foundation.value, provenancePath) || JSON.stringify(current) !== JSON.stringify(defaultValue) ? 'explicit' : 'inherited'
 }
 
 function mappingIdFor(path: string): string {
@@ -208,7 +215,19 @@ function setFontChoice(name: 'body' | 'heading' | 'mono', event: Event): void {
 }
 
 function setModeValue(path: string, event: Event): void {
-  theme.setFoundation(`${path}.${activeMode.value}`, (event.target as HTMLInputElement).value)
+  const fullPath = `${path}.${activeMode.value}`
+  const value = (event.target as HTMLInputElement).value
+  const validation = validateFoundationColor(value)
+  if (!validation.valid) {
+    foundationErrors.value[fullPath] = validation.message
+    return
+  }
+  delete foundationErrors.value[fullPath]
+  theme.setFoundation(fullPath, value)
+}
+
+function foundationError(path: string): string | undefined {
+  return foundationErrors.value[path]
 }
 
 function fontName(name: 'body' | 'heading' | 'mono'): string {
@@ -216,6 +235,7 @@ function fontName(name: 'body' | 'heading' | 'mono'): string {
 }
 
 function reset(path: string): void {
+  delete foundationErrors.value[path]
   theme.resetFoundation(path)
 }
 
@@ -230,11 +250,27 @@ function exportCanonicalJson(): void {
   link.click()
   URL.revokeObjectURL(url)
 }
+
+function downloadLegacyRecovery(): void {
+  const archived = theme.getLegacyRecoveryJson()
+  if (archived === null) return
+  const blob = new Blob([archived], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'filament-theme-legacy-recovery.json'
+  link.click()
+  URL.revokeObjectURL(url)
+}
 </script>
 
 <template>
+  <HoverInspectPrototype
+    v-if="inspectMode"
+    :initial-variant="inspectVariant"
+  />
   <ThrowawayThemePrototype
-    v-if="prototypeMode"
+    v-else-if="prototypeMode"
     :initial-variant="prototypeVariant"
     :preview-url="prototypePreviewUrl"
   />
@@ -252,6 +288,17 @@ function exportCanonicalJson(): void {
       <button type="button" aria-label="Undo" :disabled="!canUndo" @click="undo">Undo</button>
       <button type="button" aria-label="Redo" :disabled="!canRedo" @click="redo">Redo</button>
     </header>
+    <aside v-if="theme.legacyRecoveryAvailable" role="alert" class="legacy-recovery">
+      <strong>Legacy customization archived.</strong>
+      <span>Unversioned foundation values are ambiguous; restore marks non-default legacy values explicit.</span>
+      <p v-if="theme.legacyRecoveryError" role="status">{{ theme.legacyRecoveryError }}</p>
+      <button type="button" aria-label="Restore legacy customization" :disabled="!!theme.legacyRecoveryError" @click="theme.restoreLegacyRecovery()">
+        Restore legacy customization
+      </button>
+      <button type="button" aria-label="Download archived legacy JSON" @click="downloadLegacyRecovery">
+        Download archived JSON
+      </button>
+    </aside>
     <section class="foundations grid gap-4" aria-labelledby="foundations-heading">
       <h2 id="foundations-heading">Foundations</h2>
       <p class="foundations__hint">
@@ -324,9 +371,11 @@ function exportCanonicalJson(): void {
             :id="`${name}-surface`"
             type="text"
             :value="resolvedFoundation.surfaces[name]"
+            :aria-invalid="foundationError(`surfaces.${name}.${activeMode}`) ? 'true' : undefined"
             @input="setModeValue(`surfaces.${name}`, $event)"
           />
           <span role="status" aria-live="polite">{{ statusFor(`surfaces.${name}`) }}</span>
+          <span v-if="foundationError(`surfaces.${name}.${activeMode}`)" :data-foundation-error="`surfaces.${name}.${activeMode}`" role="alert">{{ foundationError(`surfaces.${name}.${activeMode}`) }}</span>
           <button
             type="button"
             :aria-label="`Reset ${name} surface`"
@@ -342,9 +391,11 @@ function exportCanonicalJson(): void {
             type="text"
             :aria-label="`Border ${name} ${activeMode}`"
             :value="resolvedFoundation.borders[name]"
+            :aria-invalid="foundationError(`borders.${name}.${activeMode}`) ? 'true' : undefined"
             @input="setModeValue(`borders.${name}`, $event)"
           />
           <span role="status" aria-live="polite">{{ statusFor(`borders.${name}`) }}</span>
+          <span v-if="foundationError(`borders.${name}.${activeMode}`)" :data-foundation-error="`borders.${name}.${activeMode}`" role="alert">{{ foundationError(`borders.${name}.${activeMode}`) }}</span>
           <button
             type="button"
             :aria-label="`Reset border ${name} ${activeMode}`"
@@ -360,9 +411,11 @@ function exportCanonicalJson(): void {
             type="text"
             :aria-label="`Text ${name} ${activeMode}`"
             :value="resolvedFoundation.text[name]"
+            :aria-invalid="foundationError(`text.${name}.${activeMode}`) ? 'true' : undefined"
             @input="setModeValue(`text.${name}`, $event)"
           />
           <span role="status" aria-live="polite">{{ statusFor(`text.${name}`) }}</span>
+          <span v-if="foundationError(`text.${name}.${activeMode}`)" :data-foundation-error="`text.${name}.${activeMode}`" role="alert">{{ foundationError(`text.${name}.${activeMode}`) }}</span>
           <button
             type="button"
             :aria-label="`Reset text ${name} ${activeMode}`"

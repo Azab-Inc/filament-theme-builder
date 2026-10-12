@@ -1353,7 +1353,7 @@ identity checks without introducing GitHub Actions.
 
 <a id="ftb-050"></a>
 
-## FTB-050 — Promote editor layout modes A and B
+## FTB-050 — Promote editor panel navigation modes A and B
 
 **Scope slug:** `editor-layout-modes-promotion`
 
@@ -1372,27 +1372,31 @@ identity checks without introducing GitHub Actions.
 ### What to build
 
 After the existing gate and functionality stabilization are satisfied and a
-separate explicit approval is recorded, promote both production modes: A
-(Sidebar), with a wide left editor rail and right live demo; and B (Top
-navigation), with horizontal editor controls above the live demo. An accessible
-segmented/radio toggle switches modes while preserving draft/theme/UI state and
-keeping the same real iframe document alive. Existing canonical state, editor
-behavior, and live-preview bridge remain authoritative. C is explicitly not a
-production mode. After verification, remove only the prototype switcher/query
-path and replace it with the production A/B toggle; keep the prototype A/B/C
-visual references intact.
+separate explicit approval is recorded, promote two navigation modes inside the
+builder's existing editor side panel: A (Sidebar), with a vertical internal
+navigation rail beside the selected editor content; and B (Top navigation),
+with horizontal internal tabs (such as Navigation, Foundations, Components)
+above the selected content. An accessible segmented/radio toggle switches only
+the panel navigation mode while preserving draft/theme/UI state and keeping the
+same real iframe document alive. The overall builder/editor/demo split and the
+demo's placement and iframe behavior are unchanged by this toggle. Existing
+canonical state, editor behavior, and live-preview bridge remain authoritative.
+C is explicitly not a production mode. After verification, remove only the
+prototype switcher/query path and replace it with the production A/B toggle;
+keep the prototype A/B/C visual references intact.
 
 ### Acceptance criteria
 
 - [ ] Production replacement begins only after the specified blockers are complete and promotion is explicitly approved.
-- [ ] Sidebar mode presents a wide left editor rail and right real Filament iframe; Top navigation mode presents horizontal editor controls above the real Filament iframe, with the specified responsive behavior.
-- [ ] An accessible segmented/radio “Editor layout” toggle selects A/Sidebar or B/Top navigation and supports keyboard operation.
+- [ ] Sidebar mode presents a vertical navigation rail inside the editor side panel, beside its selected section content; Top navigation mode presents horizontal section tabs inside that same panel above its selected content.
+- [ ] An accessible segmented/radio “Editor navigation” toggle selects Sidebar or Top navigation and supports keyboard operation.
+- [ ] Switching panel navigation modes does not change the overall builder/editor/demo split, move/resize/hide the real Filament demo, or reload/navigate its iframe.
 - [ ] Switching modes preserves canonical draft/theme state, unsaved edits, selected editor section/control, and relevant UI state; the same iframe document remains alive.
 - [ ] Existing theme controls in both modes display and mutate real canonical state; no inert or static mock controls/values are promoted.
-- [ ] At desktop, intermediate, and narrow widths, controls remain reachable and the live demo remains visible and usable without page-level horizontal overflow.
+- [ ] At desktop, intermediate, and narrow widths, panel navigation and content remain reachable within the existing editor panel without page-level horizontal overflow; the live demo remains in its existing placement and usable.
 - [ ] Semantic structure, keyboard/focus behavior, zoom/reflow, iframe naming, and automated accessibility checks meet the design contract.
-- [ ] Playwright verifies real state-to-iframe updates, responsive behavior, accessibility-relevant interaction, and iframe continuity.
-- [ ] Playwright verifies each production mode at responsive widths, A→B→A state/draft persistence, keyboard-accessible mode switching, real state-to-iframe updates, and iframe document continuity.
+- [ ] Playwright verifies real state-to-iframe updates, responsive panel behavior, accessibility-relevant interaction, and iframe continuity and unchanged placement.
+- [ ] Playwright verifies each panel mode at responsive widths, Sidebar→Top navigation→Sidebar state/draft persistence, keyboard-accessible mode switching, real state-to-iframe updates, and iframe document continuity.
 - [ ] After approval and verification, remove the prototype switcher/query path from production and replace it with the real A/B toggle; preserve prototype visual references A/B/C unchanged. No prototype-only content leaks into production; C is not selectable as a production mode.
 - [ ] No third-party dependency or new MCP capability is introduced; existing functionality remains the priority.
 
