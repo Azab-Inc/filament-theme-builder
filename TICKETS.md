@@ -15,7 +15,7 @@
 
 ## Dependency map
 
-Demo-showcase delivery order (prose delivery order (not hard dependency blockers)): **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015 → FTB-016 → FTB-017 → FTB-018**. The dependency map below remains the source of hard blockers. The demo-complete gate is not yet satisfied: FTB-011/013/014/015 are done, while FTB-012 remains partial solely for theme-density integration and FTB-016/017/018 remain outstanding; FTB-009A/B/010 are done. Remaining builder feature work remains blocked by this gate and completion of FTB-016/017/018. Operational FTB-027 and FTB-028 are done, with FTB-028's full-suite documentation-mount gap recorded in its report. Phase 1 owns the branded existing dashboard shell, four commerce widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and representative badges. FTB-015 owns the Showcase navigation/index, search/profile/authentication/tenant surfaces and must integrate (not duplicate) Phase 1 widgets/navigation. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
+Demo-showcase delivery order (prose delivery order (not hard dependency blockers)): **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015 → FTB-016 → FTB-017 → FTB-018**. The dependency map below remains the source of hard blockers. The demo-complete gate is not yet satisfied: FTB-011/013/014/015/016 are done, while FTB-012 remains partial solely for theme-density integration and FTB-017/018 remain outstanding; FTB-009A/B/010 are done. Remaining builder feature work remains blocked by this gate and completion of FTB-017/018. Operational FTB-027 and FTB-028 are done, with FTB-028's full-suite documentation-mount gap recorded in its report. Phase 1 owns the branded existing dashboard shell, four commerce widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and representative badges. FTB-015 owns the Showcase navigation/index, search/profile/authentication/tenant surfaces and must integrate (not duplicate) Phase 1 widgets/navigation. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
 
 ```text
 FTB-001
@@ -461,7 +461,7 @@ Completed: deterministic dashboard/widget fixtures, the single ShowcaseIndexPage
 
 ## FTB-016 — Add deterministic forced-state controls
 
-**Status:** ready-for-agent  
+**Status:** done
 **Blocked by:** [FTB-011](#ftb-011), [FTB-012](#ftb-012), [FTB-014](#ftb-014), [FTB-015](#ftb-015)
 
 ### What to build
@@ -470,11 +470,11 @@ Give showcase pages controls that intentionally force otherwise transient states
 
 ### Acceptance criteria
 
-- [ ] `ShowcaseStateControls` deterministically switches named surfaces `FormValidationState`, `FormFocusState`, `TableEmptyState`, `TableLoadingState`, `TableSelectedRowState`, `ActionLoadingState`, `ModalOpenState`, and `NotificationVisibleState` (plus representative hover/disabled states).
-- [ ] Forced states are deterministic and suitable for screenshot testing.
-- [ ] FTB-016 owns forcing these visual states; state controls are presentation-only, do not persist data, and expose no MCP mutation tool for changing showcase state or demo records.
-- [ ] Inspector can target the forced state and resolve the correct semantic breadcrumb.
-- [ ] Theme state can override state-level values and visibly demonstrate inheritance.
+- [x] `ShowcaseStateControls` deterministically switches named surfaces `FormValidationState`, `FormFocusState`, `TableEmptyState`, `TableLoadingState`, `TableSelectedRowState`, `ActionLoadingState`, `ModalOpenState`, and `NotificationVisibleState` (plus representative hover/disabled states).
+- [x] Forced states are deterministic and suitable for screenshot testing.
+- [x] FTB-016 owns forcing these visual states; state controls are presentation-only, do not persist data, and expose no MCP mutation tool for changing showcase state or demo records.
+- [x] Inspector can target the forced state and resolve the correct semantic breadcrumb.
+- [x] Theme state can override state-level values and visibly demonstrate inheritance.
 
 ---
 

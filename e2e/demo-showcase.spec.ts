@@ -873,3 +873,46 @@ test.describe('actions and notifications showcase', () => {
     await expect(actionFailure.getByRole('button', { name: 'Dismiss' })).toBeVisible()
   })
 })
+
+test.describe('forced state showcase', () => {
+  test.beforeEach(async ({ page }) => {
+    await useAuthenticatedSession(page)
+  })
+
+  test('switches every named state through deterministic screenshot targets', async ({ page }) => {
+    await page.goto(`${demoBaseUrl}/demo/admin/states-showcase`)
+    await expect(page.getByRole('heading', { name: 'Forced states' })).toBeVisible()
+
+    for (const state of [
+      'FormValidationState',
+      'FormFocusState',
+      'TableEmptyState',
+      'TableLoadingState',
+      'TableSelectedRowState',
+      'ActionLoadingState',
+      'ModalOpenState',
+      'NotificationVisibleState',
+      'HoverState',
+      'DisabledState',
+    ]) {
+      await page.getByRole('link', { name: state, exact: true }).click()
+      await expect(page).toHaveURL(new RegExp(`[?&]state=${state}$`))
+      await expect(page.locator(`[data-showcase-state="${state}"]`)).toBeVisible()
+      await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toContainText('Forced states')
+    }
+  })
+
+  test('supports keyboard, responsive rendering, inheritance markers, and deterministic reset without persistence', async ({ page }) => {
+    await page.goto(`${demoBaseUrl}/demo/admin/states-showcase?state=FormFocusState`)
+    await expect(page.locator('[data-showcase-state="FormFocusState"] input')).toBeFocused()
+    await page.getByRole('link', { name: 'Reset state', exact: true }).focus()
+    await page.keyboard.press('Enter')
+    await expect(page).toHaveURL(/\/states-showcase$/)
+    await expect(page.locator('[data-showcase-state="default"]')).toBeVisible()
+    await expect(page.locator('[data-state-inheritance="inherited"]')).toBeVisible()
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(page.getByRole('heading', { name: 'Forced states' })).toBeVisible()
+    await expect(page.getByRole('navigation', { name: 'State controls' })).toBeVisible()
+  })
+})

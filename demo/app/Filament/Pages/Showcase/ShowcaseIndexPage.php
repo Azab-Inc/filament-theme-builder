@@ -54,6 +54,9 @@ class ShowcaseIndexPage extends Page
             NavigationItem::make('Notifications')
                 ->url(NotificationsShowcase::getUrl())
                 ->icon(Heroicon::OutlinedBell),
+            NavigationItem::make('Forced states')
+                ->url(ShowcaseStateControls::getUrl())
+                ->icon(Heroicon::OutlinedAdjustmentsHorizontal),
         ];
     }
 }

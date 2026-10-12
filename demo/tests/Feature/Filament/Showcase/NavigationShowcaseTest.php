@@ -55,7 +55,7 @@ class NavigationShowcaseTest extends TestCase
         $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
 
         Livewire::test(ShowcaseIndexPage::class)
-            ->assertSeeInOrder(['Dashboard', 'Forms & Schemas', 'Tables', 'Infolists', 'Actions & Modals', 'Notifications']);
+            ->assertSeeInOrder(['Dashboard', 'Forms & Schemas', 'Tables', 'Infolists', 'Actions & Modals', 'Notifications', 'Forced states']);
 
         $page = Livewire::test(ShowcaseIndexPage::class)->instance();
         $subNavigation = collect($page->getCachedSubNavigation())
@@ -70,6 +70,7 @@ class NavigationShowcaseTest extends TestCase
             'Infolists',
             'Actions & Modals',
             'Notifications',
+            'Forced states',
         ], $subNavigation);
         $this->assertSame(['Showcase'], $page->getBreadcrumbs());
     }

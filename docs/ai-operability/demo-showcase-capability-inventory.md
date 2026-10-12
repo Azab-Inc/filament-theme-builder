@@ -1,6 +1,6 @@
 # Demo showcase capability inventory
 
-This inventory describes the planned capability contract, not implemented MCP
+This inventory describes the implemented capability contract, not implemented MCP
 tools. A status of `not available` is intentional: do not imply current MCP
 support. Each row records capability, surface, operation class, authorization,
 confirmation, and MCP tool/status.
@@ -36,7 +36,7 @@ there is no domain mutation to expose or authorize.
 | `showcase.navigation` | `ShowcaseIndexPage`, `ShowcaseSidebarNavigation`, `GlobalSearchSurface`, `ProfileMenuSurface`, `LoginSurface`, `TenantSwitcherSurface` | presentation-only | Existing panel authentication/authorization governs real profile and tenant resources; showcase-only states are synthetic | None | No MCP mutation tool; not available |
 | `showcase.navigation.authenticated-controls` | Global search, breadcrumbs, tabs, profile menu, login/authentication controls | read-only | Existing panel authentication/authorization; public Showcase index remains explicitly allowlisted | None | No MCP read tool; not available |
 | `showcase.navigation.tenant-presentation` | Controlled tenant presentation on `ShowcaseIndexPage` | presentation-only | No domain tenant model, membership, session, or persistence is used | None | No MCP mutation tool; not available |
-| `showcase.states` | `ShowcaseStateControls` and named state surfaces | presentation-only | No domain data access or mutation | None | No MCP mutation tool; not available |
+| `showcase.states` | `/demo/admin/states-showcase` (`ShowcaseStateControls`, `ShowcaseState`) and named state surfaces | presentation-only | Request-scoped allowlisted in-memory state; no domain data access or mutation | None | No MCP mutation tool; not available |
 | `panel.icons` | `IconPackConfiguration`, `SemanticResourceIconOverrides` | mutation | Local builder theme state; no server-side panel data permission | No server commit; explicit user action for local edit/export | No MCP tool; not available |
 | `panel.branding` | `PanelBrandingSettings`, PanelProvider/runtime configuration | mutation | Local builder theme state; deployment/runtime configuration remains under project-owner control | Explicit user action before export/application; controlled reload where required | No MCP tool; not available |
 
