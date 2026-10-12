@@ -8,6 +8,8 @@
 
 **Phase 2 technical specification:** [docs/phase-2/SPECS.md](./docs/phase-2/SPECS.md)
 
+**Deferred editor-layout design:** [Variant A split workspace](./docs/superpowers/specs/2026-10-12-variant-a-split-workspace-design.md) ([FTB-050](./TICKETS.md#ftb-050), [GitHub #50](https://github.com/Azab-Inc/filament-theme-builder/issues/50)).
+
 This is the implementation contract. PRD.md defines the product problem and outcomes. TICKETS.md contains the executable vertical slices. Each section below links to the ticket or tickets that implement it.
 
 Remaining builder feature work follows the demo-complete gate recorded in TICKETS.md and remains blocked: FTB-009A/B/010 are done, while FTB-011/013/014/015 are in progress because their implemented showcase slices do not satisfy all acceptance criteria (including registry/inheritance, coverage, and forced-state work). FTB-012 remains partial only for theme-density integration and is not a blocker. FTB-016/017/018 requirements must also be resolved before builder work resumes. Operational FTB-027 and FTB-028 are done; FTB-028's focused acceptance evidence is complete, while the full PHP suite retains pre-existing documentation-mount failures documented in the implementation report.

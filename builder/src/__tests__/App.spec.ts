@@ -3,8 +3,22 @@ import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import App from '../App.vue'
+import ThrowawayThemePrototype from '../components/ThrowawayThemePrototype.vue'
 
 describe('App', () => {
+  it('passes the supplied demo URL to the prototype iframe and gives it explicit height', () => {
+    const previewUrl = 'http://127.0.0.1:4174/demo/admin'
+    const wrapper = mount(ThrowawayThemePrototype, {
+      props: { initialVariant: 'C', previewUrl },
+    })
+    const iframe = wrapper.get('iframe')
+
+    expect(iframe.attributes('src')).toBe(previewUrl)
+    expect(iframe.attributes('style')).toContain('height: 100%')
+
+    wrapper.unmount()
+  })
+
   it('embeds the public Filament preview and reserves a subtle notice area', () => {
     const wrapper = mount(App, { global: { plugins: [createPinia()] } })
     expect(wrapper.get('iframe').attributes('title')).toBe('Filament preview')
@@ -12,6 +26,43 @@ describe('App', () => {
     expect(wrapper.get('input[type="color"]').attributes('aria-label')).toBe('Primary color')
     expect(wrapper.find('button[aria-label="Undo"]').exists()).toBe(true)
     expect(wrapper.find('button[aria-label="Redo"]').exists()).toBe(true)
+  })
+
+  it('shows the throwaway prototype only when explicitly requested', () => {
+    window.history.replaceState({}, '', '/?prototype=1&variant=B')
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+
+    expect(wrapper.find('[data-prototype="B"]').exists()).toBe(true)
+    expect(wrapper.get('iframe').attributes('title')).toBe('Filament preview')
+
+    wrapper.unmount()
+    window.history.replaceState({}, '', '/')
+  })
+
+  it('keeps the normal editor layout when prototype mode is absent', () => {
+    window.history.replaceState({}, '', '/')
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+
+    expect(wrapper.find('[data-prototype]').exists()).toBe(false)
+    expect(wrapper.find('section.foundations').exists()).toBe(true)
+  })
+
+  it('switches prototype variants with controls and arrow keys while updating the URL', async () => {
+    window.history.replaceState({}, '', '/?prototype=1&variant=A')
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+
+    await wrapper.get('button[aria-label="Next variant"]').trigger('click')
+    expect(wrapper.find('[data-prototype="B"]').exists()).toBe(true)
+    expect(window.location.search).toContain('variant=B')
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('[data-prototype="C"]').exists()).toBe(true)
+    expect(window.location.search).toContain('variant=C')
+    expect(wrapper.get('iframe').attributes('title')).toBe('Filament preview')
+
+    wrapper.unmount()
+    window.history.replaceState({}, '', '/')
   })
 
   it('enables undo and immediately updates the color editor after a color change', async () => {

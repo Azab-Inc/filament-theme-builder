@@ -13,8 +13,12 @@ import { CURATED_FONT_CHOICES, PALETTE_NAMES, PALETTE_SHADES } from '@/models/fo
 import { createDefaultFoundationState } from '@/services/foundation-defaults'
 import { lookupFoundationMapping } from '@/registry/filament-foundation-inventory'
 import { useThemeStore } from '@/stores/theme'
+import ThrowawayThemePrototype from '@/components/ThrowawayThemePrototype.vue'
 
 const previewUrl = import.meta.env.VITE_DEMO_URL ?? '/demo/admin'
+const prototypePreviewUrl = import.meta.env.VITE_DEMO_URL ?? 'http://127.0.0.1:4174/demo/admin'
+const prototypeMode = new URLSearchParams(window.location.search).get('prototype') === '1'
+const prototypeVariant = new URLSearchParams(window.location.search).get('variant') ?? 'A'
 const theme = useThemeStore()
 const iframe = ref<HTMLIFrameElement>()
 const { canUndo, canRedo } = storeToRefs(theme)
@@ -216,7 +220,12 @@ function reset(path: string): void {
 </script>
 
 <template>
-  <main class="preview-shell">
+  <ThrowawayThemePrototype
+    v-if="prototypeMode"
+    :initial-variant="prototypeVariant"
+    :preview-url="prototypePreviewUrl"
+  />
+  <main v-else class="preview-shell">
     <header class="preview-shell__header">
       <h1>Filament Theme Builder</h1>
       <p data-demo-notice>Preview demo data is temporary.</p>

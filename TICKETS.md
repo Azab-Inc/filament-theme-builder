@@ -1347,3 +1347,44 @@ identity checks without introducing GitHub Actions.
       selected before release; no placeholder identity is published.
 - [ ] No readiness or release claim is made while FTB-040, Phase 1, package
       identity, or exact compatibility evidence remains incomplete.
+
+---
+
+<a id="ftb-050"></a>
+
+## FTB-050 — Promote the Variant A split workspace
+
+**Scope slug:** `variant-a-split-workspace-promotion`
+
+**Status:** blocked
+
+**Blocked by:** [FTB-003](#ftb-003) functionality stabilization; Phase 1/demo-first gate ([FTB-009A](#ftb-009), [FTB-009B](#ftb-009b), [FTB-010](#ftb-010), [FTB-011](#ftb-011), [FTB-013](#ftb-013), [FTB-014](#ftb-014), [FTB-015](#ftb-015)); completion of remaining Phase 1 requirements [FTB-016](#ftb-016), [FTB-017](#ftb-017), and [FTB-018](#ftb-018); stabilization of existing builder functionality, including the current foundation/control projection work. FTB-012 remains partial only for theme-density integration and is not a gate blocker. Re-evaluate existing blockers before work; this ticket introduces no parent.
+
+**Spec:** [Variant A Split Workspace Design](./docs/superpowers/specs/2026-10-12-variant-a-split-workspace-design.md), especially [layout](./docs/superpowers/specs/2026-10-12-variant-a-split-workspace-design.md#layout-geometry-and-behavior), [real theme controls](./docs/superpowers/specs/2026-10-12-variant-a-split-workspace-design.md#real-theme-controls-and-binding), [accessibility](./docs/superpowers/specs/2026-10-12-variant-a-split-workspace-design.md#accessibility), [promotion and prototype cleanup](./docs/superpowers/specs/2026-10-12-variant-a-split-workspace-design.md#promotion-and-prototype-cleanup), and [Playwright acceptance](./docs/superpowers/specs/2026-10-12-variant-a-split-workspace-design.md#playwright-acceptance-and-test-seams).
+
+**Prototype reference:** [`ThrowawayThemePrototype.vue`](./builder/src/components/ThrowawayThemePrototype.vue), gated by `?prototype=1&variant=A`; do not alter before promotion.
+
+**GitHub issue:** [#50](https://github.com/Azab-Inc/filament-theme-builder/issues/50)
+
+**Review fixed point:** `1416388f7b313c51298830d786277b19c35dc195`
+
+### What to build
+
+After the existing gate and functionality stabilization are satisfied and a
+separate explicit approval is recorded, promote the approved Variant A
+reference into the production builder: wide left pane with working theme
+controls and a continuously visible real Filament demo iframe on the right,
+with a stacked mobile layout. Existing canonical state, editor behavior, and
+live-preview bridge remain authoritative. Remove the prototype component and
+query gate from production only after the promoted layout is verified.
+
+### Acceptance criteria
+
+- [ ] Production replacement begins only after the specified blockers are complete and promotion is explicitly approved.
+- [ ] Existing theme controls display and mutate real canonical state; no inert or static mock controls/values are promoted.
+- [ ] The editor and real Filament iframe remain visible at desktop/intermediate widths; the iframe stays mounted during normal editing/resizing.
+- [ ] At narrow widths the panes collapse vertically, controls remain reachable, and the live demo remains visible and usable without horizontal overflow.
+- [ ] Semantic structure, keyboard/focus behavior, zoom/reflow, iframe naming, and automated accessibility checks meet the design contract.
+- [ ] Playwright verifies real state-to-iframe updates, responsive behavior, accessibility-relevant interaction, and iframe continuity.
+- [ ] After approval and verification, the prototype component, query gate, variant switcher, and prototype-only production path are removed; no static prototype values/actions leak into production.
+- [ ] No third-party dependency or new MCP capability is introduced; existing functionality remains the priority.
