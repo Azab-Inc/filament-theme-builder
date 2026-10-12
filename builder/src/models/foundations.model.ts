@@ -6,7 +6,8 @@ export type PaletteShade = typeof PALETTE_SHADES[number]
 
 export type Density = 'compact' | 'default' | 'spacious'
 export type ThemeMode = 'light' | 'dark'
-export type FoundationMapping = 'preview-emulatable' | 'runtime-refresh-required' | 'export-only' | 'unmapped'
+export type FoundationMapping = 'preview-emulatable' | 'live-emulation'
+export type FoundationRuntimeProperty = 'color' | 'fontFamily' | 'spacing' | 'density' | 'radius' | 'borderWidth' | 'shadow'
 
 export type FontChoice =
   | { kind: 'system'; name: string; family: string }
@@ -59,20 +60,17 @@ export type FoundationProjection = {
   schemaVersion: 1
   compatibility: 'filament-5.9'
   mode: ThemeMode
-  mappings: Array<{ id: string; mapping: FoundationMapping; selector?: string; variable?: string; value: string | number }>
+  mappings: Array<{
+    id: string
+    mapping: FoundationMapping
+    property: FoundationRuntimeProperty
+    selectors?: readonly string[]
+    variable?: string
+    value: string | number
+  }>
 }
 
 export type DensityPreset = {
   controlHeight: number
   spacing: Record<string, number>
 }
-
-export type FoundationControlMappingDefaults = {
-  'text.disabled': FoundationMapping
-  'borders.strong': FoundationMapping
-}
-
-export const DEFAULT_FOUNDATION_CONTROL_MAPPINGS: Readonly<FoundationControlMappingDefaults> = Object.freeze({
-  'text.disabled': 'unmapped',
-  'borders.strong': 'export-only',
-})

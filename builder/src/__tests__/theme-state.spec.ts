@@ -154,6 +154,17 @@ describe('theme state', () => {
     expect(store.theme.foundations.surfaces.page.light).toBe('#fef3c7')
   })
 
+  it('sets and resets decimal spacing keys as atomic foundation paths', () => {
+    const store = useThemeStore()
+
+    store.setFoundation('spacing.0.5', 19)
+    expect(store.theme.foundations.spacing['0.5']).toBe(19)
+    expect(store.previewFoundation('light').mappings.find(({ id }) => id === 'spacing.0.5')?.value).toBe(19)
+
+    store.resetFoundation('spacing.0.5')
+    expect(store.theme.foundations.spacing['0.5']).toBe(2)
+  })
+
   it('does not persist a separate explicit foundation provenance list', () => {
     const store = useThemeStore()
 

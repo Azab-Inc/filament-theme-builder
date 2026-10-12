@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULT_FOUNDATION_CONTROL_MAPPINGS, PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
+import { PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
 import { createDefaultFoundationState, createDefaultThemeState, densityPreset } from '@/services/foundation-defaults'
 import { generatePalette } from '@/services/palette-generator'
 
@@ -55,12 +55,11 @@ describe('foundation defaults', () => {
     expect(anotherState.surfaces.page.dark).toBe('var(--gray-900)')
   })
 
-  it('marks disabled text and strong borders as non-previewable defaults', () => {
+  it('keeps disabled text and strong borders in the live foundation model', () => {
     const state = createDefaultFoundationState()
 
     expect(state.text.disabled).toEqual({ light: 'var(--gray-400)', dark: 'var(--gray-500)' })
     expect(state.borders.strong).toEqual({ light: 'var(--gray-300)', dark: 'var(--gray-600)' })
-    expect(DEFAULT_FOUNDATION_CONTROL_MAPPINGS).toEqual({ 'text.disabled': 'unmapped', 'borders.strong': 'export-only' })
   })
 
   it('resolves distinct named density spacing presets', () => {

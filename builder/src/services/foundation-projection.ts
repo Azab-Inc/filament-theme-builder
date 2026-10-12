@@ -1,8 +1,8 @@
 import { FILAMENT_FOUNDATION_INVENTORY } from '@/registry/filament-foundation-inventory'
 import type { FoundationProjection, FoundationState, ThemeMode } from '@/models/foundations.model'
 
-const PREVIEW_MAPPINGS = FILAMENT_FOUNDATION_INVENTORY.filter(
-  (entry) => entry.mapping === 'preview-emulatable',
+const PREVIEW_MAPPINGS = FILAMENT_FOUNDATION_INVENTORY.filter((entry) =>
+  entry.mapping === 'preview-emulatable' || entry.mapping === 'live-emulation',
 )
 
 export function projectFoundations(state: FoundationState, mode: ThemeMode): FoundationProjection {
@@ -13,28 +13,48 @@ export function projectFoundations(state: FoundationState, mode: ThemeMode): Fou
     mappings: PREVIEW_MAPPINGS.map((entry) => ({
       id: entry.id,
       mapping: entry.mapping,
-      ...(entry.selector === undefined ? {} : { selector: entry.selector }),
+      ...(entry.selectors.length === 0 ? {} : { selectors: entry.selectors }),
       ...(entry.variable === undefined ? {} : { variable: entry.variable }),
-      value: foundationValue(state, entry.id),
+      property: entry.property,
+      value: foundationValue(state, entry.id, mode),
     })),
   }
 }
 
-function foundationValue(state: FoundationState, id: string): string | number {
+function foundationValue(state: FoundationState, id: string, mode: ThemeMode): string | number {
   if (id === 'density') return state.density
-  if (id === 'palette.primary.base') return state.palettes.primary.base
+  if (id === 'radius') return state.radius
+  if (id === 'borderWidth') return state.borderWidth
+  if (id === 'shadow') return state.shadow
+
+  const paletteBase = id.match(/^palette\.(primary|success|warning|danger|info|gray)\.base$/)
+  if (paletteBase) return state.palettes[paletteBase[1] as keyof FoundationState['palettes']].base
 
   const shade = id.match(
-    /^palette\.primary\.shades\.(50|100|200|300|400|500|600|700|800|900|950)$/,
+    /^palette\.(primary|success|warning|danger|info|gray)\.shades\.(50|100|200|300|400|500|600|700|800|900|950)$/,
   )?.[1]
   if (shade !== undefined) {
-    const shadeKey = Number(shade) as keyof typeof state.palettes.primary.shades
+    const [, paletteName, shadeName] = /^palette\.([^.]+)\.shades\.(\d+)$/.exec(id) ?? []
+    const palette = state.palettes[paletteName as keyof FoundationState['palettes']]
+    const shadeKey = Number(shadeName) as keyof typeof palette.shades
     return (
-      state.palettes.primary.overrides[shadeKey] ??
-      state.palettes.primary.shades[shadeKey] ??
-      state.palettes.primary.base
+      palette.overrides[shadeKey] ??
+      palette.shades[shadeKey] ??
+      palette.base
     )
   }
+
+  const modeValue = id.match(/^(surface|border|text)\.(.+)$/)
+  if (modeValue) {
+    const collection = modeValue[1] === 'surface' ? state.surfaces : modeValue[1] === 'border' ? state.borders : state.text
+    return collection[modeValue[2] as keyof typeof collection][mode]
+  }
+
+  const typography = id.match(/^typography\.(body|heading|mono)$/)
+  if (typography) return state.typography[typography[1] as keyof FoundationState['typography']].family
+
+  const spacing = id.match(/^spacing\.(.+)$/)
+  if (spacing) return state.spacing[spacing[1]!]!
 
   throw new Error(`No projection value exists for inventory mapping: ${id}`)
 }

@@ -48,6 +48,7 @@ test.describe("foundation preview integration", () => {
       page.getByRole("heading", { name: "Filament Theme Builder" }),
     ).toBeVisible();
     await expect(page.getByLabel("Primary color")).toBeVisible();
+    await expect(page.getByLabel("Text primary light").locator("xpath=..").getByRole("status")).toHaveText("inherited");
     await expect(
       preview.getByRole("heading", { name: /dashboard/i }),
     ).toBeVisible();
@@ -197,185 +198,103 @@ test.describe("foundation preview integration", () => {
     expect(mutationRequests).toEqual([]);
   });
 
-  test("rejects forged inventory tuples and reports unmapped mode compatibility in the actual iframe", async ({
-    page,
-  }) => {
+  test("rejects forged projections and out-of-scope overrides in the real iframe", async ({ page }) => {
     await page.goto(composeBaseUrl);
-    const iframe = page.locator('iframe[title="Filament preview"]');
     await expect(page.getByLabel("Primary color")).toBeVisible();
-    await expect(
-      page
-        .frameLocator('iframe[title="Filament preview"]')
-        .getByRole("heading", { name: /dashboard/i }),
-    ).toBeVisible();
+    const frame = page.frame({ url: /\/demo\/admin/ });
+    expect(frame).toBeTruthy();
+    await frame!.evaluate(() => {
+      const capture = window as Window & { __ftbMessage?: unknown; __ftbAccepted?: number };
+      capture.__ftbAccepted = 0;
+      window.addEventListener("message", (event) => {
+        if (event.data?.type === "ftb:theme:update") capture.__ftbMessage = event.data;
+      });
+      window.addEventListener("ftb:preview-message-accepted", () => { capture.__ftbAccepted! += 1; });
+    });
+    await page.getByLabel("Primary color").fill("#0f766e");
+    await expect.poll(() => frame!.evaluate(() => Boolean((window as Window & { __ftbMessage?: unknown }).__ftbMessage))).toBe(true);
+    const valid = await frame!.evaluate(() => (window as Window & { __ftbMessage: Record<string, any> }).__ftbMessage);
+    const before = await frame!.evaluate(() => (window as Window & { __ftbAccepted: number }).__ftbAccepted);
+    expect(before).toBeGreaterThan(0);
 
+    const postAndCheckRejected = async (mutate: (message: Record<string, any>) => void) => {
+      const message = JSON.parse(JSON.stringify(valid)) as Record<string, any>;
+      mutate(message);
+      const accepted = await page.evaluate(async (payload) => {
+        const target = document.querySelector<HTMLIFrameElement>('iframe[title="Filament preview"]')!.contentWindow!;
+        return await new Promise<boolean>((resolve) => {
+          const listener = () => { window.removeEventListener("ftb:preview-message-accepted", listener); resolve(true); };
+          target.addEventListener("ftb:preview-message-accepted", listener, { once: true });
+          target.postMessage(payload, location.origin);
+          window.setTimeout(() => { window.removeEventListener("ftb:preview-message-accepted", listener); resolve(false); }, 100);
+        });
+      }, message);
+      expect(accepted).toBe(false);
+    };
+
+    await postAndCheckRejected((message) => { message.projection.mappings.pop(); });
+    await postAndCheckRejected((message) => { message.projection.mappings[0].selectors = [".attacker-controlled"]; });
+    await postAndCheckRejected((message) => { message.projection.mappings.find((mapping: Record<string, unknown>) => mapping.id === "borderWidth").value = "1"; });
+    await postAndCheckRejected((message) => { message.theme.overrides = [{ targetId: "button.primary", controlId: "background", scope: "global", componentId: "button", value: "#0f766e" }]; });
+    await postAndCheckRejected((message) => { message.theme.overrides = [{ targetId: "button.primary", controlId: "background", scope: "global", value: "not-a-color" }]; });
+  });
+
+  test("projects every foundation family live in the iframe without reload", async ({ page }) => {
+    const navigationRequests: string[] = [];
+    page.on("request", (request) => {
+      if (request.isNavigationRequest()) navigationRequests.push(request.url());
+    });
+    await page.goto(composeBaseUrl);
     const previewFrame = page.frame({ url: /\/demo\/admin/ });
     expect(previewFrame).toBeTruthy();
-    await previewFrame!.evaluate(() => {
-      document.getElementById("ftb-managed-theme")?.remove();
-      document.body.dataset.acceptedMessages = "0";
-      document.body.dataset.compatibilityNotice = "";
-      window.addEventListener("ftb:preview-message-accepted", () => {
-        document.body.dataset.acceptedMessages = String(
-          Number(document.body.dataset.acceptedMessages) + 1,
-        );
-      });
-      window.addEventListener("ftb:preview-compatibility", (event) => {
-        document.body.dataset.compatibilityNotice = JSON.stringify(
-          (event as CustomEvent).detail,
-        );
-      });
-    });
+    await expect(previewFrame!.locator("#ftb-managed-theme")).toHaveCount(1);
+    navigationRequests.length = 0;
 
-    const iframeUrl = await iframe.getAttribute("src");
-    const targetOrigin = new URL(iframeUrl!, page.url()).origin;
-    const message = (
-      mapping: Record<string, unknown>,
-      mode: "light" | "dark",
-      overrides: Record<string, unknown>[] = [],
-    ) =>
-      page.evaluate(
-        ({ mapping, mode, targetOrigin, foundations, overrides }) => {
-          const target = document.querySelector<HTMLIFrameElement>(
-            'iframe[title="Filament preview"]',
-          )!.contentWindow!;
-          target.postMessage(
-            {
-              type: "ftb:theme:update",
-              schemaVersion: 1,
-              theme: {
-                schemaVersion: 3,
-                colors: { primary: "#6366f1" },
-                foundations,
-                overrides,
-                customCss: "",
-              },
-              projection: {
-                schemaVersion: 1,
-                compatibility: "filament-5.9",
-                mode,
-                mappings: [mapping],
-              },
-            },
-            targetOrigin,
-          );
-        },
-        { mapping, mode, targetOrigin, foundations: validFoundations, overrides },
-      );
+    const readFoundationToken = (id: string) => previewFrame!.evaluate((token) => getComputedStyle(document.documentElement).getPropertyValue(`--ftb-foundation-${token}`).trim(), id.replaceAll(".", "-"));
+    const paletteNames = ["primary", "success", "warning", "danger", "info", "gray"];
+    for (const name of paletteNames) {
+      const input = page.locator(`#${name}-palette-base`);
+      await input.fill(name === "primary" ? "#0f766e" : "#123456");
+      await expect.poll(() => previewFrame!.evaluate((palette) => getComputedStyle(document.documentElement).getPropertyValue(`--ftb-${palette}`).trim(), name)).toBe(name === "primary" ? "#0f766e" : "#123456");
+      await page.getByLabel(`${name} shade 500 override`).fill("#654321");
+      await expect.poll(() => previewFrame!.evaluate((palette) => getComputedStyle(document.documentElement).getPropertyValue(`--${palette}-500`).trim(), name)).toBe("#654321");
+    }
 
-    await message(
-      {
-        id: "palette.primary.base",
-        mapping: "preview-emulatable",
-        variable: "--primary-500",
-        value: "#0f766e",
-      },
-      "light",
-    );
-    await expect
-      .poll(() =>
-        previewFrame!.evaluate(() =>
-          Number(document.body.dataset.acceptedMessages),
-        ),
-      )
-      .toBe(0);
-    expect(await previewFrame!.locator("#ftb-managed-theme").count()).toBe(0);
+    for (const [id, token] of Object.entries({ "card-surface": "surface.card", "sidebar-surface": "surface.sidebar", "topbar-surface": "surface.topbar", "elevated-surface": "surface.elevated", "input-surface": "surface.input", "page-surface": "surface.page", "border-default-light": "border.default", "border-strong-light": "border.strong", "text-primary-light": "text.primary", "text-muted-light": "text.muted", "text-disabled-light": "text.disabled" })) {
+      const control = page.locator(`#${id}`);
+      await control.fill(id.includes("border") || id.includes("text") ? "#123456" : "#fedcba");
+      await expect.poll(() => readFoundationToken(token)).toMatch(/^(#123456|#fedcba)$/);
+    }
 
-    await message(
-      {
-        id: "palette.primary.base",
-        mapping: "preview-emulatable",
-        variable: "--ftb-primary",
-        value: "#0f766e",
-      },
-      "light",
-      [{
-        targetId: "button.primary",
-        controlId: "background",
-        scope: "global",
-        componentId: "button",
-        value: "#0f766e",
-      }],
-    );
-    await expect
-      .poll(() => previewFrame!.evaluate(() => Number(document.body.dataset.acceptedMessages)))
-      .toBe(0);
+    for (const name of ["body", "heading", "mono"]) {
+      await page.locator(`#${name}-font-name`).fill(`Local ${name} Family`);
+      await expect.poll(() => readFoundationToken(`typography.${name}`)).toBe(`Local ${name} Family`);
+    }
 
-    await message(
-      {
-        id: "palette.primary.base",
-        mapping: "preview-emulatable",
-        variable: "--ftb-primary",
-        value: "#0f766e",
-      },
-      "light",
-      [{
-        targetId: "button.primary",
-        controlId: "background",
-        scope: "global",
-        value: "not-a-color",
-      }],
-    );
-    await expect
-      .poll(() => previewFrame!.evaluate(() => Number(document.body.dataset.acceptedMessages)))
-      .toBe(0);
+    for (const key of ["0", "px", "0.5", "1", "1.5", "2", "3", "4", "6", "8"]) {
+      const input = page.locator(`#spacing-${key.replace(".", "-")}`);
+      await input.fill("19");
+      await expect(input, `spacing editor ${key}`).toHaveValue("19");
+      await expect.poll(() => readFoundationToken(`spacing.${key}`), { message: `project spacing.${key}` }).toBe("19");
+    }
 
-    await message(
-      { id: "radius", mapping: "unmapped", value: "lg" },
-      "dark",
-    );
-    await expect
-      .poll(() =>
-        previewFrame!.evaluate(() => document.body.dataset.compatibilityNotice),
-      )
-      .toContain("radius");
-    expect(
-      await previewFrame!.evaluate(
-        () => JSON.parse(document.body.dataset.compatibilityNotice!).mode,
-      ),
-    ).toBe("dark");
-    expect(await previewFrame!.locator("#ftb-managed-theme").count()).toBe(0);
-    const acceptedBeforeDensityChecks = await previewFrame!.evaluate(() => Number(document.body.dataset.acceptedMessages));
-
-    await message(
-      {
-        id: "palette.primary.base",
-        mapping: "preview-emulatable",
-        variable: "--ftb-primary",
-        value: "#0f766e",
-      },
-      "light",
-    );
-    await expect
-      .poll(() => previewFrame!.evaluate(() => Number(document.body.dataset.acceptedMessages)))
-      .toBe(acceptedBeforeDensityChecks + 1);
-
-    await message(
-      {
-        id: "palette.primary.base",
-        mapping: "preview-emulatable",
-        variable: "--ftb-primary",
-        selector: ".attacker-controlled",
-        value: "#0f766e",
-      },
-      "light",
-    );
-    await expect
-      .poll(() => previewFrame!.evaluate(() => Number(document.body.dataset.acceptedMessages)))
-      .toBe(acceptedBeforeDensityChecks + 1);
-
-    await message(
-      {
-        id: "density",
-        mapping: "preview-emulatable",
-        selector: ".fi-ta",
-        value: "compact",
-      },
-      "light",
-    );
-    await expect
-      .poll(() => previewFrame!.evaluate(() => Number(document.body.dataset.acceptedMessages)))
-      .toBe(acceptedBeforeDensityChecks + 2);
+    const section = previewFrame!.locator(".fi-section, .fi-ta-ctn").first();
+    await expect(section).toBeVisible();
+    for (const radius of ["none", "sm", "md", "lg", "xl", "full"]) {
+      await page.locator("#radius").selectOption(radius);
+      const expected = { none: "0px", sm: "2px", md: "6px", lg: "8px", xl: "12px", full: "9999px" }[radius];
+      await expect.poll(() => section.evaluate((element) => getComputedStyle(element).borderRadius)).toBe(expected);
+    }
+    await page.locator("#border-width").fill("4");
+    await expect.poll(() => section.evaluate((element) => getComputedStyle(element).borderTopWidth)).toBe("4px");
+    for (const shadow of ["none", "sm", "md", "lg", "xl"]) {
+      await page.locator("#shadow").selectOption(shadow);
+      await expect.poll(() => section.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe("");
+    }
+    await page.getByRole("button", { name: "Dark mode" }).click();
+    await expect.poll(() => previewFrame!.evaluate(() => document.documentElement.classList.contains("dark"))).toBe(true);
+    await expect.poll(() => previewFrame!.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe("dark");
+    expect(navigationRequests).toEqual([]);
   });
 
   test("edits, resets, and persists the foundations editor without loading fonts", async ({
@@ -390,7 +309,9 @@ test.describe("foundation preview integration", () => {
       if (request.frame() === page.mainFrame())
         builderRequestedUrls.push(request.url());
       if (request.isNavigationRequest()) navigationRequests.push(request.url());
-      if (request.method() !== "GET") mutationRequests.push(request.url());
+      // The embedded Filament dashboard can issue its own Livewire widget polls.
+      if (request.frame() === page.mainFrame() && request.method() !== "GET")
+        mutationRequests.push(request.url());
     });
 
     await page.goto(composeBaseUrl);
@@ -418,7 +339,7 @@ test.describe("foundation preview integration", () => {
       page.getByText("generated", { exact: true }).first(),
     ).toBeVisible();
     await expect(
-      page.getByText("unmapped", { exact: true }).first(),
+      page.getByText("live-emulation", { exact: true }).first(),
     ).toBeVisible();
     navigationRequests.length = 0;
     mutationRequests.length = 0;

@@ -32,13 +32,13 @@ describe('Filament foundation inventory', () => {
     expect(new Set(expected.map((id) => lookupFoundationMapping(id)?.id)).size).toBe(expected.length)
   })
 
-  it('records an absence reason for every unverified classification', () => {
-    for (const entry of FILAMENT_FOUNDATION_INVENTORY) {
-      if (entry.mapping === 'export-only' || entry.mapping === 'unmapped') {
-        expect(entry.evidence.reason).toMatch(/.+/)
-        expect(entry.evidence.absent?.length ?? 0).toBeGreaterThan(0)
-      }
-    }
+  it('classifies every foundation control as a live preview mapping', () => {
+    const foundationIds = FILAMENT_FOUNDATION_INVENTORY
+      .filter(({ id }) => !id.includes('.') || id.startsWith('palette.') || id.startsWith('surface.') || id.startsWith('border.') || id.startsWith('text.') || id.startsWith('typography.') || id.startsWith('spacing.'))
+      .map(({ id }) => id)
+
+    expect(foundationIds.every((id) => ['preview-emulatable', 'live-emulation'].includes(lookupFoundationMapping(id)?.mapping ?? ''))).toBe(true)
+    expect(FILAMENT_FOUNDATION_INVENTORY.filter(({ id }) => id === 'radius')[0]?.mapping).toBe('live-emulation')
   })
   it('is frozen at the collection and entry levels', () => {
     expect(Object.isFrozen(FILAMENT_FOUNDATION_INVENTORY)).toBe(true)
@@ -54,7 +54,6 @@ describe('Filament foundation inventory', () => {
       expect(source).toContain(entry.evidence.needle)
       expect(baseline).toContain('"filament/filament": "^5.9"')
       expect(entry.evidence.reason).toBeTruthy()
-      for (const absent of entry.evidence.absent ?? []) expect(source).not.toContain(absent)
     }
   })
 
@@ -62,30 +61,34 @@ describe('Filament foundation inventory', () => {
     for (const entry of FILAMENT_FOUNDATION_INVENTORY.filter(
       (entry) => entry.mapping === 'preview-emulatable',
     )) {
-      expect(entry.variable ?? entry.selector).toBeTruthy()
-      if (entry.id === 'density') expect(entry.evidence.needle).toBe('.fi-ta')
-      else if (entry.id.endsWith('.base')) expect(entry.evidence.needle).toBe(entry.variable)
-      else expect(entry.evidence.needle).toBe('--primary-${shade}')
+      expect(entry.variable ?? entry.selectors.length).toBeTruthy()
+      expect(entry.evidence.needle).toBe('projects every foundation family live in the iframe without reload')
     }
   })
 
-  it('does not treat unrelated bridge evidence as a page-surface mapping', () => {
-    const mapping = lookupFoundationMapping('surface.page')
-
-    expect(mapping).toMatchObject({ mapping: 'unmapped' })
-    expect(mapping?.evidence.reason).toMatch(/no verified .*page surface/i)
-    expect(mapping?.variable).toBeUndefined()
-    expect(mapping?.selector).toBeUndefined()
+  it('records fixed runtime scopes for semantic mappings', () => {
+    for (const id of ['surface.page', 'surface.card', 'border.default', 'text.primary', 'typography.body', 'spacing.1', 'radius', 'borderWidth', 'shadow']) {
+      expect(lookupFoundationMapping(id)?.selectors?.length, id).toBeGreaterThan(0)
+      expect(lookupFoundationMapping(id)?.property, id).toBeTruthy()
+    }
   })
 
   it('records the verified native table density CSS evidence', () => {
     const mapping = lookupFoundationMapping('density')
 
     expect(mapping).toMatchObject({
-      mapping: 'preview-emulatable',
-      selector: '.fi-ta',
+           mapping: 'live-emulation',
+      selectors: expect.arrayContaining(['.fi-ta']),
     })
-    expect(mapping?.evidence.reason).toMatch(/native Filament table density/i)
+    expect(mapping?.evidence.reason).toMatch(/fixed selectors/i)
+  })
+
+  it('uses canonical text IDs and only verified concrete selectors', () => {
+    expect(lookupFoundationMapping('text.primary')?.id).toBe('text.primary')
+    expect(lookupFoundationMapping('tex.primary')).toBeUndefined()
+
+    const selectors = FILAMENT_FOUNDATION_INVENTORY.flatMap(({ selectors }) => selectors)
+    expect(selectors).not.toEqual(expect.arrayContaining(['.fi-card', '.fi-textarea', '.fi-popover', '.fi-code']))
   })
 
   it('contains no invented Filament variable tokens', () => {
@@ -98,23 +101,12 @@ describe('Filament foundation inventory', () => {
     const variables = FILAMENT_FOUNDATION_INVENTORY.flatMap((entry) =>
       entry.variable ? [entry.variable] : [],
     )
-    const selectors = FILAMENT_FOUNDATION_INVENTORY.flatMap((entry) =>
-      entry.selector ? [entry.selector] : [],
-    )
+    const selectors = FILAMENT_FOUNDATION_INVENTORY.flatMap((entry) => entry.selectors)
 
     expect(variables).toEqual(
       expect.arrayContaining(['--ftb-primary', '--primary-50', '--primary-500', '--primary-950']),
     )
-    expect(selectors).toEqual(
-      expect.arrayContaining([
-        '.fi-color-primary',
-        '.fi-btn.fi-color-primary',
-        '.fi-badge',
-        '.fi-logo-light',
-        '.fi-logo-dark',
-        '.fi-ta',
-      ]),
-    )
+    expect(selectors).toEqual(expect.arrayContaining(['.fi-color-primary', '.fi-btn.fi-color-primary', '.fi-ta', '.fi-sidebar', '.fi-topbar', '.fi-section']))
   })
 
   it('distinguishes mapping classifications while returning the validated state', () => {
@@ -124,23 +116,14 @@ describe('Filament foundation inventory', () => {
       mapping: { mapping: 'preview-emulatable' },
       state,
     })
-    expect(validateFoundationMapping('global.primary', state)).toMatchObject({
-      valid: true,
-      mapping: { mapping: 'export-only' },
-      state,
-    })
-    expect(validateFoundationMapping('surface.page', state)).toMatchObject({
-      valid: true,
-      mapping: { mapping: 'unmapped' },
-      state,
-    })
+     expect(validateFoundationMapping('surface.page', state)).toMatchObject({ valid: true, mapping: { mapping: 'preview-emulatable' }, state })
     expect(lookupFoundationMapping('palette.primary.base')).toMatchObject({
       id: 'palette.primary.base',
       variable: '--ftb-primary',
     })
   })
 
-  it('projects only inventory-approved primary variables with the v1 protocol shape', () => {
+  it('projects every inventory-approved foundation mapping with the v1 protocol shape', () => {
     const state = createDefaultFoundationState()
     state.palettes.primary.base = '#0f766e'
     state.palettes.primary.shades[500] = '#0f766e'
@@ -166,12 +149,9 @@ describe('Filament foundation inventory', () => {
         }),
       ]),
     )
-    expect(
-      projectFoundations(state, 'dark').mappings.every(
-        (mapping) => mapping.mapping === 'preview-emulatable',
-      ),
-    ).toBe(true)
-    expect(JSON.stringify(projectFoundations(state, 'dark'))).not.toMatch(/url\(|@import|font/i)
+    expect(projectFoundations(state, 'dark').mappings.length).toBe(FILAMENT_FOUNDATION_INVENTORY.filter(({ id }) => !['global.primary', 'button.primary', 'button.secondary', 'badge', 'logo.light', 'logo.dark'].includes(id)).length)
+    expect(projectFoundations(state, 'dark').mappings.every((mapping) => ['preview-emulatable', 'live-emulation'].includes(mapping.mapping))).toBe(true)
+    expect(JSON.stringify(projectFoundations(state, 'dark'))).not.toMatch(/url\(|@import/i)
   })
 
   it.each(['compact', 'default', 'spacious'] as const)('projects %s table density with the verified selector', (density) => {
@@ -182,19 +162,19 @@ describe('Filament foundation inventory', () => {
       expect.arrayContaining([
         expect.objectContaining({
           id: 'density',
-          mapping: 'preview-emulatable',
-          selector: '.fi-ta',
+         mapping: 'live-emulation',
+           selectors: expect.arrayContaining(['.fi-ta']),
           value: density,
         }),
       ]),
     )
   })
 
-  it('does not project unmapped controls or arbitrary selectors', () => {
+  it('projects scoped controls without arbitrary selectors', () => {
     const projection = projectFoundations(createDefaultFoundationState(), 'light')
 
-    expect(projection.mappings.some((mapping) => mapping.id === 'surface.page')).toBe(false)
-    expect(projection.mappings.filter((mapping) => mapping.id !== 'density').every((mapping) => mapping.selector === undefined)).toBe(true)
+    expect(projection.mappings.some((mapping) => mapping.id === 'surface.page')).toBe(true)
+    expect(projection.mappings.every((mapping) => mapping.selectors === undefined || mapping.selectors.length > 0)).toBe(true)
   })
 
   it('keeps every preview tuple tied to the inventory id and variable', () => {
@@ -202,12 +182,9 @@ describe('Filament foundation inventory', () => {
 
     for (const mapping of projection.mappings) {
       const inventory = lookupFoundationMapping(mapping.id)
-      expect(inventory).toMatchObject({
-        id: mapping.id,
-        mapping: 'preview-emulatable',
-      })
+       expect(inventory).toMatchObject({ id: mapping.id })
       if (mapping.id === 'density') {
-        expect(mapping.selector).toBe('.fi-ta')
+        expect(mapping.selectors).toContain('.fi-ta')
         expect(mapping.variable).toBeUndefined()
       } else {
         expect(mapping.variable).toBe(inventory?.variable)
@@ -221,9 +198,10 @@ describe('Filament foundation inventory', () => {
       'utf8',
     )
 
-    expect(bridge).toContain('previewMappingTuples')
-    expect(bridge).toContain('previewMappingTuples.get(mapping.id) !== mapping.variable')
-    expect(bridge).toContain("mapping.mapping !== 'preview-emulatable'")
-    expect(bridge).toContain('ftb:preview-compatibility')
+    expect(bridge).toContain('isSafeOverride')
+    expect(bridge).toContain('sameArray(candidate.selectors, expected.selectors)')
+    expect(bridge).toContain('projection.mappings')
+    expect(bridge).toContain('ftb:preview-message-accepted')
+    expect(bridge).not.toContain('ftb:preview-compatibility')
   })
 })

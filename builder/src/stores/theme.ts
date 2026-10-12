@@ -275,11 +275,11 @@ function toLegacyTheme(value: ThemeStateV3): ThemeStateV2 {
 }
 
 function getPath(root: Record<string, unknown>, path: string): unknown {
-  return path.split('.').reduce<unknown>((value, key) => isRecord(value) ? value[key] : undefined, root)
+  return foundationPathSegments(path).reduce<unknown>((value, key) => isRecord(value) ? value[key] : undefined, root)
 }
 
 function setPath(root: Record<string, unknown>, path: string, value: unknown): boolean {
-  const keys = path.split('.')
+  const keys = foundationPathSegments(path)
   const leaf = keys.pop()
   if (!leaf) return false
   if (keys.length === 0) {
@@ -293,6 +293,15 @@ function setPath(root: Record<string, unknown>, path: string, value: unknown): b
   }
   target[leaf] = value
   return true
+}
+
+function foundationPathSegments(path: string): string[] {
+  const keys = path.split('.')
+  if (keys[0] === 'spacing' && keys.length === 3) {
+    const exactKey = `${keys[1]}.${keys[2]}`
+    if (exactKey === '0.5' || exactKey === '1.5') return ['spacing', exactKey]
+  }
+  return keys
 }
 
 function selectMode<T>(values: Record<string, { light: T; dark: T }>, mode: ThemeMode): Record<string, T> {

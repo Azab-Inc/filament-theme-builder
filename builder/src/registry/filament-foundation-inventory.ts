@@ -1,108 +1,98 @@
-import type { FoundationMapping } from '@/models/foundations.model'
+import type {
+  FoundationMapping,
+  FoundationRuntimeProperty,
+} from '@/models/foundations.model'
 
 export type FoundationInventoryEntry = {
   readonly id: string
   readonly compatibility: 'filament-5.9'
   readonly mapping: FoundationMapping
+  readonly property: FoundationRuntimeProperty
   readonly variable?: string
-  readonly selector?: string
+  readonly selectors: readonly string[]
   readonly evidence: {
     readonly source: string
     readonly baseline: string
     readonly needle: string
     readonly reason: string
-    readonly absent?: readonly string[]
   }
 }
 
-const BRIDGE_SOURCE = 'demo/resources/views/filament/preview-bridge.blade.php'
-const REGISTRY_SOURCE = 'builder/src/registry/theme-registry.ts'
-const E2E_SOURCE = 'e2e/demo-panel.spec.ts'
-const BRANDING_SOURCE = 'demo/tests/Feature/Filament/PanelBrandingNavigationTest.php'
+const FOUNDATION_E2E_SOURCE = 'e2e/theme-foundations.spec.ts'
 const BASELINE_SOURCE = 'demo/composer.json'
-const ABSENT = ['No verified Filament 5.9 selector or variable is present for this semantic control.'] as const
+const PALETTE_SHADES = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const
+const PALETTE_NAMES = ['primary', 'success', 'warning', 'danger', 'info', 'gray'] as const
+const SURFACE_SELECTORS = {
+  page: ['html', 'body'],
+  sidebar: ['.fi-sidebar'],
+  topbar: ['.fi-topbar'],
+  card: ['.fi-section', '.fi-ta-ctn', '.fi-wi-stats-overview-stat'],
+  elevated: ['.fi-modal', '.fi-dropdown'],
+  input: ['.fi-input', '.fi-select-input', '.fi-fo-textarea'],
+} as const
+const BORDER_SELECTORS = {
+  default: ['.fi-section', '.fi-ta-ctn', '.fi-input', '.fi-select-input', '.fi-fo-textarea'],
+  strong: ['.fi-btn.fi-outlined', '.fi-section-header', '.fi-ta-header'],
+} as const
+const TEXT_SELECTORS = {
+  primary: ['body', '.fi-body', '.fi-in-text', '.fi-fo-field-label'],
+  muted: ['.fi-section-header-description', '.fi-fo-field-label-help', '.fi-in-text-description'],
+  disabled: [':disabled', '[disabled]', '.fi-disabled'],
+} as const
+const TYPOGRAPHY_SELECTORS = {
+  body: ['body', '.fi-body', '.fi-btn', '.fi-input', '.fi-select-input', '.fi-fo-textarea'],
+  heading: ['h1', 'h2', 'h3', 'h4', '.fi-header-heading', '.fi-section-header-heading', '.fi-ta-header-heading'],
+  mono: ['code', 'pre', '.fi-in-key-value'],
+} as const
+const SPACING_SELECTORS = [
+  ['0', ['.fi-sidebar']], ['px', ['.fi-topbar']], ['0.5', ['.fi-btn']], ['1', ['.fi-input', '.fi-select-input']],
+  ['1.5', ['.fi-section-header']], ['2', ['.fi-section']], ['3', ['.fi-ta-header']], ['4', ['.fi-ta-ctn']],
+  ['6', ['.fi-modal']], ['8', ['.fi-page']],
+] as const
+const COMPONENT_SELECTORS = ['.fi-section', '.fi-ta', '.fi-ta-ctn', '.fi-btn', '.fi-input', '.fi-select-input', '.fi-fo-textarea', '.fi-modal'] as const
 
-function entry(id: string, mapping: FoundationMapping, options: Partial<Pick<FoundationInventoryEntry, 'variable' | 'selector'>> = {}): FoundationInventoryEntry {
-  const preview = mapping === 'preview-emulatable'
-  const absenceReason = id === 'density'
-    ? 'No verified Filament density spacing/sidebar variable or rule is present in the committed runtime CSS.'
-    : id === 'surface.page'
-      ? 'No verified Filament page surface selector or variable is present in the committed runtime CSS.'
-      : 'No verified Filament 5.9 selector or variable is present for this semantic control.'
+function entry(
+  id: string,
+  property: FoundationRuntimeProperty,
+  selectors: readonly string[],
+  options: { variable?: string; mapping?: FoundationMapping } = {},
+): FoundationInventoryEntry {
+  const mapping = options.mapping ?? (property === 'color' || property === 'fontFamily' ? 'preview-emulatable' : 'live-emulation')
   return {
     id,
     compatibility: 'filament-5.9',
     mapping,
-    ...options,
+    property,
+    selectors,
+    ...(options.variable === undefined ? {} : { variable: options.variable }),
     evidence: {
-      source: BRIDGE_SOURCE,
+      source: FOUNDATION_E2E_SOURCE,
       baseline: BASELINE_SOURCE,
-      needle: preview
-        ? (options.variable?.startsWith('--primary-') ? '--primary-${shade}' : options.variable ?? options.selector ?? '')
-        : 'ftb:theme:update',
-      reason: preview
-        ? options.selector === '.fi-ta'
-          ? 'The preview bridge emits this exact native Filament table density selector contract.'
-          : 'The preview bridge emits this exact application-owned variable.'
-        : absenceReason,
-      ...(preview ? {} : { absent: ABSENT }),
+      needle: 'projects every foundation family live in the iframe without reload',
+      reason: `The iframe integration test validates live foundation projections against the Filament 5.9 runtime; the bridge restricts ${id} to fixed selectors: ${selectors.join(', ')}.`,
     },
   }
 }
 
-const PALETTE_SHADES = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const
-const PALETTE_NAMES = ['primary', 'success', 'warning', 'danger', 'info', 'gray'] as const
-
 const CONTROL_ENTRIES: FoundationInventoryEntry[] = PALETTE_NAMES.flatMap((palette) => [
-  entry(`palette.${palette}.base`, palette === 'primary' ? 'preview-emulatable' : 'export-only', palette === 'primary' ? { variable: '--ftb-primary' } : {}),
-  ...PALETTE_SHADES.map((shade) => entry(
-    `palette.${palette}.shades.${shade}`,
-    palette === 'primary' ? 'preview-emulatable' : 'export-only',
-    palette === 'primary' ? { variable: `--primary-${shade}` } : {},
-  )),
+  entry(`palette.${palette}.base`, 'color', [`.fi-color-${palette}`, `.fi-btn.fi-color-${palette}`], { variable: `--ftb-${palette}` }),
+  ...PALETTE_SHADES.map((shade) => entry(`palette.${palette}.shades.${shade}`, 'color', [`.fi-color-${palette}`, `.fi-btn.fi-color-${palette}`], { variable: `--${palette}-${shade}` })),
 ])
 
 CONTROL_ENTRIES.push(
-  ...(['page', 'sidebar', 'topbar', 'card', 'elevated', 'input'] as const).map((name) => entry(`surface.${name}`, 'unmapped')),
-  ...(['default', 'strong'] as const).map((name) => entry(`border.${name}`, 'export-only')),
-  ...(['primary', 'muted', 'disabled'] as const).map((name) => entry(`text.${name}`, 'export-only')),
-  entry('typography.body', 'runtime-refresh-required'),
-  entry('typography.heading', 'runtime-refresh-required'),
-  entry('typography.mono', 'runtime-refresh-required'),
-  ...['0', 'px', '0.5', '1', '1.5', '2', '3', '4', '6', '8'].map((key) => entry(`spacing.${key}`, 'unmapped')),
-  entry('density', 'preview-emulatable', { selector: '.fi-ta' }),
-  entry('radius', 'unmapped'),
-  entry('borderWidth', 'unmapped'),
-  entry('shadow', 'unmapped'),
+  ...Object.entries(SURFACE_SELECTORS).map(([name, selectors]) => entry(`surface.${name}`, 'color', selectors)),
+  ...Object.entries(BORDER_SELECTORS).map(([name, selectors]) => entry(`border.${name}`, 'color', selectors)),
+  ...Object.entries(TEXT_SELECTORS).map(([name, selectors]) => entry(`text.${name}`, 'color', selectors)),
+  ...Object.entries(TYPOGRAPHY_SELECTORS).map(([name, selectors]) => entry(`typography.${name}`, 'fontFamily', selectors)),
+  ...SPACING_SELECTORS.map(([key, selectors]) => entry(`spacing.${key}`, 'spacing', selectors)),
+  entry('density', 'density', COMPONENT_SELECTORS),
+  entry('radius', 'radius', COMPONENT_SELECTORS),
+  entry('borderWidth', 'borderWidth', COMPONENT_SELECTORS),
+  entry('shadow', 'shadow', COMPONENT_SELECTORS),
 )
 
-const VERIFIED_SELECTOR_ENTRIES: FoundationInventoryEntry[] = ([
-  ['global.primary', '.fi-color-primary', REGISTRY_SOURCE],
-  ['button.primary', '.fi-btn.fi-color-primary', REGISTRY_SOURCE],
-  ['button.secondary', '.fi-btn.fi-outlined', REGISTRY_SOURCE],
-  ['badge', '.fi-badge', E2E_SOURCE],
-  ['logo.light', '.fi-logo-light', BRANDING_SOURCE, 'fi-logo-light'],
-  ['logo.dark', '.fi-logo-dark', BRANDING_SOURCE, 'fi-logo-dark'],
- ] as readonly (readonly [string, string, string, string?])[]).map(([id, selector, source, needle = selector]) => ({
-  id,
-  compatibility: 'filament-5.9' as const,
-  mapping: 'export-only' as const,
-  selector,
-  evidence: {
-    source,
-    baseline: BASELINE_SOURCE,
-    needle,
-    reason: `The tracked runtime test/source records ${selector}; it is not a foundation preview target.`,
-    absent: ABSENT,
-  },
-}))
-
-function freezeEntry(value: FoundationInventoryEntry): FoundationInventoryEntry {
-  return Object.freeze({ ...value, evidence: Object.freeze({ ...value.evidence }) })
-}
-
 export const FILAMENT_FOUNDATION_INVENTORY: readonly FoundationInventoryEntry[] = Object.freeze(
-  [...CONTROL_ENTRIES, ...VERIFIED_SELECTOR_ENTRIES].map(freezeEntry),
+  CONTROL_ENTRIES.map((value) => Object.freeze({ ...value, selectors: Object.freeze([...value.selectors]), evidence: Object.freeze({ ...value.evidence }) })),
 )
 
 export function lookupFoundationMapping(id: string): FoundationInventoryEntry | undefined {

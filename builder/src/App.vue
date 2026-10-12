@@ -155,7 +155,7 @@ function mappingIdFor(path: string): string {
   const palette = /^palettes\.([^.]+)\.(base|shades)(?:\.(\d+))?$/.exec(path)
   if (palette) return `palette.${palette[1]}.${palette[2]}${palette[3] ? `.${palette[3]}` : ''}`
   const mode = /^(surfaces|borders|text)\.([^.]+)$/.exec(path)
-  if (mode) return `${mode[1] === 'surfaces' ? 'surface' : mode[1]!.slice(0, -1)}.${mode[2]}`
+  if (mode) return `${mode[1] === 'surfaces' ? 'surface' : mode[1] === 'borders' ? 'border' : 'text'}.${mode[2]}`
   return path
 }
 
