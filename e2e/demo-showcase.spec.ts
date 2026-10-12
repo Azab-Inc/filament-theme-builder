@@ -618,7 +618,7 @@ test.describe('infolists showcase', () => {
     await expect(page.getByText('Demo bestseller', { exact: true })).toBeVisible()
     await expect(page.getByText('Featured fixture', { exact: true })).toBeVisible()
     await expect(page.getByRole('region', { name: 'Product details showcase' }).getByText('Natural finish', { exact: true })).toBeVisible()
-    await expect(page.getByText('Demo Brass Lamp', { exact: true })).toBeVisible()
+    await expect(page.locator('.fi-in-table-repeatable').getByText('Demo Brass Lamp', { exact: true })).toBeVisible()
     await expect(page.locator('script:has-text("alert(\\\"xss\\\")")')).toHaveCount(0)
 
     const lightSection = await page.getByRole('region', { name: 'Product overview' }).evaluate((element) => getComputedStyle(element).color)
@@ -642,6 +642,7 @@ test.describe('infolists showcase', () => {
     await expect(page.getByText('Product attributes', { exact: true })).toBeVisible()
     await expect(page.locator('.fi-in-color')).toBeVisible()
     await expect(page.locator('.fi-in-key-value')).toHaveCount(2)
+    await expect(page.locator('.fi-in-table-repeatable')).toBeVisible()
     await expect(page.locator('.fi-tabs')).toBeVisible()
     await expect(page.locator('.fi-fieldset')).toHaveCount(2)
     await expect(page.locator('.fi-sc-flex')).toHaveCount(2)

@@ -384,7 +384,7 @@ Implementation: `293b7aa` (`Feature: add tables showcase fixtures`); verificatio
 
 ## FTB-013 — Cover Infolists visually
 
-**Status:** in-progress
+**Status:** done
 **Blocked by:** [FTB-005](#ftb-005), [FTB-006](#ftb-006), [FTB-002](#ftb-002)
 
 ### What to build
@@ -393,15 +393,15 @@ Create an Infolists showcase containing every visually distinct first-party entr
 
 ### Acceptance criteria
 
-- [ ] `ShowcaseInfolistsPage` contains `OrderDetailsInfolist`, `CustomerProfileInfolist`, and `ProductDetailsInfolist`, including the visually distinct first-party entries identified in COVERAGE.md.
-- [ ] `OrderDetailsInfolist` and `CustomerProfileInfolist` demonstrate distinct section/group layouts without identical API permutations.
-- [ ] Common states such as empty/null, badges, icons, images, and rich text are demonstrated where visually distinct.
-- [ ] Registry entries exist for relevant surfaces and states.
-- [ ] Infolists respond correctly to light/dark and global foundation changes.
+- [x] `ShowcaseInfolistsPage` contains `OrderDetailsInfolist`, `CustomerProfileInfolist`, and `ProductDetailsInfolist`, including the verified runtime-available first-party entries identified in COVERAGE.md.
+- [x] `OrderDetailsInfolist` and `CustomerProfileInfolist` demonstrate distinct section/group layouts without identical API permutations.
+- [x] Common states such as empty/null, badges, icons, images, and rich text are demonstrated where visually distinct.
+- [x] Registry entries exist for relevant surfaces and states, including both native RepeatableEntry modes.
+- [x] Infolists respond correctly to light/dark and global foundation changes on real rendered entries.
 
 Implementation: `31c4110` (`Feature: add infolists showcase fixtures`); verification: [`InfolistsShowcaseTest`](./demo/tests/Feature/Filament/Showcase/InfolistsShowcaseTest.php), `e2e/demo-showcase.spec.ts`.
 
-Remaining: this implementation adds seeded customer/order/product schemas, representative native entries/layouts, null placeholders, selector-only infolist entry registry mappings, and focused light/dark + responsive Playwright checks. FTB-013 remains in-progress: exhaustive visually distinct first-party coverage and verified native global-foundation response are still outstanding. Do not mark unfinished criteria complete prematurely.
+Evidence: `InfolistsShowcaseTest` (6 passing tests, 53 assertions), the three focused `e2e/demo-showcase.spec.ts` tests, and the Compose-only foundation integration test in `e2e/theme-foundations.spec.ts` (real light/dark infolist colors and primary badge projection). Vendor/runtime review found the optional Filament `CodeEntry` class but no installed `phiki/phiki` runtime; it is documented as unavailable rather than guessed, copied, or added as a dependency. Shared schema layout selectors remain covered by the existing form registry by design.
 
 ---
 

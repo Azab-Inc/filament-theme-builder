@@ -34,7 +34,8 @@ class InfolistsShowcaseTest extends TestCase
             ->assertSee('alt="Demo Oak Chair"', false)
             ->assertSee('Demo bestseller')
             ->assertSee('Featured fixture')
-            ->assertSee('Order items');
+            ->assertSee('Order items')
+            ->assertSee('Line item table');
     }
 
     public function test_infolist_sections_use_readable_accessible_labels_and_native_layout_entries(): void
@@ -73,7 +74,9 @@ class InfolistsShowcaseTest extends TestCase
             ->assertSee('Inventory details')
             ->assertSee('Demo collection')
             ->assertSee('Demo Chairs')
-            ->assertSee('Demonstration product; not available for purchase.');
+            ->assertSee('Demonstration product; not available for purchase.')
+            ->assertSee('Line item table')
+            ->assertSee('fi-in-table-repeatable', false);
     }
 
     public function test_rich_text_is_escaped_and_missing_values_relationships_and_repeating_rows_are_safe(): void

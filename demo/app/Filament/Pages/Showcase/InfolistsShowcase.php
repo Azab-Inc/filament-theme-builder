@@ -10,6 +10,7 @@ use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\RepeatableEntry\TableColumn;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Pages\Page;
 use Filament\Panel;
@@ -114,6 +115,22 @@ class InfolistsShowcase extends Page
                                     TextEntry::make('quantity')->label('Quantity')->numeric(),
                                     TextEntry::make('total_cents')->label('Line total')->money('USD', divideBy: 100),
                                 ])->columns(2),
+                            RepeatableEntry::make('line_item_table')
+                                ->label('Line item table')
+                                ->state([
+                                    ['description' => 'Demo Oak Chair', 'quantity' => 1, 'total' => '$249.00'],
+                                    ['description' => 'Demo Brass Lamp', 'quantity' => 2, 'total' => '$98.00'],
+                                ])
+                                ->table([
+                                    TableColumn::make('Item'),
+                                    TableColumn::make('Qty'),
+                                    TableColumn::make('Total'),
+                                ])
+                                ->schema([
+                                    TextEntry::make('description')->label('Item'),
+                                    TextEntry::make('quantity')->label('Qty'),
+                                    TextEntry::make('total')->label('Total')->badge(),
+                                ]),
                         ]),
                     ]),
             ]);

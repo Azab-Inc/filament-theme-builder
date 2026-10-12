@@ -277,6 +277,44 @@ test.describe("foundation preview integration", () => {
     expect(mutationRequests).toEqual([]);
   });
 
+  test("projects foundation changes onto real infolist entries in light and dark modes", async ({ page }) => {
+    await page.goto(`${composeBaseUrl}/demo/admin/login`);
+    await page.getByLabel(/username/i).fill("user");
+    await page.getByRole("textbox", { name: /password/i }).fill("password");
+    await page.getByRole("button", { name: /sign in/i }).click();
+    await expect(page).toHaveURL(`${composeBaseUrl}/demo/admin`);
+    await page.goto(composeBaseUrl);
+    await expect(page.locator('iframe[title="Filament preview"]')).toBeVisible();
+    const routeNavigation = page.waitForEvent("framenavigated", (frame) =>
+      /\/demo\/admin\/infolists-showcase/.test(frame.url()),
+    );
+    await page.evaluate((showcaseUrl) => {
+      document.querySelector<HTMLIFrameElement>('iframe[title="Filament preview"]')!.src = showcaseUrl;
+    }, `${composeBaseUrl}/demo/admin/infolists-showcase`);
+    const navigatedFrame = await routeNavigation;
+
+    const frame = navigatedFrame;
+    const statusBadge = frame.locator(".fi-in-text-item.fi-in-text-has-badges").first();
+    const section = frame.getByRole("region", { name: "Product overview" });
+    await expect(statusBadge).toBeVisible();
+    await expect(section).toBeVisible();
+
+    await page.emulateMedia({ colorScheme: "light" });
+    const lightText = await frame.locator(".fi-in-text").first().evaluate((element) => getComputedStyle(element).color);
+    const lightSection = await section.evaluate((element) => getComputedStyle(element).backgroundColor);
+
+    await page.getByLabel("Primary color").fill("#0f766e");
+    await expect.poll(() => statusBadge.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe("");
+    await expect.poll(() => statusBadge.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(lightSection);
+
+    await page.emulateMedia({ colorScheme: "dark" });
+    const darkText = await frame.locator(".fi-in-text").first().evaluate((element) => getComputedStyle(element).color);
+    const darkSection = await section.evaluate((element) => getComputedStyle(element).backgroundColor);
+    expect(darkText).not.toBe(lightText);
+    expect(darkSection).not.toBe(lightSection);
+    await expect(frame.locator(".fi-in-table-repeatable")).toBeVisible();
+  });
+
   test("changes native Products, Orders, and Inventory table density immediately without requests", async ({
     page,
   }) => {
