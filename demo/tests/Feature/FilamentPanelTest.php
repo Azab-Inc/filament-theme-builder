@@ -45,6 +45,8 @@ class FilamentPanelTest extends TestCase
             ->assertSee('Number.isFinite', false)
             ->assertSee('fontAllowlist', false)
             ->assertSee('controlDefinitions', false)
+            ->assertSee("['form.product-name\\u0000background', { type: 'color', component: 'form', variants: ['default'], states: ['focus'] }]", false)
+            ->assertSee("['form.product-name\\u0000background', { selector: '.fi-fo-text-input .fi-input', property: 'background-color' }]", false)
             ->assertSee("candidate.property === 'density'", false)
             ->assertSee("'.fi-ta'", false)
             ->assertDontSee("'.fi-card'", false)

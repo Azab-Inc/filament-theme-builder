@@ -453,6 +453,7 @@ test.describe('forms and schemas showcase', () => {
 
     const acceptedMessage = await frame!.evaluate(() => (window as Window & { __ftbMessage: Record<string, any> }).__ftbMessage)
     const acceptedCount = await frame!.evaluate(() => (window as Window & { __ftbAccepted: number }).__ftbAccepted)
+    const productNameBackgroundBeforeForgedMessage = await productName.evaluate((element) => getComputedStyle(element).backgroundColor)
     acceptedMessage.theme.overrides = [{
       targetId: 'form.product-name',
       controlId: 'background',
@@ -466,6 +467,7 @@ test.describe('forms and schemas showcase', () => {
     await page.waitForTimeout(100)
     expect(await frame!.evaluate(() => (window as Window & { __ftbAccepted: number }).__ftbAccepted)).toBe(acceptedCount)
     await expect.poll(() => frame!.locator('#ftb-managed-theme').textContent()).toContain('#0f766e')
+    expect(await productName.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(productNameBackgroundBeforeForgedMessage)
   })
 
   test('interacts with wizard and tabbed product layouts', async ({ page }) => {
