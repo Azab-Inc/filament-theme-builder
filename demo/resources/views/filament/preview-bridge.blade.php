@@ -67,7 +67,11 @@
         const controlDefinitions = new Map([
             ['button.primary\u0000background', { type: 'color', component: 'button', variants: ['primary', 'secondary'], states: ['default', 'hover'] }],
             ['button.secondary\u0000background', { type: 'color', component: 'button', variants: ['primary', 'secondary'], states: ['default', 'hover'] }],
+            ['form.product-name\u0000background', { type: 'color', component: 'form', variants: ['default'], states: ['focus'] }],
             ['global.primary\u0000primary', { type: 'color', component: undefined, variants: [], states: [] }],
+        ]);
+        const formControlMappings = new Map([
+            ['form.product-name\u0000background', { selector: '.fi-fo-text-input .fi-input', property: 'background-color' }],
         ]);
         const overrideIdentities = new Set(controlDefinitions.keys());
         const resolveColorReference = (value) => {
@@ -223,6 +227,15 @@
                 } else if (candidate.property === 'radius') rules.push(`${selectors} { border-radius: ${radiusValues[candidate.value]}; }`);
                 else if (candidate.property === 'borderWidth') rules.push(`${selectors} { border-width: ${candidate.value}px; }`);
                 else if (candidate.property === 'shadow') rules.push(`${selectors} { box-shadow: ${shadowValues[candidate.value]}; }`);
+            }
+            const productNameOverrides = message.theme.overrides.filter((override) => override.targetId === 'form.product-name' && override.controlId === 'background');
+            for (const scope of ['global', 'component', 'variant', 'state']) {
+                const override = productNameOverrides.find((candidate) => candidate.scope === scope);
+                if (!override) continue;
+                const mapping = formControlMappings.get(`${override.targetId}\u0000${override.controlId}`);
+                if (!mapping) continue;
+                const selector = scope === 'state' ? `${mapping.selector}:focus` : mapping.selector;
+                rules.push(`${selector} { ${mapping.property}: ${override.value} !important; }`);
             }
             const style = document.getElementById(styleId) ?? document.createElement('style');
             style.id = styleId;

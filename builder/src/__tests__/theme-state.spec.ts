@@ -47,6 +47,33 @@ describe('theme state', () => {
     expect(theme.theme.colors.primary).toBe('#0f766e')
   })
 
+  it('edits and resets the Product name target through canonical history without copying inherited values', () => {
+    const store = createThemeState()
+    const request: ResolveRequest = {
+      targetId: 'form.product-name',
+      controlId: 'background',
+      componentId: 'form',
+      variantId: 'default',
+      stateId: 'focus',
+    }
+
+    store.setOverride({ targetId: 'form.product-name', controlId: 'background', scope: 'global', value: '#111827' })
+    store.setOverride({ targetId: 'form.product-name', controlId: 'background', scope: 'component', componentId: 'form', value: '#1f2937' })
+    store.setOverride({ targetId: 'form.product-name', controlId: 'background', scope: 'variant', componentId: 'form', variantId: 'default', value: '#374151' })
+    store.setOverride({ targetId: 'form.product-name', controlId: 'background', scope: 'state', componentId: 'form', variantId: 'default', stateId: 'focus', value: '#4b5563' })
+
+    expect(store.resolve(request)).toMatchObject({ value: '#4b5563', source: 'state' })
+    store.resetOverride(request)
+    expect(store.resolve(request)).toMatchObject({ value: '#374151', source: 'variant' })
+    store.undo()
+    expect(store.resolve(request)).toMatchObject({ value: '#4b5563', source: 'state' })
+    store.redo()
+    expect(store.resolve(request)).toMatchObject({ value: '#374151', source: 'variant' })
+    store.setOverride({ targetId: 'form.product-name', controlId: 'background', scope: 'component', componentId: 'form', value: '#0f766e' })
+    expect(store.resolve(request)).toMatchObject({ value: '#374151', source: 'variant' })
+    expect(store.theme.overrides.some((override) => override.scope === 'state')).toBe(false)
+  })
+
   it('records an explicit primary selection even when it equals the native default', () => {
     const theme = createThemeState()
 

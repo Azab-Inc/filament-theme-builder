@@ -345,12 +345,12 @@ Create a Forms & Schemas showcase containing every visually distinct first-party
 - [ ] `ProductEditorForm` demonstrates `SectionGridLayout`, `WizardStepsLayout`, and `TabbedFormLayout` as distinct surfaces, not identical API permutations.
 - [ ] Applicable default, filled, focused, disabled, and validation-error states have a deterministic representation.
 - [ ] Registry entries exist for the relevant themable surfaces.
-- [ ] Global/component/variant/state inheritance is demonstrable on representative form controls.
+- [x] Global/component/variant/state inheritance is demonstrable on the production `form.product-name` target (`.fi-fo-text-input .fi-input`, `background-color`) through the canonical resolver/store and the real focused forms showcase; evidence: `theme-registry.spec.ts`, `theme-resolver.spec.ts`, `theme-state.spec.ts`, and the Compose Playwright forms acceptance test.
 - [ ] Duplicate API permutations that render identically are not added just to inflate coverage.
 
 Implementation: `0aac781` (`Feature: add forms and schemas showcase`); verification: [`FormsShowcaseTest`](./demo/tests/Feature/Filament/Showcase/FormsShowcaseTest.php), `e2e/demo-showcase.spec.ts`.
 
-Remaining: native fixture and selector-only registry coverage now includes the verified Fieldset/Grid, Repeater, Radio, and ToggleButtons surfaces. FTB-011 remains in-progress because representative Global → Component → Variant → State inheritance has only the honest test-only `form.test.fixture` evidence; native Filament themability and forced-state controls remain outside this slice (FTB-016).
+Remaining: native fixture and selector-only registry coverage now includes the verified Fieldset/Grid, Repeater, Radio, and ToggleButtons surfaces. This slice adds one native editable target for Product name with strict allowlisted bridge projection and actual-focus evidence. FTB-011 remains in-progress because exhaustive first-party registry coverage, deterministic representations for every applicable state, and forced-state controls remain outstanding; forced-state controls remain outside this slice (FTB-016).
 
 ---
 

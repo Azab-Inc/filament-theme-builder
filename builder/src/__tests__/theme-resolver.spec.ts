@@ -69,6 +69,27 @@ describe('theme validation and resolution', () => {
     expect(resolveThemeValue(state, resolverRegistry, { ...request, targetId: 'form.control.text', stateId: 'server-validation' })).toMatchObject({ status: 'invalid-request' })
   })
 
+  it('resolves the production Product name target through global, component, variant, and focus state inheritance', () => {
+    const request: ResolveRequest = {
+      targetId: 'form.product-name',
+      controlId: 'background',
+      componentId: 'form',
+      variantId: 'default',
+      stateId: 'focus',
+    }
+    const overrides: ThemeOverride[] = [
+      { targetId: 'form.product-name', controlId: 'background', scope: 'global', value: '#111827' },
+      { targetId: 'form.product-name', controlId: 'background', scope: 'component', componentId: 'form', value: '#1f2937' },
+      { targetId: 'form.product-name', controlId: 'background', scope: 'variant', componentId: 'form', variantId: 'default', value: '#374151' },
+      { targetId: 'form.product-name', controlId: 'background', scope: 'state', componentId: 'form', variantId: 'default', stateId: 'focus', value: '#4b5563' },
+    ]
+
+    expect(resolveThemeValue(withOverrides(...overrides), registry, request)).toEqual({ status: 'resolved', value: '#4b5563', source: 'state' })
+    expect(resolveThemeValue(withOverrides(...overrides.slice(0, 3)), registry, { ...request, stateId: undefined })).toEqual({ status: 'resolved', value: '#374151', source: 'variant' })
+    expect(resolveThemeValue(withOverrides(...overrides.slice(0, 2)), registry, { ...request, stateId: undefined })).toEqual({ status: 'resolved', value: '#1f2937', source: 'component' })
+    expect(resolveThemeValue(withOverrides(overrides[0]!), registry, { ...request, stateId: undefined })).toEqual({ status: 'resolved', value: '#111827', source: 'global' })
+  })
+
   it('resets the form fixture child and follows a changed parent without copying values', () => {
     const parent: ThemeOverride = { targetId: 'form.test.fixture', controlId: 'background', scope: 'component', componentId: 'form', value: '#1f2937' }
     const child: ThemeOverride = { targetId: 'form.test.fixture', controlId: 'background', scope: 'variant', componentId: 'form', variantId: 'default', value: '#374151' }

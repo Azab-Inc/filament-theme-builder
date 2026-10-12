@@ -85,6 +85,7 @@ describe('theme registry', () => {
       'form.layout.repeater',
       'form.layout.tabs',
       'form.layout.wizard',
+      'form.product-name',
       'form.section',
       'global.primary',
       'infolist.entry.color',
@@ -117,6 +118,7 @@ describe('theme registry', () => {
       'form.layout.repeater',
       'form.layout.tabs',
       'form.layout.wizard',
+      'form.product-name',
       'form.section',
     ])
     expect(forms.every((entry) => entry.family === 'form' && entry.filamentCompatibility === '5.x')).toBe(true)
@@ -133,8 +135,27 @@ describe('theme registry', () => {
     expect(forms.find((entry) => entry.id === 'form.layout.fieldset')?.selectors).toEqual(['.fi-fieldset'])
     expect(forms.find((entry) => entry.id === 'form.layout.grid')?.selectors).toEqual(['.fi-grid'])
     expect(forms.find((entry) => entry.id === 'form.layout.repeater')?.selectors).toEqual(['.fi-fo-repeater'])
-    expect(forms.every((entry) => entry.controls.length === 0)).toBe(true)
-    expect(forms.every((entry) => entry.variants.length === 0 && entry.states.length === 0)).toBe(true)
+    expect(forms.filter((entry) => entry.id !== 'form.product-name').every((entry) => entry.controls.length === 0)).toBe(true)
+    expect(forms.filter((entry) => entry.id !== 'form.product-name').every((entry) => entry.variants.length === 0 && entry.states.length === 0)).toBe(true)
+  })
+
+  it('registers only the Product name input as an editable production form target', () => {
+    const registry = createThemeRegistry()
+    const target = registry.entries.find((entry) => entry.id === 'form.product-name')
+
+    expect(target).toMatchObject({
+      family: 'form',
+      selectors: ['.fi-fo-text-input .fi-input'],
+      variants: ['default'],
+      states: ['focus'],
+      controls: [{ id: 'background', valueType: 'color' }],
+    })
+    expect(registry.entries.filter((entry) => entry.controls.length > 0).map((entry) => entry.id)).toEqual([
+      'button.primary',
+      'button.secondary',
+      'form.product-name',
+      'global.primary',
+    ])
   })
 
   it('returns unique, no-match, and ambiguous lookup results deterministically', () => {
@@ -176,7 +197,7 @@ describe('theme registry', () => {
   it('allows selector-only surfaces without inventing controls or state metadata', () => {
     const registry = createThemeRegistry()
 
-    expect(registry.entries.filter((entry) => entry.family === 'form').every((entry) => {
+    expect(registry.entries.filter((entry) => entry.family === 'form' && entry.id !== 'form.product-name').every((entry) => {
       return entry.controls.length === 0 && entry.variants.length === 0 && entry.states.length === 0
     })).toBe(true)
   })

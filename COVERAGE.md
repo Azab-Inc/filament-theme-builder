@@ -119,7 +119,13 @@ domain, resources, and relationship workflows.
   `TabbedFormLayout`, `RepeaterContactLayout`, `RadioContactControl`, and
   `ToggleButtonsStatusControl` surfaces; its image representation is private local storage restricted to
   JPEG/PNG and submissions are not persisted. The FTB-006 semantic
-  registry/inheritance remains unresolved for native themability and inheritance.
+  registry/inheritance remains partial for native themability, with the Product
+  name text input as the single verified editable target. `form.product-name`
+  maps `.fi-fo-text-input .fi-input` to `background-color`; Global → Component
+  → Variant → State (focus) inheritance, reset-to-inherit, forged-scope
+  rejection, and foundation preservation are covered by the builder unit tests
+  and the Compose Playwright forms acceptance test. No forced-state control is
+  claimed.
 
 Builder registry slice evidence (2026-10-12): shared targets are
 `form.section` (`.fi-section`), `form.field` (`.fi-fo-field`),
@@ -142,9 +148,9 @@ production form entries are selector-only coverage: they intentionally expose
 empty controls, variants, and states because no native Filament theme control
 mapping has been proven. Resolver/reset/parent-change behavior uses the
 separate `form.test.fixture` in `builder/src/__tests__/theme-resolver.spec.ts`;
-that deterministic fixture is test-only and does not claim native Filament
-themability. Fixture names remain evidence only; no forced-state controls or
-editor behavior is claimed.
+that deterministic fixture remains test-only; the Product name target is the
+only production control mapping. Fixture names remain evidence only; no
+forced-state controls are claimed.
 - **FTB-012 tables:** `TablesShowcase` provides a compact read-only
   `ProductsTableFixture` backed by deterministic seeded products and order
   counts, plus native `OrdersTableFixture` and `InventoryTableFixture` widgets.

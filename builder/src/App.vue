@@ -9,6 +9,7 @@ import type {
   PaletteShade,
   ThemeMode,
 } from '@/models/foundations.model'
+import type { ResolveRequest, ThemeOverride, ThemeScope } from '@/models/theme.model'
 import { CURATED_FONT_CHOICES, PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
 import { createDefaultFoundationState } from '@/services/foundation-defaults'
 import { lookupFoundationMapping } from '@/registry/filament-foundation-inventory'
@@ -69,6 +70,37 @@ const primaryColor = computed({
   get: () => theme.theme.colors.primary,
   set: (color: string) => theme.setPrimaryColor(color),
 })
+const productNameTarget = {
+  targetId: 'form.product-name',
+  controlId: 'background',
+  componentId: 'form',
+  variantId: 'default',
+  stateId: 'focus',
+} as const
+const productNameScopes: ReadonlyArray<{ scope: ThemeScope; label: string }> = [
+  { scope: 'global', label: 'Global' },
+  { scope: 'component', label: 'Component' },
+  { scope: 'variant', label: 'Variant' },
+  { scope: 'state', label: 'State (focus)' },
+]
+const productNameRows = computed(() => productNameScopes.map((row) => {
+  const request: ResolveRequest = {
+    targetId: productNameTarget.targetId,
+    controlId: productNameTarget.controlId,
+    ...(row.scope === 'component' || row.scope === 'variant' || row.scope === 'state' ? { componentId: productNameTarget.componentId } : {}),
+    ...(row.scope === 'variant' || row.scope === 'state' ? { variantId: productNameTarget.variantId } : {}),
+    ...(row.scope === 'state' ? { stateId: productNameTarget.stateId } : {}),
+  }
+  const resolution = theme.resolve(request)
+  const override = theme.theme.overrides.find((candidate) => sameOverrideKey(candidate, row.scope))
+  return {
+    ...row,
+    request,
+    value: resolution.status === 'resolved' && typeof resolution.value === 'string' ? resolution.value : '',
+    source: resolution.status === 'resolved' ? resolution.source : 'unresolved',
+    explicit: override !== undefined,
+  }
+}))
 
 function postTheme(): void {
   const target = iframe.value?.contentWindow
@@ -261,6 +293,34 @@ function downloadLegacyRecovery(): void {
   link.download = 'filament-theme-legacy-recovery.json'
   link.click()
   URL.revokeObjectURL(url)
+}
+
+function setProductNameValue(row: (typeof productNameRows.value)[number], event: Event): void {
+  const value = (event.target as HTMLInputElement).value
+  if (!/^#[\da-f]{6}$/i.test(value)) return
+  const override: ThemeOverride = {
+    targetId: productNameTarget.targetId,
+    controlId: productNameTarget.controlId,
+    scope: row.scope,
+    value,
+    ...(row.scope === 'component' || row.scope === 'variant' || row.scope === 'state' ? { componentId: productNameTarget.componentId } : {}),
+    ...(row.scope === 'variant' || row.scope === 'state' ? { variantId: productNameTarget.variantId } : {}),
+    ...(row.scope === 'state' ? { stateId: productNameTarget.stateId } : {}),
+  }
+  theme.setOverride(override)
+}
+
+function resetProductNameValue(row: (typeof productNameRows.value)[number]): void {
+  theme.resetOverride(row.request)
+}
+
+function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
+  return override.targetId === productNameTarget.targetId
+    && override.controlId === productNameTarget.controlId
+    && override.scope === scope
+    && (scope === 'global' || override.componentId === productNameTarget.componentId)
+    && (scope === 'global' || scope === 'component' || override.variantId === productNameTarget.variantId)
+    && (scope !== 'state' || override.stateId === productNameTarget.stateId)
 }
 </script>
 
@@ -545,6 +605,31 @@ function downloadLegacyRecovery(): void {
           </select>
           <span role="status" aria-live="polite">{{ statusFor('shadow') }}</span>
           <button type="button" aria-label="Reset shadow" @click="reset('shadow')">Reset</button>
+        </div>
+      </fieldset>
+    </section>
+    <section class="component-controls grid gap-4" aria-labelledby="component-controls-heading">
+      <h2 id="component-controls-heading">Component controls</h2>
+      <p>Product name input · <code>.fi-fo-text-input .fi-input</code> · background color</p>
+      <fieldset class="grid gap-2 rounded-lg border border-zinc-200 p-4">
+        <legend>Global → Component → Variant → State</legend>
+        <div
+          v-for="row in productNameRows"
+          :key="row.scope"
+          class="component-control-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]"
+        >
+          <label :for="`product-name-${row.scope}-background`">Product name {{ row.label }} background</label>
+          <input
+            :id="`product-name-${row.scope}-background`"
+            type="text"
+            :aria-label="`Product name ${row.scope} background`"
+            :value="row.value"
+            @input="setProductNameValue(row, $event)"
+          />
+          <span role="status" :data-theme-source="row.source">{{ row.explicit ? `Explicit (${row.source})` : `Inherited from ${row.source}` }}</span>
+          <button type="button" :aria-label="`Reset Product name ${row.scope} background`" @click="resetProductNameValue(row)">
+            Reset to inherit
+          </button>
         </div>
       </fieldset>
     </section>

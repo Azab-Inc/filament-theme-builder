@@ -74,6 +74,23 @@ function infolistEntry(id: string, label: string, selector: string): RegistryEnt
   return { ...formEntry(id, label, [selector]), family: 'infolist' }
 }
 
+const productNameInput: RegistryEntry = {
+  id: 'form.product-name',
+  label: 'Product name input',
+  family: 'form',
+  selectors: ['.fi-fo-text-input .fi-input'],
+  controls: [
+    {
+      id: 'background',
+      valueType: 'color',
+      constraints: { pattern: /^#[\da-f]{6}$/i },
+    },
+  ],
+  variants: ['default'],
+  states: ['focus'],
+  filamentCompatibility: SUPPORTED_FILAMENT_COMPATIBILITY,
+}
+
 const formEntries: readonly RegistryEntry[] = [
   formEntry('form.control.date', 'Date control', ['.fi-fo-date-time-picker']),
   formEntry('form.control.file-upload', 'File upload control', ['.fi-fo-file-upload']),
@@ -102,7 +119,7 @@ const infolistEntries: readonly RegistryEntry[] = [
 ]
 
 export function createThemeRegistry(): FilamentRegistry {
-  return validateRegistry([primaryButton, secondaryButton, legacyPrimary, ...formEntries, ...infolistEntries])
+  return validateRegistry([primaryButton, secondaryButton, legacyPrimary, productNameInput, ...formEntries, ...infolistEntries])
 }
 
 export function validateRegistry(entries: readonly RegistryEntry[]): FilamentRegistry {
@@ -171,7 +188,7 @@ function validateUniqueKeys(keys: readonly string[], field: string, entryId: str
 }
 
 function isSelector(value: unknown): value is string {
-  return typeof value === 'string' && value === value.trim() && /^(?:\.fi-[A-Za-z0-9_-]+)+$/.test(value)
+  return typeof value === 'string' && value === value.trim() && /^(?:\.fi-[A-Za-z0-9_-]+)(?:(?:\s+)?\.fi-[A-Za-z0-9_-]+)*$/.test(value)
 }
 
 function isValidControlValue(value: unknown, control: RegistryControl): boolean {

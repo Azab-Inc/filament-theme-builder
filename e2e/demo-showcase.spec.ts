@@ -1,6 +1,7 @@
 import { expect, test, type Page, type StorageState } from '@playwright/test'
 
-const demoBaseUrl = process.env.DEMO_BASE_URL ?? 'http://127.0.0.1:4174'
+const composeBaseUrl = process.env.COMPOSE_BASE_URL ?? 'http://127.0.0.1:4175'
+const demoBaseUrl = process.env.DEMO_BASE_URL ?? (process.env.COMPOSE_E2E === '1' ? composeBaseUrl : 'http://127.0.0.1:4174')
 const uploadBoundaryTestsEnabled = process.env.DEMO_UPLOAD_TEST_LIMITS === '1'
 
 let authState: StorageState
@@ -412,6 +413,59 @@ test.describe('forms and schemas showcase', () => {
     await expect(page.getByLabel('Product reference')).toBeDisabled()
     await page.getByLabel('Product name').focus()
     await expect(page.getByLabel('Product name')).toBeFocused()
+  })
+
+  test('projects the Product name inheritance controls onto the real focused input', async ({ page }) => {
+    test.skip(process.env.COMPOSE_E2E !== '1', 'This acceptance test targets the Compose gateway.')
+    await page.goto(composeBaseUrl)
+    const frame = page.frame({ url: /\/demo\/admin/ })
+    expect(frame).toBeTruthy()
+    await frame!.goto(`${composeBaseUrl}/demo/admin/forms-showcase`)
+    const productName = frame!.getByLabel('Product name')
+    await expect(productName).toHaveValue('Considered Field Notebook')
+
+    await page.locator('input[aria-label="Product name global background"]').fill('#111827')
+    await expect(page.getByRole('status').filter({ hasText: 'Explicit' }).first()).toBeVisible()
+    await expect.poll(() => productName.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(/17, 24, 39/)
+
+    await page.locator('input[aria-label="Product name component background"]').fill('#1f2937')
+    await page.locator('input[aria-label="Product name variant background"]').fill('#374151')
+    await expect.poll(() => productName.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(/55, 65, 81/)
+
+    await page.locator('input[aria-label="Product name state background"]').fill('#4b5563')
+    await productName.focus()
+    await expect.poll(() => productName.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(/75, 85, 99/)
+
+    await page.getByRole('button', { name: 'Reset Product name state background' }).click()
+    await expect.poll(() => productName.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(/55, 65, 81/)
+
+    await frame!.evaluate(() => {
+      const capture = window as Window & { __ftbMessage?: Record<string, any>; __ftbAccepted?: number }
+      capture.__ftbAccepted = 0
+      window.addEventListener('message', (event) => {
+        if (event.data?.type === 'ftb:theme:update') capture.__ftbMessage = event.data
+      })
+      window.addEventListener('ftb:preview-message-accepted', () => { capture.__ftbAccepted! += 1 })
+    })
+    await page.getByLabel('Primary color').fill('#0f766e')
+    await expect.poll(() => frame!.locator('#ftb-managed-theme').textContent()).toContain('#0f766e')
+    await expect.poll(() => frame!.evaluate(() => (window as Window & { __ftbAccepted: number }).__ftbAccepted)).toBeGreaterThan(0)
+
+    const acceptedMessage = await frame!.evaluate(() => (window as Window & { __ftbMessage: Record<string, any> }).__ftbMessage)
+    const acceptedCount = await frame!.evaluate(() => (window as Window & { __ftbAccepted: number }).__ftbAccepted)
+    acceptedMessage.theme.overrides = [{
+      targetId: 'form.product-name',
+      controlId: 'background',
+      scope: 'component',
+      componentId: 'attacker',
+      value: '#dc2626',
+    }]
+    await page.evaluate((payload) => {
+      document.querySelector<HTMLIFrameElement>('iframe[title="Filament preview"]')!.contentWindow!.postMessage(payload, location.origin)
+    }, acceptedMessage)
+    await page.waitForTimeout(100)
+    expect(await frame!.evaluate(() => (window as Window & { __ftbAccepted: number }).__ftbAccepted)).toBe(acceptedCount)
+    await expect.poll(() => frame!.locator('#ftb-managed-theme').textContent()).toContain('#0f766e')
   })
 
   test('interacts with wizard and tabbed product layouts', async ({ page }) => {

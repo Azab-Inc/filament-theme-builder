@@ -162,7 +162,7 @@ describe('App', () => {
   it('exposes accessible foundation sections without replacing the preview controls', () => {
     const wrapper = mount(App, { global: { plugins: [createPinia()] } })
 
-    expect(wrapper.get('h2').text()).toBe('Foundations')
+    expect(wrapper.get('section.foundations h2').text()).toBe('Foundations')
     expect(wrapper.get('input[aria-label="primary shade 500 override"]')).toBeTruthy()
     expect(wrapper.get('button[aria-label="Light mode"]').attributes('aria-pressed')).toBe('true')
     expect(wrapper.get('select[aria-label="Density"], select#density')).toBeTruthy()
@@ -186,10 +186,10 @@ describe('App', () => {
     expect(wrapper.get('section.foundations').classes()).toEqual(
       expect.arrayContaining(['grid', 'gap-4']),
     )
-    expect(wrapper.get('fieldset').classes()).toEqual(
+    expect(wrapper.get('section.foundations fieldset').classes()).toEqual(
       expect.arrayContaining(['grid', 'gap-4']),
     )
-    expect(wrapper.get('.foundation-row').classes()).toEqual(
+    expect(wrapper.get('section.foundations .foundation-row').classes()).toEqual(
       expect.arrayContaining([
         'grid',
         'grid-cols-1',
