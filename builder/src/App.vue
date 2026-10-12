@@ -12,6 +12,7 @@ import type {
 import { CURATED_FONT_CHOICES, PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
 import { createDefaultFoundationState } from '@/services/foundation-defaults'
 import { lookupFoundationMapping } from '@/registry/filament-foundation-inventory'
+import { serializeCanonicalTheme } from '@/services/theme-serialization'
 import { useThemeStore } from '@/stores/theme'
 import ThrowawayThemePrototype from '@/components/ThrowawayThemePrototype.vue'
 
@@ -217,6 +218,18 @@ function fontName(name: 'body' | 'heading' | 'mono'): string {
 function reset(path: string): void {
   theme.resetFoundation(path)
 }
+
+function exportCanonicalJson(): void {
+  const blob = new Blob([JSON.stringify(serializeCanonicalTheme(theme.theme), null, 2)], {
+    type: 'application/json',
+  })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'filament-theme.json'
+  link.click()
+  URL.revokeObjectURL(url)
+}
 </script>
 
 <template>
@@ -233,6 +246,9 @@ function reset(path: string): void {
         >Primary color
         <input v-model="primaryColor" type="color" aria-label="Primary color" />
       </label>
+      <button type="button" aria-label="Export theme JSON" @click="exportCanonicalJson">
+        Export JSON
+      </button>
       <button type="button" aria-label="Undo" :disabled="!canUndo" @click="undo">Undo</button>
       <button type="button" aria-label="Redo" :disabled="!canRedo" @click="redo">Redo</button>
     </header>

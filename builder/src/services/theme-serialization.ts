@@ -1,6 +1,6 @@
 import type { FilamentRegistry, RegistryEntry } from '@/models/theme-registry.model'
 import { migrateThemeState } from '@/models/theme.model'
-import type { ResolveRequest, ThemeOverride, ThemeScope, ThemeState, ThemeStateV2 } from '@/models/theme.model'
+import type { ResolveRequest, ThemeOverride, ThemeScope, ThemeState, ThemeStateV2, ThemeStateV3 } from '@/models/theme.model'
 import { resolveThemeValue } from '@/services/theme-resolver'
 import { validateResolveRequest, validateThemeState } from '@/services/theme-validation'
 
@@ -13,6 +13,16 @@ export type ThemeSerializationResult =
 export type ThemeDeserializeResult =
   | { valid: true; state: ThemeState }
   | { valid: false; error: string }
+
+/**
+ * Return the public, lossless representation used by JSON export.
+ *
+ * Unlike local persistence, public export retains generated palette shades so
+ * the exported document exactly describes the rendered foundation state.
+ */
+export function serializeCanonicalTheme(state: unknown): ThemeStateV3 {
+  return structuredClone(JSON.parse(JSON.stringify(state)) as ThemeStateV3)
+}
 
 export function serializeTheme(
   state: ThemeState,

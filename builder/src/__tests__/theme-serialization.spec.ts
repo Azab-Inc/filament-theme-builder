@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest'
 import type { FilamentRegistry } from '@/models/theme-registry.model'
 import type { ResolveRequest, ThemeOverride, ThemeState } from '@/models/theme.model'
 import { createThemeRegistry, validateRegistry } from '@/registry/theme-registry'
-import { deserializeTheme, serializeTheme } from '@/services/theme-serialization'
+import { createDefaultThemeState } from '@/services/foundation-defaults'
+import { deserializeTheme, serializeCanonicalTheme, serializeTheme } from '@/services/theme-serialization'
 
 const registry = createThemeRegistry()
 const expandedRegistry: FilamentRegistry = validateRegistry(registry.entries.map((entry) => entry.id === 'button.primary'
@@ -123,6 +124,20 @@ describe('theme serialization', () => {
     expect(deserializeTheme('{"schemaVersion":2,"colors":null,"overrides":[]}', registry)).toMatchObject({ valid: false, error: expect.stringMatching(/invalid/i) })
     expect(deserializeTheme('[]', registry)).toMatchObject({ valid: false, error: expect.stringMatching(/invalid/i) })
     expect(deserializeTheme('{not-json', registry)).toMatchObject({ valid: false, error: expect.stringMatching(/invalid/i) })
+  })
+
+  it('exports the canonical foundation state including generated palette shades', () => {
+    const theme = createDefaultThemeState()
+    theme.foundations.palettes.primary.base = '#0f766e'
+    theme.foundations.palettes.primary.shades[500] = '#123456'
+
+    const exported = serializeCanonicalTheme(theme)
+
+    expect(exported.schemaVersion).toBe(3)
+    expect(exported.foundations.palettes.primary.base).toBe('#0f766e')
+    expect(exported.foundations.palettes.primary.shades[500]).toBe('#123456')
+    expect(exported.foundations.spacing['0.5']).toBeDefined()
+    expect(exported).not.toBe(theme)
   })
 
   it('rejects an invalid serialization scope request before traversal', () => {

@@ -120,12 +120,15 @@
                 const selectors = candidate.selectors.join(',');
                 if (candidate.variable) rules.push(`:root { ${candidate.variable}: ${candidate.value}; }`);
                 if (!candidate.id.startsWith('palette.')) rules.push(`:root { --ftb-foundation-${candidate.id.replaceAll('.', '-')}: ${candidate.value}; }`);
-                if (candidate.id.startsWith('palette.') && candidate.id.includes('.shades.')) rules.push(`${selectors} { --ftb-${candidate.id.replaceAll('.', '-')}: var(${candidate.variable}); }`);
+                if (candidate.id.startsWith('palette.') && candidate.id.includes('.shades.')) rules.push(`${selectors} { ${candidate.variable}: ${candidate.value}; --ftb-${candidate.id.replaceAll('.', '-')}: var(${candidate.variable}); }`);
                 else if (candidate.id.startsWith('palette.') && candidate.id.endsWith('.base')) rules.push(`${selectors} { --ftb-palette: var(${candidate.variable}); }`);
                 else if (candidate.property === 'color') {
                     const property = candidate.id.startsWith('surface.') ? 'background-color' : candidate.id.startsWith('border.') ? 'border-color' : 'color';
                     rules.push(`${selectors} { ${property}: ${candidate.value}; }`);
-                } else if (candidate.property === 'fontFamily') rules.push(`${selectors} { font-family: ${candidate.value}; }`);
+                } else if (candidate.property === 'fontFamily') {
+                    const family = candidate.value.includes(',') ? candidate.value : `"${candidate.value.replaceAll('"', '\\"')}"`;
+                    rules.push(`${selectors} { font-family: ${family}; }`);
+                }
                 else if (candidate.property === 'spacing') rules.push(`${selectors} { padding-block: ${cssValue(candidate.value)}; }`);
                 else if (candidate.property === 'density') {
                     const density = { compact: ['32px', '0.5rem'], default: ['40px', '0.75rem'], spacious: ['48px', '1rem'] }[candidate.value];
