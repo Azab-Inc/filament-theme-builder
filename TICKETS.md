@@ -11,6 +11,7 @@
 - When a ticket is implemented, update its status and check its acceptance criteria.
 - If a ticket discovers new first-party Filament UI coverage, add that coverage to COVERAGE.md and add or split a ticket rather than silently expanding scope.
 - New theme-control coverage should generally include registry coverage, a showcase fixture, and automated verification.
+- Deferred color-picker and named-palette design: [FTB-051](#ftb-051) / [GitHub #51](https://github.com/Azab-Inc/filament-theme-builder/issues/51).
 
 ## Dependency map
 
@@ -1394,3 +1395,42 @@ visual references intact.
 - [ ] Playwright verifies each production mode at responsive widths, A→B→A state/draft persistence, keyboard-accessible mode switching, real state-to-iframe updates, and iframe document continuity.
 - [ ] After approval and verification, remove the prototype switcher/query path from production and replace it with the real A/B toggle; preserve prototype visual references A/B/C unchanged. No prototype-only content leaks into production; C is not selectable as a production mode.
 - [ ] No third-party dependency or new MCP capability is introduced; existing functionality remains the priority.
+
+---
+
+<a id="ftb-051"></a>
+
+## FTB-051 — Add native color pickers and named Tailwind palette choices
+
+**Scope slug:** `color-picker-tailwind-palette-selection`
+
+**Priority:** high
+
+**Status:** blocked
+
+**Blocked by:** FTB-003 functionality stabilization; current Phase 1/demo-first gate ([FTB-009A](#ftb-009), [FTB-009B](#ftb-009b), [FTB-010](#ftb-010), [FTB-011](#ftb-011), [FTB-013](#ftb-013), [FTB-014](#ftb-014), [FTB-015](#ftb-015)); remaining Phase 1 requirements [FTB-016](#ftb-016), [FTB-017](#ftb-017), and [FTB-018](#ftb-018); existing foundation/control projection stabilization work; owner decision on the exact Tailwind palette source/version and licensing/attribution recommendation in spec §2; verification/closure of the existing accepted hex/alpha behavior as noted in spec §9. FTB-012 remains partial only for density integration and is not a gate blocker.
+
+**Spec:** [Color Picker and Tailwind Palette Selection](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md), especially [field coverage](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#1-user-visible-behavior-and-field-coverage), [palette source/version decision](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#2-palette-contract-and-explicit-provenance-decision), [editing/validation semantics](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#3-editing-validation-and-preservation-semantics), [accessibility](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#4-accessibility-and-interaction-contract), [state and preview projection](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#5-state-preview-bridge-and-projection-boundary), [responsive/performance](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#6-responsive-behavior-and-performance), [unit and Playwright verification](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#7-observable-test-seams-and-acceptance-verification), [failure/compatibility](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#8-compatibility-failure-and-operational-behavior), [blockers](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#9-sequencing-and-blockers), and [out of scope](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#10-out-of-scope).
+
+**GitHub issue:** [#51](https://github.com/Azab-Inc/filament-theme-builder/issues/51)
+
+**Review fixed point:** `f4b8228923af1d08447588b38b8d447b1c6705b7` (planning baseline only; refresh before implementation review).
+
+### What to build
+
+Add a native browser color picker and a searchable named Tailwind color palette button to every existing editable color field. A named choice immediately sets only that field, while preserving its current label, ID, mode, validation, reset/undo/redo, persistence, and projection behavior. Keep CSS variable/token references intact unless the user explicitly replaces them. The local palette dataset must be deterministic and dependency-free. The feature remains blocked until all listed delivery gates and the palette provenance/version decision are resolved.
+
+### Acceptance criteria
+
+- [ ] Every existing editable color field—including palette bases/editable shades, page/surface, sidebar, topbar, card/elevated, input, borders, and text colors, with each existing light/dark value—exposes a native picker and a named-palette button without changing existing labels, field IDs, or mode behavior. See [§1](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#1-user-visible-behavior-and-field-coverage).
+- [ ] The palette is accessible by family and shade, searchable by family/shade/full token name, includes the approved 50–950 stops, applies a chosen name immediately to the targeted field, and behaves deterministically. See [§2](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#2-palette-contract-and-explicit-provenance-decision).
+- [ ] Exact upstream palette source/version, data snapshot, license, and attribution are recorded and explicitly approved; the implementation adds no runtime dependency or network request for palette data. See [§2](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#2-palette-contract-and-explicit-provenance-decision) and [§8](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#8-compatibility-failure-and-operational-behavior).
+- [ ] Existing valid hex and alpha handling, invalid/incomplete input behavior, recovery, reset, one-edit undo/redo, persistence, and validation semantics are preserved. See [§3](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#3-editing-validation-and-preservation-semantics).
+- [ ] Opening or dismissing the picker never silently rewrites CSS variable/token references; native picker incompatibility leaves the existing value unchanged. See [§3](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#3-editing-validation-and-preservation-semantics).
+- [ ] Keyboard navigation, visible focus, field-specific accessible names, Escape, outside-click dismissal, focus restoration, and narrow viewport/reflow behavior pass accessibility verification. See [§4](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#4-accessibility-and-interaction-contract) and [§6](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#6-responsive-behavior-and-performance).
+- [ ] Valid selections use the existing canonical state and validated preview bridge path; no unsupported selectors/tokens, direct style mutation, schema change, or invalid projection is introduced. See [§5](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#5-state-preview-bridge-and-projection-boundary).
+- [ ] Unit/component tests and Playwright tests cover complete field inventory, data/search, input validation, token preservation, modes, reset/history/persistence, mapped preview behavior, keyboard/dismissal, responsive behavior, and no generated arbitrary Tailwind class strings. See [§7](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#7-observable-test-seams-and-acceptance-verification).
+- [ ] No new MCP operation is introduced; capability inventory records this UI-only enhancement, and any existing AI edit path remains subject to shared validation/authorization/confirmation rules. See [§7](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#7-observable-test-seams-and-acceptance-verification).
+- [ ] No new color fields, CSS generation/projection targets, backend services, or third-party dependency are added. See [§10](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#10-out-of-scope).
+
+---
