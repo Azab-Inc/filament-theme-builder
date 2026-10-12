@@ -5,9 +5,9 @@ namespace App\Filament\Widgets;
 use App\Filament\Support\DashboardMetrics;
 use Filament\Widgets\ChartWidget;
 
-class RevenueOrdersChart extends ChartWidget
+class RevenueOrdersChartWidget extends ChartWidget
 {
-    protected int|string|array $columnSpan = ['@xl' => 2, '!@lg' => 2];
+    protected int|string|array $columnSpan = ['default' => 1, 'xl' => 2];
 
     protected ?string $heading = 'Revenue and orders';
 

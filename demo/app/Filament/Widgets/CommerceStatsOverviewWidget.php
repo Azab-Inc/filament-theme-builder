@@ -6,7 +6,7 @@ use App\Filament\Support\DashboardMetrics;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
-class CommerceStatsOverview extends StatsOverviewWidget
+class CommerceStatsOverviewWidget extends StatsOverviewWidget
 {
     protected int|string|array $columnSpan = 'full';
 

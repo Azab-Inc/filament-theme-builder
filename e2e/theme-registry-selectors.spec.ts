@@ -51,3 +51,24 @@ test('verified FTB-014 selectors target native action, modal, and notification s
   await expect(page.locator('.fi-no-notification')).toHaveCount(1)
   await expect(page.locator('.fi-no-notification.fi-status-success')).toBeVisible()
 })
+
+test('verified FTB-015 selectors target dashboard and navigation surfaces', async ({ page }) => {
+  await page.goto(`${demoBaseUrl}/demo/admin/login`)
+  await expect(page.locator('.fi-simple-page')).toHaveCount(1)
+  await page.locator('#form\\.email').fill('user')
+  await page.locator('#form\\.password').fill('password')
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  await page.waitForURL(`${demoBaseUrl}/demo/admin`)
+
+  await expect(page.locator('.fi-wi-stats-overview')).toHaveCount(1)
+  await expect(page.locator('.fi-wi-chart')).toHaveCount(1)
+  await expect(page.locator('.fi-wi-table')).toHaveCount(2)
+  await expect(page.locator('.fi-sidebar')).toHaveCount(1)
+  await expect(page.locator('.fi-sidebar-item-badge-ctn')).not.toHaveCount(0)
+  await expect(page.locator('.fi-topbar')).toHaveCount(1)
+
+  await page.goto(`${demoBaseUrl}/demo/admin/showcase`)
+  await expect(page.locator('.fi-ftb-tenant-switcher')).toHaveCount(1)
+  await page.keyboard.press('Control+K')
+  await expect(page.locator('.fi-global-search')).toHaveCount(1)
+})

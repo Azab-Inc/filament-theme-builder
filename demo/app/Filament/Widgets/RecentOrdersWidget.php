@@ -10,9 +10,9 @@ use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Illuminate\Support\Collection;
 
-class RecentOrdersTable extends TableWidget
+class RecentOrdersWidget extends TableWidget
 {
-    protected int|string|array $columnSpan = ['@xl' => 2, '!@lg' => 2];
+    protected int|string|array $columnSpan = ['default' => 1, 'xl' => 2];
 
     public function table(Table $table): Table
     {

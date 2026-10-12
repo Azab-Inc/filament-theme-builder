@@ -3,10 +3,10 @@
 namespace Tests\Feature\Filament;
 
 use App\Filament\Support\DashboardMetrics;
-use App\Filament\Widgets\CommerceStatsOverview;
-use App\Filament\Widgets\LowStockProductsTable;
-use App\Filament\Widgets\RecentOrdersTable;
-use App\Filament\Widgets\RevenueOrdersChart;
+use App\Filament\Widgets\CommerceStatsOverviewWidget;
+use App\Filament\Widgets\LowStockWidget;
+use App\Filament\Widgets\RecentOrdersWidget;
+use App\Filament\Widgets\RevenueOrdersChartWidget;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\Product;
@@ -61,20 +61,20 @@ class DashboardShowcaseTest extends TestCase
 
         $this->get('/demo/admin')->assertOk();
 
-        $stats = Livewire::test(CommerceStatsOverview::class)
+        $stats = Livewire::test(CommerceStatsOverviewWidget::class)
             ->assertSeeInOrder(['Total revenue', '$406.00', 'Orders', '2', 'Customers', '2', 'Products', '2', '1 low-stock item']);
         $this->assertSame(4, substr_count($stats->html(), 'fi-wi-stats-overview-stat-content'));
-        $chart = Livewire::test(RevenueOrdersChart::class)->assertSee('Revenue and orders')->assertSee('Oct 10');
-        $chartData = (new ReflectionClass(RevenueOrdersChart::class))->getMethod('getData');
+        $chart = Livewire::test(RevenueOrdersChartWidget::class)->assertSee('Revenue and orders')->assertSee('Oct 10');
+        $chartData = (new ReflectionClass(RevenueOrdersChartWidget::class))->getMethod('getData');
         $chartData->setAccessible(true);
         $data = $chartData->invoke($chart->instance());
         $this->assertSame(['Oct 4', 'Oct 5', 'Oct 6', 'Oct 7', 'Oct 8', 'Oct 9', 'Oct 10'], $data['labels']);
         $this->assertSame([0, 0, 0, 32700, 7900, 0, 0], $data['datasets'][0]['data']);
         $this->assertSame([0, 0, 0, 1, 1, 0, 0], $data['datasets'][1]['data']);
 
-        Livewire::test(RecentOrdersTable::class)
+        Livewire::test(RecentOrdersWidget::class)
             ->assertSee('Recent orders')->assertSee('DEMO-ORDER-1002')->assertSee('Oct 8, 2026')->assertSee('shipped')->assertSee('/demo/admin/orders/');
-        Livewire::test(LowStockProductsTable::class)
+        Livewire::test(LowStockWidget::class)
             ->assertSee('Low-stock products')->assertSee('DEMO-LAMP-001')->assertSee('8')->assertSee('Low stock')->assertSee('/demo/admin/products/');
     }
 
@@ -85,7 +85,7 @@ class DashboardShowcaseTest extends TestCase
         $property->setAccessible(true);
         $registeredWidgets = $property->getValue($panel);
 
-        foreach ([CommerceStatsOverview::class, RevenueOrdersChart::class, RecentOrdersTable::class, LowStockProductsTable::class] as $widget) {
+        foreach ([CommerceStatsOverviewWidget::class, RevenueOrdersChartWidget::class, RecentOrdersWidget::class, LowStockWidget::class] as $widget) {
             $this->assertCount(1, array_filter($registeredWidgets, fn (string $registered): bool => $registered === $widget));
         }
     }
@@ -124,8 +124,8 @@ class DashboardShowcaseTest extends TestCase
 
         $this->assertNull($metrics->recentOrders()->firstWhere('number', 'DEMO-ORDER-1002')->customer);
         $this->assertSame(0, $metrics->lowStockProducts()->firstWhere('sku', 'DEMO-NO-INVENTORY')->dashboard_inventory_quantity);
-        Livewire::test(RecentOrdersTable::class)->assertSee('Guest');
-        Livewire::test(LowStockProductsTable::class)->assertSee('DEMO-NO-INVENTORY')->assertSee('0');
+        Livewire::test(RecentOrdersWidget::class)->assertSee('Guest');
+        Livewire::test(LowStockWidget::class)->assertSee('DEMO-NO-INVENTORY')->assertSee('0');
     }
 
     public function test_dashboard_metrics_are_safe_with_no_related_records(): void
@@ -147,7 +147,7 @@ class DashboardShowcaseTest extends TestCase
 
     public function test_dashboard_tables_show_accessible_empty_states_without_related_records(): void
     {
-        Livewire::test(RecentOrdersTable::class)->assertSee('No recent orders');
-        Livewire::test(LowStockProductsTable::class)->assertSee('No low-stock products');
+        Livewire::test(RecentOrdersWidget::class)->assertSee('No recent orders');
+        Livewire::test(LowStockWidget::class)->assertSee('No low-stock products');
     }
 }

@@ -3,15 +3,23 @@
 namespace Tests\Feature\Filament\Showcase;
 
 use App\Filament\Pages\Showcase\ActionsShowcase;
+use App\Filament\Pages\Showcase\DemoShowcaseDashboard;
 use App\Filament\Pages\Showcase\FormsShowcase;
+use App\Filament\Pages\Showcase\GlobalSearchSurface;
 use App\Filament\Pages\Showcase\InfolistsShowcase;
+use App\Filament\Pages\Showcase\LoginSurface;
 use App\Filament\Pages\Showcase\NotificationsShowcase;
-use App\Filament\Pages\Showcase\ShowcasePage;
+use App\Filament\Pages\Showcase\ProfileMenuSurface;
+use App\Filament\Pages\Showcase\RepresentativeBadgeSet;
+use App\Filament\Pages\Showcase\ResourceIconSet;
+use App\Filament\Pages\Showcase\ShowcaseIndexPage;
+use App\Filament\Pages\Showcase\ShowcaseSidebarNavigation;
 use App\Filament\Pages\Showcase\TablesShowcase;
-use App\Filament\Widgets\CommerceStatsOverview;
-use App\Filament\Widgets\LowStockProductsTable;
-use App\Filament\Widgets\RecentOrdersTable;
-use App\Filament\Widgets\RevenueOrdersChart;
+use App\Filament\Pages\Showcase\TenantSwitcherSurface;
+use App\Filament\Widgets\CommerceStatsOverviewWidget;
+use App\Filament\Widgets\LowStockWidget;
+use App\Filament\Widgets\RecentOrdersWidget;
+use App\Filament\Widgets\RevenueOrdersChartWidget;
 use App\Models\User;
 use App\Providers\Filament\AdminPanelProvider;
 use Filament\Enums\GlobalSearchPosition;
@@ -46,10 +54,10 @@ class NavigationShowcaseTest extends TestCase
         $this->seed();
         $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
 
-        Livewire::test(ShowcasePage::class)
+        Livewire::test(ShowcaseIndexPage::class)
             ->assertSeeInOrder(['Dashboard', 'Forms & Schemas', 'Tables', 'Infolists', 'Actions & Modals', 'Notifications']);
 
-        $page = Livewire::test(ShowcasePage::class)->instance();
+        $page = Livewire::test(ShowcaseIndexPage::class)->instance();
         $subNavigation = collect($page->getCachedSubNavigation())
             ->flatMap(fn ($group): array => $group->getItems())
             ->map(fn ($item): string => $item->getLabel())
@@ -77,15 +85,20 @@ class NavigationShowcaseTest extends TestCase
         $this->assertFalse($panel->hasTenancy());
 
         $pages = $panel->getPages();
-        $this->assertSame(1, count(array_filter($pages, fn (string $page): bool => $page === ShowcasePage::class)));
+        $this->assertSame(1, count(array_filter($pages, fn (string $page): bool => $page === ShowcaseIndexPage::class)));
         $this->assertContains(FormsShowcase::class, $pages);
         $this->assertContains(TablesShowcase::class, $pages);
         $this->assertContains(InfolistsShowcase::class, $pages);
         $this->assertContains(ActionsShowcase::class, $pages);
         $this->assertContains(NotificationsShowcase::class, $pages);
 
-        foreach ([CommerceStatsOverview::class, RevenueOrdersChart::class, RecentOrdersTable::class, LowStockProductsTable::class] as $widget) {
+        foreach ([CommerceStatsOverviewWidget::class, RevenueOrdersChartWidget::class, RecentOrdersWidget::class, LowStockWidget::class] as $widget) {
             $this->assertSame(1, count(array_filter($panel->getWidgets(), fn (string $registered): bool => $registered === $widget)));
+        }
+        $this->assertContains(DemoShowcaseDashboard::class, $panel->getPages());
+        $this->assertSame(1, count(array_filter($pages, fn (string $page): bool => $page === DemoShowcaseDashboard::class)));
+        foreach ([ResourceIconSet::class, RepresentativeBadgeSet::class, ShowcaseSidebarNavigation::class, GlobalSearchSurface::class, ProfileMenuSurface::class, LoginSurface::class, TenantSwitcherSurface::class] as $surface) {
+            $this->assertTrue(class_exists($surface));
         }
     }
 
@@ -108,7 +121,7 @@ class NavigationShowcaseTest extends TestCase
             ->assertOk()
             ->assertSee('data-tenant-persistence="none"', false);
 
-        Livewire::test(ShowcasePage::class)->call('refresh');
+        Livewire::test(ShowcaseIndexPage::class)->call('refresh');
 
         $writes = collect(DB::connection()->getQueryLog())
             ->filter(fn (array $query): bool => preg_match('/^(insert|update|delete|replace|alter|create|drop|truncate)\s/i', trim($query['query'])) === 1);

@@ -15,7 +15,7 @@
 
 ## Dependency map
 
-Demo-showcase delivery order (prose delivery order (not hard dependency blockers)): **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015 → FTB-016 → FTB-017 → FTB-018**. The dependency map below remains the source of hard blockers. The demo-complete gate is not yet satisfied: FTB-011/013/014/015 are in progress, with showcase slices implemented but acceptance criteria still outstanding; FTB-009A/B/010 are done. FTB-012 remains partial solely for theme-density integration and is not a blocker. Remaining builder feature work remains blocked by this gate, completion of FTB-016/017/018, and FTB-003. Operational FTB-027 and FTB-028 are done, with FTB-028's full-suite documentation-mount gap recorded in its report. Phase 1 owns the branded existing dashboard shell, four commerce widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and representative badges. FTB-015 owns the Showcase navigation/index, search/profile/authentication/tenant surfaces and must integrate (not duplicate) Phase 1 widgets/navigation. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
+Demo-showcase delivery order (prose delivery order (not hard dependency blockers)): **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015 → FTB-016 → FTB-017 → FTB-018**. The dependency map below remains the source of hard blockers. The demo-complete gate is not yet satisfied: FTB-011/013/014/015 are done, while FTB-012 remains partial solely for theme-density integration and FTB-016/017/018 remain outstanding; FTB-009A/B/010 are done. Remaining builder feature work remains blocked by this gate and completion of FTB-016/017/018. Operational FTB-027 and FTB-028 are done, with FTB-028's full-suite documentation-mount gap recorded in its report. Phase 1 owns the branded existing dashboard shell, four commerce widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and representative badges. FTB-015 owns the Showcase navigation/index, search/profile/authentication/tenant surfaces and must integrate (not duplicate) Phase 1 widgets/navigation. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
 
 ```text
 FTB-001
@@ -434,7 +434,7 @@ Evidence: `ActionsShowcaseTest` (7 passing tests, 114 assertions), the focused C
 
 ## FTB-015 — Cover Widgets, Navigation, Search, and auth/tenant UI
 
-**Status:** in-progress
+**Status:** done
 **Blocked by:** [FTB-005](#ftb-005), [FTB-006](#ftb-006), [FTB-002](#ftb-002)
 
 ### What to build
@@ -443,17 +443,17 @@ Add visually distinct first-party widgets, sidebar/topbar/navigation patterns, g
 
 ### Acceptance criteria
 
-- [ ] Phase 1 provides `DemoShowcaseDashboard` with the branded existing dashboard shell, four widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and `RepresentativeBadgeSet`, all backed by deterministic commerce data.
-- [ ] `ShowcaseIndexPage` is the FTB-015-owned entry for the showcase; FTB-015 integrates (not duplicate) Phase 1 widgets/navigation, and adds `ShowcaseSidebarNavigation`, `GlobalSearchSurface`, `ProfileMenuSurface`, `LoginSurface`, and controlled `TenantSwitcherSurface`.
-- [ ] Global search UI is represented.
-- [ ] Login/profile/authentication UI is represented.
-- [ ] Tenant-switching UI is represented in a controlled showcase state where applicable.
-- [ ] Registry entries cover the relevant themable surfaces.
-- [ ] The showcase does not require visitors to actually belong to tenants or maintain personal accounts.
+- [x] Phase 1 provides `DemoShowcaseDashboard` with the branded existing dashboard shell, four widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and `RepresentativeBadgeSet`, all backed by deterministic commerce data. Evidence: `DashboardShowcaseTest`, `e2e/demo-showcase.spec.ts`.
+- [x] `ShowcaseIndexPage` is the FTB-015-owned entry for the showcase; FTB-015 integrates (not duplicate) Phase 1 widgets/navigation, and adds `ShowcaseSidebarNavigation`, `GlobalSearchSurface`, `ProfileMenuSurface`, `LoginSurface`, and controlled `TenantSwitcherSurface`. Evidence: `NavigationShowcaseTest`, `e2e/demo-showcase.spec.ts`.
+- [x] Global search UI is represented. Evidence: native Ctrl+K search and result assertions in `e2e/demo-showcase.spec.ts`.
+- [x] Login/profile/authentication UI is represented. Evidence: `FilamentPanelTest`, `NavigationShowcaseTest`, `e2e/demo-showcase.spec.ts`.
+- [x] Tenant-switching UI is represented in a controlled showcase state where applicable. Evidence: no-persistence assertions in `NavigationShowcaseTest` and `e2e/demo-showcase.spec.ts`.
+- [x] Registry entries cover the relevant themable surfaces. Evidence: `builder/src/__tests__/theme-registry.spec.ts`, `e2e/theme-registry-selectors.spec.ts`.
+- [x] The showcase does not require visitors to actually belong to tenants or maintain personal accounts. Evidence: `AdminPanelProvider::hasTenancy()` remains false and no-write test coverage.
 
 Implementation: `388c545` (`Feature: integrate Filament showcase navigation surfaces`); verification: [`NavigationShowcaseTest`](./demo/tests/Feature/Filament/Showcase/NavigationShowcaseTest.php), `e2e/demo-showcase.spec.ts`.
 
-Remaining: complete full surface registry coverage and remaining widget/navigation/auth/tenant acceptance criteria; FTB-016 owns deterministic forced states. Do not mark unfinished criteria complete prematurely.
+Completed: deterministic dashboard/widget fixtures, the single ShowcaseIndexPage entry, native navigation/search/profile/login integration, controlled tenant presentation, and verified FTB-015 registry selectors. FTB-016 still owns generalized forced states and is not implied by this ticket.
 
 ---
 

@@ -4,13 +4,12 @@ namespace App\Filament\Pages\Showcase;
 
 use BackedEnum;
 use Filament\Navigation\NavigationItem;
-use Filament\Pages\Dashboard;
 use Filament\Pages\Page;
 use Filament\Panel;
 use Filament\Support\Icons\Heroicon;
 use UnitEnum;
 
-class ShowcasePage extends Page
+class ShowcaseIndexPage extends Page
 {
     protected static ?string $title = 'Showcase';
 
@@ -38,7 +37,7 @@ class ShowcasePage extends Page
     {
         return [
             NavigationItem::make('Dashboard')
-                ->url(Dashboard::getUrl())
+                ->url(DemoShowcaseDashboard::getUrl())
                 ->icon(Heroicon::OutlinedHome),
             NavigationItem::make('Forms & Schemas')
                 ->url(FormsShowcase::getUrl())

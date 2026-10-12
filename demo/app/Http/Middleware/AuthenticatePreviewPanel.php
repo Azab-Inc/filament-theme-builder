@@ -11,6 +11,7 @@ class AuthenticatePreviewPanel extends Authenticate
     {
         if ($request->routeIs(
             'filament.admin.pages.dashboard',
+            'filament.admin.pages.demo-showcase-dashboard',
             'filament.admin.pages.showcase',
             'filament.admin.pages.anonymous-upload',
             'filament.admin.auth.logout',

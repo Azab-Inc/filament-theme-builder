@@ -51,6 +51,13 @@ test.describe('demo showcase panel identity and navigation', () => {
     }
 
     await expect(page.getByRole('region', { name: 'Controlled tenant presentation' })).toContainText('No tenant is persisted')
+    await expect(page.getByRole('region', { name: 'Showcase navigation surfaces' })).toContainText('Ctrl K')
+    await expect(page.getByRole('region', { name: 'Global search surface' })).toContainText('DEMO-ORDER-1001')
+    await expect(page.getByRole('region', { name: 'Profile menu surface' })).toContainText('Profile and Sign out')
+    await expect(page.getByRole('region', { name: 'Login surface' })).toContainText('Username: user')
+    await expect(page.getByRole('region', { name: 'Sidebar navigation surface' })).toContainText('existing panel sidebar')
+    await expect(page.getByRole('region', { name: 'Resource icon set' })).toContainText('Products')
+    await expect(page.getByRole('region', { name: 'Representative badge set' })).toContainText('Active')
     const showcaseTabs = page.getByRole('navigation', { name: 'Tabs' })
     await expect(showcaseTabs).toBeVisible()
     await expect(showcaseTabs.getByRole('link', { name: 'Forms & Schemas', exact: true })).toBeVisible()

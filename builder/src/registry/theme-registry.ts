@@ -177,6 +177,22 @@ const notificationEntries: readonly RegistryEntry[] = [
   showcaseEntry('notification.item', 'Notification item', 'notification', ['.fi-no-notification'], ['success', 'danger', 'warning', 'info'], ['persistent', 'transient']),
 ]
 
+const dashboardEntries: readonly RegistryEntry[] = [
+  showcaseEntry('dashboard.chart', 'Dashboard chart widget', 'dashboard', ['.fi-wi-chart'], [], ['default']),
+  showcaseEntry('dashboard.stats', 'Dashboard stats widget', 'dashboard', ['.fi-wi-stats-overview'], [], ['default']),
+  showcaseEntry('dashboard.table', 'Dashboard table widget', 'dashboard', ['.fi-wi-table'], [], ['default']),
+]
+
+const navigationEntries: readonly RegistryEntry[] = [
+  showcaseEntry('navigation.global-search', 'Global search surface', 'navigation', ['.fi-global-search'], [], ['default', 'open']),
+  showcaseEntry('navigation.login', 'Login surface', 'navigation', ['.fi-simple-page'], [], ['default', 'validation']),
+  showcaseEntry('navigation.profile-menu', 'Profile menu surface', 'navigation', ['.fi-user-menu'], [], ['default', 'open']),
+  showcaseEntry('navigation.sidebar', 'Sidebar navigation', 'navigation', ['.fi-sidebar'], [], ['default', 'collapsed']),
+  showcaseEntry('navigation.sidebar-badge', 'Sidebar navigation badge', 'navigation', ['.fi-sidebar-item-badge-ctn'], [], ['default']),
+  showcaseEntry('navigation.tenant-switcher', 'Controlled tenant switcher', 'navigation', ['.fi-ftb-tenant-switcher'], [], ['default', 'presentation-only']),
+  showcaseEntry('navigation.topbar', 'Topbar navigation', 'navigation', ['.fi-topbar'], [], ['default']),
+]
+
 export function createThemeRegistry(): FilamentRegistry {
   return validateRegistry([
     primaryButton,
@@ -188,6 +204,8 @@ export function createThemeRegistry(): FilamentRegistry {
     ...actionEntries,
     ...modalEntries,
     ...notificationEntries,
+    ...dashboardEntries,
+    ...navigationEntries,
   ])
 }
 
