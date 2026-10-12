@@ -70,6 +70,10 @@ function formEntry(id: string, label: string, selectors: readonly string[]): Reg
   }
 }
 
+function infolistEntry(id: string, label: string, selector: string): RegistryEntry {
+  return { ...formEntry(id, label, [selector]), family: 'infolist' }
+}
+
 const formEntries: readonly RegistryEntry[] = [
   formEntry('form.control.date', 'Date control', ['.fi-fo-date-time-picker']),
   formEntry('form.control.file-upload', 'File upload control', ['.fi-fo-file-upload']),
@@ -88,8 +92,17 @@ const formEntries: readonly RegistryEntry[] = [
   formEntry('form.section', 'Section layout', ['.fi-section']),
 ]
 
+const infolistEntries: readonly RegistryEntry[] = [
+  infolistEntry('infolist.entry.color', 'Infolist color entry', '.fi-in-color'),
+  infolistEntry('infolist.entry.icon', 'Infolist icon entry', '.fi-in-icon'),
+  infolistEntry('infolist.entry.image', 'Infolist image entry', '.fi-in-image'),
+  infolistEntry('infolist.entry.key-value', 'Infolist key-value entry', '.fi-in-key-value'),
+  infolistEntry('infolist.entry.text', 'Infolist text entry', '.fi-in-text'),
+  infolistEntry('infolist.layout.flex', 'Infolist flex layout', '.fi-sc-flex'),
+]
+
 export function createThemeRegistry(): FilamentRegistry {
-  return validateRegistry([primaryButton, secondaryButton, legacyPrimary, ...formEntries])
+  return validateRegistry([primaryButton, secondaryButton, legacyPrimary, ...formEntries, ...infolistEntries])
 }
 
 export function validateRegistry(entries: readonly RegistryEntry[]): FilamentRegistry {

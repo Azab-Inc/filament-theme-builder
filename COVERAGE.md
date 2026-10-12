@@ -99,7 +99,7 @@ domain, resources, and relationship workflows.
 | `dashboard.low-stock` | planned | `LowStockWidget` | Threshold/status badge presentation | Seeded inventory and products | Seeded low-stock rows | Dashboard feature tests |
 | `showcase.forms` | partial | `/demo/admin/forms-showcase` (`ShowcaseFormsPage`, implemented as `FormsShowcase`) | Named product, customer, and order schemas with Section/grid, Fieldset/Grid, Wizard, Tabs, Repeater, Radio, and ToggleButtons layouts; native text, price, select, toggle, date, private local image representation, address/contact, nested contact, and status validation controls | Fixed non-persisting fixture data | Filled, disabled, optional-null, server-validation, nested validation, long-text, and keyboard-focus behavior in the native page; no forced-state controls | `FormsShowcaseTest`; `e2e/demo-showcase.spec.ts` (`forms and schemas`) |
 | `showcase.tables` | implemented | `ShowcaseTablesPage` → `/demo/admin/tables-showcase` (`TablesShowcase`) | Responsive native product table with image/text/badge/icon columns, grouping, summaries, controls, safe read-only actions, and verified density spacing | Seeded demo products with order counts and nullable supplier/image relationships | Empty, loading, invalid-filter, missing-related-data, long-name, selected-row reset, and Compact/Default/Spacious density preview | `TablesShowcaseTest`; `e2e/demo-showcase.spec.ts` (`tables`); `e2e/theme-foundations.spec.ts` (`native ... table density`) |
-| `showcase.infolists` | planned | `ShowcaseInfolistsPage` | Order, customer, and product detail entries/layouts | Seeded customer/order/product records | Null and representative value presentation | Showcase feature tests |
+| `showcase.infolists` | partial | `/demo/admin/infolists-showcase` (`InfolistsShowcase`) | Read-only customer profile, order and product details; text/image/icon/badge/color/key-value entries, rich text, repeatable and bullet lists, Fieldset/Tabs/Flex layouts | Seeded customer, order, and product records with fixed presentation values | Seeded representative values; nullable image/supplier/customer/variant and empty relationship labels; no forced-state controls | `InfolistsShowcaseTest`; `e2e/demo-showcase.spec.ts` (`infolists showcase`) |
 | `showcase.actions` | planned | `ShowcaseActionsPage` | Order/product actions, destructive confirmation, open modal | Fixed non-production fixture records | `ActionLoadingState`, `ModalOpenState` | Showcase feature tests |
 | `showcase.notifications` | planned | `OrderStatusNotification`, `InventoryWarningNotification`, `ActionFailureNotification` | Success/warning/danger styles and layout variants | Fixed message payloads | `NotificationVisibleState`; no persistence | Showcase feature tests |
 | `showcase.navigation` | planned | `ShowcaseIndexPage` plus FTB-015 shared navigation integration | Search, profile/auth, controlled tenant surface; reuse Phase 1 navigation/widgets | Panel configuration and fixed showcase identity | Active/collapsed/search UI presentation | Showcase feature tests |
@@ -159,8 +159,18 @@ editor behavior is claimed.
   Compact/Default/Spacious changes are measured on the native Products,
   Orders, and Inventory fixtures in `e2e/theme-foundations.spec.ts` without
   reloads or non-GET requests. No global Filament density variable is claimed.
-- **FTB-013 infolists:** `ShowcaseInfolistsPage` provides `OrderDetailsInfolist`,
-  `CustomerProfileInfolist`, and `ProductDetailsInfolist`.
+- **FTB-013 infolists:** `InfolistsShowcase` provides `CustomerProfileInfolist`,
+  `OrderDetailsInfolist`, and `ProductDetailsInfolist` as named schemas on the
+  existing showcase page (not separate CRUD pages). Native entry
+  samples include ColorEntry, KeyValueEntry, text/image/icon/badge entries,
+  rich prose, repeatable rows, and TextEntry's native bulleted list variant;
+  Fieldset, Tabs, and Flex provide distinct layouts. Light/dark contrast and a
+  narrow viewport are covered by Compose Playwright. Registry entries for
+  `.fi-in-color`, `.fi-in-icon`, `.fi-in-image`, `.fi-in-key-value`, `.fi-in-text`,
+  and `.fi-sc-flex` are selector-only. Layout classes shared with forms are
+  covered by the existing form entries and are not mapped a second time. Native
+  global-foundation response and exhaustive visually-distinct entry/layout
+  coverage are not yet proven; FTB-013 remains partial.
 - **FTB-014 actions/notifications:** `ShowcaseActionsPage` provides
   `OrderActionsFixture`, `ProductActionsFixture`, `DeleteProductConfirmationModal`,
   and `OrderStatusModal`; notification fixtures are `OrderStatusNotification`,

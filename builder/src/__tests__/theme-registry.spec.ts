@@ -33,6 +33,22 @@ function createTestRegistry() {
 }
 
 describe('theme registry', () => {
+  it('registers unique selector-only entries for first-party infolist components and layouts', () => {
+    const registry = createThemeRegistry()
+    const infolistEntries = registry.entries.filter(({ id }) => id.startsWith('infolist.'))
+
+    expect(infolistEntries.map(({ id }) => id)).toEqual([
+      'infolist.entry.color',
+      'infolist.entry.icon',
+      'infolist.entry.image',
+      'infolist.entry.key-value',
+      'infolist.entry.text',
+      'infolist.layout.flex',
+    ])
+    expect(infolistEntries.every(({ controls, variants, states }) => !controls.length && !variants.length && !states.length)).toBe(true)
+    expect(new Set(infolistEntries.flatMap(({ selectors }) => selectors)).size).toBe(infolistEntries.flatMap(({ selectors }) => selectors).length)
+  })
+
   it('rejects duplicate stable IDs and malformed selector/control metadata', () => {
     expect(() => validateRegistry([buttonEntry, { ...buttonEntry }])).toThrow(/duplicate.*button\.primary/i)
     expect(() => validateRegistry([{ ...buttonEntry, selectors: [] }])).toThrow(/selectors/i)
@@ -71,6 +87,12 @@ describe('theme registry', () => {
       'form.layout.wizard',
       'form.section',
       'global.primary',
+      'infolist.entry.color',
+      'infolist.entry.icon',
+      'infolist.entry.image',
+      'infolist.entry.key-value',
+      'infolist.entry.text',
+      'infolist.layout.flex',
     ])
     expect(registry.entries.find((entry) => entry.id === 'button.primary')?.selectors).toEqual(['.fi-btn.fi-color-primary'])
     expect(registry.entries.find((entry) => entry.id === 'button.secondary')?.selectors).toEqual(['.fi-btn.fi-outlined'])

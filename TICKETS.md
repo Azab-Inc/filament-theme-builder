@@ -393,7 +393,7 @@ Create an Infolists showcase containing every visually distinct first-party entr
 
 Implementation: `31c4110` (`Feature: add infolists showcase fixtures`); verification: [`InfolistsShowcaseTest`](./demo/tests/Feature/Filament/Showcase/InfolistsShowcaseTest.php), `e2e/demo-showcase.spec.ts`.
 
-Remaining: complete visually distinct first-party entry/layout coverage and registry coverage, then verify light/dark and global foundation behavior; do not mark unfinished criteria complete prematurely.
+Remaining: this implementation adds seeded customer/order/product schemas, representative native entries/layouts, null placeholders, selector-only infolist entry registry mappings, and focused light/dark + responsive Playwright checks. FTB-013 remains in-progress: exhaustive visually distinct first-party coverage and verified native global-foundation response are still outstanding. Do not mark unfinished criteria complete prematurely.
 
 ---
 

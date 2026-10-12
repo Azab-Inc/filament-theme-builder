@@ -556,12 +556,12 @@ test.describe('infolists showcase', () => {
     await expect(page.getByRole('heading', { name: 'Order items' })).toBeVisible()
     await expect(page.getByText('DEMO-CHAIR-001', { exact: true })).toBeVisible()
     await expect(page.getByText('DEMO-ORDER-1001', { exact: true })).toBeVisible()
-    await expect(page.getByText('Avery Demo', { exact: true })).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Customer profile details' }).getByText('Avery Demo', { exact: true })).toBeVisible()
     await expect(page.getByRole('img', { name: 'Demo Oak Chair' })).toBeVisible()
-    await expect(page.locator('.fi-in-icon')).toHaveCount(1)
+    await expect(page.locator('.fi-in-icon')).toHaveCount(2)
     await expect(page.getByText('Demo bestseller', { exact: true })).toBeVisible()
     await expect(page.getByText('Featured fixture', { exact: true })).toBeVisible()
-    await expect(page.getByText('Natural finish', { exact: true })).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Product details showcase' }).getByText('Natural finish', { exact: true })).toBeVisible()
     await expect(page.getByText('Demo Brass Lamp', { exact: true })).toBeVisible()
     await expect(page.locator('script:has-text("alert(\\\"xss\\\")")')).toHaveCount(0)
 
@@ -578,6 +578,22 @@ test.describe('infolists showcase', () => {
     await expect(showcase.getByText('DEMO-ORDER-1001', { exact: true })).toBeVisible()
     await expect(showcase.getByRole('button')).toHaveCount(0)
     await expect(showcase.getByRole('textbox')).toHaveCount(0)
+  })
+
+  test('shows distinct native infolist layouts and remains readable at narrow widths', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'Customer profile' })).toBeVisible()
+    await expect(page.getByText(/Order details: facts grouped/)).toBeVisible()
+    await expect(page.getByText('Product attributes', { exact: true })).toBeVisible()
+    await expect(page.locator('.fi-in-color')).toBeVisible()
+    await expect(page.locator('.fi-in-key-value')).toHaveCount(2)
+    await expect(page.locator('.fi-tabs')).toBeVisible()
+    await expect(page.locator('.fi-fieldset')).toHaveCount(2)
+    await expect(page.locator('.fi-sc-flex')).toHaveCount(2)
+    await expect(page.locator('.fi-in-text').first()).toBeVisible()
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(page.getByRole('heading', { name: 'Customer profile' })).toBeVisible()
+    await expect(page.getByText('DEMO-ORDER-1001', { exact: true })).toBeVisible()
   })
 })
 

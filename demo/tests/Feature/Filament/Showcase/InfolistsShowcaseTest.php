@@ -55,6 +55,27 @@ class InfolistsShowcaseTest extends TestCase
             ->assertSee('SKU');
     }
 
+    public function test_named_infolist_fixtures_render_distinct_native_entries_and_layouts(): void
+    {
+        $this->seed();
+        $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
+
+        Livewire::test(InfolistsShowcase::class)
+            ->assertSee('Customer profile')
+            ->assertSee('Order details')
+            ->assertSee('Product details')
+            ->assertSee('Status color')
+            ->assertSee('Product attributes')
+            ->assertSee('Contact preferences')
+            ->assertSee('Contact information')
+            ->assertSee('Order information')
+            ->assertSee('Email updates')
+            ->assertSee('Inventory details')
+            ->assertSee('Demo collection')
+            ->assertSee('Demo Chairs')
+            ->assertSee('Demonstration product; not available for purchase.');
+    }
+
     public function test_rich_text_is_escaped_and_missing_values_relationships_and_repeating_rows_are_safe(): void
     {
         $this->seed();
@@ -73,6 +94,17 @@ class InfolistsShowcaseTest extends TestCase
             ->assertSee('Order items')
             ->assertSee('Natural finish')
             ->assertSee('Demo Brass Lamp');
+    }
+
+    public function test_empty_order_items_use_a_deterministic_placeholder(): void
+    {
+        $this->seed();
+        $this->actingAs(User::query()->where('email', 'user')->firstOrFail());
+        $order = Order::query()->where('number', 'DEMO-ORDER-1001')->firstOrFail();
+        $order->items()->delete();
+
+        Livewire::test(InfolistsShowcase::class)
+            ->assertSee('No order items');
     }
 
     public function test_infolist_showcase_is_read_only(): void

@@ -57,7 +57,7 @@ class DemoShowcaseCapabilityInventoryTest extends TestCase
             'ShowcaseFormsPage', 'ProductEditorForm', 'CustomerContactForm', 'OrderStatusForm',
             'SectionGridLayout', 'WizardStepsLayout', 'TabbedFormLayout', 'ShowcaseTablesPage',
             'ProductsTableFixture', 'OrdersTableFixture', 'InventoryTableFixture',
-            'ShowcaseInfolistsPage', 'OrderDetailsInfolist', 'CustomerProfileInfolist',
+            'InfolistsShowcase', 'OrderDetailsInfolist', 'CustomerProfileInfolist',
             'ProductDetailsInfolist', 'ShowcaseActionsPage', 'OrderActionsFixture', 'ProductActionsFixture',
             'DeleteProductConfirmationModal', 'OrderStatusModal', 'OrderStatusNotification',
             'InventoryWarningNotification', 'ActionFailureNotification', 'ShowcaseIndexPage',
