@@ -47,6 +47,13 @@ Runtime + persistence + tests feed FTB-034 Jenkins and FTB-035 production.
 All public-alpha prerequisites feed FTB-038.
 Complete first-party coverage feeds FTB-039, then FTB-040.
 FTB-041 is independent and can start immediately.
+
+Phase 2 is release-blocked until all approved Phase 1 requirements and FTB-040
+are complete. The eight Phase 2 slices below are vertical implementation
+tickets, not horizontal test tickets. P2 identifiers are product requirements
+from `docs/phase-2/PRD.md`; the implementation tickets are FTB-042 through
+FTB-049. The package identity/namespace/Composer coordinates remain an
+explicit release blocker and must not be invented in these tickets.
 ```
 
 ---
@@ -1049,3 +1056,294 @@ Keep every resource sidebar count badge visually consistent with the configured 
 - [ ] Badge colors remain correct after navigating between resources.
 - [ ] Badge colors remain correct after reloading the page.
 - [ ] Regression coverage verifies the primary-color styling for all resource sidebar count badges and its stability after navigation and reload.
+
+---
+
+<a id="phase-2-filament-dashboard-composer-integration"></a>
+
+# Phase 2 — Filament Dashboard Composer Integration
+
+All Phase 2 tickets are **blocked** by [FTB-040](#ftb-040) and by completion of
+all approved Phase 1 requirements: FTB-009A, FTB-009B, FTB-010, FTB-011,
+FTB-012, FTB-013, FTB-014, FTB-015, FTB-016, FTB-017, and FTB-018. The
+demo-first gate alone is insufficient. Package identity, namespace, and
+Composer coordinates are also release-blocking and intentionally deferred.
+
+The review fixed point for this planning publication is
+`f348ac2c504e627690324eea0595f2245c9d215c`; it must be refreshed after Phase
+1 and FTB-040 before implementation review.
+
+<a id="ftb-042"></a>
+
+## FTB-042 — Package installation and protected collapsible dock
+
+**Status:** blocked
+**Blocked by:** [FTB-040](#ftb-040); all approved Phase 1 requirements listed above; package identity release blocker
+**Spec:** [§2](./docs/phase-2/SPECS.md#2-product-boundary-and-activation), [§3](./docs/phase-2/SPECS.md#3-authoritative-panel-identity-and-embedded-ui), [§10](./docs/phase-2/SPECS.md#10-accessibility-and-panel-continuity)
+**GitHub issue:** [#42](https://github.com/Azab-Inc/filament-theme-builder/issues/42)
+**PRD requirements:** [P2-001–P2-005](./docs/phase-2/PRD.md#61-activation-and-authorization), [P2-010–P2-013](./docs/phase-2/PRD.md#62-embedded-panel-experience), [P2-070–P2-073](./docs/phase-2/PRD.md#67-accessibility)
+**Review fixed point:** `f348ac2c504e627690324eea0595f2245c9d215c`
+
+### What to build
+
+Deliver the Composer development-package installation and local-only activation
+flow inside a user's own authorized Filament panel. Embed the compiled builder
+in a collapsible/resizable dock while keeping the actual panel visible and
+usable. Preserve the panel's existing authentication, authorization, tenant,
+CSRF, origin, and endpoint protections without adding a second permission
+system.
+
+### Acceptance criteria
+
+- [ ] Installation works in a host application using the approved baseline and
+      does not require the repository demo.
+- [ ] The integration activates only in the local environment with
+      `FILAMENT_THEME_BUILDER=true`; the flag is never treated as credentials.
+- [ ] Existing authorized panel users can access the dock without an extra
+      product gate; unauthorized users cannot.
+- [ ] The panel remains visible and operable while the dock is open, resized,
+      or collapsed.
+- [ ] Multiple panels do not share authoritative identity, preview state, or
+      authorization context.
+- [ ] Keyboard and accessibility behavior is covered in the same vertical
+      slice.
+
+<a id="ftb-043"></a>
+
+## FTB-043 — Preview and sessionStorage draft lifecycle
+
+**Status:** blocked
+**Blocked by:** [FTB-040](#ftb-040), [FTB-042](#ftb-042); all approved Phase 1 requirements listed above; package identity release blocker
+**Spec:** [§4](./docs/phase-2/SPECS.md#4-browser-session-draft-lifecycle), [§6](./docs/phase-2/SPECS.md#6-shared-generator-and-tailwind-4-compatibility), [§10](./docs/phase-2/SPECS.md#10-accessibility-and-panel-continuity)
+**GitHub issue:** [#43](https://github.com/Azab-Inc/filament-theme-builder/issues/43)
+**PRD requirements:** [P2-014–P2-015](./docs/phase-2/PRD.md#62-embedded-panel-experience), [P2-030–P2-032](./docs/phase-2/PRD.md#64-preview-and-guidance), [P2-070](./docs/phase-2/PRD.md#67-accessibility)
+**Review fixed point:** `f348ac2c504e627690324eea0595f2245c9d215c`
+
+### What to build
+
+Provide the browser-local preview loop and active draft lifecycle. Use the
+approved same-tab `sessionStorage` semantics, restore only valid state for the
+authoritative panel, and keep preview-only state separate from project-file
+save state.
+
+### Acceptance criteria
+
+- [ ] Preview output and save output use the same deterministic generator.
+- [ ] Drafts persist across same-tab panel navigation and reload.
+- [ ] Separate browser tabs do not share the active draft.
+- [ ] Draft storage is scoped to host origin and authoritative panel identity.
+- [ ] Invalid, stale, malformed, or cross-panel drafts are quarantined safely.
+- [ ] Explicit discard removes only the current draft and restores saved/stock
+      preview state.
+- [ ] The UI distinguishes draft, generated preview, compiled/applied, and
+      saved states.
+
+<a id="ftb-044"></a>
+
+## FTB-044 — Source discovery, CSS creation, and setup guidance
+
+**Status:** blocked
+**Blocked by:** [FTB-040](#ftb-040), [FTB-042](#ftb-042); all approved Phase 1 requirements listed above; package identity release blocker
+**Spec:** [§5](./docs/phase-2/SPECS.md#5-source-discovery-and-setup-guidance), [§6](./docs/phase-2/SPECS.md#6-shared-generator-and-tailwind-4-compatibility), [§13](./docs/phase-2/SPECS.md#13-verification-contract)
+**GitHub issue:** [#44](https://github.com/Azab-Inc/filament-theme-builder/issues/44)
+**PRD requirements:** [P2-020–P2-028](./docs/phase-2/PRD.md#63-theme-source-discovery), [P2-033–P2-035](./docs/phase-2/PRD.md#64-preview-and-guidance)
+**Review fixed point:** `f348ac2c504e627690324eea0595f2245c9d215c`
+
+### What to build
+
+Implement safe theme-source discovery and explicit CSS-target creation. Resolve
+the registered panel source first, then searchable project stylesheets, while
+containing paths to the configured project root and rejecting symlinks. Keep
+registered application CSS naturally active in the panel, but never inject
+arbitrary discovered CSS into the builder. Provide manual setup guidance for
+registration, PHP, Vite, or build steps.
+
+### Acceptance criteria
+
+- [ ] Registered editable theme source resolution precedes filesystem search.
+- [ ] Search supports CSS, SCSS, and Sass discovery, but only CSS is a
+      selectable save target.
+- [ ] Dependencies, generated outputs, backups, traversal, outside-root paths,
+      null bytes, and symlinked components/targets are rejected.
+- [ ] Unrecognized CSS recommends creating a new CSS file; declining uses
+      documented defaults.
+- [ ] An unmarked CSS file is a valid Append starting point and receives the
+      initial managed block after existing contents.
+- [ ] Tailwind 4 Sass inputs are rejected with actionable guidance.
+- [ ] Hostile CSS is treated as text/metadata and cannot execute, import remote
+      resources, or enter the builder through discovery.
+- [ ] No PHP, registration, Vite, dependency, or build mutation occurs
+      automatically.
+
+<a id="ftb-045"></a>
+
+## FTB-045 — Confirm, append, and preserve complete prior contents
+
+**Status:** blocked
+**Blocked by:** [FTB-040](#ftb-040), [FTB-042](#ftb-042), [FTB-043](#ftb-043), [FTB-044](#ftb-044); all approved Phase 1 requirements listed above; package identity release blocker
+**Spec:** [§7](./docs/phase-2/SPECS.md#7-confirmation-and-append-persistence), [§13](./docs/phase-2/SPECS.md#13-verification-contract), [§14](./docs/phase-2/SPECS.md#14-failure-security-and-observability-rules)
+**GitHub issue:** [#45](https://github.com/Azab-Inc/filament-theme-builder/issues/45)
+**PRD requirements:** [P2-040–P2-043, P2-046–P2-047](./docs/phase-2/PRD.md#65-save-safety), [P2-070–P2-072](./docs/phase-2/PRD.md#67-accessibility)
+**Review fixed point:** `f348ac2c504e627690324eea0595f2245c9d215c`
+
+### What to build
+
+Deliver the explicit confirmation and safe Append flow. Show the target,
+generated diff, affected panels, mode, hashes, and recovery implications.
+Append must preserve all existing contents, create or update one versioned
+managed comment section, and handle repeated conflicts without duplicating or
+overwriting unrelated CSS.
+
+### Acceptance criteria
+
+- [ ] Confirmation identifies target path, panel context, generated diff,
+      affected panels, mode, and source/output hashes.
+- [ ] Shared stylesheets require an explicit conflict acknowledgement.
+- [ ] Every Append operation first creates a unique, no-clobber `old-` backup
+      containing the complete current file before any target mutation.
+- [ ] The initial Append to an unmarked CSS file creates one managed section
+      only after that backup is durable, without removing existing contents.
+- [ ] Managed markers contain versioned round-trip metadata and hashes.
+- [ ] Malformed, nested, or duplicate markers fail closed without guessing.
+- [ ] Repeated Append updates the existing managed section exactly once.
+- [ ] Content outside the managed section remains byte-for-byte preserved.
+- [ ] No source, backup, or unrelated user file is removed automatically.
+
+<a id="ftb-046"></a>
+
+## FTB-046 — Replace, journaled writes, and active failure recovery
+
+**Status:** blocked
+**Blocked by:** [FTB-040](#ftb-040), [FTB-045](#ftb-045); all approved Phase 1 requirements listed above; package identity release blocker
+**Spec:** [§8](./docs/phase-2/SPECS.md#8-replace-transaction-and-recovery-contract), [§13](./docs/phase-2/SPECS.md#13-verification-contract), [§14](./docs/phase-2/SPECS.md#14-failure-security-and-observability-rules)
+**GitHub issue:** [#46](https://github.com/Azab-Inc/filament-theme-builder/issues/46)
+**PRD requirements:** [P2-044–P2-049](./docs/phase-2/PRD.md#65-save-safety), [P2-072](./docs/phase-2/PRD.md#67-accessibility)
+**Review fixed point:** `f348ac2c504e627690324eea0595f2245c9d215c`
+
+### What to build
+
+Deliver complete Replace behavior and the journaled filesystem transaction.
+Replace intentionally writes a complete generated CSS scaffold at the original
+path after uniquely renaming the original to an `old-` backup containing the
+entire old file. Locks,
+file hashes, single-use confirmation binding, permission revalidation, failed
+output retention, and active recovery must protect against partial failure and
+concurrent edits.
+
+### Acceptance criteria
+
+- [ ] Replace uniquely renames the original to a full-content `old-` backup
+      without clobbering an existing backup.
+- [ ] Replace writes complete buildable CSS at the original path; preserving
+      append-only directives is not a Replace requirement.
+- [ ] Confirmation is bound to user/panel, target, hashes, mode, expiry, and a
+      single-use nonce.
+- [ ] Apply revalidates authorization, activation, containment, symlink policy,
+      hashes, lock ownership, and target mode.
+- [ ] Journal states record staged output, backup, commit, and recovery status.
+- [ ] Partial failure preserves prior file, backup, failed/staged output, and
+      journal; it never cleans up by deletion.
+- [ ] Recovery restores the old file by copying from the retained backup when
+      safe, leaves that backup intact, and otherwise marks explicit
+      recovery-required without claiming success.
+- [ ] Concurrent edits prevent unreviewed writes and never modify another
+      user's files.
+
+<a id="ftb-047"></a>
+
+## FTB-047 — Shared saved/compiled state across panels
+
+**Status:** blocked
+**Blocked by:** [FTB-040](#ftb-040), [FTB-045](#ftb-045), [FTB-046](#ftb-046); all approved Phase 1 requirements listed above; package identity release blocker
+**Spec:** [§6](./docs/phase-2/SPECS.md#6-shared-generator-and-tailwind-4-compatibility), [§8](./docs/phase-2/SPECS.md#8-replace-transaction-and-recovery-contract), [§11](./docs/phase-2/SPECS.md#11-package-and-consumer-architecture)
+**GitHub issue:** [#47](https://github.com/Azab-Inc/filament-theme-builder/issues/47)
+**PRD requirements:** [P2-030–P2-035](./docs/phase-2/PRD.md#64-preview-and-guidance), [P2-040, P2-049](./docs/phase-2/PRD.md#65-save-safety)
+**Review fixed point:** `f348ac2c504e627690324eea0595f2245c9d215c`
+
+### What to build
+
+Make generated preview, saved project state, and compiled/applied panel state
+coherent across multiple panels in a host application. Use authoritative panel
+identity and shared generator results without allowing one panel's draft,
+registration, or applied CSS state to leak into another.
+
+### Acceptance criteria
+
+- [ ] Panel identity is resolved from the host Filament runtime rather than
+      caller-supplied identifiers.
+- [ ] Preview and saved output report the same generator/schema/output hashes.
+- [ ] Saved, compiled/applied, stale, and recovery-required states are distinct.
+- [ ] Multiple panels sharing a stylesheet show affected-panel impact before
+      save and do not silently claim isolated effects.
+- [ ] Existing Vite/HMR remains the only project feedback path.
+- [ ] No automatic install, registration, PHP edit, or build is performed.
+
+<a id="ftb-048"></a>
+
+## FTB-048 — Local MCP parity and capability inventory
+
+**Status:** blocked
+**Blocked by:** [FTB-040](#ftb-040), [FTB-044](#ftb-044), [FTB-045](#ftb-045), [FTB-046](#ftb-046); all approved Phase 1 requirements listed above; package identity release blocker
+**Spec:** [§9](./docs/phase-2/SPECS.md#9-local-mcp-parity), [§14](./docs/phase-2/SPECS.md#14-failure-security-and-observability-rules)
+**GitHub issue:** [#48](https://github.com/Azab-Inc/filament-theme-builder/issues/48)
+**PRD requirements:** [P2-060–P2-064](./docs/phase-2/PRD.md#66-local-mcp-and-ai-operability)
+**Review fixed point:** `f348ac2c504e627690324eea0595f2245c9d215c`
+
+### What to build
+
+Expose local MCP discovery, preview, and confirmation-save behavior through the
+same services and protections as the UI. Authenticate through the host's
+authenticated local MCP session/request and resolve the same panel context;
+the feature flag is never a credential and MCP receives no extra privileges.
+
+### Acceptance criteria
+
+- [ ] MCP and UI use the same source resolution, generator, validation,
+      authorization, locking, journal, and filesystem safety boundaries.
+- [ ] MCP preview returns structured target, diff, hashes, affected panels,
+      risks, and confirmation requirements.
+- [ ] Save requires explicit confirmation and revalidates permission, hashes,
+      lock, nonce, activation, and containment before mutation.
+- [ ] Unauthenticated or unauthorized MCP requests are rejected.
+- [ ] Replay, stale confirmation, cross-panel, and concurrent-change cases are
+      denied without mutation.
+- [ ] Capability inventory records operation, authorization, confirmation,
+      target scope, and evidence.
+- [ ] The supported AI-client flow is verified before MCP support is claimed.
+
+<a id="ftb-049"></a>
+
+## FTB-049 — Consumer installation, isolation, and Jenkins release verification
+
+**Status:** blocked
+**Blocked by:** [FTB-040](#ftb-040), [FTB-042](#ftb-042), [FTB-043](#ftb-043), [FTB-044](#ftb-044), [FTB-045](#ftb-045), [FTB-046](#ftb-046), [FTB-047](#ftb-047), [FTB-048](#ftb-048); all approved Phase 1 requirements listed above; package identity release blocker
+**Spec:** [§11](./docs/phase-2/SPECS.md#11-package-and-consumer-architecture), [§12](./docs/phase-2/SPECS.md#12-published-vertical-slices-and-ticket-mapping), [§13](./docs/phase-2/SPECS.md#13-verification-contract), [§14](./docs/phase-2/SPECS.md#14-failure-security-and-observability-rules), [§15](./docs/phase-2/SPECS.md#15-out-of-scope), [§16](./docs/phase-2/SPECS.md#16-release-conditions), [§18](./docs/phase-2/SPECS.md#18-publication-and-implementation-handoff)
+**GitHub issue:** [#49](https://github.com/Azab-Inc/filament-theme-builder/issues/49)
+**PRD requirements:** [P2-001, P2-010](./docs/phase-2/PRD.md#61-activation-and-authorization), [P2-030–P2-035](./docs/phase-2/PRD.md#64-preview-and-guidance), [P2-064](./docs/phase-2/PRD.md#66-local-mcp-and-ai-operability), [P2-073](./docs/phase-2/PRD.md#67-accessibility)
+**Review fixed point:** `f348ac2c504e627690324eea0595f2245c9d215c`
+
+### What to build
+
+Verify the complete package as a consumer-facing release candidate. Run
+isolated Jenkins consumer applications against the approved initial baseline:
+PHP 8.5, Laravel 13, Filament 5, Livewire 4, and Tailwind 4. Establish exact
+minimum/latest evidence, panel isolation, installation behavior, protected
+activation, browser journeys, MCP verification, and release-blocking package
+identity checks without introducing GitHub Actions.
+
+### Acceptance criteria
+
+- [ ] Clean consumer applications install the package as a Composer development
+      dependency without the repository demo.
+- [ ] Isolated Jenkins fixtures verify the exact minimum and latest tested
+      versions for the approved PHP/Laravel/Filament/Livewire/Tailwind baseline.
+- [ ] Consumer tests cover local-only activation, authorized access, panel
+      continuity, draft isolation, discovery, Append, Replace, recovery, and
+      MCP parity.
+- [ ] Multiple panel instances and unrelated consumer files remain isolated.
+- [ ] Jenkins is the release verification path; no GitHub Actions workflow is
+      added.
+- [ ] Package identity, namespace, and Composer coordinates are explicitly
+      selected before release; no placeholder identity is published.
+- [ ] No readiness or release claim is made while FTB-040, Phase 1, package
+      identity, or exact compatibility evidence remains incomplete.

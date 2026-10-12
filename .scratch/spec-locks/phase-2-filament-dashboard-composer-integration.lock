@@ -1,0 +1,7 @@
+scope: phase-2-filament-dashboard-composer-integration
+owner: openai/gpt-5.6-luna
+claimed_at: 2026-10-12T00:00:00Z
+source: approved Phase 2 technical specification conversation
+status: published-blocked
+published_tickets: FTB-042, FTB-043, FTB-044, FTB-045, FTB-046, FTB-047, FTB-048, FTB-049
+release_blockers: all approved Phase 1 requirements, FTB-040, package identity/namespace/Composer coordinates
