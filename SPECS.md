@@ -8,7 +8,7 @@
 
 **Phase 2 technical specification:** [docs/phase-2/SPECS.md](./docs/phase-2/SPECS.md)
 
-**Deferred editor-layout design:** [Variant A split workspace](./docs/superpowers/specs/2026-10-12-variant-a-split-workspace-design.md) ([FTB-050](./TICKETS.md#ftb-050), [GitHub #50](https://github.com/Azab-Inc/filament-theme-builder/issues/50)).
+**Deferred editor-layout design:** [Editor Layout Modes Promotion](./docs/superpowers/specs/2026-10-12-editor-layout-modes-promotion.md) ([FTB-050](./TICKETS.md#ftb-050), [GitHub #50](https://github.com/Azab-Inc/filament-theme-builder/issues/50)).
 
 This is the implementation contract. PRD.md defines the product problem and outcomes. TICKETS.md contains the executable vertical slices. Each section below links to the ticket or tickets that implement it.
 
