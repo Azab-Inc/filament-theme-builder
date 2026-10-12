@@ -33,6 +33,34 @@ test.describe("foundation preview integration", () => {
     "requires the canonical Compose stack",
   );
 
+  test("preserves native palette defaults until a family is explicitly edited", async ({ page }) => {
+    await page.goto(composeBaseUrl);
+    const nativePage = await page.context().newPage();
+    await nativePage.goto(`${composeBaseUrl}/demo/admin/showcase`);
+    const nativeBackground = await nativePage.locator("body").evaluate((element) => getComputedStyle(element).backgroundColor);
+    const nativePrimary = await nativePage.locator(".fi-badge.fi-color-primary").first().evaluate((element) => getComputedStyle(element).backgroundColor);
+
+    await page.evaluate((showcaseUrl) => {
+      document.querySelector<HTMLIFrameElement>('iframe[title="Filament preview"]')!.src = showcaseUrl;
+    }, `${composeBaseUrl}/demo/admin/showcase`);
+    await expect.poll(() => page.frames().find((frame) => /\/demo\/admin\/showcase/.test(frame.url()))?.url() ?? "").toContain("/demo/admin/showcase");
+    const preview = page.frame({ url: /\/demo\/admin\/showcase/ })!;
+    await expect(preview.locator("body")).toBeVisible();
+    await expect.poll(() => preview.locator("body").evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(nativeBackground);
+
+    const primaryElement = preview.locator(".fi-badge.fi-color-primary").first();
+    const initialPrimary = await primaryElement.evaluate((element) => getComputedStyle(element).backgroundColor);
+    expect(initialPrimary).toBe(nativePrimary);
+    await page.getByLabel("Primary color").fill("#0f766e");
+    await expect.poll(() => primaryElement.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(initialPrimary);
+
+    const initialGrayBackground = await preview.locator("body").evaluate((element) => getComputedStyle(element).backgroundColor);
+    await page.locator("#gray-palette-base").fill("#123456");
+    await expect.poll(() => preview.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--gray-50").trim())).not.toBe("");
+    await expect.poll(() => preview.locator("body").evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(initialGrayBackground);
+    await nativePage.close();
+  });
+
   test("edits a real builder foundation control and updates the actual preview iframe immediately", async ({
     page,
   }) => {

@@ -126,7 +126,7 @@ describe('Filament foundation inventory', () => {
   it('projects every inventory-approved foundation mapping with the v1 protocol shape', () => {
     const state = createDefaultFoundationState()
     state.palettes.primary.base = '#0f766e'
-    state.palettes.primary.shades[500] = '#0f766e'
+    state.palettes.primary.overrides[500] = '#0f766e'
 
     expect(projectFoundations(state, 'dark')).toEqual(
       expect.objectContaining({
@@ -149,9 +149,35 @@ describe('Filament foundation inventory', () => {
         }),
       ]),
     )
-    expect(projectFoundations(state, 'dark').mappings.length).toBe(FILAMENT_FOUNDATION_INVENTORY.filter(({ id }) => !['global.primary', 'button.primary', 'button.secondary', 'badge', 'logo.light', 'logo.dark'].includes(id)).length)
+    expect(projectFoundations(state, 'dark').mappings.length).toBe(FILAMENT_FOUNDATION_INVENTORY.filter(({ id }) => !id.startsWith('palette.') && !['global.primary', 'button.primary', 'button.secondary', 'badge', 'logo.light', 'logo.dark'].includes(id)).length + 12)
     expect(projectFoundations(state, 'dark').mappings.every((mapping) => ['preview-emulatable', 'live-emulation'].includes(mapping.mapping))).toBe(true)
     expect(JSON.stringify(projectFoundations(state, 'dark'))).not.toMatch(/url\(|@import/i)
+  })
+
+  it('omits untouched palettes but projects every value for an explicitly edited family', () => {
+    const state = createDefaultFoundationState()
+
+    expect(projectFoundations(state, 'light').mappings.filter(({ id }) => id.startsWith('palette.'))).toEqual([])
+
+    state.palettes.primary.base = '#0f766e'
+    const primaryMappings = projectFoundations(state, 'light').mappings.filter(({ id }) => id.startsWith('palette.primary.'))
+
+    expect(primaryMappings).toHaveLength(12)
+    expect(primaryMappings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'palette.primary.base', value: '#0f766e' }),
+      expect.objectContaining({ id: 'palette.primary.shades.500' }),
+    ]))
+    expect(projectFoundations(state, 'light').mappings.some(({ id }) => id.startsWith('palette.gray.'))).toBe(false)
+  })
+
+  it('projects an explicitly overridden shade with its complete palette family', () => {
+    const state = createDefaultFoundationState()
+    state.palettes.gray.overrides[50] = '#123456'
+
+    const grayMappings = projectFoundations(state, 'light').mappings.filter(({ id }) => id.startsWith('palette.gray.'))
+
+    expect(grayMappings).toHaveLength(12)
+    expect(grayMappings).toContainEqual(expect.objectContaining({ id: 'palette.gray.shades.50', value: '#123456' }))
   })
 
   it.each(['compact', 'default', 'spacious'] as const)('projects %s table density with the verified selector', (density) => {

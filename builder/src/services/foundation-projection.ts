@@ -1,16 +1,21 @@
 import { FILAMENT_FOUNDATION_INVENTORY } from '@/registry/filament-foundation-inventory'
 import type { FoundationProjection, FoundationState, ThemeMode } from '@/models/foundations.model'
+import { createDefaultFoundationState } from '@/services/foundation-defaults'
 
 const PREVIEW_MAPPINGS = FILAMENT_FOUNDATION_INVENTORY.filter((entry) =>
   entry.mapping === 'preview-emulatable' || entry.mapping === 'live-emulation',
 )
+const DEFAULT_FOUNDATIONS = createDefaultFoundationState()
 
 export function projectFoundations(state: FoundationState, mode: ThemeMode): FoundationProjection {
   return {
     schemaVersion: 1,
     compatibility: 'filament-5.9',
     mode,
-    mappings: PREVIEW_MAPPINGS.map((entry) => ({
+    mappings: PREVIEW_MAPPINGS.filter((entry) => {
+      const paletteName = /^palette\.([^.]+)\./.exec(entry.id)?.[1]
+      return paletteName === undefined || isPaletteTouched(state, paletteName as keyof FoundationState['palettes'])
+    }).map((entry) => ({
       id: entry.id,
       mapping: entry.mapping,
       ...(entry.selectors.length === 0 ? {} : { selectors: entry.selectors }),
@@ -19,6 +24,13 @@ export function projectFoundations(state: FoundationState, mode: ThemeMode): Fou
       value: foundationValue(state, entry.id, mode),
     })),
   }
+}
+
+function isPaletteTouched(state: FoundationState, name: keyof FoundationState['palettes']): boolean {
+  const palette = state.palettes[name]
+  const defaults = DEFAULT_FOUNDATIONS.palettes[name]
+
+  return palette.base !== defaults.base || Object.keys(palette.overrides).length > 0
 }
 
 function foundationValue(state: FoundationState, id: string, mode: ThemeMode): string | number {

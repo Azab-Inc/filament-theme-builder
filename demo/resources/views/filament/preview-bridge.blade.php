@@ -91,9 +91,9 @@
             return overrideIdentities.has(identity) && definition && validateOverrideScope(override, definition) && isValidOverrideValue(override.value, definition) && ['componentId', 'variantId', 'stateId'].every((key) => override[key] === undefined || isSafeToken(override[key]));
         };
         const isAcceptedProjection = (projection) => {
-            if (!isRecord(projection) || projection.schemaVersion !== 1 || projection.compatibility !== 'filament-5.9' || !['light', 'dark'].includes(projection.mode) || !Array.isArray(projection.mappings) || projection.mappings.length !== canonicalFoundationMappings.size) return false;
+            if (!isRecord(projection) || projection.schemaVersion !== 1 || projection.compatibility !== 'filament-5.9' || !['light', 'dark'].includes(projection.mode) || !Array.isArray(projection.mappings)) return false;
             const ids = new Set();
-            return projection.mappings.every((candidate) => {
+            const validMappings = projection.mappings.every((candidate) => {
                 const expected = canonicalFoundationMappings.get(candidate?.id);
                 if (!expected || ids.has(candidate.id) || !isRecord(candidate) || candidate.mapping !== expected.mapping || candidate.property !== expected.property || !sameArray(candidate.selectors, expected.selectors) || candidate.variable !== expected.variable || Object.keys(candidate).some((key) => !['id', 'mapping', 'property', 'selectors', 'variable', 'value'].includes(key))) return false;
                 if (candidate.property === 'color' && !safeColor(candidate.value)) return false;
@@ -106,6 +106,16 @@
                 ids.add(candidate.id);
                 return true;
             });
+            if (!validMappings) return false;
+            for (const id of canonicalFoundationMappings.keys()) {
+                if (!id.startsWith('palette.') && !ids.has(id)) return false;
+            }
+            for (const palette of paletteNames) {
+                const paletteIds = [...canonicalFoundationMappings.keys()].filter((id) => id.startsWith(`palette.${palette}.`));
+                const included = paletteIds.filter((id) => ids.has(id)).length;
+                if (included !== 0 && included !== paletteIds.length) return false;
+            }
+            return true;
         };
         const isAcceptedTheme = (message) => isRecord(message) && message.type === 'ftb:theme:update' && message.schemaVersion === 1 && isRecord(message.theme) && message.theme.schemaVersion === 3 && exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss']) && exactKeys(message.theme.colors, ['primary']) && /^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(message.theme.colors.primary) && isFoundationRecord(message.theme.foundations) && Array.isArray(message.theme.overrides) && message.theme.overrides.every(isSafeOverride) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && message.theme.customCss === '' && isAcceptedProjection(message.projection);
         const radiusValues = { none: '0px', sm: '0.125rem', md: '0.375rem', lg: '0.5rem', xl: '0.75rem', full: '9999px' };
