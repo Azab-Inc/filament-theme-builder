@@ -74,6 +74,26 @@ function infolistEntry(id: string, label: string, selectors: readonly string[]):
   return { ...formEntry(id, label, selectors), family: 'infolist' }
 }
 
+function showcaseEntry(
+  id: string,
+  label: string,
+  family: string,
+  selectors: readonly string[],
+  variants: readonly string[],
+  states: readonly string[],
+): RegistryEntry {
+  return {
+    id,
+    label,
+    family,
+    selectors,
+    controls: [],
+    variants,
+    states,
+    filamentCompatibility: SUPPORTED_FILAMENT_COMPATIBILITY,
+  }
+}
+
 const productNameInput: RegistryEntry = {
   id: 'form.product-name',
   label: 'Product name input',
@@ -140,8 +160,35 @@ const infolistEntries: readonly RegistryEntry[] = [
   infolistEntry('infolist.layout.flex', 'Infolist flex layout', ['.fi-sc-flex']),
 ]
 
+const actionEntries: readonly RegistryEntry[] = [
+  showcaseEntry('action.button', 'Action button', 'action', ['.fi-btn'], ['primary', 'danger', 'success', 'warning', 'info', 'gray', 'outline', 'icon-only'], ['default', 'disabled', 'loading']),
+  showcaseEntry('action.group', 'Action group', 'action', ['.fi-ac'], ['grouped'], ['default']),
+]
+
+const modalEntries: readonly RegistryEntry[] = [
+  showcaseEntry('modal.content', 'Modal content', 'modal', ['.fi-modal-content'], [], ['open']),
+  showcaseEntry('modal.footer', 'Modal footer', 'modal', ['.fi-modal-footer'], [], ['open']),
+  showcaseEntry('modal.heading', 'Modal heading', 'modal', ['.fi-modal-heading'], [], ['open']),
+  showcaseEntry('modal.window', 'Modal window', 'modal', ['.fi-modal-window'], ['small', 'medium', 'large', 'extra-large', 'slide-over'], ['open']),
+]
+
+const notificationEntries: readonly RegistryEntry[] = [
+  showcaseEntry('notification.container', 'Notification container', 'notification', ['.fi-no'], ['top-start', 'top-center', 'top-end', 'bottom-start', 'bottom-center', 'bottom-end'], ['visible']),
+  showcaseEntry('notification.item', 'Notification item', 'notification', ['.fi-no-notification'], ['success', 'danger', 'warning', 'info'], ['persistent', 'transient']),
+]
+
 export function createThemeRegistry(): FilamentRegistry {
-  return validateRegistry([primaryButton, secondaryButton, legacyPrimary, productNameInput, ...formEntries, ...infolistEntries])
+  return validateRegistry([
+    primaryButton,
+    secondaryButton,
+    legacyPrimary,
+    productNameInput,
+    ...formEntries,
+    ...infolistEntries,
+    ...actionEntries,
+    ...modalEntries,
+    ...notificationEntries,
+  ])
 }
 
 export function validateRegistry(entries: readonly RegistryEntry[]): FilamentRegistry {

@@ -770,6 +770,56 @@ test.describe('actions and notifications showcase', () => {
     await expect(loadingAction).toBeEnabled()
   })
 
+  test('shows named destructive and status modal fixtures with native sections and forms', async ({ page }) => {
+    await page.goto(`${demoBaseUrl}/demo/admin/actions-showcase`)
+    await expect(page.getByText('OrderActionsFixture', { exact: true })).toBeVisible()
+    await expect(page.getByText('ProductActionsFixture', { exact: true })).toBeVisible()
+
+    await page.getByRole('button', { name: 'Delete product confirmation' }).click()
+    const deleteModal = page.locator('.fi-modal.fi-modal-open')
+    await expect(deleteModal.locator('.fi-modal-window')).toHaveClass(/fi-width-sm/)
+    await expect(deleteModal).toContainText('DeleteProductConfirmationModal')
+    await expect(deleteModal.getByRole('button', { name: 'Delete fixture product' })).toBeVisible()
+    await deleteModal.getByRole('button', { name: 'Keep product' }).click()
+
+    await page.getByRole('button', { name: 'Order status modal' }).click()
+    const statusModal = page.locator('.fi-modal.fi-modal-open')
+    await expect(statusModal.locator('.fi-modal-window')).toHaveClass(/fi-width-lg/)
+    await expect(statusModal).toContainText('OrderStatusModal')
+    await expect(statusModal.getByLabel('Order status')).toHaveValue('Processing')
+    await expect(statusModal.getByRole('button', { name: 'Save review only' })).toBeVisible()
+
+    let releaseStatusRequest!: () => void
+    let statusRequestReachedBrowser!: () => void
+    const statusRequestSeen = new Promise<void>((resolve) => { statusRequestReachedBrowser = resolve })
+    const statusRequestReleased = new Promise<void>((resolve) => { releaseStatusRequest = resolve })
+    await page.route('**/livewire-*/update', async (route) => {
+      statusRequestReachedBrowser()
+      await statusRequestReleased
+      await route.continue()
+    })
+    const reviewClick = statusModal.getByRole('button', { name: 'Review status', exact: true }).click()
+    await statusRequestSeen
+    const reviewButton = statusModal.getByRole('button', { name: 'Review status', exact: true })
+    await expect(reviewButton).toBeDisabled()
+    await expect(reviewButton.locator('.fi-loading-indicator').first()).toBeVisible()
+    releaseStatusRequest()
+    await reviewClick
+  })
+
+  test('forces named modal and notification fixtures visibly through presentation-only query tokens', async ({ page }) => {
+    await page.goto(`${demoBaseUrl}/demo/admin/actions-showcase?force_modal=delete-product`)
+    const forcedModal = page.locator('.fi-modal.fi-modal-open')
+    await expect(forcedModal).toContainText('DeleteProductConfirmationModal')
+    await expect(forcedModal.getByRole('button', { name: 'Delete fixture product' })).toBeVisible()
+    await forcedModal.getByRole('button', { name: 'Keep product' }).click()
+
+    await page.goto(`${demoBaseUrl}/demo/admin/notifications-showcase?force_notification=inventory-warning`)
+    const forcedNotification = page.locator('.fi-no-notification').filter({ hasText: 'Inventory warning' })
+    await expect(forcedNotification).toBeVisible()
+    await expect(forcedNotification).toHaveClass(/fi-status-warning/)
+  })
+
   test('shows deterministic notification statuses and content without relying on toast timing', async ({ page }) => {
     await page.goto(`${demoBaseUrl}/demo/admin/notifications-showcase`)
     await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible()
@@ -797,5 +847,22 @@ test.describe('actions and notifications showcase', () => {
     const transient = page.locator('.fi-no-notification').filter({ hasText: 'Transient fixture notification' })
     await expect(transient).toHaveAttribute('x-data', /duration.*5000/)
     await expect(transient).toBeVisible()
+
+    await page.getByRole('button', { name: 'Show order status notification' }).click()
+    const orderStatus = page.locator('.fi-no-notification').filter({ hasText: 'Order status updated' })
+    await expect(orderStatus).toHaveClass(/fi-status-success/)
+    await expect(orderStatus).toHaveAttribute('x-data', /persistent/)
+    await orderStatus.getByRole('button', { name: /close/i }).click()
+
+    await page.getByRole('button', { name: 'Show inventory warning notification' }).click()
+    const inventoryWarning = page.locator('.fi-no-notification').filter({ hasText: 'Inventory warning' })
+    await expect(inventoryWarning).toHaveClass(/fi-status-warning/)
+    await expect(inventoryWarning).toHaveAttribute('x-data', /8000/)
+    await inventoryWarning.getByRole('button', { name: /close/i }).click()
+
+    await page.getByRole('button', { name: 'Show action failure notification' }).click()
+    const actionFailure = page.locator('.fi-no-notification').filter({ hasText: 'Action failure' })
+    await expect(actionFailure).toHaveClass(/fi-status-danger/)
+    await expect(actionFailure.getByRole('button', { name: 'Dismiss' })).toBeVisible()
   })
 })

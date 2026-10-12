@@ -27,6 +27,16 @@ class NotificationsShowcase extends Page
         return 'notifications-showcase';
     }
 
+    public function mount(): void
+    {
+        match (request()->query('force_notification')) {
+            'order-status' => $this->showOrderStatus(),
+            'inventory-warning' => $this->showInventoryWarning(),
+            'action-failure' => $this->showActionFailure(),
+            default => null,
+        };
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -47,6 +57,15 @@ class NotificationsShowcase extends Page
             }),
             Action::make('showTransient')->label('Show transient notification')->action(function (): void {
                 $this->showTransient();
+            }),
+            Action::make('showOrderStatus')->label('Show order status notification')->action(function (): void {
+                $this->showOrderStatus();
+            }),
+            Action::make('showInventoryWarning')->label('Show inventory warning notification')->action(function (): void {
+                $this->showInventoryWarning();
+            }),
+            Action::make('showActionFailure')->label('Show action failure notification')->action(function (): void {
+                $this->showActionFailure();
             }),
         ];
     }
@@ -90,6 +109,41 @@ class NotificationsShowcase extends Page
             ->body('This notification uses a deterministic short duration.')
             ->info()
             ->duration(5000)
+            ->send();
+    }
+
+    public function showOrderStatus(): void
+    {
+        $this->lastNotification = 'Order status updated';
+        Notification::make()
+            ->title('Order status updated')
+            ->body('Order DEMO-ORDER-1001 is ready for fulfillment.')
+            ->success()
+            ->persistent()
+            ->send();
+    }
+
+    public function showInventoryWarning(): void
+    {
+        $this->lastNotification = 'Inventory warning';
+        Notification::make()
+            ->title('Inventory warning')
+            ->body('Product DEMO-PRODUCT-001 is below its reorder threshold.')
+            ->warning()
+            ->duration(8000)
+            ->send();
+    }
+
+    public function showActionFailure(): void
+    {
+        $this->lastNotification = 'Action failure';
+        Notification::make()
+            ->title('Action failure')
+            ->body('The fixture action was rejected without changing demo data.')
+            ->danger()
+            ->actions([
+                Action::make('dismiss')->label('Dismiss'),
+            ])
             ->send();
     }
 

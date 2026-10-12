@@ -100,8 +100,8 @@ domain, resources, and relationship workflows.
 | `showcase.forms` | implemented | `/demo/admin/forms-showcase` (`ShowcaseFormsPage`, implemented as `FormsShowcase`) | Named product, customer, and order schemas with distinct Section/grid, Fieldset/Grid, Wizard, Tabs, Repeater, Radio, ToggleButtons, and exhaustive vendor-backed Filament 5.9 form/schema registry surfaces; native text, price, select, toggle, date, private local image representation, address/contact, nested contact, and status validation controls | Fixed non-persisting fixture data | Filled, disabled, optional-null, server-validation, nested validation, long-text, and keyboard-focus behavior in the native page; forced-state controls remain FTB-016 scope | `FormsShowcaseTest`; `e2e/demo-showcase.spec.ts` (`forms and schemas`); `builder/src/__tests__/theme-registry.spec.ts` |
 | `showcase.tables` | implemented | `ShowcaseTablesPage` → `/demo/admin/tables-showcase` (`TablesShowcase`) | Responsive native product table with image/text/badge/icon columns, grouping, summaries, controls, safe read-only actions, and verified density spacing | Seeded demo products with order counts and nullable supplier/image relationships | Empty, loading, invalid-filter, missing-related-data, long-name, selected-row reset, and Compact/Default/Spacious density preview | `TablesShowcaseTest`; `e2e/demo-showcase.spec.ts` (`tables`); `e2e/theme-foundations.spec.ts` (`native ... table density`) |
 | `showcase.infolists` | implemented | `/demo/admin/infolists-showcase` (`InfolistsShowcase`) | Read-only customer profile, order and product details; text/image/icon/badge/color/key-value entries, rich text, repeatable list/table entries and bullet lists, Fieldset/Tabs/Flex layouts | Seeded customer, order, and product records with fixed presentation values | Seeded representative values; nullable image/supplier/customer/variant and empty relationship labels; no forced-state controls | `InfolistsShowcaseTest`; `e2e/demo-showcase.spec.ts` (`infolists showcase`); `e2e/theme-foundations.spec.ts` (real infolist light/dark/foundation response) |
-| `showcase.actions` | planned | `ShowcaseActionsPage` | Order/product actions, destructive confirmation, open modal | Fixed non-production fixture records | `ActionLoadingState`, `ModalOpenState` | Showcase feature tests |
-| `showcase.notifications` | planned | `OrderStatusNotification`, `InventoryWarningNotification`, `ActionFailureNotification` | Success/warning/danger styles and layout variants | Fixed message payloads | `NotificationVisibleState`; no persistence | Showcase feature tests |
+| `showcase.actions` | implemented | `ShowcaseActionsPage` | Order/product actions, grouped actions, destructive confirmation, representative small/large modals, forms, headers, footers, and native loading | Fixed non-production fixture records; callbacks do not mutate records | `force_modal=delete-product|order-status` is presentation-only; FTB-016 owns broader state controls | `ActionsShowcaseTest`; `e2e/demo-showcase.spec.ts` (native variants, modal semantics, loading, forced modal) |
+| `showcase.notifications` | implemented | `OrderStatusNotification`, `InventoryWarningNotification`, `ActionFailureNotification` | Success/warning/danger styles with persistent, duration, and action-footer layouts | Fixed message payloads | `force_notification=order-status|inventory-warning|action-failure` is presentation-only; no persistence | `ActionsShowcaseTest`; `e2e/demo-showcase.spec.ts` (native statuses, layout, forced notification) |
 | `showcase.navigation` | planned | `ShowcaseIndexPage` plus FTB-015 shared navigation integration | Search, profile/auth, controlled tenant surface; reuse Phase 1 navigation/widgets | Panel configuration and fixed showcase identity | Active/collapsed/search UI presentation | Showcase feature tests |
 | `showcase.states` | planned | `ShowcaseStateControls` | Form, table, action, modal, and notification state surfaces | In-memory presentation controls | Deterministic; presentation-only | Showcase feature tests |
 | `panel.icons` | planned | `IconPackConfiguration`, `SemanticResourceIconOverrides` | Default/alternative packs and resource icon replacement | Theme and PanelProvider configuration | Preview configuration only | Builder/theme export tests |
@@ -198,10 +198,23 @@ forced-state controls are claimed.
   not installed in this repository; it is intentionally not rendered or
   registry-claimed because adding dependencies is out of scope. The verified
   runtime-available first-party entry/layout surface is complete.
-- **FTB-014 actions/notifications:** `ShowcaseActionsPage` provides
-  `OrderActionsFixture`, `ProductActionsFixture`, `DeleteProductConfirmationModal`,
-  and `OrderStatusModal`; notification fixtures are `OrderStatusNotification`,
-  `InventoryWarningNotification`, and `ActionFailureNotification`.
+- **FTB-014 actions/notifications:** `ShowcaseActionsPage` provides named
+  `OrderActionsFixture` and `ProductActionsFixture` sections backed by native
+  primary, danger, success, warning, info, gray, outline, icon-only, disabled,
+  loading, grouped, tooltip, and confirmation actions. `DeleteProductConfirmationModal`
+  is a small destructive confirmation with icon, header, description, and footer;
+  `OrderStatusModal` is a large form modal with a second footer action and native
+  Livewire loading evidence. `NotificationsShowcase` provides
+  `OrderStatusNotification` (persistent success), `InventoryWarningNotification`
+  (warning with deterministic duration), and `ActionFailureNotification` (danger
+  with a dismiss action). The builder registry covers `.fi-btn`, `.fi-ac`,
+  `.fi-modal-window`, `.fi-modal-heading`, `.fi-modal-content`, `.fi-modal-footer`,
+  `.fi-no`, and `.fi-no-notification` with component/variant/state metadata.
+  Query tokens `force_modal` and `force_notification` use native presentation
+  paths only; they do not persist, mutate demo data, or replace FTB-016
+  `ShowcaseStateControls`. Evidence is in `ActionsShowcaseTest`,
+  `e2e/demo-showcase.spec.ts`, `e2e/theme-registry-selectors.spec.ts`, and
+  `builder/src/__tests__/theme-registry.spec.ts`.
 - **FTB-015 integration:** `ShowcaseIndexPage` integrates Phase 1 widgets and
   navigation, adding `ShowcaseSidebarNavigation`, `GlobalSearchSurface`,
   `ProfileMenuSurface`, `LoginSurface`, and `TenantSwitcherSurface` without

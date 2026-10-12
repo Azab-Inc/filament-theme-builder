@@ -9,5 +9,9 @@
                 Last notification: {{ $lastNotification }}
             </p>
         </x-filament::section>
+        <x-filament::section aria-label="Named notification fixtures">
+            <x-slot name="heading">OrderStatusNotification, InventoryWarningNotification, ActionFailureNotification</x-slot>
+            <p class="text-sm text-gray-600 dark:text-gray-300">These named native fixtures cover success, warning, and danger semantics with persistent, duration, and action-footer layouts.</p>
+        </x-filament::section>
     </div>
 </x-filament-panels::page>

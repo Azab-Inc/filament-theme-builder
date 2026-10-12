@@ -26,3 +26,28 @@ test('verified semantic selectors target accessible demo controls', async ({ pag
   await expect(secondaryButton).toHaveAccessibleName('Outline action')
   await expect(secondaryButton.locator('..')).toHaveClass(/fi-ac/)
 })
+
+test('verified FTB-014 selectors target native action, modal, and notification surfaces', async ({ page }) => {
+  await page.goto(`${demoBaseUrl}/demo/admin/login`)
+  await page.locator('#form\\.email').fill('user')
+  await page.locator('#form\\.password').fill('password')
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  await page.waitForURL(`${demoBaseUrl}/demo/admin`)
+  await page.goto(`${demoBaseUrl}/demo/admin/actions-showcase`)
+  await expect(page.locator('.fi-btn')).not.toHaveCount(0)
+  await expect(page.locator('.fi-ac')).not.toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Order status modal' }).click()
+  const modal = page.locator('.fi-modal.fi-modal-open')
+  await expect(modal.locator('.fi-modal-window')).toBeVisible()
+  await expect(modal.locator('.fi-modal-heading')).toBeVisible()
+  await expect(modal.locator('.fi-modal-content')).toBeVisible()
+  await expect(modal.locator('.fi-modal-footer')).toBeVisible()
+  await modal.getByRole('button', { name: 'Cancel' }).click()
+
+  await page.goto(`${demoBaseUrl}/demo/admin/notifications-showcase`)
+  await page.getByRole('button', { name: 'Show success notification' }).click()
+  await expect(page.locator('.fi-no')).toBeVisible()
+  await expect(page.locator('.fi-no-notification')).toHaveCount(1)
+  await expect(page.locator('.fi-no-notification.fi-status-success')).toBeVisible()
+})

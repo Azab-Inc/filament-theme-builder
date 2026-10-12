@@ -409,7 +409,7 @@ Evidence: `InfolistsShowcaseTest` (6 passing tests, 53 assertions), the three fo
 
 ## FTB-014 — Cover Actions, Modals, and Notifications visually
 
-**Status:** in-progress
+**Status:** done
 **Blocked by:** [FTB-005](#ftb-005), [FTB-006](#ftb-006), [FTB-002](#ftb-002)
 
 ### What to build
@@ -418,15 +418,15 @@ Create showcase fixtures and registry coverage for Filament actions, buttons, dr
 
 ### Acceptance criteria
 
-- [ ] `ShowcaseActionsPage` contains `OrderActionsFixture` and `ProductActionsFixture` with primary, danger, success, warning, info, gray, outline, icon-only, disabled, and loading variants where applicable.
-- [ ] `DeleteProductConfirmationModal` and `OrderStatusModal` demonstrate representative sizes, headers, footers, forms, destructive confirmation, and loading/action states.
-- [ ] `OrderStatusNotification`, `InventoryWarningNotification`, and `ActionFailureNotification` demonstrate semantic status styles and layout variations.
-- [ ] Registry entries expose component, variant, and state-level theming.
-- [ ] `showcase.notifications` and modal fixtures can be forced visible for theme work without timing-sensitive interaction; forcing is presentation-only and does not persist data.
+- [x] `ShowcaseActionsPage` contains `OrderActionsFixture` and `ProductActionsFixture` with primary, danger, success, warning, info, gray, outline, icon-only, disabled, and loading variants where applicable.
+- [x] `DeleteProductConfirmationModal` and `OrderStatusModal` demonstrate representative sizes, headers, footers, forms, destructive confirmation, and loading/action states.
+- [x] `OrderStatusNotification`, `InventoryWarningNotification`, and `ActionFailureNotification` demonstrate semantic status styles and layout variations.
+- [x] Registry entries expose component, variant, and state-level theming.
+- [x] `showcase.notifications` and modal fixtures can be forced visible for theme work without timing-sensitive interaction; forcing is presentation-only and does not persist data.
 
 Implementation: `ca160d1` (`Feature: add actions modals and notifications showcase`); verification: [`ActionsShowcaseTest`](./demo/tests/Feature/Filament/Showcase/ActionsShowcaseTest.php), `e2e/demo-showcase.spec.ts`.
 
-Remaining: complete registry component/variant/state coverage and deterministic forced-visible notification/modal support; do not mark unfinished criteria complete prematurely.
+Evidence: `ActionsShowcaseTest` (7 passing tests, 114 assertions), the focused Compose Playwright actions/notifications suite (7 passing tests, including forced-visible modal/notification and modal loading coverage), and `builder/src/__tests__/theme-registry.spec.ts` (13 passing tests). The installed Filament 5.9 runtime is the compatibility baseline; no third-party compatibility dependency was added. FTB-016 remains the owner of generalized `ShowcaseStateControls` and is not implied by these presentation-only query tokens.
 
 ---
 

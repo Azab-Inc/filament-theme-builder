@@ -70,6 +70,8 @@ describe('theme registry', () => {
 
     expect(registry.entries.find((entry) => entry.id === 'button.primary')?.label).toBe('Primary button')
     expect(registry.entries.map((entry) => entry.id)).toEqual([
+      'action.button',
+      'action.group',
       'button.primary',
       'button.secondary',
       'form.control.builder',
@@ -117,6 +119,12 @@ describe('theme registry', () => {
       'infolist.entry.repeatable',
       'infolist.entry.text',
       'infolist.layout.flex',
+      'modal.content',
+      'modal.footer',
+      'modal.heading',
+      'modal.window',
+      'notification.container',
+      'notification.item',
     ])
     expect(registry.entries.find((entry) => entry.id === 'button.primary')?.selectors).toEqual(['.fi-btn.fi-color-primary'])
     expect(registry.entries.find((entry) => entry.id === 'button.secondary')?.selectors).toEqual(['.fi-btn.fi-outlined'])
@@ -204,6 +212,44 @@ describe('theme registry', () => {
     expect(forms.filter((entry) => entry.id !== 'form.product-name').every((entry) => entry.variants.length === 0 && entry.states.length === 0)).toBe(true)
   })
 
+  it('registers action, modal, and notification component variants and states', () => {
+    const registry = createThemeRegistry()
+
+    expect(registry.entries.find((entry) => entry.id === 'action.button')).toMatchObject({
+      family: 'action',
+      selectors: ['.fi-btn'],
+      variants: ['primary', 'danger', 'success', 'warning', 'info', 'gray', 'outline', 'icon-only'],
+      states: ['default', 'disabled', 'loading'],
+    })
+    expect(registry.entries.find((entry) => entry.id === 'action.group')).toMatchObject({
+      family: 'action',
+      selectors: ['.fi-ac'],
+      variants: ['grouped'],
+      states: ['default'],
+    })
+    expect(registry.entries.find((entry) => entry.id === 'modal.window')).toMatchObject({
+      family: 'modal',
+      selectors: ['.fi-modal-window'],
+      variants: ['small', 'medium', 'large', 'extra-large', 'slide-over'],
+      states: ['open'],
+    })
+    for (const id of ['modal.heading', 'modal.content', 'modal.footer']) {
+      expect(registry.entries.find((entry) => entry.id === id)).toMatchObject({ family: 'modal', states: ['open'] })
+    }
+    expect(registry.entries.find((entry) => entry.id === 'notification.container')).toMatchObject({
+      family: 'notification',
+      selectors: ['.fi-no'],
+      variants: ['top-start', 'top-center', 'top-end', 'bottom-start', 'bottom-center', 'bottom-end'],
+      states: ['visible'],
+    })
+    expect(registry.entries.find((entry) => entry.id === 'notification.item')).toMatchObject({
+      family: 'notification',
+      selectors: ['.fi-no-notification'],
+      variants: ['success', 'danger', 'warning', 'info'],
+      states: ['persistent', 'transient'],
+    })
+  })
+
   it('registers only the Product name input as an editable production form target', () => {
     const registry = createThemeRegistry()
     const target = registry.entries.find((entry) => entry.id === 'form.product-name')
@@ -275,6 +321,14 @@ describe('theme registry', () => {
       '.fi-sc-image',
       '.fi-sc-text',
       '.fi-sc-unordered-list',
+      '.fi-btn',
+      '.fi-ac',
+      '.fi-modal-window',
+      '.fi-modal-heading',
+      '.fi-modal-content',
+      '.fi-modal-footer',
+      '.fi-no',
+      '.fi-no-notification',
     ]) {
       expect(lookupRegistryEntry(registry, { selectors: [selector], filamentVersion: '5.9' }), selector).toMatchObject({ status: 'matched' })
     }

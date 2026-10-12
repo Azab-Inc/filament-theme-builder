@@ -31,6 +31,19 @@ class ActionsShowcase extends Page
         return 'actions-showcase';
     }
 
+    public function mount(): void
+    {
+        $forcedAction = match (request()->query('force_modal')) {
+            'delete-product' => 'deleteProduct',
+            'order-status' => 'orderStatus',
+            default => null,
+        };
+
+        if ($forcedAction !== null) {
+            $this->defaultAction = $forcedAction;
+        }
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -160,6 +173,44 @@ class ActionsShowcase extends Page
                 ->modalWidth(Width::Medium)
                 ->modalCancelActionLabel('Close')
                 ->modalSubmitAction(false),
+            Action::make('deleteProduct')
+                ->label('Delete product confirmation')
+                ->color('danger')
+                ->icon('heroicon-o-trash')
+                ->requiresConfirmation()
+                ->modalIcon('heroicon-o-trash')
+                ->modalIconColor('danger')
+                ->modalHeading('DeleteProductConfirmationModal')
+                ->modalDescription('This destructive fixture is presentation-only and does not delete a product.')
+                ->modalWidth(Width::Small)
+                ->modalSubmitActionLabel('Delete fixture product')
+                ->modalCancelActionLabel('Keep product')
+                ->action(function (): void {
+                    $this->notify('Delete fixture confirmed without mutation.', 'info');
+                }),
+            Action::make('orderStatus')
+                ->label('Order status modal')
+                ->color('primary')
+                ->schema([
+                    TextInput::make('status')
+                        ->label('Order status')
+                        ->default('Processing')
+                        ->required(),
+                    TextInput::make('status_note')
+                        ->label('Status note')
+                        ->default('Read-only order status fixture'),
+                ])
+                ->modalHeading('OrderStatusModal')
+                ->modalDescription('Review a status update without persisting an order change.')
+                ->modalWidth(Width::Large)
+                ->modalSubmitActionLabel('Review status')
+                ->modalCancelActionLabel('Cancel')
+                ->extraModalFooterActions(fn (Action $action): array => [
+                    $action->makeModalSubmitAction('saveStatusReview')->label('Save review only'),
+                ])
+                ->action(function (): void {
+                    $this->notify('Order status review completed without mutation.', 'success');
+                }),
         ];
     }
 

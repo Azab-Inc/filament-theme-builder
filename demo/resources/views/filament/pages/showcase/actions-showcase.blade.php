@@ -2,14 +2,18 @@
     <div class="space-y-6">
         <section aria-label="Action variants" class="grid gap-4 md:grid-cols-2">
             <x-filament::section>
-                <x-slot name="heading">Action variants</x-slot>
-                <p class="text-sm text-gray-600 dark:text-gray-300">Native buttons cover visual states without changing seeded records.</p>
+                <x-slot name="heading">OrderActionsFixture</x-slot>
+                <p class="text-sm text-gray-600 dark:text-gray-300">Native order actions cover primary, success, warning, info, gray, outline, icon-only, disabled, and loading presentations without changing seeded records.</p>
             </x-filament::section>
             <x-filament::section>
-                <x-slot name="heading">Modal fixtures</x-slot>
-                <p class="text-sm text-gray-600 dark:text-gray-300">Confirmation, form, slide-over, and read-only detail interactions are safe to repeat.</p>
+                <x-slot name="heading">ProductActionsFixture</x-slot>
+                <p class="text-sm text-gray-600 dark:text-gray-300">Native product actions cover primary, danger, success, warning, info, gray, outline, icon-only, disabled, and loading presentations without changing seeded records.</p>
             </x-filament::section>
         </section>
+        <x-filament::section aria-label="Named modal fixtures">
+            <x-slot name="heading">DeleteProductConfirmationModal and OrderStatusModal</x-slot>
+            <p class="text-sm text-gray-600 dark:text-gray-300">The native confirmation and form actions expose representative sizes, headers, descriptions, forms, footers, destructive confirmation, and Livewire loading semantics.</p>
+        </x-filament::section>
         <x-filament::section heading="Typography fixtures">
             <p>Body typography is rendered by this native page.</p>
             <p class="fi-section-header-description" data-foundation-muted>Muted text fixture</p>
