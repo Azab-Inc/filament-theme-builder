@@ -32,7 +32,7 @@ const SURFACE_SELECTORS = {
 } as const
 const BORDER_SELECTORS = {
   default: ['.fi-section', '.fi-ta-ctn', '.fi-input', '.fi-select-input', '.fi-fo-textarea'],
-  strong: ['.fi-btn.fi-outlined', '.fi-section-header', '.fi-ta-header'],
+  strong: ['.fi-btn.fi-outlined', '.fi-section', '.fi-ta-header'],
 } as const
 const TEXT_SELECTORS = {
   primary: ['body', '.fi-body', '.fi-in-text', '.fi-fo-field-label'],
@@ -46,7 +46,7 @@ const TYPOGRAPHY_SELECTORS = {
 } as const
 const SPACING_SELECTORS = [
   ['0', ['.fi-sidebar']], ['px', ['.fi-topbar']], ['0.5', ['.fi-btn']], ['1', ['.fi-input', '.fi-select-input']],
-  ['1.5', ['.fi-section-header']], ['2', ['.fi-section']], ['3', ['.fi-ta-header']], ['4', ['.fi-ta-ctn']],
+  ['1.5', ['.fi-section']], ['2', ['.fi-section > div']], ['3', ['.fi-ta-header']], ['4', ['.fi-ta-ctn']],
   ['6', ['.fi-modal']], ['8', ['.fi-page']],
 ] as const
 const COMPONENT_SELECTORS = ['.fi-section', '.fi-ta', '.fi-ta-ctn', '.fi-btn', '.fi-input', '.fi-select-input', '.fi-fo-textarea', '.fi-modal'] as const

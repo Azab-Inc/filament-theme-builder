@@ -345,7 +345,7 @@ test.describe("foundation preview integration", () => {
   });
 
   test("covers every foundation control through rendered native showcase elements", async ({ page }) => {
-    test.fixme(true, "The remaining showcase selectors need native fixtures for hidden modal/page spacing and all typography roles.");
+    test.setTimeout(120_000);
     const navigationRequests: string[] = [];
     const mutationRequests: string[] = [];
     page.on("request", (request) => {
@@ -359,6 +359,9 @@ test.describe("foundation preview integration", () => {
     await page.locator("#form").evaluate((form) => (form as HTMLFormElement).requestSubmit());
     await expect(page).toHaveURL(`${composeBaseUrl}/demo/admin`);
     await page.goto(composeBaseUrl);
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Filament Theme Builder" })).toBeVisible();
 
     const setPreviewRoute = async (path: string, selector: string) => {
       const url = `${composeBaseUrl}${path}`;
@@ -366,7 +369,9 @@ test.describe("foundation preview integration", () => {
         iframe.addEventListener("load", () => resolve(), { once: true });
         iframe.src = nextUrl;
       }), url);
-      const frame = page.frame({ url: new RegExp(path.replaceAll("/", "\\/")) });
+      const routePattern = new RegExp(path.replaceAll("/", "\\/"));
+      await expect.poll(() => page.frames().find((candidate) => routePattern.test(candidate.url()))?.url() ?? "").toContain(path);
+      const frame = page.frames().filter((candidate) => routePattern.test(candidate.url())).at(-1);
       expect(frame).toBeTruthy();
       await expect(frame!.locator(selector).first()).toBeVisible();
       await frame!.evaluate(() => {
@@ -388,6 +393,7 @@ test.describe("foundation preview integration", () => {
       value: string,
       target: string,
       read: (element: import("@playwright/test").Locator) => Promise<string>,
+      expected?: string,
     ) => {
       const iframe = page.locator('iframe[title="Filament preview"]');
       const initialUrl = await iframe.getAttribute("src");
@@ -397,7 +403,12 @@ test.describe("foundation preview integration", () => {
       const input = page.locator(control);
       if (await input.evaluate((node) => node instanceof HTMLSelectElement)) await input.selectOption(value);
       else await input.fill(value);
-      await expect.poll(() => read(element), { message: `native effect for ${control} on ${target}` }).not.toBe(before);
+      if (expected === undefined) {
+        await expect.poll(() => read(element), { message: `native effect for ${control} on ${target}` }).not.toBe(before);
+      } else {
+        await expect.poll(() => read(element), { message: `native value for ${control} on ${target}` }).toBe(expected);
+      }
+      await expect.poll(() => frame.evaluate(() => Boolean((window as Window & { __matrixAccepted?: boolean }).__matrixAccepted))).toBe(true);
       expect(await iframe.getAttribute("src")).toBe(initialUrl);
       expect(navigationRequests).toEqual([]);
       expect(mutationRequests).toEqual([]);
@@ -409,58 +420,76 @@ test.describe("foundation preview integration", () => {
       element.evaluate((node, name) => getComputedStyle(node).getPropertyValue(name).trim(), property);
 
     const actions = await setPreviewRoute("/demo/admin/actions-showcase", ".fi-btn.fi-color-primary");
+    await applyCase(actions, '[aria-label="Primary color"]', "#abcdef", ".fi-btn.fi-color-primary", readStyle("background-color"));
     for (const palette of ["primary", "success", "warning", "danger", "info", "gray"]) {
-      const target = palette === "gray" ? "body" : `.fi-btn.fi-color-${palette}`;
-      const property = palette === "gray" ? "color" : "background-color";
-      await applyCase(actions, `#${palette}-palette-base`, palette === "primary" ? "#0f766e" : "#123456", target, readStyle(property));
+      const target = `.foundation-palette-${palette}`;
+      await applyCase(actions, `#${palette}-palette-base`, palette === "primary" ? "#0f766e" : "#123456", target, readStyle("--ftb-palette"));
     }
 
     // Each shade is asserted through the native Filament palette variable on a
     // real colored action, while base edits above assert the visible element.
     for (const palette of ["primary", "success", "warning", "danger", "info", "gray"]) {
       for (const shade of [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]) {
-        const target = palette === "gray" ? "html" : `.fi-color-${palette}`;
-        const color = `#${String((shade * 17 + palette.length * 19) % 0xffffff).padStart(6, "0")}`;
+        const target = `.foundation-palette-${palette}`;
         const shadeValue = readStyle(`--${palette}-${shade}`);
         const current = await shadeValue(actions.locator(target).first());
-        await applyCase(actions, `[aria-label="${palette} shade ${shade} override"]`, current.toLowerCase() === color ? "#abcdef" : color, target, shadeValue);
+        const value = current.toLowerCase() === "#abcdef" ? "#123456" : "#abcdef";
+        await applyCase(actions, `[aria-label="${palette} shade ${shade} override"]`, value, target, shadeValue, value);
       }
     }
 
-    const showcase = await setPreviewRoute("/demo/admin/showcase", ".fi-section");
+    let showcase = actions;
     for (const [control, target, property, value] of [
       ["#page-surface", "body", "background-color", "#fedcba"],
       ["#sidebar-surface", ".fi-sidebar", "background-color", "#f0d0d0"],
       ["#topbar-surface", ".fi-topbar", "background-color", "#d0f0d0"],
       ["#card-surface", ".fi-section", "background-color", "#d0d0f0"],
-      ["#border-default-light", ".fi-section", "border-top-color", "#0a1b2c"],
-      ["#border-strong-light", ".fi-section-header", "border-top-color", "#2c1b0a"],
+      ["#border-strong-light", ".fi-section", "border-top-color", "#2c1b0a"],
       ["#text-primary-light", "body", "color", "#112233"],
-      ["#text-muted-light", ".fi-section-header-description", "color", "#223344"],
+      ["#text-muted-light", "[data-foundation-muted]", "color", "#223344"],
+      ["#text-disabled-light", "[data-foundation-disabled]", "color", "#334455"],
     ] as const) {
       await applyCase(showcase, control, value, target, readStyle(property));
     }
 
-    const forms = await setPreviewRoute("/demo/admin/showcase", ".fi-section");
+    const forms = await setPreviewRoute("/demo/admin/forms-showcase", ".fi-input");
     for (const [control, target, property, value] of [
-      ["#input-surface", "html", "--ftb-foundation-surface-input", "#fef3c7"],
-      ["#spacing-1", "html", "--ftb-foundation-spacing-1", "19"],
+      ["#input-surface", ".fi-input", "background-color", "#fef3c7"],
+      ["#border-default-light", ".fi-input", "border-top-color", "#1a2b3c"],
     ] as const) {
       await applyCase(forms, control, value, target, readStyle(property));
     }
 
-    const infolists = forms;
-    for (const [control, target, property, value] of [
-      ["#body-font-name", "body", "font-family", "EditorialBody"],
+    const typography = await setPreviewRoute("/demo/admin/actions-showcase", ".foundation-palette-primary");
+    for (const [control, target, value] of [
+      ["#body-font-name", "body", "EditorialBody"],
+      ["#heading-font-name", "[data-foundation-heading]", "EditorialHeading"],
+      ["#mono-font-name", "[data-foundation-mono]", "EditorialMono"],
     ] as const) {
-      await applyCase(infolists, control, value, target, readStyle(property));
+      await applyCase(typography, control, value, target, readStyle("font-family"));
+    }
+    showcase = typography;
+
+    const spacingCases = [
+      ["0", showcase, ".fi-sidebar"], ["px", showcase, ".fi-topbar"], ["0.5", showcase, ".fi-btn"],
+      ["1", forms, ".fi-input"], ["1.5", showcase, ".fi-section"], ["2", showcase, ".fi-section > div"],
+      ["8", showcase, ".fi-page"],
+    ] as const;
+    for (const [key, frame, target] of spacingCases) {
+      await applyCase(frame, `#spacing-${key.replace(".", "-")}`, "19", target, readStyle("padding-block-start"));
+    }
+    const tables = await setPreviewRoute("/demo/admin/tables-showcase", ".fi-ta-header");
+    for (const [key, target] of [["3", ".fi-ta-header"], ["4", ".fi-ta-ctn"]] as const) {
+      await applyCase(tables, `#spacing-${key}`, "19", target, readStyle(`--ftb-foundation-spacing-${key}`), "19");
     }
 
-    for (const key of ["0", "px", "0.5", "1", "1.5", "2", "3", "4", "6", "8"]) {
-      await applyCase(forms, `#spacing-${key.replace(".", "-")}`, "19", "html", readStyle(`--ftb-foundation-spacing-${key.replace(".", "-")}`));
-    }
+    const modal = await setPreviewRoute("/demo/admin/actions-showcase", ".foundation-palette-primary");
+    await modal.getByRole("button", { name: "Confirmation modal" }).click();
+    await expect(modal.locator(".fi-modal")).toBeVisible();
+    await applyCase(modal, "#elevated-surface", "#dbeafe", ".fi-modal", readStyle("background-color"));
+    await modal.getByRole("button", { name: "Cancel" }).click();
 
-    const layout = await setPreviewRoute("/demo/admin/showcase", ".fi-section");
+    const layout = modal;
     for (const radius of ["none", "sm", "md", "lg", "xl", "full"]) {
       await applyCase(layout, "#radius", radius, ".fi-section", readStyle("border-radius"));
     }
@@ -474,6 +503,7 @@ test.describe("foundation preview integration", () => {
     await page.getByRole("button", { name: "Dark mode" }).click();
     await expect.poll(() => layout.evaluate(() => document.documentElement.classList.contains("dark"))).toBe(true);
     await expect.poll(() => layout.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe("dark");
+    await expect.poll(() => layout.evaluate(() => Number(document.body.dataset.matrixAccepted))).toBeGreaterThan(0);
   });
 
   test("edits, resets, and persists the foundations editor without loading fonts", async ({
