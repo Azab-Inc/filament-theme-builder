@@ -10,10 +10,42 @@ import {
 import { createDefaultFoundationState } from '@/services/foundation-defaults'
 import { validateFoundationMapping } from '@/services/foundation-validation'
 import { projectFoundations } from '@/services/foundation-projection'
+import {
+  TAILWIND_COLOR_FAMILIES,
+  TAILWIND_COLOR_SHADES,
+  resolveTrustedColorReference,
+} from '@/registry/tailwind-color-catalog'
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
 
 describe('Filament foundation inventory', () => {
+  it('resolves standard Tailwind references to installed literals without changing canonical references', () => {
+    expect(resolveTrustedColorReference('var(--red-200)')).toBe('oklch(88.5% 0.062 18.334)')
+    expect(resolveTrustedColorReference('var(--color-red-200)')).toBe('oklch(88.5% 0.062 18.334)')
+    expect(resolveTrustedColorReference('var(--gray-200)')).toBe('var(--gray-200)')
+    expect(resolveTrustedColorReference('var(--slate-200)')).toBe('oklch(92.9% 0.013 255.508)')
+    expect(resolveTrustedColorReference('var(--primary-200)')).toBe('var(--primary-200)')
+  })
+
+  it('keeps the bridge Tailwind color catalog in parity with the trusted builder catalog', () => {
+    const bridge = readFileSync(resolve(repositoryRoot, 'demo/resources/views/filament/preview-bridge.blade.php'), 'utf8')
+    const families = bridge.match(/const tailwindColorFamilies = (\[[^;]+\]);/)?.[1]
+    const shades = bridge.match(/const tailwindColorShades = (\[[^;]+\]);/)?.[1]
+
+    expect(families).toBeDefined()
+    expect(shades).toBeDefined()
+    expect(JSON.parse(families!.replace(/'/g, '"'))).toEqual(TAILWIND_COLOR_FAMILIES)
+    expect(JSON.parse(shades!)).toEqual(TAILWIND_COLOR_SHADES)
+  })
+
+  it('matches every trusted literal to the installed Tailwind theme source', () => {
+    const themeSource = readFileSync(resolve(repositoryRoot, 'demo/node_modules/tailwindcss/theme.css'), 'utf8')
+
+    for (const [, family, shade, value] of themeSource.matchAll(/--color-([a-z]+)-(50|100|200|300|400|500|600|700|800|900|950):\s*([^;]+);/g)) {
+      expect(resolveTrustedColorReference(`var(--color-${family}-${shade})`)).toBe(value!.trim())
+    }
+  })
+
   it('classifies every FTB-005 control exactly once', () => {
     const expected = [
       ...['primary', 'success', 'warning', 'danger', 'info', 'gray'].flatMap((palette) => [
@@ -127,6 +159,7 @@ describe('Filament foundation inventory', () => {
     const state = createDefaultFoundationState()
     state.palettes.primary.base = '#0f766e'
     state.palettes.primary.overrides[500] = '#0f766e'
+    state.explicitPaths.push('palettes.primary.base', 'palettes.primary.overrides.500')
 
     expect(projectFoundations(state, 'dark')).toEqual(
       expect.objectContaining({
@@ -149,9 +182,24 @@ describe('Filament foundation inventory', () => {
         }),
       ]),
     )
-    expect(projectFoundations(state, 'dark').mappings.length).toBe(FILAMENT_FOUNDATION_INVENTORY.filter(({ id }) => !id.startsWith('palette.') && !['global.primary', 'button.primary', 'button.secondary', 'badge', 'logo.light', 'logo.dark'].includes(id)).length + 12)
+    expect(projectFoundations(state, 'dark').mappings.length).toBe(12)
     expect(projectFoundations(state, 'dark').mappings.every((mapping) => ['preview-emulatable', 'live-emulation'].includes(mapping.mapping))).toBe(true)
     expect(JSON.stringify(projectFoundations(state, 'dark'))).not.toMatch(/url\(|@import/i)
+  })
+
+  it('does not project untouched foundation values over Filament native styles', () => {
+    const projection = projectFoundations(createDefaultFoundationState(), 'light')
+
+    expect(projection.mappings).toEqual([])
+  })
+
+  it('projects an explicit value even when it equals the builder default', () => {
+    const state = createDefaultFoundationState()
+    state.explicitPaths.push('borders.default.light')
+
+    expect(projectFoundations(state, 'light').mappings).toContainEqual(
+      expect.objectContaining({ id: 'border.default', value: 'var(--gray-200)' }),
+    )
   })
 
   it('omits untouched palettes but projects every value for an explicitly edited family', () => {
@@ -160,6 +208,7 @@ describe('Filament foundation inventory', () => {
     expect(projectFoundations(state, 'light').mappings.filter(({ id }) => id.startsWith('palette.'))).toEqual([])
 
     state.palettes.primary.base = '#0f766e'
+    state.explicitPaths.push('palettes.primary.base')
     const primaryMappings = projectFoundations(state, 'light').mappings.filter(({ id }) => id.startsWith('palette.primary.'))
 
     expect(primaryMappings).toHaveLength(12)
@@ -173,6 +222,7 @@ describe('Filament foundation inventory', () => {
   it('projects an explicitly overridden shade with its complete palette family', () => {
     const state = createDefaultFoundationState()
     state.palettes.gray.overrides[50] = '#123456'
+    state.explicitPaths.push('palettes.gray.overrides.50')
 
     const grayMappings = projectFoundations(state, 'light').mappings.filter(({ id }) => id.startsWith('palette.gray.'))
 
@@ -183,6 +233,7 @@ describe('Filament foundation inventory', () => {
   it.each(['compact', 'default', 'spacious'] as const)('projects %s table density with the verified selector', (density) => {
     const state = createDefaultFoundationState()
     state.density = density
+    state.explicitPaths.push('density')
 
     expect(projectFoundations(state, 'light').mappings).toEqual(
       expect.arrayContaining([
@@ -197,7 +248,9 @@ describe('Filament foundation inventory', () => {
   })
 
   it('projects scoped controls without arbitrary selectors', () => {
-    const projection = projectFoundations(createDefaultFoundationState(), 'light')
+    const state = createDefaultFoundationState()
+    state.explicitPaths.push('surfaces.page.light')
+    const projection = projectFoundations(state, 'light')
 
     expect(projection.mappings.some((mapping) => mapping.id === 'surface.page')).toBe(true)
     expect(projection.mappings.every((mapping) => mapping.selectors === undefined || mapping.selectors.length > 0)).toBe(true)
@@ -229,5 +282,19 @@ describe('Filament foundation inventory', () => {
     expect(bridge).toContain('projection.mappings')
     expect(bridge).toContain('ftb:preview-message-accepted')
     expect(bridge).not.toContain('ftb:preview-compatibility')
+  })
+
+  it('requires the bridge to bind sparse projections to canonical values and active mode', () => {
+    const bridge = readFileSync(
+      resolve(repositoryRoot, 'demo/resources/views/filament/preview-bridge.blade.php'),
+      'utf8',
+    )
+
+    expect(bridge).toContain('projectionMatchesCanonicalFoundation')
+    expect(bridge).toContain('projection.mode')
+    expect(bridge).toContain('foundationValue')
+    expect(bridge).toContain('explicitPaths')
+    expect(bridge).toContain('canonicalFoundationMappings.size')
+    expect(bridge).toContain('expectedMappings.length')
   })
 })

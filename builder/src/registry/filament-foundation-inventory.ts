@@ -27,7 +27,7 @@ const SURFACE_SELECTORS = {
   sidebar: ['.fi-sidebar'],
   topbar: ['.fi-topbar'],
   card: ['.fi-section', '.fi-ta-ctn', '.fi-wi-stats-overview-stat'],
-  elevated: ['.fi-modal', '.fi-dropdown'],
+  elevated: ['.fi-modal-window', '.fi-dropdown'],
   input: ['.fi-input', '.fi-select-input', '.fi-fo-textarea'],
 } as const
 const BORDER_SELECTORS = {

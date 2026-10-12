@@ -130,12 +130,14 @@ describe('theme serialization', () => {
     const theme = createDefaultThemeState()
     theme.foundations.palettes.primary.base = '#0f766e'
     theme.foundations.palettes.primary.shades[500] = '#123456'
+    theme.foundations.explicitPaths.push('palettes.primary.base')
 
     const exported = serializeCanonicalTheme(theme)
 
     expect(exported.schemaVersion).toBe(3)
     expect(exported.foundations.palettes.primary.base).toBe('#0f766e')
     expect(exported.foundations.palettes.primary.shades[500]).toBe('#123456')
+    expect(exported.foundations.explicitPaths).toEqual(['palettes.primary.base'])
     expect(exported.foundations.spacing['0.5']).toBeDefined()
     expect(exported).not.toBe(theme)
   })

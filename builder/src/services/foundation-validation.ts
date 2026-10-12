@@ -9,6 +9,7 @@ import type { ThemeOverride, ThemeScope, ThemeValue } from '@/models/theme.model
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { lookupFoundationMapping, type FoundationInventoryEntry } from '@/registry/filament-foundation-inventory'
 import { validateThemeOverride } from '@/services/theme-validation'
+import { isTrustedColor } from '@/registry/tailwind-color-catalog'
 
 type ValidationError = Exclude<FoundationValidationResult, { valid: true }>
 
@@ -25,7 +26,6 @@ const RADII = ['none', 'sm', 'md', 'lg', 'xl', 'full'] as const
 const SHADOWS = ['none', 'sm', 'md', 'lg', 'xl'] as const
 const SPACING_KEYS = ['0', 'px', '0.5', '1', '1.5', '2', '3', '4', '6', '8'] as const
 const HEX_COLOR = /^#[\da-f]{6}(?:[\da-f]{2})?$/i
-const SAFE_REFERENCE = /^var\(--(?:primary|success|warning|danger|info|gray)-(?:50|100|200|300|400|500|600|700|800|900|950)\)$/
 const SAFE_FONT_FAMILY = /^[A-Za-z0-9][A-Za-z0-9 .,_-]*$/
 const SYSTEM_MONO_FALLBACK = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
 
@@ -43,6 +43,10 @@ export function validateFoundationMapping(value: unknown, stateValue: unknown): 
   if (!mapping) return invalid('unsupported-mapping', 'mapping', 'Foundation mapping is not in the Filament 5.9 inventory')
 
   return { valid: true, mapping, state: stateResult.state }
+}
+
+export function isEditableFoundationPath(path: string): boolean {
+  return KNOWN_EXPLICIT_PATHS.has(path)
 }
 
 function validateVersionedState(value: Record<string, unknown>): FoundationValidationResult {
@@ -100,11 +104,24 @@ function validateOverride(value: unknown, path: string): { valid: true; override
 
 function validateFoundationRecord(value: unknown, path: string): FoundationValidationResult {
   if (!isRecord(value)) return invalid('invalid-value', path || 'state', 'Foundation state must be an object')
-  const keys = checkKeys(value, ['palettes', 'surfaces', 'borders', 'text', 'typography', 'spacing', 'density', 'radius', 'borderWidth', 'shadow'], ['palettes', 'surfaces', 'borders', 'text', 'typography', 'spacing', 'density', 'radius', 'borderWidth', 'shadow'], path)
+  const foundationKeys = ['palettes', 'surfaces', 'borders', 'text', 'typography', 'spacing', 'density', 'radius', 'borderWidth', 'shadow', 'explicitPaths', 'provenanceVersion']
+  const keys = checkKeys(value, foundationKeys, foundationKeys, path)
   if (keys) return keys
+  if (value.provenanceVersion !== 1) return invalid('invalid-value', join(path, 'provenanceVersion'), 'Unsupported foundation provenance version')
+  const provenancePath = join(path, 'explicitPaths')
+  if (!Array.isArray(value.explicitPaths) || new Set(value.explicitPaths).size !== value.explicitPaths.length || value.explicitPaths.some((candidate) => typeof candidate !== 'string' || !KNOWN_EXPLICIT_PATHS.has(candidate))) {
+    return invalid('invalid-value', provenancePath, 'Explicit foundation paths must be known canonical paths')
+  }
 
   const paletteResult = validatePaletteCollection(value.palettes, join(path, 'palettes'))
   if (paletteResult) return paletteResult
+  for (const explicitPath of value.explicitPaths as string[]) {
+    const overridePath = /^palettes\.([^.]+)\.overrides\.(\d+)$/.exec(explicitPath)
+    const palette = overridePath && isRecord(value.palettes) ? value.palettes[overridePath[1]!] : undefined
+    if (overridePath && (!isRecord(palette) || !isRecord(palette.overrides) || !Object.prototype.hasOwnProperty.call(palette.overrides, overridePath[2]!))) {
+      return invalid('invalid-value', provenancePath, 'Palette override provenance must reference an existing override')
+    }
+  }
   for (const [collectionName, collection, allowed] of [
     ['surfaces', value.surfaces, SURFACE_KEYS],
     ['borders', value.borders, BORDER_KEYS],
@@ -136,6 +153,17 @@ function validateFoundationRecord(value: unknown, path: string): FoundationValid
   if (!isFiniteNumber(value.borderWidth) || value.borderWidth < 0 || value.borderWidth > 8) return invalid('invalid-value', join(path, 'borderWidth'), 'Border width must be finite and between 0 and 8')
   return { valid: true, state: value as FoundationState }
 }
+
+const KNOWN_EXPLICIT_PATHS = new Set<string>([
+  ...PALETTE_NAMES.flatMap((name) => [
+    `palettes.${name}.base`,
+    ...PALETTE_SHADES.map((shade) => `palettes.${name}.overrides.${shade}`),
+  ]),
+  ...['surfaces.page', 'surfaces.sidebar', 'surfaces.topbar', 'surfaces.card', 'surfaces.elevated', 'surfaces.input', 'borders.default', 'borders.strong', 'text.primary', 'text.muted', 'text.disabled'].flatMap((path) => [`${path}.light`, `${path}.dark`]),
+  ...['body', 'heading', 'mono'].map((name) => `typography.${name}`),
+  ...SPACING_KEYS.map((key) => `spacing.${key}`),
+  'density', 'radius', 'borderWidth', 'shadow',
+])
 
 function validatePaletteCollection(value: unknown, path: string): ValidationError | undefined {
   if (!isRecord(value)) return invalid('invalid-value', path, 'Palettes must be an object')
@@ -203,7 +231,11 @@ function checkKeys(value: Record<string, unknown>, allowed: readonly string[], r
 }
 
 function isColor(value: unknown): value is string {
-  return isHexColor(value) || (typeof value === 'string' && SAFE_REFERENCE.test(value))
+  return isHexColor(value) || isTrustedColor(value)
+}
+
+export function validateFoundationColor(value: string): { valid: true } | { valid: false; message: string } {
+  return isColor(value) ? { valid: true } : { valid: false, message: 'Unsupported color reference. Use a six/eight-digit hex or an allowlisted Tailwind color.' }
 }
 
 function isHexColor(value: unknown): value is string {

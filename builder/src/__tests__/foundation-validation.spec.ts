@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 import { PALETTE_NAMES, PALETTE_SHADES, type FoundationState } from '@/models/foundations.model'
 import { createDefaultFoundationState } from '@/services/foundation-defaults'
 import { validateFoundationMapping, validateFoundationState } from '@/services/foundation-validation'
+import { TAILWIND_COLOR_FAMILIES, TAILWIND_COLOR_SHADES } from '@/registry/tailwind-color-catalog'
 
 function validState(): FoundationState {
   return createDefaultFoundationState()
@@ -17,7 +20,7 @@ function expectError(value: unknown, code: string, path: string): void {
 describe('validateFoundationState', () => {
   it('accepts the typed default foundation state', () => {
     expect(validateFoundationState(validState())).toMatchObject({ valid: true })
-    expect('explicitPaths' in validState()).toBe(false)
+    expect(validState().explicitPaths).toEqual([])
   })
 
   it('accepts a complete versioned V3 payload with canonical nested records', () => {
@@ -45,8 +48,39 @@ describe('validateFoundationState', () => {
     }, 'invalid-value', 'foundations.surfaces')
   })
 
-  it('rejects explicitPaths because provenance is reconstructed from canonical overrides', () => {
-    expectError({ ...validState(), explicitPaths: [] }, 'unknown-key', 'explicitPaths')
+  it('accepts an explicit provenance path when it is canonical', () => {
+    expect(validateFoundationState({ ...validState(), explicitPaths: ['surfaces.page.light'] })).toMatchObject({ valid: true })
+    expectError({ ...validState(), explicitPaths: ['surfaces.page.injected'] }, 'invalid-value', 'explicitPaths')
+  })
+
+  it('rejects duplicate explicit provenance paths', () => {
+    expectError({ ...validState(), explicitPaths: ['density', 'density'] }, 'invalid-value', 'explicitPaths')
+  })
+
+  it.each([
+    ['palettes.primary.overrides.500', (state: FoundationState) => ({ ...state, explicitPaths: ['palettes.primary.overrides.500'] })],
+  ])('rejects provenance for absent palette value %s', (_path, makeInvalid) => {
+    expectError(makeInvalid(validState()), 'invalid-value', 'explicitPaths')
+  })
+
+  it('keeps the bridge explicit-path allowlist in parity with the TypeScript validator', () => {
+    const bridge = readFileSync(resolve(process.cwd(), '../demo/resources/views/filament/preview-bridge.blade.php'), 'utf8')
+    const bridgeAllowlist = bridge.match(/const isSafeExplicitPath = \(path\) => (\/.*\/\.test\(path\));/)?.[1]
+    expect(bridgeAllowlist).toBeDefined()
+    const isBridgePathAllowed = new Function('path', `return ${bridgeAllowlist}`) as (path: string) => boolean
+    const state = validState()
+    const allowedPaths = [
+      ...PALETTE_NAMES.flatMap((name) => [`palettes.${name}.base`, ...PALETTE_SHADES.map((shade) => `palettes.${name}.overrides.${shade}`)]),
+      ...['surfaces.page', 'surfaces.sidebar', 'surfaces.topbar', 'surfaces.card', 'surfaces.elevated', 'surfaces.input', 'borders.default', 'borders.strong', 'text.primary', 'text.muted', 'text.disabled'].flatMap((path) => [`${path}.light`, `${path}.dark`]),
+      ...['body', 'heading', 'mono'].map((name) => `typography.${name}`),
+      ...Object.keys(state.spacing).map((key) => `spacing.${key}`),
+      'density', 'radius', 'borderWidth', 'shadow',
+    ]
+    const paths = [...allowedPaths, 'palettes.primary.overrides.49', 'spacing.9', 'untrusted.path']
+
+    for (const path of paths) {
+      expect(isBridgePathAllowed(path), `bridge allowlist for ${path}`).toBe(allowedPaths.includes(path))
+    }
   })
 
   it.each([
@@ -63,8 +97,31 @@ describe('validateFoundationState', () => {
     ['palettes.primary.base', (state: FoundationState) => ({ ...state, palettes: { ...state.palettes, primary: { ...state.palettes.primary, base: 'red' } } })],
     ['surfaces.page.light', (state: FoundationState) => ({ ...state, surfaces: { ...state.surfaces, page: { ...state.surfaces.page, light: '#12' } } })],
     ['borders.default.dark', (state: FoundationState) => ({ ...state, borders: { ...state.borders, default: { ...state.borders.default, dark: 'rgb(1, 2, 3)' } } })],
+    ['surfaces.page.light', (state: FoundationState) => ({ ...state, surfaces: { ...state.surfaces, page: { ...state.surfaces.page, light: 'var(--unknown-200)' } } })],
   ])('rejects malformed colors at %s', (path, makeInvalid) => {
     expectError(makeInvalid(validState()), 'invalid-value', path)
+  })
+
+  it.each([
+    'var(--red-200)',
+    'var(--color-red-200)',
+    'var(--sky-950)',
+    'var(--color-sky-950)',
+  ])('accepts an installed Tailwind v4 color reference %s', (reference) => {
+    const state = validState()
+    state.surfaces.sidebar.light = reference
+
+    expect(validateFoundationState(state)).toMatchObject({ valid: true })
+  })
+
+  it('keeps the fixed Tailwind catalog aligned with the installed v4 theme source', () => {
+    const themeSource = readFileSync(resolve(process.cwd(), '../demo/node_modules/tailwindcss/theme.css'), 'utf8')
+    const names = [...themeSource.matchAll(/--color-([a-z]+)-(50|100|200|300|400|500|600|700|800|900|950):/g)]
+      .map(([, family]) => family)
+    const families = [...new Set(names)]
+
+    expect(TAILWIND_COLOR_FAMILIES).toEqual(families)
+    expect(TAILWIND_COLOR_SHADES).toEqual([50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950])
   })
 
   it.each([
@@ -138,6 +195,13 @@ describe('validateFoundationState', () => {
   it('rejects unsupported mapping identifiers without coercing them', () => {
     expect(validateFoundationMapping('mapping.does-not-exist', validState())).toMatchObject({ valid: false, code: 'unsupported-mapping', path: 'mapping' })
     expect(validateFoundationMapping('palette.primary.base', validState())).toMatchObject({ valid: true, mapping: { mapping: 'preview-emulatable' } })
+  })
+
+  it('rejects metadata paths as editable foundation paths', () => {
+    expect(validateFoundationMapping('explicitPaths', validState())).toMatchObject({
+      valid: false,
+      code: 'unsupported-mapping',
+    })
   })
 
   it('keeps the canonical palette and shade allowlists explicit', () => {

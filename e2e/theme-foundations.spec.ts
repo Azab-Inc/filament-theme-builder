@@ -33,6 +33,107 @@ test.describe("foundation preview integration", () => {
     "requires the canonical Compose stack",
   );
 
+  const computedColorPixel = (context: import("@playwright/test").Page | import("@playwright/test").Frame, selector: string) =>
+    context.locator(selector).evaluate((element) => {
+      const color = getComputedStyle(element).backgroundColor;
+      const canvas = document.createElement("canvas");
+      canvas.width = 1;
+      canvas.height = 1;
+      const context = canvas.getContext("2d")!;
+      context.fillStyle = color;
+      context.fillRect(0, 0, 1, 1);
+      return Array.from(context.getImageData(0, 0, 1, 1).data);
+    });
+
+  const colorPixel = (context: import("@playwright/test").Page | import("@playwright/test").Frame, color: string) =>
+    context.evaluate((value) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 1;
+      canvas.height = 1;
+      const context = canvas.getContext("2d")!;
+      context.fillStyle = value;
+      context.fillRect(0, 0, 1, 1);
+      return Array.from(context.getImageData(0, 0, 1, 1).data);
+    }, color);
+
+  test("archives malformed persisted JSON for download and keeps restoration disabled", async ({ page }) => {
+    const original = "{malformed legacy JSON"
+    await page.addInitScript((raw) => localStorage.setItem("ftb-theme", raw), original)
+    await page.goto(composeBaseUrl)
+
+    await expect(page.getByRole("alert")).toContainText("not valid JSON")
+    const restore = page.getByRole("button", { name: "Restore legacy customization" })
+    await expect(restore).toBeDisabled()
+    const downloadPromise = page.waitForEvent("download")
+    await page.getByRole("button", { name: "Download archived legacy JSON" }).click()
+    const download = await downloadPromise
+    expect(download.suggestedFilename()).toBe("filament-theme-legacy-recovery.json")
+    expect(await readFile((await download.path())!, "utf8")).toBe(original)
+    expect(await page.evaluate(() => localStorage.getItem("ftb-theme-legacy-recovery"))).toBe(original)
+  })
+
+  test("accepts a red Tailwind shade reference for the native sidebar surface", async ({ page }) => {
+    await page.goto(composeBaseUrl)
+    await expect(page.getByRole("heading", { name: "Filament Theme Builder" })).toBeVisible()
+    const iframe = page.locator('iframe[title="Filament preview"]')
+    const nativePage = await page.context().newPage()
+    await nativePage.goto(`${composeBaseUrl}/demo/admin`)
+    const nativeSidebarColor = await computedColorPixel(nativePage, '.fi-sidebar')
+    const frame = page.frames().find((candidate) => candidate.url().includes("/demo/admin"))
+    expect(frame).toBeTruthy()
+    await expect.poll(() => computedColorPixel(frame!, '.fi-sidebar')).toEqual(nativeSidebarColor)
+    await frame!.evaluate(() => {
+      (window as Window & { __sidebarAccepted?: number }).__sidebarAccepted = 0
+      window.addEventListener("ftb:preview-message-accepted", () => {
+        (window as Window & { __sidebarAccepted?: number }).__sidebarAccepted! += 1
+      })
+    })
+
+    const sidebarSurface = page.locator("#sidebar-surface")
+    await sidebarSurface.fill("var(--gray-200)")
+    await expect.poll(() => page.evaluate(() => {
+      const raw = localStorage.getItem("ftb-theme")
+      return raw ? JSON.parse(raw).foundations.surfaces.sidebar.light : null
+    })).toBe("var(--gray-200)")
+    await expect.poll(() => frame!.evaluate(() => (window as Window & { __sidebarAccepted?: number }).__sidebarAccepted)).toBe(1)
+
+    await sidebarSurface.fill("var(--red-200)")
+
+    await expect.poll(() => frame!.evaluate(() => (window as Window & { __sidebarAccepted?: number }).__sidebarAccepted)).toBe(2)
+    await expect.poll(() => page.evaluate(() => {
+      const raw = localStorage.getItem("ftb-theme")
+      return raw ? JSON.parse(raw).foundations.surfaces.sidebar.light : null
+    })).toBe("var(--red-200)")
+    await expect.poll(() => computedColorPixel(frame!, ".fi-sidebar")).toEqual(await colorPixel(frame!, "oklch(88.5% 0.062 18.334)"))
+
+    await sidebarSurface.fill("var(--color-red-200)")
+    await expect.poll(() => computedColorPixel(frame!, ".fi-sidebar")).toEqual(await colorPixel(frame!, "oklch(88.5% 0.062 18.334)"))
+
+    await sidebarSurface.fill("var(--sky-950)")
+    await expect.poll(() => computedColorPixel(frame!, ".fi-sidebar")).toEqual(await colorPixel(frame!, "oklch(29.3% 0.066 243.157)"))
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("ftb-theme")!).foundations.surfaces.sidebar.light)).toBe("var(--sky-950)")
+    const downloadPromise = page.waitForEvent("download")
+    await page.getByRole("button", { name: "Export theme JSON" }).click()
+    const download = await downloadPromise
+    const exported = JSON.parse(await readFile((await download.path())!, "utf8"))
+    expect(exported.foundations.surfaces.sidebar.light).toBe("var(--sky-950)")
+    await page.getByRole("button", { name: "Reset sidebar surface" }).click()
+    await expect.poll(() => computedColorPixel(frame!, '.fi-sidebar')).toEqual(nativeSidebarColor)
+    await nativePage.close()
+    expect(await iframe.getAttribute("src")).toContain("/demo/admin")
+  })
+
+  test("rejects an unknown color reference visibly without changing persistence", async ({ page }) => {
+    await page.goto(composeBaseUrl)
+    const sidebarSurface = page.locator("#sidebar-surface")
+    const before = await page.evaluate(() => localStorage.getItem("ftb-theme"))
+
+    await sidebarSurface.fill("var(--not-a-tailwind-color)")
+
+    await expect(page.locator('[data-foundation-error="surfaces.sidebar.light"]')).toContainText("Unsupported color reference")
+    await expect.poll(() => page.evaluate(() => localStorage.getItem("ftb-theme"))).toBe(before)
+  })
+
   test("preserves native palette defaults until a family is explicitly edited", async ({ page }) => {
     await page.goto(composeBaseUrl);
     const nativePage = await page.context().newPage();
@@ -59,6 +160,38 @@ test.describe("foundation preview integration", () => {
     await expect.poll(() => preview.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--gray-50").trim())).not.toBe("");
     await expect.poll(() => preview.locator("body").evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(initialGrayBackground);
     await nativePage.close();
+  });
+
+  test("accepts eight-digit palette bases and overrides and renders their alpha", async ({ page }) => {
+    await page.goto(composeBaseUrl);
+    const routeNavigation = page.waitForEvent("framenavigated", (frame) =>
+      /\/demo\/admin\/showcase/.test(frame.url()),
+    );
+    await page.evaluate((showcaseUrl) => {
+      document.querySelector<HTMLIFrameElement>('iframe[title="Filament preview"]')!.src = showcaseUrl;
+    }, `${composeBaseUrl}/demo/admin/showcase`);
+    const preview = await routeNavigation;
+    const primaryButton = preview.locator(".fi-badge.fi-color-primary").first();
+
+    await page.locator("#primary-palette-base").fill("#ff000080");
+    await expect.poll(() => page.evaluate(() => {
+      const theme = localStorage.getItem("ftb-theme");
+      return theme ? JSON.parse(theme).foundations.palettes.primary.base : null;
+    }))
+      .toBe("#ff000080");
+    await expect.poll(() => primaryButton.evaluate((element) => getComputedStyle(element).backgroundColor))
+      .toMatch(/^rgba?\(/);
+    const baseColor = await primaryButton.evaluate((element) => getComputedStyle(element).backgroundColor);
+    expect(baseColor).toContain("0.5");
+
+    await page.getByLabel("Primary shade 700 override").fill("#0000ff80");
+    await expect.poll(() => page.evaluate(() => {
+      const theme = localStorage.getItem("ftb-theme");
+      return theme ? JSON.parse(theme).foundations.palettes.primary.overrides[700] : null;
+    }))
+      .toBe("#0000ff80");
+    await expect.poll(() => primaryButton.evaluate((element) => getComputedStyle(element).color))
+      .toBe("rgba(0, 0, 255, 0.5)");
   });
 
   test("edits a real builder foundation control and updates the actual preview iframe immediately", async ({
@@ -160,6 +293,8 @@ test.describe("foundation preview integration", () => {
     await page.locator("#form").evaluate((form) => form.requestSubmit());
     await expect(page).toHaveURL(`${composeBaseUrl}/demo/admin`);
     await page.goto(composeBaseUrl);
+    const nativePage = await page.context().newPage();
+    await nativePage.goto(`${composeBaseUrl}/demo/admin/tables-showcase`);
     await page.evaluate(() => localStorage.clear());
     await page.reload();
     await expect(page.getByRole("heading", { name: "Filament Theme Builder" })).toBeVisible();
@@ -186,8 +321,8 @@ test.describe("foundation preview integration", () => {
     });
     expect(densityEvents).toBe(0);
 
-    const measure = () =>
-      previewFrame!.evaluate(() =>
+    const measure = (frame: import("@playwright/test").Frame | import("@playwright/test").Page) =>
+      frame.evaluate(() =>
         Array.from(document.querySelectorAll(".fi-ta")).map((root) => ({
           heading: root.querySelector(".fi-ta-header-heading")?.textContent?.trim(),
           container: root.querySelector(".fi-ta-ctn")!.getBoundingClientRect().height,
@@ -202,7 +337,8 @@ test.describe("foundation preview integration", () => {
       "Orders table fixture",
       "Inventory table fixture",
     ];
-    const defaultMeasurements = await measure();
+    const nativeMeasurements = await measure(nativePage);
+    const defaultMeasurements = await measure(previewFrame!);
     expect(defaultMeasurements.map(({ heading }) => heading)).toEqual(expectedHeadings);
 
     navigationRequests.length = 0;
@@ -212,32 +348,32 @@ test.describe("foundation preview integration", () => {
     await expect
       .poll(() => previewFrame!.evaluate(() => Number(document.body.dataset.tableDensityEvents)))
       .toBe(1);
-    const compactMeasurements = await measure();
+    const compactMeasurements = await measure(previewFrame!);
 
-    await page.getByRole("button", { name: "Default density" }).click();
+    await page.getByRole("button", { name: "Reset density" }).click();
     await expect(page.locator("#density")).toHaveValue("default");
     await expect
       .poll(() => previewFrame!.evaluate(() => Number(document.body.dataset.tableDensityEvents)))
       .toBe(2);
-    const restoredMeasurements = await measure();
+    const restoredMeasurements = await measure(previewFrame!);
 
     await page.getByRole("button", { name: "Spacious density" }).click();
     await expect(page.locator("#density")).toHaveValue("spacious");
     await expect
       .poll(() => previewFrame!.evaluate(() => Number(document.body.dataset.tableDensityEvents)))
       .toBe(3);
-    const spaciousMeasurements = await measure();
+    const spaciousMeasurements = await measure(previewFrame!);
 
     for (const index of [0, 1, 2]) {
       expect(compactMeasurements[index]!.container).toBeLessThan(defaultMeasurements[index]!.container);
-      expect(defaultMeasurements[index]!.container).toBe(restoredMeasurements[index]!.container);
-      expect(restoredMeasurements[index]!.container).toBeLessThan(spaciousMeasurements[index]!.container);
+      expect(restoredMeasurements[index]).toEqual(nativeMeasurements[index]);
       expect(compactMeasurements[index]!.header).toBeLessThan(defaultMeasurements[index]!.header);
-      expect(defaultMeasurements[index]!.header).toBeLessThan(spaciousMeasurements[index]!.header);
       expect(compactMeasurements[index]!.headerCell).toBeLessThan(defaultMeasurements[index]!.headerCell);
-      expect(defaultMeasurements[index]!.headerCell).toBeLessThan(spaciousMeasurements[index]!.headerCell);
       expect(compactMeasurements[index]!.row).toBeLessThan(defaultMeasurements[index]!.row);
-      expect(defaultMeasurements[index]!.row).toBeLessThan(spaciousMeasurements[index]!.row);
+      expect(spaciousMeasurements[index]!.container).toBeGreaterThan(compactMeasurements[index]!.container);
+      expect(spaciousMeasurements[index]!.header).toBeGreaterThan(compactMeasurements[index]!.header);
+      expect(spaciousMeasurements[index]!.headerCell).toBeGreaterThan(compactMeasurements[index]!.headerCell);
+      expect(spaciousMeasurements[index]!.row).toBeGreaterThan(compactMeasurements[index]!.row);
     }
 
     expect(await iframe.getAttribute("src")).toBe(initialIframeUrl);
@@ -259,6 +395,7 @@ test.describe("foundation preview integration", () => {
       window.addEventListener("ftb:preview-message-accepted", () => { capture.__ftbAccepted! += 1; });
     });
     await page.getByLabel("Primary color").fill("#0f766e");
+    await page.locator("#border-width").fill("1");
     await expect.poll(() => frame!.evaluate(() => Boolean((window as Window & { __ftbMessage?: unknown }).__ftbMessage))).toBe(true);
     const valid = await frame!.evaluate(() => (window as Window & { __ftbMessage: Record<string, any> }).__ftbMessage);
     const before = await frame!.evaluate(() => (window as Window & { __ftbAccepted: number }).__ftbAccepted);
@@ -279,12 +416,20 @@ test.describe("foundation preview integration", () => {
       expect(accepted).toBe(false);
     };
 
-    await postAndCheckRejected((message) => { message.projection.mappings.pop(); });
+    await postAndCheckRejected((message) => { message.projection.mappings.push({ id: "unknown", mapping: "live-emulation", property: "color", selectors: ["body"], value: "#123456" }); });
     await postAndCheckRejected((message) => { message.projection.mappings[0].selectors = [".attacker-controlled"]; });
     await postAndCheckRejected((message) => { message.projection.mappings.find((mapping: Record<string, unknown>) => mapping.id === "borderWidth").value = "1"; });
     await postAndCheckRejected((message) => { message.projection.mappings.find((mapping: Record<string, unknown>) => mapping.id === "borderWidth").value = Number.POSITIVE_INFINITY; });
+    await postAndCheckRejected((message) => { message.projection.mappings.find((mapping: Record<string, unknown>) => mapping.id === "palette.primary.base").value = "#abcdef"; });
+    await postAndCheckRejected((message) => { message.projection.mode = "dark"; });
     await postAndCheckRejected((message) => { message.theme.overrides = [{ targetId: "button.primary", controlId: "background", scope: "global", componentId: "button", value: "#0f766e" }]; });
     await postAndCheckRejected((message) => { message.theme.overrides = [{ targetId: "button.primary", controlId: "background", scope: "global", value: "not-a-color" }]; });
+    await postAndCheckRejected((message) => { message.theme.foundations.explicitPaths = ["density", "density"]; });
+    await postAndCheckRejected((message) => { message.theme.foundations.explicitPaths = ["palettes.primary.overrides.500"]; });
+    await postAndCheckRejected((message) => { message.theme.colors.primary = "#123456"; });
+    await postAndCheckRejected((message) => { message.theme.foundations.palettes.primary.base = "#12345"; });
+    await postAndCheckRejected((message) => { message.theme.foundations.palettes.primary.shades[500] = "#12345"; });
+    await postAndCheckRejected((message) => { message.theme.foundations.palettes.primary.overrides[500] = "#12345"; });
   });
 
   test("projects every foundation family live in the iframe without reload", async ({ page }) => {
@@ -393,14 +538,12 @@ test.describe("foundation preview integration", () => {
 
     const setPreviewRoute = async (path: string, selector: string) => {
       const url = `${composeBaseUrl}${path}`;
-      await page.locator('iframe[title="Filament preview"]').evaluate((iframe, nextUrl) => new Promise<void>((resolve) => {
-        iframe.addEventListener("load", () => resolve(), { once: true });
-        iframe.src = nextUrl;
-      }), url);
       const routePattern = new RegExp(path.replaceAll("/", "\\/"));
-      await expect.poll(() => page.frames().find((candidate) => routePattern.test(candidate.url()))?.url() ?? "").toContain(path);
-      const frame = page.frames().filter((candidate) => routePattern.test(candidate.url())).at(-1);
-      expect(frame).toBeTruthy();
+      const routeNavigation = page.waitForEvent("framenavigated", (candidate) => routePattern.test(candidate.url()));
+      await page.locator('iframe[title="Filament preview"]').evaluate((iframe, nextUrl) => {
+        iframe.src = nextUrl;
+      }, url);
+      const frame = await routeNavigation;
       await expect(frame!.locator(selector).first()).toBeVisible();
       await frame!.evaluate(() => {
         document.body.dataset.matrixAccepted = "0";
@@ -508,13 +651,14 @@ test.describe("foundation preview integration", () => {
     }
     const tables = await setPreviewRoute("/demo/admin/tables-showcase", ".fi-ta-header");
     for (const [key, target] of [["3", ".fi-ta-header"], ["4", ".fi-ta-ctn"]] as const) {
-      await applyCase(tables, `#spacing-${key}`, "19", target, readStyle(`--ftb-foundation-spacing-${key}`), "19");
+      await applyCase(tables, `#spacing-${key}`, "19", target, readStyle("padding-block-start"));
     }
 
     const modal = await setPreviewRoute("/demo/admin/actions-showcase", ".foundation-palette-primary");
     await modal.getByRole("button", { name: "Confirmation modal" }).click();
-    await expect(modal.locator(".fi-modal")).toBeVisible();
-    await applyCase(modal, "#elevated-surface", "#dbeafe", ".fi-modal", readStyle("background-color"));
+    await expect(modal.locator(".fi-modal-window")).toBeVisible();
+    await applyCase(modal, "#spacing-6", "19", ".fi-modal", readStyle("padding-block-start"));
+    await applyCase(modal, "#elevated-surface", "#dbeafe", ".fi-modal-window", readStyle("background-color"));
     await modal.getByRole("button", { name: "Cancel" }).click();
 
     const layout = modal;
@@ -522,7 +666,7 @@ test.describe("foundation preview integration", () => {
       await applyCase(layout, "#radius", radius, ".fi-section", readStyle("border-radius"));
     }
     for (const width of ["0", "1", "2", "4", "8"]) {
-      await applyCase(layout, "#border-width", width, ".fi-section", readStyle("border-top-width"));
+      await applyCase(layout, "#border-width", width, ".fi-section", readStyle("border-top-width"), `${width}px`);
     }
     for (const shadow of ["none", "sm", "md", "lg", "xl"]) {
       await applyCase(layout, "#shadow", shadow, ".fi-section", readStyle("box-shadow"));

@@ -47,6 +47,15 @@ describe('theme state', () => {
     expect(theme.theme.colors.primary).toBe('#0f766e')
   })
 
+  it('records an explicit primary selection even when it equals the native default', () => {
+    const theme = createThemeState()
+
+    theme.setPrimaryColor('#6366f1')
+
+    expect(theme.theme.foundations.explicitPaths).toContain('palettes.primary.base')
+    expect(theme.previewFoundation('light').mappings.filter(({ id }) => id.startsWith('palette.primary.'))).toHaveLength(12)
+  })
+
   it('undoes and redoes color changes', () => {
     const theme = createThemeState()
     theme.setPrimaryColor('#0f766e')
@@ -71,12 +80,34 @@ describe('theme state', () => {
   })
 
   it('uses the default theme when persisted JSON is malformed or invalid', () => {
+    vi.useFakeTimers()
     localStorage.setItem('ftb-theme', '{invalid')
-    expect(createThemeState().theme.colors.primary).toBe('#6366f1')
+    const store = createThemeState()
+    expect(store.theme.colors.primary).toBe('#6366f1')
+    expect(localStorage.getItem('ftb-theme-legacy-recovery')).toBe('{invalid')
+    expect(store.legacyRecoveryAvailable).toBe(true)
+    expect(store.getLegacyRecoveryJson()).toBe('{invalid')
+    expect(store.restoreLegacyRecovery()).toBe(false)
+    expect(store.legacyRecoveryError).toMatch(/valid JSON/i)
+    store.setPrimaryColor('#0f766e')
+    vi.advanceTimersByTime(300)
+    expect(localStorage.getItem('ftb-theme')).not.toBe('{invalid')
+    expect(localStorage.getItem('ftb-theme-legacy-recovery')).toBe('{invalid')
 
     setActivePinia(createPinia())
     localStorage.setItem('ftb-theme', JSON.stringify({ schemaVersion: 1, colors: { primary: 'red' } }))
     expect(createThemeState().theme.colors.primary).toBe('#6366f1')
+  })
+
+  it('does not replace an existing raw recovery archive with malformed persisted JSON', () => {
+    localStorage.setItem('ftb-theme', '{invalid')
+    localStorage.setItem('ftb-theme-legacy-recovery', 'original archive')
+
+    const store = createThemeState()
+
+    expect(store.getLegacyRecoveryJson()).toBe('original archive')
+    expect(store.restoreLegacyRecovery()).toBe(false)
+    expect(store.theme.colors.primary).toBe('#6366f1')
   })
 
   it('clears the redo branch when a new edit follows undo', () => {
@@ -165,14 +196,138 @@ describe('theme state', () => {
     expect(store.theme.foundations.spacing['0.5']).toBe(2)
   })
 
-  it('does not persist a separate explicit foundation provenance list', () => {
+  it('resets a palette shade through the generic foundation reset path', () => {
+    const store = useThemeStore()
+
+    store.setFoundation('palettes.gray.overrides.50', '#123456')
+    expect(store.theme.foundations.explicitPaths).toContain('palettes.gray.overrides.50')
+
+    store.resetFoundation('palettes.gray.overrides.50')
+
+    expect(store.theme.foundations.palettes.gray.overrides).not.toHaveProperty('50')
+    expect(store.theme.foundations.explicitPaths).not.toContain('palettes.gray.overrides.50')
+  })
+
+  it('rejects resets for foundation metadata while retaining palette override resets', () => {
+    const store = useThemeStore()
+    const before = JSON.parse(JSON.stringify(store.theme.foundations))
+
+    store.resetFoundation('provenanceVersion')
+    store.resetFoundation('explicitPaths')
+    store.resetFoundation('palettes.primary.shades.50')
+
+    expect(store.theme.foundations).toEqual(before)
+  })
+
+  it('persists explicit foundation provenance, including equal-to-default edits', () => {
+    vi.useFakeTimers()
     const store = useThemeStore()
 
     store.setFoundation('surfaces.page.light', '#ffffff')
 
-    expect('explicitPaths' in store.theme.foundations).toBe(false)
+    expect(store.theme.foundations.explicitPaths).toContain('surfaces.page.light')
+    vi.advanceTimersByTime(300)
+    expect(JSON.parse(localStorage.getItem('ftb-theme')!).foundations.explicitPaths).toContain('surfaces.page.light')
     store.resetFoundation('surfaces.page.light')
-    expect('explicitPaths' in store.theme.foundations).toBe(false)
+    expect(store.theme.foundations.explicitPaths).not.toContain('surfaces.page.light')
+  })
+
+  it('restores the native baseline when old V3 state has no provenance marker', () => {
+    const state = createDefaultThemeState()
+    state.foundations.borders.default.light = '#123456'
+    delete (state.foundations as unknown as { explicitPaths?: string[] }).explicitPaths
+    delete (state.foundations as unknown as { provenanceVersion?: number }).provenanceVersion
+    localStorage.setItem('ftb-theme', JSON.stringify(state))
+
+    const store = useThemeStore()
+
+    expect(store.theme.foundations.borders.default.light).toBe('var(--gray-200)')
+    expect(store.theme.foundations.explicitPaths).toEqual([])
+  })
+
+  it('restores the native baseline from transitional V3 state with an empty path list', () => {
+    const state = createDefaultThemeState()
+    state.foundations.radius = 'lg'
+    delete (state.foundations as unknown as { provenanceVersion?: number }).provenanceVersion
+    localStorage.setItem('ftb-theme', JSON.stringify(state))
+
+    const store = useThemeStore()
+
+    expect(store.theme.foundations.radius).toBe('md')
+    expect(store.theme.foundations.explicitPaths).toEqual([])
+  })
+
+  it('does not project unversioned legacy foundation values as user edits', () => {
+    const state = createDefaultThemeState()
+    state.foundations.borderWidth = 4
+    delete (state.foundations as unknown as { explicitPaths?: string[] }).explicitPaths
+    delete (state.foundations as unknown as { provenanceVersion?: number }).provenanceVersion
+    localStorage.setItem('ftb-theme', JSON.stringify(state))
+
+    const store = useThemeStore()
+
+    expect(store.theme.foundations.borderWidth).toBe(1)
+    expect(store.theme.foundations.explicitPaths).toEqual([])
+    expect(store.previewFoundation('light').mappings).toEqual([])
+    expect(JSON.parse(localStorage.getItem('ftb-theme')!).foundations.provenanceVersion).toBe(1)
+    expect(JSON.parse(localStorage.getItem('ftb-theme')!).foundations.borderWidth).toBe(1)
+  })
+
+  it('archives unversioned V3 values before native normalization without overwriting an archive', () => {
+    const state = createDefaultThemeState()
+    state.colors.primary = '#123456'
+    state.foundations.palettes.primary.base = '#123456'
+    state.foundations.borders.default.light = '#654321'
+    state.overrides = [primaryButtonVariantOverride]
+    delete (state.foundations as unknown as { explicitPaths?: string[] }).explicitPaths
+    delete (state.foundations as unknown as { provenanceVersion?: number }).provenanceVersion
+    const original = JSON.stringify(state, null, 2)
+    localStorage.setItem('ftb-theme', original)
+
+    const store = useThemeStore()
+
+    expect(store.theme.foundations.palettes.primary.base).toBe('#6366f1')
+    expect(localStorage.getItem('ftb-theme-legacy-recovery')).toBe(original)
+
+    const replacement = JSON.stringify({ schemaVersion: 3, preserved: true })
+    localStorage.setItem('ftb-theme', replacement)
+    setActivePinia(createPinia())
+    useThemeStore()
+    expect(localStorage.getItem('ftb-theme-legacy-recovery')).toBe(original)
+  })
+
+  it('restores an archived legacy foundation through validated explicit provenance', () => {
+    const state = createDefaultThemeState()
+    state.colors.primary = '#123456'
+    state.foundations.palettes.primary.base = '#123456'
+    state.foundations.borders.default.light = '#654321'
+    state.overrides = [primaryButtonVariantOverride]
+    delete (state.foundations as unknown as { explicitPaths?: string[] }).explicitPaths
+    delete (state.foundations as unknown as { provenanceVersion?: number }).provenanceVersion
+    localStorage.setItem('ftb-theme', JSON.stringify(state))
+
+    const store = useThemeStore()
+    expect(store.legacyRecoveryAvailable).toBe(true)
+
+    expect(store.restoreLegacyRecovery()).toBe(true)
+    expect(store.theme.colors.primary).toBe('#123456')
+    expect(store.theme.foundations.borders.default.light).toBe('#654321')
+    expect(store.theme.foundations.explicitPaths).toEqual(expect.arrayContaining([
+      'palettes.primary.base',
+      'borders.default.light',
+    ]))
+    expect(store.theme.overrides).toEqual([primaryButtonVariantOverride])
+    expect(store.legacyRecoveryAvailable).toBe(false)
+  })
+
+  it('rejects provenance metadata paths through the generic foundation setter', () => {
+    const store = useThemeStore()
+    const before = JSON.stringify(store.theme)
+
+    store.setFoundation('explicitPaths', ['density'])
+    store.setFoundation('provenanceVersion', 99)
+
+    expect(JSON.stringify(store.theme)).toBe(before)
   })
 
   it('resets a custom typography foundation value to its system choice', () => {

@@ -1,0 +1,29 @@
+# Filament native styling vs. demo theme
+
+**Reviewed:** 2026-10-12
+**Scope:** Official Filament Demo 5.x styling, official CSS hooks/theme documentation, and this repository's demo CSS, panel configuration, preview bridge, and showcase views. The goal is to distinguish official-demo styling from framework defaults and repository-owned behavior relevant to a no-customization baseline.
+
+## Sources and method
+
+- Inspected the live [Filament Demo](https://demo.filamentphp.com/), the official 5.x demo's [raw `theme.css`](https://raw.githubusercontent.com/filamentphp/demo/5.x/resources/css/filament/admin/theme.css) and [`AdminPanelProvider`](https://raw.githubusercontent.com/filamentphp/demo/5.x/app/Providers/Filament/AdminPanelProvider.php), and the official [CSS hooks](https://filamentphp.com/docs/5.x/styling/css-hooks) and [styling overview](https://filamentphp.com/docs/5.x/styling/overview) documentation.
+- Compared these sources to this repo's [`app.css`](../../demo/resources/css/app.css), [`AdminPanelProvider`](../../demo/app/Providers/Filament/AdminPanelProvider.php), [`preview-bridge.blade.php`](../../demo/resources/views/filament/preview-bridge.blade.php), and custom showcase Blade views.
+
+## Findings
+
+1. **The upstream demo theme file does not declare visual overrides.** Its entire stylesheet imports Filament's package theme and declares Tailwind source scanning for `app/Filament/**/*` and `resources/views/filament/**/*`. It contains no project-authored rules for padding, borders, or typography. This source declaration lets the compiler include classes used by demo templates; it is not itself a spacing or appearance override. [Official demo `theme.css`](https://raw.githubusercontent.com/filamentphp/demo/5.x/resources/css/filament/admin/theme.css)
+
+2. **Upstream's distinct styling choices are configured through the panel, not custom CSS in that file.** The official 5.x panel registers the Vite theme, disables the topbar, uses dark/primary demo logos, groups navigation, enables database notifications and search, enables SPA mode, selects blue as primary, and sets Albert Sans. Those are demo-specific configuration choices; the provider contains no density, padding, border width, or border treatment customization. [Official demo `AdminPanelProvider`](https://raw.githubusercontent.com/filamentphp/demo/5.x/app/Providers/Filament/AdminPanelProvider.php)
+
+3. **Filament's default appearance is distinct from both the demo configuration and a custom theme.** The official docs state the default panel font is Inter, document panel-level color and font options, and describe a custom theme as a compiled stylesheet replacing the default. The docs' compact-padding examples are optional targeted rules, not baseline framework behavior. [Styling overview](https://filamentphp.com/docs/5.x/styling/overview)
+
+4. **CSS hooks are an explicit customization seam, not evidence of an upstream override.** Filament recommends inspecting `fi-` hook classes and adding app CSS when intentionally customizing; it warns against publishing internal views as a styling workaround. [CSS hooks](https://filamentphp.com/docs/5.x/styling/css-hooks)
+
+5. **This repository has no authored global Filament theme stylesheet rule for padding or borders.** Its [`app.css`](../../demo/resources/css/app.css) imports Tailwind, scans `resources/views` and Laravel pagination views, and sets the generic sans stack to Instrument Sans. It does not import a Filament theme or define CSS selectors changing padding/borders. The local panel instead sets brand name/logos/favicon, amber primary, navigation/search behavior and built-in account widget; it does not set a panel font or register a Filament Vite theme. [`app.css`](../../demo/resources/css/app.css), [`AdminPanelProvider`](../../demo/app/Providers/Filament/AdminPanelProvider.php)
+
+6. **The preview bridge is the repository's local dynamic styling override, not a default.** After receiving and accepting an authorized theme update, it injects a stylesheet targeting selected `fi-` hooks. It directly changes colors, font family, vertical padding, density-specific table-cell padding, radii, border width, and shadows. The update handler is message-driven; these declarations are applied in response to a valid projection, rather than being authored as initial stylesheet rules. [`preview-bridge.blade.php`](../../demo/resources/views/filament/preview-bridge.blade.php#L7-L32) [`preview-bridge.blade.php`](../../demo/resources/views/filament/preview-bridge.blade.php#L127-L160)
+
+7. **Showcase templates contain layout utilities and illustrative text classes, not overrides of Filament's global internals.** The custom Blade views use utility classes such as `space-y-6`, grid/gap and text-color classes, alongside native Filament components and `fi-` hooks for preview targeting. These affect the showcase content/layout or identify targets; they do not define a global padding or border override stylesheet. The class utilities are app-authored content styling and must not be mistaken for the official demo's theme. [Showcase views](../../demo/resources/views/filament/pages/showcase/)
+
+## Recommendation
+
+Use **no customization until manual edits** as the correct reference/default state. Keep framework-native Filament rendering without applying preview-bridge changes; do not treat upstream demo-specific font, palette, logos, topbar/navigation choices, showcase utility classes, or the preview bridge's edit projection as Filament defaults. Only let styling changes appear after an explicit user edit. If a future baseline comparison needs a decision about the generic Instrument Sans declared in `app.css` versus Filament's documented default Inter, verify which stylesheet is loaded on the actual panel before changing anything; this research does not establish a rendered cascade for that global asset.

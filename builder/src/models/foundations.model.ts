@@ -36,6 +36,10 @@ export type FoundationState = {
   radius: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
   borderWidth: number
   shadow: 'none' | 'sm' | 'md' | 'lg' | 'xl'
+  /** Canonical user-edit provenance; values alone cannot distinguish native defaults from explicit selections. */
+  explicitPaths: string[]
+  /** Persisted provenance is only trusted after this migration marker exists. */
+  provenanceVersion: 1
 }
 
 export type ResolvedFoundation = Omit<FoundationState, 'surfaces' | 'borders' | 'text'> & {

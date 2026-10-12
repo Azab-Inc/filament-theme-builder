@@ -64,6 +64,8 @@ const FOUNDATION_DEFAULTS: FoundationState = deepFreeze({
   radius: 'md',
   borderWidth: 1,
   shadow: 'sm',
+  explicitPaths: [],
+  provenanceVersion: 1,
 })
 
 const DENSITY_PRESETS: Record<Density, DensityPreset> = deepFreeze({
