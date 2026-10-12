@@ -419,3 +419,4 @@ These metrics are directional product signals, not 1.0 acceptance gates.
 
 - [SPECS.md](./SPECS.md) — complete technical and behavioral specification.
 - [TICKETS.md](./TICKETS.md) — implementation tickets, dependencies, and acceptance criteria.
+- [docs/phase-2/PRD.md](./docs/phase-2/PRD.md) — approved Phase 2 Composer/dashboard integration product requirements.

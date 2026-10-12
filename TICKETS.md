@@ -1319,7 +1319,7 @@ the feature flag is never a credential and MCP receives no extra privileges.
 **Blocked by:** [FTB-040](#ftb-040), [FTB-042](#ftb-042), [FTB-043](#ftb-043), [FTB-044](#ftb-044), [FTB-045](#ftb-045), [FTB-046](#ftb-046), [FTB-047](#ftb-047), [FTB-048](#ftb-048); all approved Phase 1 requirements listed above; package identity release blocker
 **Spec:** [§11](./docs/phase-2/SPECS.md#11-package-and-consumer-architecture), [§12](./docs/phase-2/SPECS.md#12-published-vertical-slices-and-ticket-mapping), [§13](./docs/phase-2/SPECS.md#13-verification-contract), [§14](./docs/phase-2/SPECS.md#14-failure-security-and-observability-rules), [§15](./docs/phase-2/SPECS.md#15-out-of-scope), [§16](./docs/phase-2/SPECS.md#16-release-conditions), [§18](./docs/phase-2/SPECS.md#18-publication-and-implementation-handoff)
 **GitHub issue:** [#49](https://github.com/Azab-Inc/filament-theme-builder/issues/49)
-**PRD requirements:** [P2-001, P2-010](./docs/phase-2/PRD.md#61-activation-and-authorization), [P2-030–P2-035](./docs/phase-2/PRD.md#64-preview-and-guidance), [P2-064](./docs/phase-2/PRD.md#66-local-mcp-and-ai-operability), [P2-073](./docs/phase-2/PRD.md#67-accessibility)
+**PRD requirements:** [P2-001](./docs/phase-2/PRD.md#61-activation-and-authorization), [P2-010](./docs/phase-2/PRD.md#62-embedded-panel-experience), [P2-030–P2-035](./docs/phase-2/PRD.md#64-preview-and-guidance), [P2-064](./docs/phase-2/PRD.md#66-local-mcp-and-ai-operability), [P2-073](./docs/phase-2/PRD.md#67-accessibility)
 **Review fixed point:** `f348ac2c504e627690324eea0595f2245c9d215c`
 
 ### What to build
