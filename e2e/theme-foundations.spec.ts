@@ -218,7 +218,7 @@ test.describe("foundation preview integration", () => {
     expect(before).toBeGreaterThan(0);
 
     const postAndCheckRejected = async (mutate: (message: Record<string, any>) => void) => {
-      const message = JSON.parse(JSON.stringify(valid)) as Record<string, any>;
+      const message = structuredClone(valid) as Record<string, any>;
       mutate(message);
       const accepted = await page.evaluate(async (payload) => {
         const target = document.querySelector<HTMLIFrameElement>('iframe[title="Filament preview"]')!.contentWindow!;
@@ -235,6 +235,7 @@ test.describe("foundation preview integration", () => {
     await postAndCheckRejected((message) => { message.projection.mappings.pop(); });
     await postAndCheckRejected((message) => { message.projection.mappings[0].selectors = [".attacker-controlled"]; });
     await postAndCheckRejected((message) => { message.projection.mappings.find((mapping: Record<string, unknown>) => mapping.id === "borderWidth").value = "1"; });
+    await postAndCheckRejected((message) => { message.projection.mappings.find((mapping: Record<string, unknown>) => mapping.id === "borderWidth").value = Number.POSITIVE_INFINITY; });
     await postAndCheckRejected((message) => { message.theme.overrides = [{ targetId: "button.primary", controlId: "background", scope: "global", componentId: "button", value: "#0f766e" }]; });
     await postAndCheckRejected((message) => { message.theme.overrides = [{ targetId: "button.primary", controlId: "background", scope: "global", value: "not-a-color" }]; });
   });
@@ -245,9 +246,16 @@ test.describe("foundation preview integration", () => {
       if (request.isNavigationRequest()) navigationRequests.push(request.url());
     });
     await page.goto(composeBaseUrl);
-    const previewFrame = page.frame({ url: /\/demo\/admin/ });
+    let previewFrame = page.frame({ url: /\/demo\/admin/ });
     expect(previewFrame).toBeTruthy();
     await expect(previewFrame!.locator("#ftb-managed-theme")).toHaveCount(1);
+    await page.evaluate((showcaseUrl) => {
+      document.querySelector<HTMLIFrameElement>('iframe[title="Filament preview"]')!.src = showcaseUrl;
+    }, `${composeBaseUrl}/demo/admin/showcase`);
+    await expect.poll(() => page.frames().find((frame) => /\/demo\/admin\/showcase/.test(frame.url()))?.url() ?? "").toContain("/demo/admin/showcase");
+    previewFrame = page.frame({ url: /\/demo\/admin\/showcase/ });
+    expect(previewFrame).toBeTruthy();
+    await expect(previewFrame!.locator(".fi-badge.fi-color-primary").first()).toBeVisible();
     navigationRequests.length = 0;
 
     const readFoundationToken = (id: string) => previewFrame!.evaluate((token) => getComputedStyle(document.documentElement).getPropertyValue(`--ftb-foundation-${token}`).trim(), id.replaceAll(".", "-"));
@@ -259,6 +267,13 @@ test.describe("foundation preview integration", () => {
       await page.getByLabel(`${name} shade 500 override`).fill("#654321");
       await expect.poll(() => previewFrame!.evaluate((palette) => getComputedStyle(document.documentElement).getPropertyValue(`--${palette}-500`).trim(), name)).toBe("#654321");
     }
+
+    const primaryElement = previewFrame!.locator(".fi-badge.fi-color-primary").first();
+    await expect(primaryElement).toBeVisible();
+    const primaryTextBefore = await primaryElement.evaluate((element) => getComputedStyle(element).color);
+    await page.getByLabel("Primary shade 700 override").fill("#ff0000");
+    await expect.poll(() => primaryElement.evaluate((element) => getComputedStyle(element).color)).not.toBe(primaryTextBefore);
+    await expect.poll(() => primaryElement.evaluate((element) => getComputedStyle(element).getPropertyValue("--ftb-palette-primary-shades-500").trim())).toBe("#654321");
 
     for (const [id, token] of Object.entries({ "card-surface": "surface.card", "sidebar-surface": "surface.sidebar", "topbar-surface": "surface.topbar", "elevated-surface": "surface.elevated", "input-surface": "surface.input", "page-surface": "surface.page", "border-default-light": "border.default", "border-strong-light": "border.strong", "text-primary-light": "text.primary", "text-muted-light": "text.muted", "text-disabled-light": "text.disabled" })) {
       const control = page.locator(`#${id}`);
@@ -287,13 +302,26 @@ test.describe("foundation preview integration", () => {
     }
     await page.locator("#border-width").fill("4");
     await expect.poll(() => section.evaluate((element) => getComputedStyle(element).borderTopWidth)).toBe("4px");
+    const input = previewFrame!.locator(".fi-input").first();
+    await expect(input).toBeVisible();
+    await page.locator("#spacing-1").fill("19");
+    await expect.poll(() => input.evaluate((element) => getComputedStyle(element).paddingTop)).toBe("19px");
     for (const shadow of ["none", "sm", "md", "lg", "xl"]) {
       await page.locator("#shadow").selectOption(shadow);
-      await expect.poll(() => section.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe("");
+      const expectedShadow = shadow === "none" ? "none" : "not-none";
+      const shadowStyle = () => section.evaluate((element) => getComputedStyle(element).boxShadow);
+      if (expectedShadow === "none") await expect.poll(shadowStyle).toBe("none");
+      else await expect.poll(shadowStyle).not.toBe("none");
     }
     await page.getByRole("button", { name: "Dark mode" }).click();
     await expect.poll(() => previewFrame!.evaluate(() => document.documentElement.classList.contains("dark"))).toBe(true);
     await expect.poll(() => previewFrame!.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe("dark");
+    await page.locator("#card-surface").fill("#123456");
+    await page.locator("#text-primary-dark").fill("#fefefe");
+    const darkSurface = await previewFrame!.locator(".fi-section").first().evaluate((element) => getComputedStyle(element).backgroundColor);
+    expect(darkSurface).toBe("rgb(18, 52, 86)");
+    const darkText = await previewFrame!.locator("body").evaluate((element) => getComputedStyle(element).color);
+    expect(darkText).toBe("rgb(254, 254, 254)");
     expect(navigationRequests).toEqual([]);
   });
 

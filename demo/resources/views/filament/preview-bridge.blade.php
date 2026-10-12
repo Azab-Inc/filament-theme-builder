@@ -102,7 +102,7 @@
                 if (candidate.property === 'density' && !['compact', 'default', 'spacious'].includes(candidate.value)) return false;
                 if (candidate.property === 'radius' && !['none', 'sm', 'md', 'lg', 'xl', 'full'].includes(candidate.value)) return false;
                 if (candidate.property === 'shadow' && !['none', 'sm', 'md', 'lg', 'xl'].includes(candidate.value)) return false;
-                if (candidate.property === 'borderWidth' && (typeof candidate.value !== 'number' || candidate.value < 0 || candidate.value > 8)) return false;
+                if (candidate.property === 'borderWidth' && (typeof candidate.value !== 'number' || !Number.isFinite(candidate.value) || candidate.value < 0 || candidate.value > 8)) return false;
                 ids.add(candidate.id);
                 return true;
             });
@@ -120,8 +120,8 @@
                 const selectors = candidate.selectors.join(',');
                 if (candidate.variable) rules.push(`:root { ${candidate.variable}: ${candidate.value}; }`);
                 if (!candidate.id.startsWith('palette.')) rules.push(`:root { --ftb-foundation-${candidate.id.replaceAll('.', '-')}: ${candidate.value}; }`);
-                if (candidate.id.startsWith('palette.') && candidate.id.includes('.shades.')) rules.push(`${selectors} { --ftb-${candidate.id.replaceAll('.', '-')}: ${candidate.variable}; }`);
-                else if (candidate.id.startsWith('palette.') && candidate.id.endsWith('.base')) rules.push(`${selectors} { --ftb-palette: var(${candidate.variable}); color: var(--ftb-palette); }`);
+                if (candidate.id.startsWith('palette.') && candidate.id.includes('.shades.')) rules.push(`${selectors} { --ftb-${candidate.id.replaceAll('.', '-')}: var(${candidate.variable}); }`);
+                else if (candidate.id.startsWith('palette.') && candidate.id.endsWith('.base')) rules.push(`${selectors} { --ftb-palette: var(${candidate.variable}); }`);
                 else if (candidate.property === 'color') {
                     const property = candidate.id.startsWith('surface.') ? 'background-color' : candidate.id.startsWith('border.') ? 'border-color' : 'color';
                     rules.push(`${selectors} { ${property}: ${candidate.value}; }`);

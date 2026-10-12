@@ -54,6 +54,13 @@ class FilamentPanelTest extends TestCase
             ->assertDontSee("'.fi-code'", false);
     }
 
+    public function test_preview_bridge_rejects_non_finite_border_width_projections(): void
+    {
+        $this->get('/demo/admin')
+            ->assertOk()
+            ->assertSee("candidate.property === 'borderWidth' && (typeof candidate.value !== 'number' || !Number.isFinite(candidate.value)", false);
+    }
+
     public function test_showcase_index_is_public_but_focused_showcase_pages_require_authentication(): void
     {
         $this->get('/demo/admin/showcase')->assertOk()->assertSee('Showcase');
