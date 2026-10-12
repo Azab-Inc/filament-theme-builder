@@ -42,6 +42,7 @@ describe('theme registry', () => {
       'infolist.entry.icon',
       'infolist.entry.image',
       'infolist.entry.key-value',
+      'infolist.entry.repeatable',
       'infolist.entry.text',
       'infolist.layout.flex',
     ])
@@ -113,6 +114,7 @@ describe('theme registry', () => {
       'infolist.entry.icon',
       'infolist.entry.image',
       'infolist.entry.key-value',
+      'infolist.entry.repeatable',
       'infolist.entry.text',
       'infolist.layout.flex',
     ])
