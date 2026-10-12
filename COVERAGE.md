@@ -97,7 +97,7 @@ domain, resources, and relationship workflows.
 | `dashboard.revenue-orders-chart` | planned | `RevenueOrdersChartWidget` | Series, axes, legend, tooltips | Seeded order totals and dates | Deterministic seeded chart period | Dashboard feature tests |
 | `dashboard.recent-orders` | planned | `RecentOrdersWidget` | Compact table with status and money columns | Seeded orders and customers | Seeded result set | Dashboard feature tests |
 | `dashboard.low-stock` | planned | `LowStockWidget` | Threshold/status badge presentation | Seeded inventory and products | Seeded low-stock rows | Dashboard feature tests |
-| `showcase.forms` | partial | `/demo/admin/forms-showcase` (`ShowcaseFormsPage`, implemented as `FormsShowcase`) | Named product, customer, and order schemas with Section/grid, Fieldset/Grid, Wizard, Tabs, Repeater, Radio, and ToggleButtons layouts; native text, price, select, toggle, date, private local image representation, address/contact, nested contact, and status validation controls | Fixed non-persisting fixture data | Filled, disabled, optional-null, server-validation, nested validation, long-text, and keyboard-focus behavior in the native page; no forced-state controls | `FormsShowcaseTest`; `e2e/demo-showcase.spec.ts` (`forms and schemas`) |
+| `showcase.forms` | implemented | `/demo/admin/forms-showcase` (`ShowcaseFormsPage`, implemented as `FormsShowcase`) | Named product, customer, and order schemas with distinct Section/grid, Fieldset/Grid, Wizard, Tabs, Repeater, Radio, ToggleButtons, and exhaustive vendor-backed Filament 5.9 form/schema registry surfaces; native text, price, select, toggle, date, private local image representation, address/contact, nested contact, and status validation controls | Fixed non-persisting fixture data | Filled, disabled, optional-null, server-validation, nested validation, long-text, and keyboard-focus behavior in the native page; forced-state controls remain FTB-016 scope | `FormsShowcaseTest`; `e2e/demo-showcase.spec.ts` (`forms and schemas`); `builder/src/__tests__/theme-registry.spec.ts` |
 | `showcase.tables` | implemented | `ShowcaseTablesPage` → `/demo/admin/tables-showcase` (`TablesShowcase`) | Responsive native product table with image/text/badge/icon columns, grouping, summaries, controls, safe read-only actions, and verified density spacing | Seeded demo products with order counts and nullable supplier/image relationships | Empty, loading, invalid-filter, missing-related-data, long-name, selected-row reset, and Compact/Default/Spacious density preview | `TablesShowcaseTest`; `e2e/demo-showcase.spec.ts` (`tables`); `e2e/theme-foundations.spec.ts` (`native ... table density`) |
 | `showcase.infolists` | partial | `/demo/admin/infolists-showcase` (`InfolistsShowcase`) | Read-only customer profile, order and product details; text/image/icon/badge/color/key-value entries, rich text, repeatable and bullet lists, Fieldset/Tabs/Flex layouts | Seeded customer, order, and product records with fixed presentation values | Seeded representative values; nullable image/supplier/customer/variant and empty relationship labels; no forced-state controls | `InfolistsShowcaseTest`; `e2e/demo-showcase.spec.ts` (`infolists showcase`) |
 | `showcase.actions` | planned | `ShowcaseActionsPage` | Order/product actions, destructive confirmation, open modal | Fixed non-production fixture records | `ActionLoadingState`, `ModalOpenState` | Showcase feature tests |
@@ -124,10 +124,17 @@ domain, resources, and relationship workflows.
   maps `.fi-fo-text-input .fi-input` to `background-color`; Global → Component
   → Variant → State (focus) inheritance, reset-to-inherit, forged-scope
   rejection, and foundation preservation are covered by the builder unit tests
-  and the Compose Playwright forms acceptance test. No forced-state control is
+  and the Compose Playwright forms acceptance test. The registry also covers
+  every visually distinct Filament 5.9 vendor/runtime surface with a distinct
+  CSS root: Builder, Checkbox, CheckboxList, CodeEditor, ColorPicker, KeyValue,
+  MarkdownEditor, ModalTableSelect, OneTimeCodeInput, RichEditor, Slider,
+  TagsInput, Actions, Callout, EmptyState, Form, FusedGroup, Icon, Image, Text,
+  UnorderedList, Tabs, and Wizard. Date/time and select subclasses share entries
+  when their runtime markup is identical; non-visual/runtime-only components are
+  intentionally excluded rather than duplicated. No forced-state control is
   claimed.
 
-Builder registry slice evidence (2026-10-12): shared targets are
+Builder registry evidence (2026-10-12): shared targets are
 `form.section` (`.fi-section`), `form.field` (`.fi-fo-field`),
 `form.control.text` (`.fi-fo-text-input`, `.fi-input`),
 `form.control.select` (`.fi-fo-select`, `.fi-select-input`),
@@ -139,8 +146,17 @@ Builder registry slice evidence (2026-10-12): shared targets are
 `.fi-sc-wizard-step`), `form.layout.tabs` (`.fi-tabs`, `.fi-tabs-item`),
 `form.control.radio` (`.fi-fo-radio`, `.fi-radio-input`),
 `form.control.toggle-buttons` (`.fi-fo-toggle-buttons`, `.fi-fo-toggle-buttons-input`),
-`form.layout.fieldset` (`.fi-fieldset`), `form.layout.grid` (`.fi-grid`), and
-`form.layout.repeater` (`.fi-fo-repeater`).
+`form.layout.fieldset` (`.fi-fieldset`), `form.layout.form` (`.fi-sc-form`),
+`form.layout.fused-group` (`.fi-sc-fused-group`), `form.layout.grid`
+(`.fi-grid`), `form.layout.icon` (`.fi-sc-icon`), `form.layout.image`
+(`.fi-sc-image`), `form.layout.repeater` (`.fi-fo-repeater`),
+`form.layout.text` (`.fi-sc-text`), `form.layout.unordered-list`
+(`.fi-sc-unordered-list`), `form.layout.actions` (`.fi-sc-actions`),
+`form.layout.callout` (`.fi-callout`, `.fi-sc-callout`), and
+`form.layout.empty-state` (`.fi-empty-state`, `.fi-sc-empty-state`). Controls
+also include Builder, Checkbox, CheckboxList, CodeEditor, ColorPicker, KeyValue,
+MarkdownEditor, ModalTableSelect, OneTimeCodeInput, RichEditor, Slider, and
+TagsInput roots from the installed Filament vendor source.
 Selectors were verified against the running demo's Filament `v5.9.0` markup by
 role/label/context assertions in `e2e/demo-showcase.spec.ts`; registry and
 lookup evidence are in `builder/src/__tests__/theme-registry.spec.ts`. These

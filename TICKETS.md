@@ -332,7 +332,7 @@ Use the e-commerce model to demonstrate Filament relationship UI as real workflo
 
 ## FTB-011 — Cover Forms and Schemas visually
 
-**Status:** in-progress
+**Status:** done
 **Blocked by:** [FTB-005](#ftb-005), [FTB-006](#ftb-006), [FTB-002](#ftb-002)
 
 ### What to build
@@ -341,16 +341,16 @@ Create a Forms & Schemas showcase containing every visually distinct first-party
 
 ### Acceptance criteria
 
-- [ ] `ShowcaseFormsPage` contains named fixtures `ProductEditorForm` (text, price, select, toggle, date, upload), `CustomerContactForm` (address/contact fields), and `OrderStatusForm` (status and validation states), with relevant registry targets.
-- [ ] `ProductEditorForm` demonstrates `SectionGridLayout`, `WizardStepsLayout`, and `TabbedFormLayout` as distinct surfaces, not identical API permutations.
-- [ ] Applicable default, filled, focused, disabled, and validation-error states have a deterministic representation.
-- [ ] Registry entries exist for the relevant themable surfaces.
+- [x] `ShowcaseFormsPage` contains named fixtures `ProductEditorForm` (text, price, select, toggle, date, upload), `CustomerContactForm` (address/contact fields), and `OrderStatusForm` (status and validation states), with relevant registry targets.
+- [x] `ProductEditorForm` demonstrates `SectionGridLayout`, `WizardStepsLayout`, and `TabbedFormLayout` as distinct surfaces, not identical API permutations.
+- [x] Applicable default, filled, focused, disabled, and validation-error states have a deterministic representation.
+- [x] Registry entries exist for the relevant themable surfaces.
 - [x] Global/component/variant/state inheritance is demonstrable on the production `form.product-name` target (`.fi-fo-text-input .fi-input`, `background-color`) through the canonical resolver/store and the real focused forms showcase; evidence: `theme-registry.spec.ts`, `theme-resolver.spec.ts`, `theme-state.spec.ts`, and the Compose Playwright forms acceptance test.
-- [ ] Duplicate API permutations that render identically are not added just to inflate coverage.
+- [x] Duplicate API permutations that render identically are not added just to inflate coverage.
 
 Implementation: `0aac781` (`Feature: add forms and schemas showcase`); verification: [`FormsShowcaseTest`](./demo/tests/Feature/Filament/Showcase/FormsShowcaseTest.php), `e2e/demo-showcase.spec.ts`.
 
-Remaining: native fixture and selector-only registry coverage now includes the verified Fieldset/Grid, Repeater, Radio, and ToggleButtons surfaces. This slice adds one native editable target for Product name with strict allowlisted bridge projection and actual-focus evidence. FTB-011 remains in-progress because exhaustive first-party registry coverage, deterministic representations for every applicable state, and forced-state controls remain outstanding; forced-state controls remain outside this slice (FTB-016).
+Completed: native fixtures and selector-only registry coverage include every visually distinct Filament 5.9 form/schema surface with a vendor/runtime CSS root, including the verified Fieldset/Grid, Repeater, Radio, ToggleButtons, Builder, Checkbox, CheckboxList, CodeEditor, ColorPicker, KeyValue, MarkdownEditor, ModalTableSelect, OneTimeCodeInput, RichEditor, Slider, TagsInput, Actions, Callout, EmptyState, Form, FusedGroup, Icon, Image, Text, UnorderedList, Tabs, and Wizard surfaces. DatePicker/DateTimePicker/TimePicker and Select/MultiSelect/MorphToSelect intentionally share one registry entry where Filament renders the same surface; non-visual Hidden, Placeholder, ViewField, Html, Group, and embedded/runtime-only components are not duplicated as visual targets. Deterministic native default/filled/optional-null, focused, disabled, and validation-error evidence is covered by `FormsShowcaseTest` and the Compose Playwright forms acceptance tests. Forced-state controls remain outside this ticket and belong to FTB-016.
 
 ---
 

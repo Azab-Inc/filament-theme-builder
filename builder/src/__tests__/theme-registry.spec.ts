@@ -71,19 +71,40 @@ describe('theme registry', () => {
     expect(registry.entries.map((entry) => entry.id)).toEqual([
       'button.primary',
       'button.secondary',
+      'form.control.builder',
+      'form.control.checkbox',
+      'form.control.checkbox-list',
+      'form.control.code-editor',
+      'form.control.color-picker',
       'form.control.date',
       'form.control.file-upload',
+      'form.control.key-value',
+      'form.control.markdown-editor',
+      'form.control.modal-table-select',
+      'form.control.one-time-code',
       'form.control.radio',
+      'form.control.rich-editor',
       'form.control.select',
+      'form.control.slider',
+      'form.control.tags-input',
       'form.control.text',
       'form.control.textarea',
       'form.control.toggle',
       'form.control.toggle-buttons',
       'form.field',
+      'form.layout.actions',
+      'form.layout.callout',
+      'form.layout.empty-state',
       'form.layout.fieldset',
+      'form.layout.form',
+      'form.layout.fused-group',
       'form.layout.grid',
+      'form.layout.icon',
+      'form.layout.image',
       'form.layout.repeater',
       'form.layout.tabs',
+      'form.layout.text',
+      'form.layout.unordered-list',
       'form.layout.wizard',
       'form.product-name',
       'form.section',
@@ -104,19 +125,40 @@ describe('theme registry', () => {
     const forms = registry.entries.filter((entry) => entry.id.startsWith('form.'))
 
     expect(forms.map((entry) => entry.id)).toEqual([
+      'form.control.builder',
+      'form.control.checkbox',
+      'form.control.checkbox-list',
+      'form.control.code-editor',
+      'form.control.color-picker',
       'form.control.date',
       'form.control.file-upload',
+      'form.control.key-value',
+      'form.control.markdown-editor',
+      'form.control.modal-table-select',
+      'form.control.one-time-code',
       'form.control.radio',
+      'form.control.rich-editor',
       'form.control.select',
+      'form.control.slider',
+      'form.control.tags-input',
       'form.control.text',
       'form.control.textarea',
       'form.control.toggle',
       'form.control.toggle-buttons',
       'form.field',
+      'form.layout.actions',
+      'form.layout.callout',
+      'form.layout.empty-state',
       'form.layout.fieldset',
+      'form.layout.form',
+      'form.layout.fused-group',
       'form.layout.grid',
+      'form.layout.icon',
+      'form.layout.image',
       'form.layout.repeater',
       'form.layout.tabs',
+      'form.layout.text',
+      'form.layout.unordered-list',
       'form.layout.wizard',
       'form.product-name',
       'form.section',
@@ -132,9 +174,30 @@ describe('theme registry', () => {
     expect(forms.find((entry) => entry.id === 'form.control.select')?.selectors).toEqual(['.fi-fo-select', '.fi-select-input'])
     expect(forms.find((entry) => entry.id === 'form.control.radio')?.selectors).toEqual(['.fi-fo-radio', '.fi-radio-input'])
     expect(forms.find((entry) => entry.id === 'form.control.toggle-buttons')?.selectors).toEqual(['.fi-fo-toggle-buttons', '.fi-fo-toggle-buttons-input'])
+    expect(forms.find((entry) => entry.id === 'form.control.checkbox')?.selectors).toEqual(['.fi-checkbox-input'])
+    expect(forms.find((entry) => entry.id === 'form.control.checkbox-list')?.selectors).toEqual(['.fi-fo-checkbox-list'])
+    expect(forms.find((entry) => entry.id === 'form.control.code-editor')?.selectors).toEqual(['.fi-fo-code-editor'])
+    expect(forms.find((entry) => entry.id === 'form.control.color-picker')?.selectors).toEqual(['.fi-fo-color-picker'])
+    expect(forms.find((entry) => entry.id === 'form.control.builder')?.selectors).toEqual(['.fi-fo-builder'])
+    expect(forms.find((entry) => entry.id === 'form.control.key-value')?.selectors).toEqual(['.fi-fo-key-value'])
+    expect(forms.find((entry) => entry.id === 'form.control.markdown-editor')?.selectors).toEqual(['.fi-fo-markdown-editor'])
+    expect(forms.find((entry) => entry.id === 'form.control.modal-table-select')?.selectors).toEqual(['.fi-fo-modal-table-select'])
+    expect(forms.find((entry) => entry.id === 'form.control.one-time-code')?.selectors).toEqual(['.fi-one-time-code-input-ctn'])
+    expect(forms.find((entry) => entry.id === 'form.control.rich-editor')?.selectors).toEqual(['.fi-fo-rich-editor'])
+    expect(forms.find((entry) => entry.id === 'form.control.slider')?.selectors).toEqual(['.fi-fo-slider'])
+    expect(forms.find((entry) => entry.id === 'form.control.tags-input')?.selectors).toEqual(['.fi-fo-tags-input'])
     expect(forms.find((entry) => entry.id === 'form.layout.fieldset')?.selectors).toEqual(['.fi-fieldset'])
+    expect(forms.find((entry) => entry.id === 'form.layout.actions')?.selectors).toEqual(['.fi-sc-actions'])
+    expect(forms.find((entry) => entry.id === 'form.layout.callout')?.selectors).toEqual(['.fi-callout', '.fi-sc-callout'])
+    expect(forms.find((entry) => entry.id === 'form.layout.empty-state')?.selectors).toEqual(['.fi-empty-state', '.fi-sc-empty-state'])
+    expect(forms.find((entry) => entry.id === 'form.layout.fused-group')?.selectors).toEqual(['.fi-sc-fused-group'])
+    expect(forms.find((entry) => entry.id === 'form.layout.form')?.selectors).toEqual(['.fi-sc-form'])
     expect(forms.find((entry) => entry.id === 'form.layout.grid')?.selectors).toEqual(['.fi-grid'])
+    expect(forms.find((entry) => entry.id === 'form.layout.icon')?.selectors).toEqual(['.fi-sc-icon'])
+    expect(forms.find((entry) => entry.id === 'form.layout.image')?.selectors).toEqual(['.fi-sc-image'])
     expect(forms.find((entry) => entry.id === 'form.layout.repeater')?.selectors).toEqual(['.fi-fo-repeater'])
+    expect(forms.find((entry) => entry.id === 'form.layout.text')?.selectors).toEqual(['.fi-sc-text'])
+    expect(forms.find((entry) => entry.id === 'form.layout.unordered-list')?.selectors).toEqual(['.fi-sc-unordered-list'])
     expect(forms.filter((entry) => entry.id !== 'form.product-name').every((entry) => entry.controls.length === 0)).toBe(true)
     expect(forms.filter((entry) => entry.id !== 'form.product-name').every((entry) => entry.variants.length === 0 && entry.states.length === 0)).toBe(true)
   })
@@ -182,13 +245,36 @@ describe('theme registry', () => {
       '.fi-fo-date-time-picker',
       '.fi-fo-textarea',
       '.fi-fo-file-upload',
+      '.fi-checkbox-input',
+      '.fi-fo-checkbox-list',
+      '.fi-fo-code-editor',
+      '.fi-fo-color-picker',
+      '.fi-fo-builder',
+      '.fi-fo-key-value',
+      '.fi-fo-markdown-editor',
+      '.fi-fo-modal-table-select',
+      '.fi-one-time-code-input-ctn',
+      '.fi-fo-rich-editor',
+      '.fi-fo-slider',
+      '.fi-fo-tags-input',
       '.fi-sc-wizard',
       '.fi-sc-wizard-header-step-btn',
       '.fi-sc-wizard-step',
       '.fi-tabs',
       '.fi-tabs-item',
+      '.fi-sc-actions',
+      '.fi-callout',
+      '.fi-sc-callout',
+      '.fi-empty-state',
+      '.fi-sc-empty-state',
+      '.fi-sc-fused-group',
+      '.fi-sc-form',
+      '.fi-sc-icon',
+      '.fi-sc-image',
+      '.fi-sc-text',
+      '.fi-sc-unordered-list',
     ]) {
-      expect(lookupRegistryEntry(registry, { selectors: [selector], filamentVersion: '5.9' })).toMatchObject({ status: 'matched' })
+      expect(lookupRegistryEntry(registry, { selectors: [selector], filamentVersion: '5.9' }), selector).toMatchObject({ status: 'matched' })
     }
 
     expect(lookupRegistryEntry(registry, { selectors: ['ProductEditorForm'], filamentVersion: '5.9' })).toEqual({ status: 'no-match' })
