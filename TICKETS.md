@@ -16,7 +16,7 @@
 
 ## Dependency map
 
-Demo-showcase delivery order (prose delivery order (not hard dependency blockers)): **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015 → FTB-016 → FTB-017 → FTB-018**. The dependency map below remains the source of hard blockers. The demo-complete gate is not yet satisfied: FTB-011/013/014/015/016/017 are done, while FTB-012 remains partial solely for theme-density integration and FTB-018 is in progress pending Compose PHP/Playwright evidence; FTB-009A/B/010 are done. Remaining builder feature work remains blocked by this gate and completion of FTB-018. Operational FTB-027 and FTB-028 are done, with FTB-028's full-suite documentation-mount gap recorded in its report. Phase 1 owns the branded existing dashboard shell, four commerce widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and representative badges. FTB-015 owns the Showcase navigation/index, search/profile/authentication/tenant surfaces and must integrate (not duplicate) Phase 1 widgets/navigation. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
+Demo-showcase delivery order (prose delivery order (not hard dependency blockers)): **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015 → FTB-016 → FTB-017 → FTB-018**. The dependency map below remains the source of hard blockers. The demo-complete gate is satisfied by current Compose evidence: FTB-009A/B/010, FTB-011, FTB-013, FTB-014, FTB-015, FTB-016, FTB-017, and FTB-018 are done; FTB-012 remains partial solely for theme-density integration and is explicitly not a blocker. Operational FTB-027 and FTB-028 are done, with FTB-028's full-suite documentation-mount gap recorded in its report. Phase 1 owns the branded existing dashboard shell, four commerce widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and representative badges. FTB-015 owns the Showcase navigation/index, search/profile/authentication/tenant surfaces and must integrate (not duplicate) Phase 1 widgets/navigation. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
 
 ```text
 FTB-001
@@ -206,7 +206,7 @@ Turn canonical theme state into readable vanilla CSS and let the user copy or do
 
 ## FTB-005 — Deliver complete global foundations editing
 
-**Status:** done  
+**Status:** done
 **Blocked by:** [FTB-003](#ftb-003)
 
 ### What to build
@@ -554,7 +554,7 @@ Let users alter the visual icon system with global pack/style presets and indivi
 
 ## FTB-018 — Add panel branding and runtime configuration controls
 
-**Status:** ready-for-agent  
+**Status:** done
 **Blocked by:** [FTB-006](#ftb-006), [FTB-002](#ftb-002)
 
 ### What to build
@@ -570,7 +570,7 @@ Support appearance-related panel settings that are not purely CSS, including app
 - [x] Purely visual settings use immediate preview emulation where safe.
 - [x] Runtime-only settings trigger a controlled preview update/reload.
 - [x] Theme state clearly distinguishes CSS settings from PanelProvider/runtime settings.
-- [ ] FTB-018 final evidence: Compose PHP and the dedicated branding Playwright journey pass; the broader foundation Playwright run still has one unrelated 120-second timeout while clicking the existing `Confirmation modal` fixture because the topbar/debugbar intercepts the pointer.
+- [x] FTB-018 final evidence: Compose PHP suite (165 tests, 1,558 assertions), builder verification, dedicated branding journey, and full Compose Playwright suite (69 passed, 3 skipped by explicit environment gates) pass. The full foundation matrix no longer times out: the Compose dev stack disables the minimized Debugbar pointer interceptor, and showcase dashboard widgets load immediately in the iframe.
 
 ---
 

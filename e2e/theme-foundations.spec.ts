@@ -697,7 +697,8 @@ test.describe("foundation preview integration", () => {
     await expect(modal.locator(".fi-modal-window")).toBeVisible();
     await applyCase(modal, "#spacing-6", "19", ".fi-modal", readStyle("padding-block-start"));
     await applyCase(modal, "#elevated-surface", "#dbeafe", ".fi-modal-window", readStyle("background-color"));
-    await modal.getByRole("button", { name: "Cancel" }).click();
+    await modal.getByRole("button", { name: "Cancel" }).evaluate((button) => (button as HTMLElement).click());
+    await expect(modal.locator(".fi-modal-window")).toBeHidden();
 
     const layout = modal;
     for (const radius of ["none", "sm", "md", "lg", "xl", "full"]) {

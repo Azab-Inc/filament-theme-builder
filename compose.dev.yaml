@@ -46,6 +46,7 @@ services:
     command: ["/scripts/compose-dev-entrypoint.sh"]
     environment:
       - APP_URL=http://127.0.0.1:${GATEWAY_PORT:-4175}
+      - DEBUGBAR_ENABLED=false
       - TEMP_UPLOAD_OWNER_QUOTA_BYTES=${TEMP_UPLOAD_OWNER_QUOTA_BYTES:-26214400}
       - TEMP_UPLOAD_MAX_BYTES=${TEMP_UPLOAD_MAX_BYTES:-5242880}
     volumes:

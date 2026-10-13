@@ -1,7 +1,5 @@
 import { expect, test, type Page, type StorageState } from '@playwright/test'
-
-const composeBaseUrl = process.env.COMPOSE_BASE_URL ?? 'http://127.0.0.1:4175'
-const demoBaseUrl = process.env.DEMO_BASE_URL ?? (process.env.COMPOSE_E2E === '1' ? composeBaseUrl : 'http://127.0.0.1:4174')
+import { composeBaseUrl, demoBaseUrl } from './urls'
 const uploadBoundaryTestsEnabled = process.env.DEMO_UPLOAD_TEST_LIMITS === '1'
 
 let authState: StorageState

@@ -27,10 +27,10 @@
 - Modify: `builder/src/services/theme-serialization.ts`
 - Test: `builder/src/__tests__/panel-branding.spec.ts`
 
-- [ ] Write failing tests for defaults, exact unions, safe asset references, Google Fonts, migration, classification, canonical JSON, and PanelProvider snippets.
-- [ ] Run the focused Vitest test and confirm the missing model/export failures.
-- [ ] Implement typed settings, validation, migration, and deterministic exports.
-- [ ] Run the focused tests and the existing serialization tests.
+- [x] Write failing tests for defaults, exact unions, safe asset references, Google Fonts, migration, classification, canonical JSON, and PanelProvider snippets.
+- [x] Run the focused Vitest test and confirm the missing model/export failures.
+- [x] Implement typed settings, validation, migration, and deterministic exports.
+- [x] Run the focused tests and the existing serialization tests.
 
 ### Task 2: Pinia state integration and controlled preview protocol
 
@@ -42,10 +42,10 @@
 - Test: `builder/src/__tests__/App.spec.ts`
 - Test: `e2e/ftb-018-branding.spec.ts`
 
-- [ ] Add failing tests for set/reset/undo/redo/persistence, immediate CSS projection, runtime loading/reload, iframe continuity, and dark/light assets.
-- [ ] Run unit and Playwright tests to establish expected failures.
-- [ ] Implement store methods, message classification, runtime message validation, bridge asset/font application, and loading state without replacing the draft.
-- [ ] Run focused unit tests and the browser test.
+- [x] Add failing tests for set/reset/undo/redo/persistence, immediate CSS projection, runtime loading/reload, iframe continuity, and dark/light assets.
+- [x] Run unit and Playwright tests to establish expected failures.
+- [x] Implement store methods, message classification, runtime message validation, bridge asset/font application, and loading state without replacing the draft.
+- [x] Run focused unit tests and the browser test.
 
 ### Task 3: Demo runtime branding consumption and uploads
 
@@ -59,10 +59,10 @@
 - Test: `demo/tests/Feature/Filament/PanelBrandingTest.php`
 - Test: `demo/tests/Feature/Uploads/BrandingUploadTest.php`
 
-- [ ] Write failing PHP tests for image validation, quota, safe references, 24-hour cleanup, unauthorized upload rejection, runtime settings, and supported sidebar/content-width modes.
-- [ ] Run focused PHPUnit tests and confirm failures.
-- [ ] Implement the domain value object, upload endpoint/reference handling, cleanup reuse, and native PanelProvider mapping.
-- [ ] Run focused tests, Pint, and PHPStan.
+- [x] Write failing PHP tests for image validation, quota, safe references, 24-hour cleanup, unauthorized upload rejection, runtime settings, and supported sidebar/content-width modes.
+- [x] Run focused PHPUnit tests and confirm failures.
+- [x] Implement the domain value object, upload endpoint/reference handling, cleanup reuse, and native PanelProvider mapping.
+- [x] Run focused tests, Pint, and PHPStan.
 
 ### Task 4: Builder controls and export boundary
 
@@ -73,9 +73,9 @@
 - Test: `builder/src/__tests__/panel-branding.spec.ts`
 - Test: `e2e/ftb-018-branding.spec.ts`
 
-- [ ] Add failing control tests for app name, logos, favicon, logo height, custom Google font, width, sidebar modes, reset, and both export formats.
-- [ ] Implement the controls using existing styling/components and explicit mapping labels.
-- [ ] Run focused unit and Playwright tests.
+- [x] Add failing control tests for app name, logos, favicon, logo height, custom Google font, width, sidebar modes, reset, and both export formats.
+- [x] Implement the controls using existing styling/components and explicit mapping labels.
+- [x] Run focused unit and Playwright tests.
 
 ### Task 5: MCP inventory, coverage, ticket closure, and full verification
 
@@ -85,8 +85,8 @@
 - Modify: `TICKETS.md`
 - Add/update: relevant MCP inventory documentation/tests
 
-- [ ] Write failing inventory/coverage assertions for branding read, upload, preview, export, authorization, and cleanup capabilities.
-- [ ] Implement truthful inventory and evidence references.
-- [ ] Run builder type-check/unit/build, PHP tests/Pint/PHPStan, health checks, and full relevant Compose Playwright coverage.
-- [ ] Mark FTB-018 done only for evidenced criteria; report any environmental or acceptance gaps.
-- [ ] Inspect status/diff, stage only intended files, and commit with `(builder)`/`(demo)` prefixes.
+- [x] Write failing inventory/coverage assertions for branding read, upload, preview, export, authorization, and cleanup capabilities.
+- [x] Implement truthful inventory and evidence references.
+- [x] Run builder type-check/unit/build, PHP tests/Pint/PHPStan, health checks, and full relevant Compose Playwright coverage.
+- [x] Mark FTB-018 done only for evidenced criteria; report any environmental or acceptance gaps.
+- [x] Inspect status/diff, stage only intended files, and commit with `(builder)`/`(demo)` prefixes.

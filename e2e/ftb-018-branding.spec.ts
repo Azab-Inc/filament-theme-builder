@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test'
-
-const builderBaseUrl = process.env.BUILDER_BASE_URL ?? 'http://127.0.0.1:4173'
+import { builderBaseUrl } from './urls'
 
 test('branding controls preserve the draft while runtime preview refreshes', async ({ page }) => {
   await page.goto(builderBaseUrl)

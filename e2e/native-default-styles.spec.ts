@@ -6,6 +6,14 @@ const dashboardUrl = `${baseUrl}/demo/admin`
 test('untouched builder preview preserves native dashboard layout and table styles', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } })
   try {
+    const login = await context.newPage()
+    await login.goto(`${baseUrl}/demo/admin/login`)
+    await login.getByLabel(/username/i).fill('user')
+    await login.getByRole('textbox', { name: /password/i }).fill('password')
+    await login.getByRole('button', { name: /sign in/i }).click()
+    await expect(login).toHaveURL(dashboardUrl)
+    await login.close()
+
     const standalone = await context.newPage()
     await standalone.goto(dashboardUrl)
     await expect(standalone.locator('.fi-page')).toBeVisible()
@@ -15,6 +23,11 @@ test('untouched builder preview preserves native dashboard layout and table styl
     await builder.goto(baseUrl)
     await builder.evaluate(() => localStorage.clear())
     await builder.reload()
+    const previewNavigation = builder.waitForEvent('framenavigated', (frame) => frame.url() === dashboardUrl)
+    await builder.locator('iframe[title="Filament preview"]').evaluate((iframe, url) => {
+      iframe.src = url
+    }, dashboardUrl)
+    await previewNavigation
     await builder.locator('iframe[title="Filament preview"]').evaluate((frame) => {
       frame.style.width = '100vw'
       frame.style.height = '100vh'

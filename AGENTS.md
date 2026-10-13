@@ -35,7 +35,7 @@ Use test-driven development for every feature and bug fix: write the test first,
 
 ### Demo-first implementation gate
 
-After FTB-003, remaining builder feature work stays blocked until all demo-complete requirements are met: FTB-009A (demo domain), FTB-009B (core resources), and FTB-010 (relationship UI) are done; FTB-011 (forms/schemas), FTB-013 (infolists), FTB-014 (actions/modals/notifications), and FTB-015 (widgets/navigation/search/auth/tenant UI) are still in progress. Their implemented showcase slices do not complete all acceptance criteria; full fixture, registry/inheritance, coverage, and forced-state requirements remain outstanding as specified in TICKETS.md. FTB-012 (tables) remains explicitly partial only for theme-density integration, which is not a blocker. Resolve the remaining requirements of FTB-016, FTB-017, and FTB-018 before lifting the builder-work block. Operational FTB-027/028 are parallel and outside the current plan; they retain separate pending work with independent status/prerequisites, and are not substitutes for or relaxations of this gate. Preserve TDD and Playwright requirements above for all feature work.
+After FTB-003, remaining builder feature work stays blocked until all demo-complete requirements are met: FTB-009A/B/010, FTB-011, FTB-013, FTB-014, FTB-015, FTB-016, FTB-017, and FTB-018 are now evidenced complete. FTB-012 (tables) remains explicitly partial only for theme-density integration, which is not a blocker. Operational FTB-027/028 are parallel and outside the current plan; they retain separate status/prerequisites and are not substitutes for or relaxations of this gate. Preserve TDD and Playwright requirements above for all feature work.
 
 ## More Specific Instructions
 

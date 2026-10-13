@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test'
-
-const demoBaseUrl = process.env.DEMO_BASE_URL ?? 'http://127.0.0.1:4174'
+import { demoBaseUrl } from './urls'
 
 test('customers and products resource indexes and product detail load', async ({ page }) => {
   await page.goto(`${demoBaseUrl}/demo/admin/login`)

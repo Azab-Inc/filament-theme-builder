@@ -1,6 +1,5 @@
 import { expect, test as base, type BrowserContext, type Page } from '@playwright/test'
-
-const demoBaseUrl = process.env.DEMO_BASE_URL ?? 'http://127.0.0.1:4174'
+import { demoBaseUrl } from './urls'
 
 type Fixtures = {
   authenticatedPage: Page

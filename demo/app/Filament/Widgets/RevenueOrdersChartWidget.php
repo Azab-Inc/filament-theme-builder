@@ -3,10 +3,13 @@
 namespace App\Filament\Widgets;
 
 use App\Filament\Support\DashboardMetrics;
+use App\Filament\Widgets\Concerns\LoadsImmediately;
 use Filament\Widgets\ChartWidget;
 
 class RevenueOrdersChartWidget extends ChartWidget
 {
+    use LoadsImmediately;
+
     protected int|string|array $columnSpan = ['default' => 1, 'xl' => 2];
 
     protected ?string $heading = 'Revenue and orders';

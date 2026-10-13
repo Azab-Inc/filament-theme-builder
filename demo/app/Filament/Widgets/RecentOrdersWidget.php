@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Filament\Resources\Orders\OrderResource;
 use App\Filament\Support\DashboardMetrics;
+use App\Filament\Widgets\Concerns\LoadsImmediately;
 use App\Models\Order;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -12,6 +13,8 @@ use Illuminate\Support\Collection;
 
 class RecentOrdersWidget extends TableWidget
 {
+    use LoadsImmediately;
+
     protected int|string|array $columnSpan = ['default' => 1, 'xl' => 2];
 
     public function table(Table $table): Table

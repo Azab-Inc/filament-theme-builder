@@ -3,11 +3,14 @@
 namespace App\Filament\Widgets;
 
 use App\Filament\Support\DashboardMetrics;
+use App\Filament\Widgets\Concerns\LoadsImmediately;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class CommerceStatsOverviewWidget extends StatsOverviewWidget
 {
+    use LoadsImmediately;
+
     protected int|string|array $columnSpan = 'full';
 
     protected ?string $heading = 'Commerce overview';

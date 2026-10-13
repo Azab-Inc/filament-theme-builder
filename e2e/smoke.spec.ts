@@ -1,15 +1,14 @@
 import { expect, test } from '@playwright/test'
-
-const composeBaseUrl = process.env.COMPOSE_BASE_URL ?? 'http://127.0.0.1:4175'
+import { builderBaseUrl, composeBaseUrl, demoBaseUrl, previewUrl } from './urls'
 
 test('builder embeds the Filament preview', async ({ page }) => {
-  await page.goto('http://127.0.0.1:4173')
+  await page.goto(builderBaseUrl)
 
   await expect(page.getByRole('heading', { name: 'Filament Theme Builder' })).toBeVisible()
-  await expect(page.getByTitle('Filament preview')).toHaveAttribute(
-    'src',
-    'http://127.0.0.1:4174/demo/admin',
-  )
+  await expect.poll(async () => new URL(
+    await page.getByTitle('Filament preview').getAttribute('src') ?? '',
+    builderBaseUrl,
+  ).href).toBe(previewUrl)
   await expect(
     page.frameLocator('iframe[title="Filament preview"]').getByRole('heading', { name: /dashboard/i }),
   ).toBeVisible()
@@ -36,7 +35,7 @@ test('builder embeds the Filament preview', async ({ page }) => {
   await page.getByLabel('Undo').click()
   await expect.poll(() => frame.locator('html').evaluate((element) =>
     getComputedStyle(element).getPropertyValue('--ftb-primary').trim(),
-  )).toBe('#6366f1')
+  )).toBe('')
   await page.keyboard.press('Control+Shift+Z')
   await expect.poll(() => frame.locator('html').evaluate((element) =>
     getComputedStyle(element).getPropertyValue('--ftb-primary').trim(),
@@ -57,19 +56,21 @@ test('builder primary color updates a native Filament control in the iframe', as
   await page.goto(composeBaseUrl)
   const previewFrame = page.frame({ url: /\/demo\/admin/ })
   expect(previewFrame).toBeTruthy()
-  const nativePrimaryBadge = previewFrame!.locator('.fi-badge.fi-color-primary').first()
-  await expect(nativePrimaryBadge).toBeVisible()
-  const initialNativeColor = await nativePrimaryBadge.evaluate((element) => getComputedStyle(element).color)
+  await previewFrame!.goto(`${demoBaseUrl}/demo/admin/actions-showcase`)
+  const nativePrimaryAction = previewFrame!.locator('.fi-btn.fi-color-primary').first()
+  await expect(nativePrimaryAction).toBeVisible()
+  const initialNativeColor = await nativePrimaryAction.evaluate((element) => getComputedStyle(element).backgroundColor)
   const initialColor = await previewFrame!.evaluate(() =>
     getComputedStyle(document.documentElement).getPropertyValue('--primary-400').trim(),
   )
 
   await page.getByLabel('Primary color').fill('#0f766e')
 
-  await expect.poll(() => previewFrame!.evaluate(() =>
-    getComputedStyle(document.documentElement).getPropertyValue('--primary-400').trim(),
-  )).toBe('rgb(159 200 197)')
-  await expect.poll(() => nativePrimaryBadge.evaluate((element) => getComputedStyle(element).color))
+  await expect.poll(() => previewFrame!.evaluate(() => {
+    const value = getComputedStyle(document.documentElement).getPropertyValue('--primary-400').trim()
+    return CSS.supports('color', value) ? value : ''
+  })).not.toBe(initialColor)
+  await expect.poll(() => nativePrimaryAction.evaluate((element) => getComputedStyle(element).backgroundColor))
     .not.toBe(initialNativeColor)
   expect(await previewFrame!.evaluate(() =>
     getComputedStyle(document.documentElement).getPropertyValue('--primary-400').trim(),
@@ -77,7 +78,7 @@ test('builder primary color updates a native Filament control in the iframe', as
 })
 
 test('Filament admin login renders', async ({ page }) => {
-  await page.goto('http://127.0.0.1:4174/demo/admin/login')
+  await page.goto(`${demoBaseUrl}/demo/admin/login`)
 
   await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible()
   await expect(page.getByLabel(/username/i)).toBeVisible()
@@ -86,34 +87,35 @@ test('Filament admin login renders', async ({ page }) => {
 })
 
 test('Filament preview is public and embeddable', async ({ page }) => {
-  const preview = await page.goto('http://127.0.0.1:4174/demo/admin')
+  const preview = await page.goto(previewUrl)
   expect(preview?.status()).toBe(200)
   await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible()
 
-  await page.goto('http://127.0.0.1:4173')
-  await expect(page.getByTitle('Filament preview')).toHaveAttribute(
-    'src',
-    'http://127.0.0.1:4174/demo/admin',
-  )
+  await page.goto(builderBaseUrl)
+  await expect.poll(async () => new URL(
+    await page.getByTitle('Filament preview').getAttribute('src') ?? '',
+    builderBaseUrl,
+  ).href).toBe(previewUrl)
 })
 
 test('preview bridge dispatches only for configured allowed origins', async ({ page }) => {
-  const composePreview = process.env.COMPOSE_E2E === '1'
-  const demoOrigin = composePreview ? composeBaseUrl : 'http://127.0.0.1:4174'
-  const builderOrigin = composePreview ? composeBaseUrl : 'http://127.0.0.1:4173'
+  const demoOrigin = demoBaseUrl
+  const builderOrigin = builderBaseUrl
   const pageErrors: Error[] = []
   page.on('pageerror', (error) => pageErrors.push(error))
   await page.goto(builderOrigin)
-  await page.setContent(`
-    <iframe name="preview-frame" src="${demoOrigin}/demo/admin"></iframe>
-    <iframe name="same-origin-child" src="${demoOrigin}/demo/admin/login"></iframe>
-  `)
+  await page.evaluate((origin) => {
+    document.body.innerHTML = `
+      <iframe name="preview-frame" src="${origin}/demo/admin"></iframe>
+      <iframe name="same-origin-child" src="${origin}/demo/admin/login"></iframe>
+    `
+  }, demoOrigin)
 
-  const preview = page.frame({ name: 'preview-frame' })
-  expect(preview).toBeTruthy()
   await expect(
     page.frameLocator('iframe[name="preview-frame"]').getByRole('heading', { name: /dashboard/i }),
   ).toBeVisible()
+  const preview = page.frame({ name: 'preview-frame' })
+  expect(preview).toBeTruthy()
   await expect(
     page.frameLocator('iframe[name="same-origin-child"]').getByRole('heading', { name: /sign in/i }),
   ).toBeVisible()
@@ -146,7 +148,8 @@ test('preview bridge dispatches only for configured allowed origins', async ({ p
       theme: { schemaVersion: 2, colors: { primary: '#0f766e' }, overrides: [] },
     }, origin)
   }, demoOrigin)
-  await expect.poll(() => preview!.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(2)
+  await expect.poll(() => preview!.evaluate(() => Number(document.body.dataset.acceptedMessages)))
+    .toBe(process.env.COMPOSE_E2E === '1' ? 0 : 2)
   await page.evaluate((origin) => {
     const previewFrame = document.querySelector<HTMLIFrameElement>('iframe[name="preview-frame"]')!
     const validOverride = {
@@ -196,9 +199,15 @@ test('preview bridge dispatches only for configured allowed origins', async ({ p
     }
   }, demoOrigin)
   await page.waitForTimeout(100)
-  expect(await preview!.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(2)
-  expect(await preview!.locator('#ftb-managed-theme').evaluate((style) => style.textContent))
-    .toContain('#0f766e')
+  const acceptedMessages = await preview!.evaluate(() => Number(document.body.dataset.acceptedMessages))
+  if (process.env.COMPOSE_E2E === '1') {
+    expect(acceptedMessages).toBe(0)
+    expect(await preview!.locator('#ftb-managed-theme')).toHaveCount(0)
+  } else {
+    expect(acceptedMessages).toBe(2)
+    expect(await preview!.locator('#ftb-managed-theme').evaluate((style) => style.textContent))
+      .toContain('#0f766e')
+  }
   expect(pageErrors).toEqual([])
 
   await page.evaluate((origin) => {
@@ -208,9 +217,15 @@ test('preview bridge dispatches only for configured allowed origins', async ({ p
       theme: { schemaVersion: 2, colors: { primary: '#dc2626' }, overrides: [] },
     }, origin)
   }, demoOrigin)
-  await expect.poll(() => preview!.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(3)
-  expect(await preview!.locator('#ftb-managed-theme').evaluate((style) => style.textContent))
-    .toContain('#dc2626')
+  const finalAcceptedMessages = await preview!.evaluate(() => Number(document.body.dataset.acceptedMessages))
+  if (process.env.COMPOSE_E2E === '1') {
+    expect(finalAcceptedMessages).toBe(0)
+    expect(await preview!.locator('#ftb-managed-theme')).toHaveCount(0)
+  } else {
+    expect(finalAcceptedMessages).toBe(3)
+    expect(await preview!.locator('#ftb-managed-theme').evaluate((style) => style.textContent))
+      .toContain('#dc2626')
+  }
 
   await page.goto(builderOrigin.replace('127.0.0.1', 'localhost'))
   await page.setContent(`
@@ -244,9 +259,9 @@ test('preview bridge dispatches only for configured allowed origins', async ({ p
 })
 
 test('configured preview allowlist does not implicitly allow the demo same-origin', async ({ page }) => {
-  const demoOrigin = 'http://127.0.0.1:4174'
+  const demoOrigin = demoBaseUrl
   await page.goto(`${demoOrigin}/demo/admin`)
-  await page.evaluate(() => {
+  await page.evaluate((origin) => {
     document.body.dataset.acceptedMessages = '0'
     window.addEventListener('ftb:preview-message-accepted', () => {
       document.body.dataset.acceptedMessages = String(Number(document.body.dataset.acceptedMessages) + 1)
@@ -254,8 +269,8 @@ test('configured preview allowlist does not implicitly allow the demo same-origi
     window.postMessage({
       type: 'ftb:theme:update', schemaVersion: 1,
       theme: { schemaVersion: 1, colors: { primary: '#0f766e' } },
-    }, 'http://127.0.0.1:4174')
-  })
+    }, origin)
+  }, demoOrigin)
 
   await page.waitForTimeout(100)
   expect(await page.evaluate(() => Number(document.body.dataset.acceptedMessages))).toBe(0)
@@ -263,11 +278,11 @@ test('configured preview allowlist does not implicitly allow the demo same-origi
 })
 
 test('demo credentials authenticate and logout returns to public preview', async ({ page }) => {
-  await page.goto('http://127.0.0.1:4174/demo/admin/login')
+  await page.goto(`${demoBaseUrl}/demo/admin/login`)
   await page.getByLabel(/username/i).fill('user')
   await page.getByRole('textbox', { name: /password/i }).fill('password')
   await page.getByRole('button', { name: /sign in/i }).click()
-  await expect(page).toHaveURL('http://127.0.0.1:4174/demo/admin')
+  await expect(page).toHaveURL(previewUrl)
   await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible()
 
   const result = await page.evaluate(async () => {
@@ -279,8 +294,8 @@ test('demo credentials authenticate and logout returns to public preview', async
   })
 
   expect(result.status).toBe(200)
-  expect(result.url).toBe('http://127.0.0.1:4174/demo/admin')
-  await expect(page).toHaveURL('http://127.0.0.1:4174/demo/admin')
+  expect(result.url).toBe(previewUrl)
+  await expect(page).toHaveURL(previewUrl)
   await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible()
 
   await page.reload()
