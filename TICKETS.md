@@ -15,7 +15,7 @@
 
 ## Dependency map
 
-Demo-showcase delivery order (prose delivery order (not hard dependency blockers)): **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015 → FTB-016 → FTB-017 → FTB-018**. The dependency map below remains the source of hard blockers. The demo-complete gate is not yet satisfied: FTB-011/013/014/015/016 are done, while FTB-012 remains partial solely for theme-density integration and FTB-017/018 remain outstanding; FTB-009A/B/010 are done. Remaining builder feature work remains blocked by this gate and completion of FTB-017/018. Operational FTB-027 and FTB-028 are done, with FTB-028's full-suite documentation-mount gap recorded in its report. Phase 1 owns the branded existing dashboard shell, four commerce widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and representative badges. FTB-015 owns the Showcase navigation/index, search/profile/authentication/tenant surfaces and must integrate (not duplicate) Phase 1 widgets/navigation. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
+Demo-showcase delivery order (prose delivery order (not hard dependency blockers)): **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015 → FTB-016 → FTB-017 → FTB-018**. The dependency map below remains the source of hard blockers. The demo-complete gate is not yet satisfied: FTB-011/013/014/015/016/017 are done, while FTB-012 remains partial solely for theme-density integration and FTB-018 remains outstanding; FTB-009A/B/010 are done. Remaining builder feature work remains blocked by this gate and completion of FTB-018. Operational FTB-027 and FTB-028 are done, with FTB-028's full-suite documentation-mount gap recorded in its report. Phase 1 owns the branded existing dashboard shell, four commerce widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and representative badges. FTB-015 owns the Showcase navigation/index, search/profile/authentication/tenant surfaces and must integrate (not duplicate) Phase 1 widgets/navigation. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
 
 ```text
 FTB-001
@@ -482,7 +482,7 @@ Give showcase pages controls that intentionally force otherwise transient states
 
 ## FTB-017 — Add icon packs and semantic icon replacement
 
-**Status:** ready-for-agent  
+**Status:** done
 **Blocked by:** [FTB-006](#ftb-006), [FTB-015](#ftb-015)
 
 ### What to build
@@ -491,13 +491,13 @@ Let users alter the visual icon system with global pack/style presets and indivi
 
 ### Acceptance criteria
 
-- [ ] `IconPackConfiguration` offers the default pack and multiple alternative pack/style presets; `SemanticResourceIconOverrides` can replace individual resource icons after pack selection.
-- [ ] Individual semantic icons can be overridden after choosing a pack.
-- [ ] Icon changes preview immediately.
-- [ ] Icon configuration is part of theme JSON.
-- [ ] Required non-CSS configuration is surfaced in PanelProvider/config export rather than faked with brittle CSS.
-- [ ] FTB-017 owns icon configuration and its PanelProvider/config export path; icons are not duplicated as separate dashboard/showcase work.
-- [ ] Reset restores inherited/default icon behavior.
+- [x] `IconPackConfiguration` offers the default pack and multiple alternative pack/style presets; `SemanticResourceIconOverrides` can replace individual resource icons after pack selection.
+- [x] Individual semantic icons can be overridden after choosing a pack.
+- [x] Icon changes preview immediately.
+- [x] Icon configuration is part of theme JSON.
+- [x] Required non-CSS configuration is surfaced in PanelProvider/config export rather than faked with brittle CSS.
+- [x] FTB-017 owns icon configuration and its PanelProvider/config export path; icons are not duplicated as separate dashboard/showcase work.
+- [x] Reset restores inherited/default icon behavior.
 
 ---
 

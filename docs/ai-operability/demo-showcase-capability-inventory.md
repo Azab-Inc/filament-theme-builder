@@ -37,7 +37,7 @@ there is no domain mutation to expose or authorize.
 | `showcase.navigation.authenticated-controls` | Global search, breadcrumbs, tabs, profile menu, login/authentication controls | read-only | Existing panel authentication/authorization; public Showcase index remains explicitly allowlisted | None | No MCP read tool; not available |
 | `showcase.navigation.tenant-presentation` | Controlled tenant presentation on `ShowcaseIndexPage` | presentation-only | No domain tenant model, membership, session, or persistence is used | None | No MCP mutation tool; not available |
 | `showcase.states` | `/demo/admin/states-showcase` (`ShowcaseStateControls`, `ShowcaseState`) and named state surfaces | presentation-only | Request-scoped allowlisted in-memory state; no domain data access or mutation | None | No MCP mutation tool; not available |
-| `panel.icons` | `IconPackConfiguration`, `SemanticResourceIconOverrides` | mutation | Local builder theme state; no server-side panel data permission | No server commit; explicit user action for local edit/export | No MCP tool; not available |
+| `panel.icons` | `IconPackConfiguration`, `SemanticResourceIconOverrides`, `IconConfiguration` | mutation | Local builder theme state; deployment/runtime configuration remains under project-owner control | No server commit; explicit user action for local edit/export | No MCP tool; not available |
 | `panel.branding` | `PanelBrandingSettings`, PanelProvider/runtime configuration | mutation | Local builder theme state; deployment/runtime configuration remains under project-owner control | Explicit user action before export/application; controlled reload where required | No MCP tool; not available |
 
 ## Commerce operation boundary
