@@ -70,6 +70,7 @@
         };
         const safeIcon = (value) => typeof value === 'string' && /^heroicon-(?:o|s|m)-(?:shopping-bag|shopping-cart|users|archive-box|cube|star|bolt|heart|check-circle)$/.test(value);
         const isSafeIconConfiguration = (icons) => isRecord(icons) && iconPackNames.includes(icons.pack) && isRecord(icons.overrides) && Object.keys(icons.overrides).every((key) => iconKeys.includes(key) && safeIcon(icons.overrides[key]));
+        const iconPath = (icon, fallback) => icon.endsWith('-cube') ? 'M21 7.5l-9-5.25L3 7.5m18 0v9l-9 5.25m9-14.25l-9 5.25m0 9.25v-9.25m0 0L3 7.5m9 5.25l9-5.25' : fallback;
         const styleId = 'ftb-managed-theme';
         const safeToken = /^[a-z\d_.-]{1,100}$/i;
         const fontAllowlist = new Map([['Inter', 'Inter'], ['Roboto', 'Roboto']]);
@@ -255,6 +256,12 @@
             const iconValues = iconKeys.map((key, index) => iconConfiguration.overrides[key] ?? preset[index]);
             document.querySelectorAll('svg').forEach((icon, index) => {
                 const iconValue = iconValues[index % iconValues.length];
+                const path = icon.querySelector('path');
+                if (path) {
+                    const fallback = path.getAttribute('data-ftb-default-path') ?? path.getAttribute('d') ?? '';
+                    path.setAttribute('data-ftb-default-path', fallback);
+                    path.setAttribute('d', iconPath(iconValue, fallback));
+                }
                 icon.setAttribute('data-ftb-icon-pack', iconConfiguration.pack);
                 icon.setAttribute('data-ftb-icon', iconValue);
                 icon.setAttribute('aria-label', icon.getAttribute('aria-label') ?? iconValue);
