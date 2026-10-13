@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\Auth\Pages\Login;
 use App\Filament\Pages\Showcase\DemoShowcaseDashboard;
 use App\Filament\Pages\Showcase\ShowcaseIndexPage;
+use App\Filament\Support\IconConfiguration;
 use App\Http\Middleware\AuthenticatePreviewPanel;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -47,6 +48,7 @@ class AdminPanelProvider extends PanelProvider
             ->globalSearchFieldKeyBindingSuffix()
             ->sidebarCollapsibleOnDesktop()
             ->sidebarFullyCollapsibleOnDesktop()
+            ->icons(IconConfiguration::panelIcons())
             ->renderHook(
                 PanelsRenderHook::BODY_END,
                 fn (): string => view('filament.preview-bridge')->render(),

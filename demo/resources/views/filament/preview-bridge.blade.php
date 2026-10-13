@@ -61,6 +61,15 @@
             '6': ['.fi-modal'], '8': ['.fi-page'],
         };
         const componentSelectors = ['.fi-section', '.fi-ta', '.fi-ta-ctn', '.fi-btn', '.fi-input', '.fi-select-input', '.fi-fo-textarea', '.fi-modal'];
+        const iconPackNames = ['default', 'solid', 'mini'];
+        const iconKeys = ['products', 'orders', 'customers', 'inventory'];
+        const iconPresets = {
+            default: ['heroicon-o-shopping-bag', 'heroicon-o-shopping-cart', 'heroicon-o-users', 'heroicon-o-archive-box'],
+            solid: ['heroicon-s-shopping-bag', 'heroicon-s-shopping-cart', 'heroicon-s-users', 'heroicon-s-archive-box'],
+            mini: ['heroicon-m-shopping-bag', 'heroicon-m-shopping-cart', 'heroicon-m-users', 'heroicon-m-archive-box'],
+        };
+        const safeIcon = (value) => typeof value === 'string' && /^heroicon-(?:o|s|m)-(?:shopping-bag|shopping-cart|users|archive-box|cube|star|bolt|heart|check-circle)$/.test(value);
+        const isSafeIconConfiguration = (icons) => isRecord(icons) && iconPackNames.includes(icons.pack) && isRecord(icons.overrides) && Object.keys(icons.overrides).every((key) => iconKeys.includes(key) && safeIcon(icons.overrides[key]));
         const styleId = 'ftb-managed-theme';
         const safeToken = /^[a-z\d_.-]{1,100}$/i;
         const fontAllowlist = new Map([['Inter', 'Inter'], ['Roboto', 'Roboto']]);
@@ -164,7 +173,11 @@
             }
             return projectionMatchesCanonicalFoundation(projection, foundations);
         };
-        const isAcceptedTheme = (message) => isRecord(message) && message.type === 'ftb:theme:update' && message.schemaVersion === 1 && ['light', 'dark'].includes(message.activeMode) && isRecord(message.projection) && message.activeMode === message.projection.mode && isRecord(message.theme) && message.theme.schemaVersion === 3 && exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss']) && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && isFoundationRecord(message.theme.foundations) && Array.isArray(message.theme.overrides) && message.theme.overrides.every(isSafeOverride) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && message.theme.customCss === '' && isAcceptedProjection(message.projection, message.theme.foundations);
+        const isAcceptedTheme = (message) => {
+            if (!isRecord(message) || message.type !== 'ftb:theme:update' || message.schemaVersion !== 1 || !['light', 'dark'].includes(message.activeMode) || !isRecord(message.projection) || message.activeMode !== message.projection.mode || !isRecord(message.theme) || message.theme.schemaVersion !== 3) return false;
+            const hasSupportedKeys = exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss', 'icons']);
+            return hasSupportedKeys && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && isFoundationRecord(message.theme.foundations) && Array.isArray(message.theme.overrides) && message.theme.overrides.every(isSafeOverride) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && message.theme.customCss === '' && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && isAcceptedProjection(message.projection, message.theme.foundations);
+        };
         const projectionMatchesCanonicalFoundation = (projection, foundations) => {
             const expectedMappings = [...canonicalFoundationMappings.values()].filter((entry) => {
                 const palette = /^palette\.([^.]+)\./.exec(entry.id)?.[1];
@@ -237,6 +250,22 @@
                 const selector = scope === 'state' ? `${mapping.selector}:focus` : mapping.selector;
                 rules.push(`${selector} { ${mapping.property}: ${override.value} !important; }`);
             }
+            const iconConfiguration = message.theme.icons ?? { pack: 'default', overrides: {} };
+            const preset = iconPresets[iconConfiguration.pack];
+            const iconValues = iconKeys.map((key, index) => iconConfiguration.overrides[key] ?? preset[index]);
+            document.querySelectorAll('svg').forEach((icon, index) => {
+                const iconValue = iconValues[index % iconValues.length];
+                icon.setAttribute('data-ftb-icon-pack', iconConfiguration.pack);
+                icon.setAttribute('data-ftb-icon', iconValue);
+                icon.setAttribute('aria-label', icon.getAttribute('aria-label') ?? iconValue);
+                if (iconConfiguration.pack === 'solid') {
+                    icon.setAttribute('fill', 'currentColor');
+                    icon.setAttribute('stroke', 'none');
+                } else {
+                    icon.setAttribute('fill', 'none');
+                    icon.setAttribute('stroke', 'currentColor');
+                }
+            });
             const style = document.getElementById(styleId) ?? document.createElement('style');
             style.id = styleId;
             style.textContent = rules.join('\n');

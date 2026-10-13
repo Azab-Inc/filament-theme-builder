@@ -7,4 +7,5 @@ $allowedOrigins = array_values(array_filter(array_map(
 
 return [
     'allowed_origins' => $allowedOrigins,
+    'icon_overrides' => [],
 ];
