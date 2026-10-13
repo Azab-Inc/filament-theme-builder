@@ -11,12 +11,14 @@ test.describe("icon configuration integration", () => {
     const preview = page.frameLocator('iframe[title="Filament preview"]');
     const firstIcon = preview.locator("svg").first();
     await expect(firstIcon).toHaveAttribute("data-ftb-icon-pack", "default");
+    const defaultPath = await firstIcon.locator("path").getAttribute("d");
 
     await page.getByLabel("Icon pack").selectOption("solid");
     await expect(firstIcon).toHaveAttribute("data-ftb-icon-pack", "solid");
 
     await page.getByLabel("Products semantic icon override").selectOption("heroicon-o-cube");
     await expect(firstIcon).toHaveAttribute("data-ftb-icon", "heroicon-o-cube");
+    await expect(firstIcon.locator("path")).not.toHaveAttribute("d", defaultPath!);
 
     await page.getByRole("button", { name: "Reset products semantic icon" }).click();
     await expect(firstIcon).toHaveAttribute("data-ftb-icon", "heroicon-s-shopping-bag");
