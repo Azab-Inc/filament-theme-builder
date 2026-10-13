@@ -15,6 +15,8 @@ import { createThemeRegistry } from '@/registry/theme-registry'
 import { resolveThemeValue } from '@/services/theme-resolver'
 import { deserializeTheme } from '@/services/theme-serialization'
 import { validateThemeOverride } from '@/services/theme-validation'
+import type { IconPackName, ResourceIconKey } from '@/models/icons.model'
+import { createDefaultIconConfiguration, validateIconConfiguration } from '@/registry/icon-registry'
 
 const storageKey = 'ftb-theme'
 const registry = createThemeRegistry()
@@ -150,6 +152,28 @@ export const useThemeStore = defineStore('theme', () => {
       if (!validateFoundationState(candidate.foundations).valid) return
       theme.value = candidate
     },
+    setIconPack(value: IconPackName): void {
+      const candidate = cloneTheme(theme.value)
+      candidate.icons = { ...candidate.icons, pack: value }
+      if (!validateIconConfiguration(candidate.icons).valid) return
+      theme.value = candidate
+    },
+    setSemanticResourceIcon(key: ResourceIconKey, icon: string): void {
+      const candidate = cloneTheme(theme.value)
+      candidate.icons.overrides[key] = icon
+      if (!validateIconConfiguration(candidate.icons).valid) return
+      theme.value = candidate
+    },
+    resetSemanticResourceIcon(key: ResourceIconKey): void {
+      const candidate = cloneTheme(theme.value)
+      delete candidate.icons.overrides[key]
+      theme.value = candidate
+    },
+    resetIconConfiguration(): void {
+      const candidate = cloneTheme(theme.value)
+      candidate.icons = createDefaultIconConfiguration()
+      theme.value = candidate
+    },
     resolveFoundation(mode: ThemeMode): ResolvedFoundation {
       const foundations = structuredClone(JSON.parse(JSON.stringify(toRaw(theme.value.foundations))))
       return {
@@ -264,6 +288,7 @@ function migrateToCurrent(state: ThemeState): ThemeStateV3 {
 
 function normalizeTheme(value: ThemeStateV3): ThemeStateV3 {
   const normalized = cloneTheme(value)
+  if (!normalized.icons) normalized.icons = createDefaultIconConfiguration()
   if (normalized.foundations.provenanceVersion !== 1) {
     // Pre-provenance values cannot distinguish a deliberate edit from a builder
     // default. Keep overrides, but restore the only safe foundation baseline.

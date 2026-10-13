@@ -47,6 +47,20 @@ describe('theme state', () => {
     expect(theme.theme.colors.primary).toBe('#0f766e')
   })
 
+  it('selects an icon pack and resets individual semantic overrides', () => {
+    const store = createThemeState()
+
+    store.setIconPack('solid')
+    store.setSemanticResourceIcon('products', 'heroicon-o-cube')
+
+    expect(store.theme.icons).toEqual({ pack: 'solid', overrides: { products: 'heroicon-o-cube' } })
+    store.resetSemanticResourceIcon('products')
+    expect(store.theme.icons).toEqual({ pack: 'solid', overrides: {} })
+
+    store.resetIconConfiguration()
+    expect(store.theme.icons).toEqual({ pack: 'default', overrides: {} })
+  })
+
   it('edits and resets the Product name target through canonical history without copying inherited values', () => {
     const store = createThemeState()
     const request: ResolveRequest = {

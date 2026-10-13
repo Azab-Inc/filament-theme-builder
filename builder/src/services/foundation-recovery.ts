@@ -48,6 +48,7 @@ export function restoreLegacyTheme(value: unknown): FoundationStateV3 | null {
     foundations,
     overrides: Array.isArray(legacy.overrides) ? structuredClone(legacy.overrides) as ThemeOverride[] : [],
     customCss: typeof legacy.customCss === 'string' ? legacy.customCss : '',
+    icons: defaults.icons,
   }
 
   const validation = validateFoundationState(restored)

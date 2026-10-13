@@ -10,10 +10,14 @@ import type {
   ThemeMode,
 } from '@/models/foundations.model'
 import type { ResolveRequest, ThemeOverride, ThemeScope } from '@/models/theme.model'
+import type { IconPackName, ResourceIconKey } from '@/models/icons.model'
+import { ICON_PACK_NAMES, RESOURCE_ICON_KEYS } from '@/models/icons.model'
+import { ICON_PACK_PRESETS } from '@/registry/icon-registry'
 import { CURATED_FONT_CHOICES, PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
 import { createDefaultFoundationState } from '@/services/foundation-defaults'
 import { lookupFoundationMapping } from '@/registry/filament-foundation-inventory'
 import { serializeCanonicalTheme } from '@/services/theme-serialization'
+import { exportIconConfigurationPhp } from '@/services/icon-export'
 import { isExplicitPath } from '@/services/foundation-provenance'
 import { validateFoundationColor } from '@/services/foundation-validation'
 import { useThemeStore } from '@/stores/theme'
@@ -37,6 +41,13 @@ const surfaceNames = ['page', 'sidebar', 'topbar', 'card', 'elevated', 'input'] 
 const typographyNames = ['body', 'heading', 'mono'] as const
 const borderNames = ['default', 'strong'] as const
 const textNames = ['primary', 'muted', 'disabled'] as const
+const iconPackNames = ICON_PACK_NAMES
+const resourceIconKeys = RESOURCE_ICON_KEYS
+const iconOptions = [
+  'heroicon-o-cube', 'heroicon-o-star', 'heroicon-o-bolt', 'heroicon-o-heart', 'heroicon-o-check-circle',
+  'heroicon-s-cube', 'heroicon-s-star', 'heroicon-s-bolt', 'heroicon-s-heart', 'heroicon-s-check-circle',
+  'heroicon-m-cube', 'heroicon-m-star', 'heroicon-m-bolt', 'heroicon-m-heart', 'heroicon-m-check-circle',
+]
 const radiusOptions = ['none', 'sm', 'md', 'lg', 'xl', 'full'] as const
 const shadowOptions = ['none', 'sm', 'md', 'lg', 'xl'] as const
 const fontChoices: ReadonlyArray<{ value: string; label: string; font?: FontChoice }> = [
@@ -283,6 +294,38 @@ function exportCanonicalJson(): void {
   URL.revokeObjectURL(url)
 }
 
+function exportIconPhp(): void {
+  const blob = new Blob([exportIconConfigurationPhp(theme.theme.icons)], { type: 'text/plain' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'filament-panel-icon-config.php'
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+function setIconPack(event: Event): void {
+  theme.setIconPack((event.target as HTMLSelectElement).value as IconPackName)
+}
+
+function iconOverrideValue(key: ResourceIconKey): string {
+  return theme.theme.icons.overrides[key] ?? ''
+}
+
+function setIconOverride(key: ResourceIconKey, event: Event): void {
+  const value = (event.target as HTMLSelectElement).value
+  if (value) theme.setSemanticResourceIcon(key, value)
+  else theme.resetSemanticResourceIcon(key)
+}
+
+function iconLabel(key: ResourceIconKey): string {
+  return key.charAt(0).toUpperCase() + key.slice(1)
+}
+
+function iconPreview(key: ResourceIconKey): string {
+  return theme.theme.icons.overrides[key] ?? ICON_PACK_PRESETS[theme.theme.icons.pack][key]
+}
+
 function downloadLegacyRecovery(): void {
   const archived = theme.getLegacyRecoveryJson()
   if (archived === null) return
@@ -344,6 +387,9 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
       </label>
       <button type="button" aria-label="Export theme JSON" @click="exportCanonicalJson">
         Export JSON
+      </button>
+      <button type="button" aria-label="Export PanelProvider icon config" @click="exportIconPhp">
+        Export icon PHP
       </button>
       <button type="button" aria-label="Undo" :disabled="!canUndo" @click="undo">Undo</button>
       <button type="button" aria-label="Redo" :disabled="!canRedo" @click="redo">Redo</button>
@@ -605,6 +651,31 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
           </select>
           <span role="status" aria-live="polite">{{ statusFor('shadow') }}</span>
           <button type="button" aria-label="Reset shadow" @click="reset('shadow')">Reset</button>
+        </div>
+      </fieldset>
+    </section>
+    <section class="icons grid gap-4" aria-labelledby="icons-heading">
+      <h2 id="icons-heading">Icons</h2>
+      <p>Heroicons are runtime Filament configuration. Preview changes apply to rendered icons immediately.</p>
+      <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
+        <legend>IconPackConfiguration</legend>
+        <label for="icon-pack">Icon pack</label>
+        <select id="icon-pack" aria-label="Icon pack" :value="theme.theme.icons.pack" @change="setIconPack">
+          <option v-for="pack in iconPackNames" :key="pack" :value="pack">{{ pack }}</option>
+        </select>
+        <button type="button" aria-label="Reset icon configuration" @click="theme.resetIconConfiguration">Reset icon configuration</button>
+        <div
+          v-for="key in resourceIconKeys"
+          :key="key"
+          class="icon-control-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]"
+        >
+          <label :for="`${key}-semantic-icon`">{{ iconLabel(key) }} semantic icon override</label>
+          <select :id="`${key}-semantic-icon`" :aria-label="`${iconLabel(key)} semantic icon override`" :value="iconOverrideValue(key)" @change="setIconOverride(key, $event)">
+            <option value="">Inherited from pack ({{ iconPreview(key) }})</option>
+            <option v-for="icon in iconOptions" :key="icon" :value="icon">{{ icon }}</option>
+          </select>
+          <span role="status">{{ iconPreview(key) }}</span>
+          <button type="button" :aria-label="`Reset ${key} semantic icon`" @click="theme.resetSemanticResourceIcon(key)">Reset</button>
         </div>
       </fieldset>
     </section>

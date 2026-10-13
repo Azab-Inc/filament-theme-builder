@@ -54,6 +54,7 @@ export type FoundationStateV3 = {
   foundations: FoundationState
   overrides: import('@/models/theme.model').ThemeOverride[]
   customCss: string
+  icons: import('@/models/icons.model').IconPackConfiguration
 }
 
 export type FoundationValidationResult =

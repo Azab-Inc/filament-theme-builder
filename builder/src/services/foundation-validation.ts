@@ -10,6 +10,7 @@ import { createThemeRegistry } from '@/registry/theme-registry'
 import { lookupFoundationMapping, type FoundationInventoryEntry } from '@/registry/filament-foundation-inventory'
 import { validateThemeOverride } from '@/services/theme-validation'
 import { isTrustedColor } from '@/registry/tailwind-color-catalog'
+import { validateIconConfiguration } from '@/registry/icon-registry'
 
 type ValidationError = Exclude<FoundationValidationResult, { valid: true }>
 
@@ -50,7 +51,7 @@ export function isEditableFoundationPath(path: string): boolean {
 }
 
 function validateVersionedState(value: Record<string, unknown>): FoundationValidationResult {
-  const topLevel = checkKeys(value, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss'], ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss'], '')
+  const topLevel = checkKeys(value, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss', 'icons'], ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss'], '')
   if (topLevel) return topLevel
   if (value.schemaVersion !== 3) return invalid('invalid-value', 'schemaVersion', 'Unsupported foundation schema version')
   if (!isRecord(value.colors)) return invalid('invalid-value', 'colors', 'Colors must be an object')
@@ -70,6 +71,10 @@ function validateVersionedState(value: Record<string, unknown>): FoundationValid
   }
 
   if (value.customCss !== '') return invalid('invalid-value', 'customCss', 'Custom CSS must be empty until a safe CSS grammar is defined')
+  if (value.icons !== undefined) {
+    const iconResult = validateIconConfiguration(value.icons)
+    if (!iconResult.valid) return invalid('invalid-value', 'icons', iconResult.error)
+  }
   return validateFoundationRecord(value.foundations, 'foundations')
 }
 
