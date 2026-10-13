@@ -174,10 +174,23 @@
             }
             return projectionMatchesCanonicalFoundation(projection, foundations);
         };
+        const isSafeBrandingAsset = (value) => value === null || (typeof value === 'string' && /^[a-f0-9]{64}\/[a-f0-9]{40}\.(?:jpg|jpeg|png|webp)$/i.test(value));
+        const isSafeBranding = (branding) => isRecord(branding)
+            && Object.keys(branding).every((key) => ['appName', 'lightLogo', 'darkLogo', 'favicon', 'logoHeight', 'brandTypography', 'contentWidth', 'sidebar'].includes(key))
+            && typeof branding.appName === 'string' && /^[\p{L}\p{N} .,_&'’()\-]{1,100}$/u.test(branding.appName)
+            && isSafeBrandingAsset(branding.lightLogo) && isSafeBrandingAsset(branding.darkLogo) && isSafeBrandingAsset(branding.favicon)
+            && typeof branding.logoHeight === 'string' && /^(?:0|[1-9]\d?)(?:\.\d+)?(?:px|rem|em|vh|vw|%)$/.test(branding.logoHeight)
+            && isRecord(branding.brandTypography) && ['system', 'curated', 'custom'].includes(branding.brandTypography.kind)
+            && typeof branding.brandTypography.name === 'string' && typeof branding.brandTypography.family === 'string'
+            && /^[A-Za-z0-9][A-Za-z0-9 .,_-]{0,99}$/.test(branding.brandTypography.family)
+            && (branding.brandTypography.kind !== 'curated' || (branding.brandTypography.provider === 'google-fonts' && ['Inter', 'Roboto'].includes(branding.brandTypography.name) && branding.brandTypography.name === branding.brandTypography.family))
+            && (branding.brandTypography.kind !== 'custom' || branding.brandTypography.name === branding.brandTypography.family)
+            && ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl', 'full'].includes(branding.contentWidth)
+            && ['collapsible', 'fully-collapsible', 'top-navigation'].includes(branding.sidebar);
         const isAcceptedTheme = (message) => {
-            if (!isRecord(message) || message.type !== 'ftb:theme:update' || message.schemaVersion !== 1 || !['light', 'dark'].includes(message.activeMode) || !isRecord(message.projection) || message.activeMode !== message.projection.mode || !isRecord(message.theme) || message.theme.schemaVersion !== 3) return false;
-            const hasSupportedKeys = exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss', 'icons']);
-            return hasSupportedKeys && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && isFoundationRecord(message.theme.foundations) && Array.isArray(message.theme.overrides) && message.theme.overrides.every(isSafeOverride) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && message.theme.customCss === '' && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && isAcceptedProjection(message.projection, message.theme.foundations);
+            if (!isRecord(message) || message.type !== 'ftb:theme:update' || message.schemaVersion !== 1 || !['light', 'dark'].includes(message.activeMode) || !isRecord(message.projection) || message.activeMode !== message.projection.mode || !isRecord(message.theme) || !(message.theme.schemaVersion === 3)) return false;
+             const hasSupportedKeys = exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss', 'icons']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss', 'branding']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss', 'icons', 'branding']);
+             return hasSupportedKeys && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && isFoundationRecord(message.theme.foundations) && Array.isArray(message.theme.overrides) && message.theme.overrides.every(isSafeOverride) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && message.theme.customCss === '' && (message.theme.branding === undefined || isSafeBranding(message.theme.branding)) && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && isAcceptedProjection(message.projection, message.theme.foundations);
         };
         const projectionMatchesCanonicalFoundation = (projection, foundations) => {
             const expectedMappings = [...canonicalFoundationMappings.values()].filter((entry) => {
@@ -214,8 +227,23 @@
         const cssValue = (value) => typeof value === 'number' ? `${value}px` : value;
         const updateTheme = (message) => {
             if (!isAcceptedTheme(message)) return false;
-            const root = document.documentElement;
-            root.classList.toggle('dark', message.projection.mode === 'dark');
+             const root = document.documentElement;
+             root.classList.toggle('dark', message.projection.mode === 'dark');
+             const branding = message.theme.branding ?? { appName: 'Filament Theme Builder', lightLogo: null, darkLogo: null, favicon: null, logoHeight: '2.5rem', brandTypography: { kind: 'system', name: 'System', family: 'ui-sans-serif, system-ui, sans-serif' }, contentWidth: '7xl', sidebar: 'collapsible' };
+             const brandingStyle = document.getElementById('ftb-branding-theme') ?? document.createElement('style');
+             brandingStyle.id = 'ftb-branding-theme';
+             brandingStyle.textContent = `:root { --ftb-brand-logo-height: ${branding.logoHeight}; } .fi-logo { height: var(--ftb-brand-logo-height) !important; }`;
+             document.head.append(brandingStyle);
+             if (branding.brandTypography.kind !== 'system') {
+                 const fontLinkId = 'ftb-brand-google-font';
+                 const fontLink = document.getElementById(fontLinkId) ?? document.createElement('link');
+                 fontLink.id = fontLinkId;
+                 fontLink.rel = 'stylesheet';
+                 fontLink.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(branding.brandTypography.family).replaceAll('%20', '+')}&display=swap`;
+                 document.head.append(fontLink);
+                 document.documentElement.style.setProperty('--ftb-brand-font-family', `"${branding.brandTypography.family.replaceAll('"', '')}"`);
+                 document.body.style.fontFamily = `var(--ftb-brand-font-family)`;
+             }
             const rules = [`:root { color-scheme: ${message.projection.mode}; }`];
             for (const candidate of message.projection.mappings) {
                 const selectors = candidate.selectors.join(',');

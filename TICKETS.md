@@ -16,7 +16,7 @@
 
 ## Dependency map
 
-Demo-showcase delivery order (prose delivery order (not hard dependency blockers)): **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015 → FTB-016 → FTB-017 → FTB-018**. The dependency map below remains the source of hard blockers. The demo-complete gate is not yet satisfied: FTB-011/013/014/015/016/017 are done, while FTB-012 remains partial solely for theme-density integration and FTB-018 remains outstanding; FTB-009A/B/010 are done. Remaining builder feature work remains blocked by this gate and completion of FTB-018. Operational FTB-027 and FTB-028 are done, with FTB-028's full-suite documentation-mount gap recorded in its report. Phase 1 owns the branded existing dashboard shell, four commerce widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and representative badges. FTB-015 owns the Showcase navigation/index, search/profile/authentication/tenant surfaces and must integrate (not duplicate) Phase 1 widgets/navigation. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
+Demo-showcase delivery order (prose delivery order (not hard dependency blockers)): **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015 → FTB-016 → FTB-017 → FTB-018**. The dependency map below remains the source of hard blockers. The demo-complete gate is not yet satisfied: FTB-011/013/014/015/016/017 are done, while FTB-012 remains partial solely for theme-density integration and FTB-018 is in progress pending Compose PHP/Playwright evidence; FTB-009A/B/010 are done. Remaining builder feature work remains blocked by this gate and completion of FTB-018. Operational FTB-027 and FTB-028 are done, with FTB-028's full-suite documentation-mount gap recorded in its report. Phase 1 owns the branded existing dashboard shell, four commerce widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and representative badges. FTB-015 owns the Showcase navigation/index, search/profile/authentication/tenant surfaces and must integrate (not duplicate) Phase 1 widgets/navigation. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
 
 ```text
 FTB-001
@@ -267,7 +267,7 @@ Remediation evidence: `theme-state.spec.ts` verifies canonical `colors.primary` 
 
 ## FTB-007 — Add semantic Inspector mode
 
-**Status:** ready-for-agent  
+**Status:** in progress
 **Blocked by:** [FTB-006](#ftb-006)
 
 ### What to build
@@ -563,14 +563,14 @@ Support appearance-related panel settings that are not purely CSS, including app
 
 ### Acceptance criteria
 
-- [ ] `PanelBrandingSettings` names app name, light/dark logos, favicon, logo height, brand typography, content width, and sidebar behavior, classifying each as CSS-previewable or PanelProvider/runtime configuration.
-- [ ] Light/dark logos can be represented.
-- [ ] Favicon and logo height configuration are represented.
-- [ ] Agreed layout settings such as content width/sidebar behavior are represented.
-- [ ] Purely visual settings use immediate preview emulation where safe.
-- [ ] Runtime-only settings trigger a controlled preview update/reload.
-- [ ] Theme state clearly distinguishes CSS settings from PanelProvider/runtime settings.
-- [ ] FTB-018 owns runtime branding and export classification; runtime-only settings remain distinct from CSS and use a controlled preview update/reload.
+- [x] `PanelBrandingSettings` names app name, light/dark logos, favicon, logo height, brand typography, content width, and sidebar behavior, classifying each as CSS-previewable or PanelProvider/runtime configuration.
+- [x] Light/dark logos can be represented.
+- [x] Favicon and logo height configuration are represented.
+- [x] Agreed layout settings such as content width/sidebar behavior are represented.
+- [x] Purely visual settings use immediate preview emulation where safe.
+- [x] Runtime-only settings trigger a controlled preview update/reload.
+- [x] Theme state clearly distinguishes CSS settings from PanelProvider/runtime settings.
+- [ ] FTB-018 final evidence: Compose PHP and full Playwright verification remain pending because the local PHP runtime cannot load the existing `Laravel\\Boost\\BoostServiceProvider` vendor class.
 
 ---
 

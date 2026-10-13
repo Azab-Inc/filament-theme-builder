@@ -205,6 +205,24 @@ class TemporaryUploadStorageTest extends TestCase
         }
     }
 
+    public function test_cleanup_expired_removes_files_older_than_the_24_hour_retention_window(): void
+    {
+        $owner = hash('sha256', 'anonymous-session');
+        mkdir($this->directory.'/'.$owner, 0750, true);
+        $expired = $this->directory.'/'.$owner.'/expired.png';
+        $fresh = $this->directory.'/'.$owner.'/fresh.png';
+        file_put_contents($expired, 'expired');
+        file_put_contents($fresh, 'fresh');
+        touch($expired, now()->subHours(25)->getTimestamp());
+        touch($fresh, now()->subHours(23)->getTimestamp());
+
+        $result = app(TemporaryUploadStorage::class)->cleanupExpired();
+
+        $this->assertSame(1, $result['deleted']);
+        $this->assertFileDoesNotExist($expired);
+        $this->assertFileExists($fresh);
+    }
+
     public function test_preview_reports_global_cleanup_without_performing_it(): void
     {
         $owner = hash('sha256', 'anonymous-session');

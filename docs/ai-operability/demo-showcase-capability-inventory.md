@@ -39,6 +39,8 @@ there is no domain mutation to expose or authorize.
 | `showcase.states` | `/demo/admin/states-showcase` (`ShowcaseStateControls`, `ShowcaseState`) and named state surfaces | presentation-only | Request-scoped allowlisted in-memory state; no domain data access or mutation | None | No MCP mutation tool; not available |
 | `panel.icons` | `IconPackConfiguration`, `SemanticResourceIconOverrides`, `IconConfiguration` | mutation | Local builder theme state; deployment/runtime configuration remains under project-owner control | No server commit; explicit user action for local edit/export | No MCP tool; not available |
 | `panel.branding` | `PanelBrandingSettings`, PanelProvider/runtime configuration | mutation | Local builder theme state; deployment/runtime configuration remains under project-owner control | Explicit user action before export/application; controlled reload where required | No MCP tool; not available |
+| `panel.branding.upload` | `POST /api/branding-assets` | mutation | Public preview upload boundary; project-owner authorization is bounded by `TemporaryUploadStorage`, which enforces image MIME/extension, size, per-session quota, global quota, private storage, and 24-hour purge | Explicit user action; no automatic application to a project | No MCP mutation tool for binary upload; not available |
+| `panel.branding.asset-read` | `GET /api/branding-assets/{reference}` | read-only | Public preview asset read uses an opaque validated temporary reference; missing/unsafe references return 404 | None | No MCP read tool; not available |
 
 ## Commerce operation boundary
 

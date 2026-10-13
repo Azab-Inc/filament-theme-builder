@@ -7,6 +7,7 @@ use App\Filament\Pages\Showcase\DemoShowcaseDashboard;
 use App\Filament\Pages\Showcase\ShowcaseIndexPage;
 use App\Filament\Support\IconConfiguration;
 use App\Http\Middleware\AuthenticatePreviewPanel;
+use App\Support\Branding\PanelBrandingSettings;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -29,16 +30,22 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
+        $panel = $panel
+            ->brandName(fn (): string => PanelBrandingSettings::fromRequest(request())->appName())
+            ->brandLogo(fn (): HtmlString|string => $this->logoFor(PanelBrandingSettings::fromRequest(request()), 'lightLogo'))
+            ->darkModeBrandLogo(fn (): HtmlString|string => $this->logoFor(PanelBrandingSettings::fromRequest(request()), 'darkLogo'))
+            ->brandLogoHeight(fn (): string => PanelBrandingSettings::fromRequest(request())->logoHeight())
+            ->favicon(fn (): string => $this->faviconFor(PanelBrandingSettings::fromRequest(request())))
+            ->maxContentWidth(fn (): string => PanelBrandingSettings::fromRequest(request())->contentWidth())
+            ->sidebarCollapsibleOnDesktop(fn (): bool => PanelBrandingSettings::fromRequest(request())->sidebar() === 'collapsible')
+            ->sidebarFullyCollapsibleOnDesktop(fn (): bool => PanelBrandingSettings::fromRequest(request())->sidebar() !== 'top-navigation')
+            ->topNavigation(fn (): bool => PanelBrandingSettings::fromRequest(request())->sidebar() === 'top-navigation');
+
         // Only the dashboard preview and logout route bypass panel authentication.
         return $panel
             ->default()
             ->id('admin')
             ->path('demo/admin')
-            ->brandName('Filament Theme Builder')
-            ->brandLogo(new HtmlString(File::get(resource_path('views/filament/branding/logo-light.svg'))))
-            ->darkModeBrandLogo(new HtmlString(File::get(resource_path('views/filament/branding/logo-dark.svg'))))
-            ->brandLogoHeight('2.5rem')
-            ->favicon('data:image/svg+xml;base64,'.base64_encode(File::get(resource_path('views/filament/branding/favicon.svg'))))
             ->login(Login::class)
             ->profile()
             ->breadcrumbs(true, true)
@@ -46,8 +53,6 @@ class AdminPanelProvider extends PanelProvider
             ->globalSearch()
             ->globalSearchKeyBindings(['ctrl+k'])
             ->globalSearchFieldKeyBindingSuffix()
-            ->sidebarCollapsibleOnDesktop()
-            ->sidebarFullyCollapsibleOnDesktop()
             ->icons(IconConfiguration::panelIcons())
             ->renderHook(
                 PanelsRenderHook::BODY_END,
@@ -80,5 +85,22 @@ class AdminPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ]);
+    }
+
+    private function logoFor(PanelBrandingSettings $branding, string $variant): HtmlString|string
+    {
+        $asset = $branding->asset($variant);
+        $logoVariant = $variant === 'lightLogo' ? 'light' : 'dark';
+
+        return $asset === null
+            ? new HtmlString(File::get(resource_path("views/filament/branding/logo-{$logoVariant}.svg")))
+            : url('/api/branding-assets/'.$asset);
+    }
+
+    private function faviconFor(PanelBrandingSettings $branding): string
+    {
+        return $branding->asset('favicon') === null
+            ? 'data:image/svg+xml;base64,'.base64_encode(File::get(resource_path('views/filament/branding/favicon.svg')))
+            : url('/api/branding-assets/'.$branding->asset('favicon'));
     }
 }
