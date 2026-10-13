@@ -570,7 +570,7 @@ Support appearance-related panel settings that are not purely CSS, including app
 - [x] Purely visual settings use immediate preview emulation where safe.
 - [x] Runtime-only settings trigger a controlled preview update/reload.
 - [x] Theme state clearly distinguishes CSS settings from PanelProvider/runtime settings.
-- [ ] FTB-018 final evidence: Compose PHP and full Playwright verification remain pending because the local PHP runtime cannot load the existing `Laravel\\Boost\\BoostServiceProvider` vendor class.
+- [ ] FTB-018 final evidence: Compose PHP and the dedicated branding Playwright journey pass; the broader foundation Playwright run still has one unrelated 120-second timeout while clicking the existing `Confirmation modal` fixture because the topbar/debugbar intercepts the pointer.
 
 ---
 
