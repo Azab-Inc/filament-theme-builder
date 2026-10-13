@@ -11,6 +11,7 @@ import type {
 } from '@/models/foundations.model'
 import type { ResolveRequest, ThemeOverride, ThemeScope } from '@/models/theme.model'
 import type { IconPackName, ResourceIconKey } from '@/models/icons.model'
+import type { PanelBrandingSetting } from '@/models/panel-branding.model'
 import { ICON_PACK_NAMES, RESOURCE_ICON_KEYS } from '@/models/icons.model'
 import { ICON_PACK_PRESETS } from '@/registry/icon-registry'
 import { CURATED_FONT_CHOICES, PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
@@ -18,6 +19,7 @@ import { createDefaultFoundationState } from '@/services/foundation-defaults'
 import { lookupFoundationMapping } from '@/registry/filament-foundation-inventory'
 import { serializeCanonicalTheme } from '@/services/theme-serialization'
 import { exportIconConfigurationPhp } from '@/services/icon-export'
+import { exportPanelBrandingJson, exportPanelProviderBrandingPhp } from '@/services/panel-branding-export'
 import { isExplicitPath } from '@/services/foundation-provenance'
 import { validateFoundationColor } from '@/services/foundation-validation'
 import { useThemeStore } from '@/stores/theme'
@@ -32,11 +34,14 @@ const prototypeMode = new URLSearchParams(window.location.search).get('prototype
 const prototypeVariant = new URLSearchParams(window.location.search).get('variant') ?? 'A'
 const theme = useThemeStore()
 const iframe = ref<HTMLIFrameElement>()
+const iframeSrc = ref(previewUrl)
+const runtimeLoading = ref(false)
 const { canUndo, canRedo } = storeToRefs(theme)
 const paletteNames = PALETTE_NAMES
 const paletteShades = PALETTE_SHADES
 const activeMode = ref<ThemeMode>('light')
 const foundationErrors = ref<Record<string, string>>({})
+const uploadErrors = ref<Record<string, string>>({})
 const surfaceNames = ['page', 'sidebar', 'topbar', 'card', 'elevated', 'input'] as const
 const typographyNames = ['body', 'heading', 'mono'] as const
 const borderNames = ['default', 'strong'] as const
@@ -129,6 +134,13 @@ function postTheme(): void {
   )
 }
 
+function refreshRuntimePreview(): void {
+  runtimeLoading.value = true
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(theme.theme.branding))))
+  const separator = previewUrl.includes('?') ? '&' : '?'
+  iframeSrc.value = `${previewUrl}${separator}ftb_branding=${encodeURIComponent(encoded)}`
+}
+
 function handleKeydown(event: KeyboardEvent): void {
   if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'z') return
   const target = event.target
@@ -147,6 +159,19 @@ watch(
 )
 
 watch(activeMode, postTheme)
+
+watch(() => theme.theme.branding.logoHeight, postTheme)
+watch(
+  () => JSON.stringify([
+    theme.theme.branding.appName,
+    theme.theme.branding.lightLogo,
+    theme.theme.branding.darkLogo,
+    theme.theme.branding.brandTypography,
+    theme.theme.branding.contentWidth,
+    theme.theme.branding.sidebar,
+  ]),
+  refreshRuntimePreview,
+)
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
@@ -304,6 +329,54 @@ function exportIconPhp(): void {
   URL.revokeObjectURL(url)
 }
 
+function exportBrandingJson(): void {
+  downloadText('filament-panel-branding.json', exportPanelBrandingJson(theme.theme.branding), 'application/json')
+}
+
+function exportBrandingPhp(): void {
+  downloadText('filament-panel-branding.php', exportPanelProviderBrandingPhp(theme.theme.branding), 'text/plain')
+}
+
+async function uploadBrandingAsset(setting: PanelBrandingSetting, event: Event): Promise<void> {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  const form = new FormData()
+  form.append('asset', file)
+  const response = await fetch('/api/branding-assets', { method: 'POST', body: form, credentials: 'same-origin' })
+  if (!response.ok) {
+    uploadErrors.value[setting] = 'Upload rejected. Use a JPEG, PNG, or WebP image within the temporary quota.'
+    return
+  }
+  const payload = await response.json() as { reference?: string }
+  if (typeof payload.reference !== 'string') {
+    uploadErrors.value[setting] = 'Upload response did not contain a safe reference.'
+    return
+  }
+  delete uploadErrors.value[setting]
+  theme.setBrandingSetting(setting, payload.reference)
+}
+
+function setBrandTypography(event: Event): void {
+  const value = (event.target as HTMLSelectElement).value
+  if (value === 'System') {
+    theme.setBrandingSetting('brandTypography', { kind: 'system', name: 'System', family: 'ui-sans-serif, system-ui, sans-serif' })
+    return
+  }
+  if (value === 'Inter' || value === 'Roboto') {
+    theme.setBrandingSetting('brandTypography', { kind: 'curated', name: value, family: value, provider: 'google-fonts' })
+  }
+}
+
+function downloadText(filename: string, contents: string, type: string): void {
+  const blob = new Blob([contents], { type })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
 function setIconPack(event: Event): void {
   theme.setIconPack((event.target as HTMLSelectElement).value as IconPackName)
 }
@@ -391,9 +464,16 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
       <button type="button" aria-label="Export PanelProvider icon config" @click="exportIconPhp">
         Export icon PHP
       </button>
+      <button type="button" aria-label="Export panel branding JSON" @click="exportBrandingJson">
+        Export branding JSON
+      </button>
+      <button type="button" aria-label="Export PanelProvider branding config" @click="exportBrandingPhp">
+        Export branding PHP
+      </button>
       <button type="button" aria-label="Undo" :disabled="!canUndo" @click="undo">Undo</button>
       <button type="button" aria-label="Redo" :disabled="!canRedo" @click="redo">Redo</button>
     </header>
+    <p v-if="runtimeLoading" role="status" aria-live="polite" data-preview-loading>Refreshing runtime preview…</p>
     <aside v-if="theme.legacyRecoveryAvailable" role="alert" class="legacy-recovery">
       <strong>Legacy customization archived.</strong>
       <span>Unversioned foundation values are ambiguous; restore marks non-default legacy values explicit.</span>
@@ -654,6 +734,48 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         </div>
       </fieldset>
     </section>
+    <section class="branding grid gap-4" aria-labelledby="branding-heading">
+      <h2 id="branding-heading">Panel branding and runtime</h2>
+      <p>CSS-previewable values apply immediately. PanelProvider values refresh the iframe without losing this draft.</p>
+      <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
+        <legend>PanelBrandingSettings</legend>
+        <label for="brand-app-name">App name</label>
+        <input id="brand-app-name" aria-label="App name" :value="theme.theme.branding.appName" @input="theme.setBrandingSetting('appName', ($event.target as HTMLInputElement).value)" />
+        <label for="brand-light-logo">Light logo upload reference</label>
+        <input id="brand-light-logo-file" aria-label="Upload light logo" type="file" accept="image/jpeg,image/png,image/webp" @change="uploadBrandingAsset('lightLogo', $event)" />
+        <input id="brand-light-logo" aria-label="Light logo upload reference" :value="theme.theme.branding.lightLogo ?? ''" @input="theme.setBrandingSetting('lightLogo', ($event.target as HTMLInputElement).value || null)" />
+        <span v-if="uploadErrors.lightLogo" role="alert">{{ uploadErrors.lightLogo }}</span>
+        <label for="brand-dark-logo">Dark logo upload reference</label>
+        <input id="brand-dark-logo-file" aria-label="Upload dark logo" type="file" accept="image/jpeg,image/png,image/webp" @change="uploadBrandingAsset('darkLogo', $event)" />
+        <input id="brand-dark-logo" aria-label="Dark logo upload reference" :value="theme.theme.branding.darkLogo ?? ''" @input="theme.setBrandingSetting('darkLogo', ($event.target as HTMLInputElement).value || null)" />
+        <span v-if="uploadErrors.darkLogo" role="alert">{{ uploadErrors.darkLogo }}</span>
+        <label for="brand-favicon">Favicon upload reference</label>
+        <input id="brand-favicon-file" aria-label="Upload favicon" type="file" accept="image/jpeg,image/png,image/webp" @change="uploadBrandingAsset('favicon', $event)" />
+        <input id="brand-favicon" aria-label="Favicon upload reference" :value="theme.theme.branding.favicon ?? ''" @input="theme.setBrandingSetting('favicon', ($event.target as HTMLInputElement).value || null)" />
+        <span v-if="uploadErrors.favicon" role="alert">{{ uploadErrors.favicon }}</span>
+        <label for="brand-logo-height">Logo height (CSS-previewable)</label>
+        <input id="brand-logo-height" aria-label="Logo height" :value="theme.theme.branding.logoHeight" @input="theme.setBrandingSetting('logoHeight', ($event.target as HTMLInputElement).value)" />
+        <label for="brand-font">Brand typography</label>
+        <select id="brand-font" aria-label="Brand typography" :value="theme.theme.branding.brandTypography.name" @change="setBrandTypography">
+          <option value="System">System</option>
+          <option value="Inter">Inter (Google Fonts)</option>
+          <option value="Roboto">Roboto (Google Fonts)</option>
+        </select>
+        <label for="brand-custom-font">Custom Google Font family</label>
+        <input id="brand-custom-font" aria-label="Custom Google Font family" :value="theme.theme.branding.brandTypography.kind === 'custom' ? theme.theme.branding.brandTypography.family : ''" placeholder="Example: Source Sans 3" @change="theme.setBrandingSetting('brandTypography', { kind: 'custom', name: ($event.target as HTMLInputElement).value.trim(), family: ($event.target as HTMLInputElement).value.trim() })" />
+        <label for="brand-content-width">Content width</label>
+        <select id="brand-content-width" aria-label="Content width" :value="theme.theme.branding.contentWidth" @change="theme.setBrandingSetting('contentWidth', ($event.target as HTMLSelectElement).value as any)">
+          <option v-for="value in ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl', 'full']" :key="value" :value="value">{{ value }}</option>
+        </select>
+        <label for="brand-sidebar">Sidebar behavior</label>
+        <select id="brand-sidebar" aria-label="Sidebar behavior" :value="theme.theme.branding.sidebar" @change="theme.setBrandingSetting('sidebar', ($event.target as HTMLSelectElement).value as any)">
+          <option value="collapsible">Collapsible</option>
+          <option value="fully-collapsible">Fully collapsible</option>
+          <option value="top-navigation">Top navigation</option>
+        </select>
+        <button type="button" aria-label="Reset panel branding" @click="theme.resetBranding">Reset panel branding</button>
+      </fieldset>
+    </section>
     <section class="icons grid gap-4" aria-labelledby="icons-heading">
       <h2 id="icons-heading">Icons</h2>
       <p>Heroicons are runtime Filament configuration. Preview changes apply to rendered icons immediately.</p>
@@ -706,10 +828,10 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
     </section>
     <iframe
       ref="iframe"
-      :src="previewUrl"
+      :src="iframeSrc"
       title="Filament preview"
       class="preview-shell__frame"
-      @load="postTheme"
+      @load="runtimeLoading = false; postTheme()"
     />
   </main>
 </template>

@@ -11,6 +11,7 @@ import { lookupFoundationMapping, type FoundationInventoryEntry } from '@/regist
 import { validateThemeOverride } from '@/services/theme-validation'
 import { isTrustedColor } from '@/registry/tailwind-color-catalog'
 import { validateIconConfiguration } from '@/registry/icon-registry'
+import { validatePanelBrandingSettings } from '@/services/panel-branding-validation'
 
 type ValidationError = Exclude<FoundationValidationResult, { valid: true }>
 
@@ -51,7 +52,7 @@ export function isEditableFoundationPath(path: string): boolean {
 }
 
 function validateVersionedState(value: Record<string, unknown>): FoundationValidationResult {
-  const topLevel = checkKeys(value, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss', 'icons'], ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss'], '')
+  const topLevel = checkKeys(value, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss', 'icons', 'branding'], ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss'], '')
   if (topLevel) return topLevel
   if (value.schemaVersion !== 3) return invalid('invalid-value', 'schemaVersion', 'Unsupported foundation schema version')
   if (!isRecord(value.colors)) return invalid('invalid-value', 'colors', 'Colors must be an object')
@@ -74,6 +75,10 @@ function validateVersionedState(value: Record<string, unknown>): FoundationValid
   if (value.icons !== undefined) {
     const iconResult = validateIconConfiguration(value.icons)
     if (!iconResult.valid) return invalid('invalid-value', 'icons', iconResult.error)
+  }
+  if (value.branding !== undefined) {
+    const brandingResult = validatePanelBrandingSettings(value.branding)
+    if (!brandingResult.valid) return invalid('invalid-value', `branding.${brandingResult.path}`, brandingResult.message)
   }
   return validateFoundationRecord(value.foundations, 'foundations')
 }

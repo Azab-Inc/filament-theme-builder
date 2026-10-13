@@ -2,6 +2,7 @@ import type { Density, DensityPreset, FoundationState, FoundationStateV3, Palett
 import { PALETTE_NAMES } from '@/models/foundations.model'
 import { generatePalette } from '@/services/palette-generator'
 import { createDefaultIconConfiguration } from '@/registry/icon-registry'
+import { createDefaultPanelBrandingSettings } from '@/services/panel-branding-validation'
 
 const PALETTE_BASES: Record<PaletteName, string> = {
   primary: '#6366f1',
@@ -87,6 +88,7 @@ export function createDefaultThemeState(): FoundationStateV3 {
     overrides: [],
     customCss: '',
     icons: createDefaultIconConfiguration(),
+    branding: createDefaultPanelBrandingSettings(),
   }
 }
 

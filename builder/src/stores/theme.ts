@@ -17,6 +17,8 @@ import { deserializeTheme } from '@/services/theme-serialization'
 import { validateThemeOverride } from '@/services/theme-validation'
 import type { IconPackName, ResourceIconKey } from '@/models/icons.model'
 import { createDefaultIconConfiguration, validateIconConfiguration } from '@/registry/icon-registry'
+import { createDefaultPanelBrandingSettings, validatePanelBrandingSettings } from '@/services/panel-branding-validation'
+import type { PanelBrandingSettings, PanelBrandingSetting } from '@/models/panel-branding.model'
 
 const storageKey = 'ftb-theme'
 const registry = createThemeRegistry()
@@ -174,6 +176,22 @@ export const useThemeStore = defineStore('theme', () => {
       candidate.icons = createDefaultIconConfiguration()
       theme.value = candidate
     },
+    setBranding(settings: PanelBrandingSettings): void {
+      const validation = validatePanelBrandingSettings(settings)
+      if (!validation.valid) return
+      theme.value = { ...cloneTheme(theme.value), branding: validation.settings }
+    },
+    setBrandingSetting(setting: PanelBrandingSetting, value: PanelBrandingSettings[PanelBrandingSetting]): void {
+      const candidate = cloneTheme(theme.value)
+      const next = { ...candidate.branding, [setting]: value }
+      const validation = validatePanelBrandingSettings(next)
+      if (!validation.valid) return
+      candidate.branding = validation.settings
+      theme.value = candidate
+    },
+    resetBranding(): void {
+      theme.value = { ...cloneTheme(theme.value), branding: createDefaultPanelBrandingSettings() }
+    },
     resolveFoundation(mode: ThemeMode): ResolvedFoundation {
       const foundations = structuredClone(JSON.parse(JSON.stringify(toRaw(theme.value.foundations))))
       return {
@@ -289,6 +307,7 @@ function migrateToCurrent(state: ThemeState): ThemeStateV3 {
 function normalizeTheme(value: ThemeStateV3): ThemeStateV3 {
   const normalized = cloneTheme(value)
   if (!normalized.icons) normalized.icons = createDefaultIconConfiguration()
+  if (!normalized.branding) normalized.branding = createDefaultPanelBrandingSettings()
   if (normalized.foundations.provenanceVersion !== 1) {
     // Pre-provenance values cannot distinguish a deliberate edit from a builder
     // default. Keep overrides, but restore the only safe foundation baseline.
