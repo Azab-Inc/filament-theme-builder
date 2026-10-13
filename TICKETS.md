@@ -12,6 +12,7 @@
 - If a ticket discovers new first-party Filament UI coverage, add that coverage to COVERAGE.md and add or split a ticket rather than silently expanding scope.
 - New theme-control coverage should generally include registry coverage, a showcase fixture, and automated verification.
 - Deferred color-picker and named-palette design: [FTB-051](#ftb-051) / [GitHub #51](https://github.com/Azab-Inc/filament-theme-builder/issues/51).
+- Builder value padlock design: [FTB-052](#ftb-052) / [GitHub #52](https://github.com/Azab-Inc/filament-theme-builder/issues/52).
 
 ## Dependency map
 
@@ -56,6 +57,54 @@ from `docs/phase-2/PRD.md`; the implementation tickets are FTB-042 through
 FTB-049. The package identity/namespace/Composer coordinates remain an
 explicit release blocker and must not be invented in these tickets.
 ```
+
+---
+
+<a id="ftb-052"></a>
+
+## FTB-052 — Add strict per-value builder padlocks
+
+**Status:** blocked
+**Blocked by:** FTB-003 functionality stabilization; the unchanged demo-first gate and remaining Phase 1 requirements (including FTB-018); existing foundation/control projection stabilization; [FTB-022](#ftb-022) versioned JSON import/export and migration boundary. FTB-012's density-only partial status is not a blocker.
+**Gate note:** local root guidance and tracker issue states may be stale or inconsistent; the root demo-first gate remains in force until its documented acceptance criteria and evidence are resolved. Tracker status alone does not mark the gate complete.
+**Spec:** [Builder Value Padlocks](./docs/superpowers/specs/2026-10-13-builder-value-padlocks-design.md), including [lock semantics](./docs/superpowers/specs/2026-10-13-builder-value-padlocks-design.md#2-user-visible-contract), [persistence and migration](./docs/superpowers/specs/2026-10-13-builder-value-padlocks-design.md#3-state-persistence-and-migration), [MCP and authorization](./docs/superpowers/specs/2026-10-13-builder-value-padlocks-design.md#5-mcp-and-authorization-contract), and [testing](./docs/superpowers/specs/2026-10-13-builder-value-padlocks-design.md#7-testing-and-observable-seams).
+**GitHub:** [#52](https://github.com/Azab-Inc/filament-theme-builder/issues/52)
+**Review fixed point:** `66c8b6e543717f41266b8c100d7cdeaa291dbdb1` (refresh before implementation review if functionality changes).
+
+### What to build
+
+Give every editable builder value a left-side padlock. A lock snapshots the currently resolved effective value—including inherited/CSS-variable values and each generated palette shade—and strictly prevents direct edits, pickers, regeneration, reset, undo/redo, and bulk operations from changing it until explicit unlock. Unlocked values continue to apply in mixed operations, which report skipped locked fields. Unlock only permits future edits and does not silently restore or regenerate anything.
+
+### <a id="ftb-052-lock-semantics"></a>Lock semantics
+
+- [ ] The lock inventory is generated from the complete editable registry/control inventory beyond foundations: icons/resource overrides, fonts, runtime/branding values, raw/component/variant/state paths, aliases, light/dark values, and typography composites are covered; no editable control is silently omitted.
+- [ ] Every field has a reusable left-side lock control with stable field naming, keyboard support, `aria-pressed`, accessible label, protection tooltip, and non-color-only locked styling.
+- [ ] Locking resolves and stores the effective current value; source expression/provenance remains informational. Missing, malformed, ambiguous, or unresolved values fail without guessing or empty overwrite.
+- [ ] Aliases share one canonical lock identity; light/dark values are separate; typography locks the whole composite value; every generated shade 50–950, including 500, can be independently locked.
+- [ ] A centralized guard protects direct edits, pickers, selectors, regeneration, per/group reset, undo/redo, and bulk theme/preset/import operations. Explicit unlock is the only protection-state change, and unlock does not restore or regenerate the value.
+- [ ] Mixed operations update unlocked values, preserve locked effective values, and report every skipped field and reason.
+
+### <a id="ftb-052-persistence-and-migration"></a>Persistence and migration
+
+- [ ] Versioned lock metadata is included in canonical theme JSON, local autosave, reload/bootstrap, and JSON export/import; old themes migrate to all unlocked.
+- [ ] Metadata validates schema/version, canonical paths, value compatibility, source metadata, and integrity hashes. Invalid, stale, duplicate, unknown, or unsafe metadata fails safely without damaging the current theme.
+- [ ] Current locks take precedence when merging imported locked/unlocked fields. Serialized locks are restored at bootstrap after validation.
+- [ ] Migration preview, exact-key acceptance, and JSON export parity are tested; no keys are added silently.
+- [ ] Generated shade projection/materialization freezes the locked shade in actual preview and effective export, while unlocked peer shades still regenerate normally when the base changes.
+
+### <a id="ftb-052-mcp-coverage"></a>MCP coverage
+
+- [ ] Purpose-built MCP discovery/read/preview/apply capabilities expose editable values, effective values, and lock state through the capability inventory.
+- [ ] Lock, unlock, and multi-value apply mutations require explicit preview confirmation and revalidate authorization, current state, resolution, compatibility, and locks at apply time.
+- [ ] MCP uses the same centralized service as UI, cannot bypass locks or authorization, rejects untrusted selectors/CSS payloads, and reports partial skips.
+- [ ] Authorization, malformed input, stale apply, and actual AI-client transport evidence are tested and documented; this is not claimed as UI-only behavior.
+
+### <a id="ftb-052-verification"></a>Verification
+
+- [ ] TDD unit/component tests cover the complete inventory, snapshot/materialization failures, all shade locks, aliases, modes, typography, every blocked operation, partial application, migration, persistence, malformed metadata, stale async rechecks, preview projection, and export parity.
+- [ ] Playwright verifies inventory, left-side controls, keyboard/tooltip accessibility, lock/unlock, shade regeneration, reset, undo/redo, import, reload, mode separation, aliases, composite typography, partial reporting, and visible preview/export freezing.
+- [ ] MCP capability discovery, confirmation, authorization, revalidation, lock/unlock, partial skip, and AI-client verification pass.
+- [ ] Existing demo-first gate, foundation stability prerequisite, and unrelated worktree changes remain intact; no parent issue is modified and no dependency is added.
 
 ---
 
