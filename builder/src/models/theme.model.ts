@@ -1,3 +1,5 @@
+import { createDefaultThemeState } from '@/services/foundation-defaults'
+
 export type ThemeScope = 'global' | 'component' | 'variant' | 'state'
 
 export type ThemeValue = string | number | boolean
@@ -32,13 +34,15 @@ export type ThemeStateV4 = import('@/models/foundations.model').FoundationStateV
 
 export type ThemeState = ThemeStateV1 | ThemeStateV2 | ThemeStateV3 | ThemeStateV4
 
-export function migrateThemeState(state: ThemeState): ThemeStateV2 {
-  if (state.schemaVersion === 2) return structuredClone(state)
-  return {
-    schemaVersion: 2,
-    colors: { primary: state.colors.primary },
-    overrides: [],
-  }
+export function migrateThemeState(state: ThemeState): ThemeStateV4 {
+  if (state.schemaVersion === 4) return structuredClone(state)
+  if (state.schemaVersion === 3) return { ...structuredClone(state), schemaVersion: 4, rawOverrides: [] }
+
+  const current = createDefaultThemeState()
+  current.colors.primary = state.colors.primary
+  current.foundations.palettes.primary.base = state.colors.primary
+  current.overrides = state.schemaVersion === 2 ? structuredClone(state.overrides) : []
+  return current
 }
 
 export type ResolveRequest = {

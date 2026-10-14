@@ -12,7 +12,7 @@ export type ThemeSerializationResult =
   | { valid: false; mode: ThemeSerializationMode; error: string }
 
 export type ThemeDeserializeResult =
-  | { valid: true; state: ThemeState }
+  | { valid: true; state: ThemeStateV4 }
   | { valid: false; error: string }
 
 /**
@@ -64,14 +64,14 @@ export function deserializeTheme(input: unknown, registry: FilamentRegistry): Th
   if (isCanonicalThemeStateShape(parsed)) {
     const validation = validateFoundationState(parsed)
     if (!validation.valid) return { valid: false, error: validation.message }
-    return { valid: true, state: structuredClone(parsed) as ThemeState }
+    return { valid: true, state: migrateThemeState(structuredClone(parsed) as ThemeState) }
   }
 
   if (!isThemeStateShape(parsed)) return { valid: false, error: 'Invalid theme state' }
 
   const validation = validateThemeState(parsed, registry)
   if (!validation.valid) return { valid: false, error: validation.invalidOverrides[0]?.error ?? 'Invalid theme state' }
-  return { valid: true, state: validation.state }
+  return { valid: true, state: migrateThemeState(validation.state) }
 }
 
 function materializeSupportedOverrides(
@@ -114,7 +114,12 @@ function supportedRequests(entry: RegistryEntry, targetId: string, componentId: 
 }
 
 function toVersionTwo(state: ThemeState): ThemeStateV2 {
-  return migrateThemeState(state)
+  const current = migrateThemeState(state)
+  return {
+    schemaVersion: 2,
+    colors: { primary: current.colors.primary },
+    overrides: structuredClone(current.overrides),
+  }
 }
 
 function createExplicitOverride(scope: ResolveRequest, value: ThemeOverride['value']): ThemeOverride {

@@ -63,6 +63,9 @@ class PreviewInspectorBridgeTest extends TestCase
             ->assertSee("['button.secondary\\u0000background'", false)
             ->assertSee("['form.product-name\\u0000background'", false)
             ->assertSee("['global.primary\\u0000primary'", false)
-            ->assertSee('semanticOverrideMappings', false);
+            ->assertSee('semanticOverrideMappings', false)
+            ->assertSee("['hover', 'focus', 'active', 'disabled', 'checked', 'focus-visible', 'focus-within']", false)
+            ->assertSee('supportedPseudoStates.includes(override.stateId)', false)
+            ->assertDontSee("override.stateId === 'hover' ? 'hover' : 'focus'", false);
     }
 }

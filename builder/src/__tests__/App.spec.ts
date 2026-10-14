@@ -6,6 +6,7 @@ import App from '../App.vue'
 import ThrowawayThemePrototype from '../components/ThrowawayThemePrototype.vue'
 import HoverInspectPrototype from '../components/HoverInspectPrototype.vue'
 import { createDefaultThemeState } from '@/services/foundation-defaults'
+import * as vanillaCssExport from '@/services/vanilla-css-export'
 
 describe('App', () => {
   it('mounts the hover inspector only behind the inspect query gate', () => {
@@ -141,6 +142,19 @@ describe('App', () => {
     expect(await (blob as Blob).text()).toContain('.fi-btn {')
     expect(click).toHaveBeenCalled()
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:theme-css')
+    wrapper.unmount()
+  })
+
+  it('shows a visible export error instead of silently transforming unsupported semantic overrides', async () => {
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+    const exportSpy = vi.spyOn(vanillaCssExport, 'exportVanillaCss').mockImplementation(() => {
+      throw new Error('Unsupported semantic override state: button.primary.background.loading')
+    })
+
+    await wrapper.get('button[aria-label="Copy vanilla CSS"]').trigger('click')
+
+    expect(wrapper.get('[data-export-status]').text()).toMatch(/unsupported semantic override state/i)
+    exportSpy.mockRestore()
     wrapper.unmount()
   })
 

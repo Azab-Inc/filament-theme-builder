@@ -74,16 +74,17 @@
         const styleId = 'ftb-managed-theme';
         const safeToken = /^[a-z\d_.-]{1,100}$/i;
         const fontAllowlist = new Map([['Inter', 'Inter'], ['Roboto', 'Roboto']]);
+        const supportedPseudoStates = ['hover', 'focus', 'active', 'disabled', 'checked', 'focus-visible', 'focus-within'];
         const controlDefinitions = new Map([
-            ['button.primary\u0000background', { type: 'color', component: 'button', variants: ['primary', 'secondary'], states: ['default', 'hover'] }],
-            ['button.secondary\u0000background', { type: 'color', component: 'button', variants: ['primary', 'secondary'], states: ['default', 'hover'] }],
-            ['form.product-name\u0000background', { type: 'color', component: 'form', variants: ['default'], states: ['focus'] }],
+            ['button.primary\u0000background', { type: 'color', component: 'button', variants: ['primary', 'secondary'], states: ['default', ...supportedPseudoStates] }],
+            ['button.secondary\u0000background', { type: 'color', component: 'button', variants: ['primary', 'secondary'], states: ['default', ...supportedPseudoStates] }],
+            ['form.product-name\u0000background', { type: 'color', component: 'form', variants: ['default'], states: supportedPseudoStates }],
             ['global.primary\u0000primary', { type: 'color', component: undefined, variants: [], states: [] }],
         ]);
         const semanticOverrideMappings = new Map([
-            ['button.primary\u0000background', { selector: '.fi-btn.fi-color-primary', property: 'background-color' }],
-            ['button.secondary\u0000background', { selector: '.fi-btn.fi-outlined', property: 'background-color' }],
-            ['form.product-name\u0000background', { selector: '.fi-fo-text-input .fi-input', property: 'background-color' }],
+            ['button.primary\u0000background', { selector: '.fi-btn.fi-color-primary', globalSelector: '.fi-btn', componentSelector: '.fi-btn', property: 'background-color' }],
+            ['button.secondary\u0000background', { selector: '.fi-btn.fi-outlined', globalSelector: '.fi-btn', componentSelector: '.fi-btn', property: 'background-color' }],
+            ['form.product-name\u0000background', { selector: '.fi-fo-text-input .fi-input', globalSelector: '.fi-input', componentSelector: '.fi-fo-text-input .fi-input', property: 'background-color' }],
             ['global.primary\u0000primary', { selector: '.fi-color-primary', property: 'color' }],
         ]);
         const overrideIdentities = new Set(controlDefinitions.keys());
@@ -301,7 +302,9 @@
               for (const override of semanticOverrides) {
                   const mapping = semanticOverrideMappings.get(`${override.targetId}\u0000${override.controlId}`);
                   if (!mapping || typeof override.value !== 'string') return false;
-                  const selector = override.scope === 'state' ? `${mapping.selector}:${override.stateId === 'hover' ? 'hover' : 'focus'}` : mapping.selector;
+                   const baseSelector = override.scope === 'global' ? (mapping.globalSelector ?? mapping.selector) : override.scope === 'component' ? (mapping.componentSelector ?? mapping.selector) : mapping.selector;
+                   if (override.scope === 'state' && !supportedPseudoStates.includes(override.stateId)) return false;
+                   const selector = override.scope === 'state' ? `${baseSelector}:${override.stateId}` : baseSelector;
                   rules.push(`${selector} { ${mapping.property}: ${override.value} !important; }`);
               }
              const rawOverrideRules = [...message.theme.rawOverrides].sort((left, right) => left.selector.localeCompare(right.selector)).map((override) => `${override.selector} { ${Object.entries(override.properties).sort(([left], [right]) => left.localeCompare(right)).map(([property, value]) => `${property}: ${value};`).join(' ')} }`);

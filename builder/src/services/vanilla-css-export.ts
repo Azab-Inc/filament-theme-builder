@@ -4,11 +4,13 @@ import { projectFoundations } from '@/services/foundation-projection'
 import { validateRawOverrides } from '@/services/raw-override-validation'
 
 const semanticMappings = new Map([
-  ['button.primary\u0000background', { selector: '.fi-btn.fi-color-primary', property: 'background-color' }],
-  ['button.secondary\u0000background', { selector: '.fi-btn.fi-outlined', property: 'background-color' }],
-  ['form.product-name\u0000background', { selector: '.fi-fo-text-input .fi-input', property: 'background-color' }],
+  ['button.primary\u0000background', { selector: '.fi-btn.fi-color-primary', globalSelector: '.fi-btn', componentSelector: '.fi-btn', property: 'background-color' }],
+  ['button.secondary\u0000background', { selector: '.fi-btn.fi-outlined', globalSelector: '.fi-btn', componentSelector: '.fi-btn', property: 'background-color' }],
+  ['form.product-name\u0000background', { selector: '.fi-fo-text-input .fi-input', globalSelector: '.fi-input', componentSelector: '.fi-fo-text-input .fi-input', property: 'background-color' }],
   ['global.primary\u0000primary', { selector: '.fi-color-primary', property: 'color' }],
 ])
+
+const supportedPseudoStates = new Set(['hover', 'focus', 'active', 'disabled', 'checked', 'focus-visible', 'focus-within'])
 
 export function exportVanillaCss(theme: Readonly<ThemeStateV4>): string {
   const canonical = theme as ThemeStateV4
@@ -80,11 +82,32 @@ function renderSemanticOverrides(theme: ThemeStateV4): string {
       const mapping = semanticMappings.get(`${override.targetId}\u0000${override.controlId}`)
       if (!mapping) throw new Error(`Unsupported semantic override: ${override.targetId}.${override.controlId}`)
       if (typeof override.value !== 'string') throw new Error(`Unsupported semantic override value: ${override.targetId}.${override.controlId}`)
-      const selector = override.scope === 'state' ? `${mapping.selector}:${override.stateId === 'hover' ? 'hover' : 'focus'}` : mapping.selector
+      const selector = semanticSelector(override, mapping)
       return `${selector} { ${mapping.property}: ${override.value} !important; }`
     })
     .filter(Boolean)
     .join('\n')
+}
+
+type SemanticMapping = {
+  selector: string
+  globalSelector?: string
+  componentSelector?: string
+  property: string
+}
+
+function semanticSelector(override: ThemeStateV4['overrides'][number], mapping: SemanticMapping): string {
+  const baseSelector = override.scope === 'global'
+    ? mapping.globalSelector ?? mapping.selector
+    : override.scope === 'component'
+      ? mapping.componentSelector ?? mapping.selector
+      : mapping.selector
+
+  if (override.scope !== 'state') return baseSelector
+  if (!override.stateId || !supportedPseudoStates.has(override.stateId)) {
+    throw new Error(`Unsupported semantic override state: ${override.targetId}.${override.controlId}.${override.stateId ?? 'missing'}`)
+  }
+  return `${baseSelector}:${override.stateId}`
 }
 
 function semanticOverrideKey(override: ThemeStateV4['overrides'][number]): string {

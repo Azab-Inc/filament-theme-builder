@@ -103,11 +103,12 @@ Capability inventory identifier: `preview.raw-inspector`.
   unsafe values, and duplicate selectors, valid raw ordering, and applies the
   downloaded CSS to a clean Filament fixture whose primary/raw computed styles
   match the preview.
-- Final remediation evidence (2026-10-14): a clean full Compose Playwright run
-  passed 84 tests with 3 explicitly skipped; the final repeated run with
-  retries passed all changed raw/export tests and recorded one unrelated flaky
-  session-auth test after its first attempt. The full PHP suite passed 169
-  tests / 1,633 assertions; Pint passed 296 files; PHPStan passed 265 files;
+- Final remediation evidence (2026-10-14): the recorded full Compose Playwright
+  result was 83 passed, 1 known unrelated `entity-resource-smoke` failure, and
+  3 explicitly skipped. A subsequent rerun in the same environment passed 84
+  tests with 3 skipped, including the previously failing smoke test; no FTB-004
+  or FTB-008 test failed. The full PHP suite passed 169 tests / 1,633
+  assertions; Pint passed 296 files; PHPStan passed 265 files;
   `/api/health` returned `{"status":"ok"}`.
 - FTB-024 fully-explicit export and FTB-025 Tailwind export remain deferred.
 

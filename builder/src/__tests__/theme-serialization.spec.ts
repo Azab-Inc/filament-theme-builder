@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { FilamentRegistry } from '@/models/theme-registry.model'
+import { migrateThemeState } from '@/models/theme.model'
 import type { ResolveRequest, ThemeOverride, ThemeState } from '@/models/theme.model'
 import { createThemeRegistry, validateRegistry } from '@/registry/theme-registry'
 import { createDefaultThemeState } from '@/services/foundation-defaults'
@@ -43,6 +44,47 @@ describe('canonical V4 serialization', () => {
       expect('rawOverrides' in restored.state ? restored.state.rawOverrides : undefined).toEqual(state.rawOverrides)
       expect('overrides' in restored.state ? restored.state.overrides : undefined).toEqual([])
     }
+  })
+
+  it('migrates V1 through the canonical deserializer and preserves its primary color', () => {
+    const restored = deserializeTheme({ schemaVersion: 1, colors: { primary: '#123456' } }, registry)
+
+    expect(restored).toEqual({
+      valid: true,
+      state: migrateThemeState({ schemaVersion: 1, colors: { primary: '#123456' } }),
+    })
+  })
+
+  it('migrates V2 through the canonical deserializer and preserves semantic overrides', () => {
+    const restored = deserializeTheme({ schemaVersion: 2, colors: { primary: '#123456' }, overrides: [globalOverride] }, registry)
+
+    expect(restored).toEqual({
+      valid: true,
+      state: migrateThemeState({ schemaVersion: 2, colors: { primary: '#123456' }, overrides: [globalOverride] }),
+    })
+  })
+
+  it('migrates V3 through the canonical deserializer without dropping icons or branding', () => {
+    const state = createDefaultThemeState()
+    const { rawOverrides: _rawOverrides, ...v3 } = { ...state, schemaVersion: 3 }
+    const restored = deserializeTheme(v3, registry)
+
+    expect(restored).toMatchObject({ valid: true })
+    if (restored.valid) {
+      expect(restored.state.schemaVersion).toBe(4)
+      expect(restored.state).toMatchObject({ colors: v3.colors, overrides: v3.overrides })
+      expect('icons' in restored.state ? restored.state.icons : undefined).toEqual(v3.icons)
+      expect('branding' in restored.state ? restored.state.branding : undefined).toEqual(v3.branding)
+    }
+  })
+
+  it('preserves V4 raw overrides, icons, and branding through the canonical deserializer', () => {
+    const state = createDefaultThemeState()
+    state.rawOverrides = [{ selector: '.fi-btn', properties: { color: '#0f766e' } }]
+
+    const restored = deserializeTheme(state, registry)
+
+    expect(restored).toEqual({ valid: true, state })
   })
 })
 const equalChildOverride: ThemeOverride = {
@@ -133,7 +175,7 @@ describe('theme serialization', () => {
     const serialized = serializeTheme(themeWithGlobalAndVariant, registry, primaryScope, 'minimal')
     if (!serialized.valid) throw new Error(serialized.error)
 
-    expect(deserializeTheme(JSON.stringify(serialized.state), registry)).toEqual({ valid: true, state: serialized.state })
+    expect(deserializeTheme(JSON.stringify(serialized.state), registry)).toEqual({ valid: true, state: migrateThemeState(serialized.state) })
   })
 
   it('rejects malformed runtime input before state validation', () => {

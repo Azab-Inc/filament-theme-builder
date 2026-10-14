@@ -416,12 +416,23 @@ function exportBrandingPhp(): void {
 }
 
 function exportVanillaThemeCss(): void {
-  exportStatus.value = 'Vanilla CSS download started.'
-  downloadText('theme.css', exportVanillaCss(theme.theme as unknown as ThemeStateV4), 'text/css')
+  try {
+    const contents = exportVanillaCss(theme.theme as unknown as ThemeStateV4)
+    downloadText('theme.css', contents, 'text/css')
+    exportStatus.value = 'Vanilla CSS download started.'
+  } catch (error) {
+    exportStatus.value = exportErrorMessage(error)
+  }
 }
 
 async function copyVanillaThemeCss(): Promise<void> {
-  const contents = exportVanillaCss(theme.theme as unknown as ThemeStateV4)
+  let contents: string
+  try {
+    contents = exportVanillaCss(theme.theme as unknown as ThemeStateV4)
+  } catch (error) {
+    exportStatus.value = exportErrorMessage(error)
+    return
+  }
   try {
     await navigator.clipboard.writeText(contents)
     exportStatus.value = 'Vanilla CSS copied to clipboard.'
@@ -437,6 +448,10 @@ async function copyVanillaThemeCss(): Promise<void> {
     textarea.remove()
     exportStatus.value = copied ? 'Vanilla CSS copied to clipboard.' : 'Copy failed; use Download CSS instead.'
   }
+}
+
+function exportErrorMessage(error: unknown): string {
+  return `Vanilla CSS export failed: ${error instanceof Error ? error.message : 'Unknown export error'}`
 }
 
 async function uploadBrandingAsset(setting: PanelBrandingSetting, event: Event): Promise<void> {
