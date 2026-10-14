@@ -109,15 +109,16 @@ export const useThemeStore = defineStore('theme', () => {
       if (!theme.value.rawOverrides.some((override) => override.selector === selector)) return
       theme.value = { ...cloneTheme(theme.value), rawOverrides: theme.value.rawOverrides.filter((override) => override.selector !== selector) }
     },
-    renameRawOverride(fromSelector: string, toSelector: string): void {
-      if (fromSelector === toSelector) return
+    renameRawOverride(fromSelector: string, toSelector: string): boolean {
+      if (fromSelector === toSelector) return false
       const existing = theme.value.rawOverrides.find((override) => override.selector === fromSelector)
-      if (!existing || theme.value.rawOverrides.some((override) => override.selector === toSelector)) return
-      const candidate = { selector: toSelector, properties: structuredClone(existing.properties) }
-      if (!validateRawElementOverride(candidate).valid) return
+      if (!existing || theme.value.rawOverrides.some((override) => override.selector === toSelector)) return false
+      const candidate = { selector: toSelector, properties: JSON.parse(JSON.stringify(existing.properties)) as typeof existing.properties }
+      if (!validateRawElementOverride(candidate).valid) return false
       const rawOverrides = theme.value.rawOverrides.filter((override) => override.selector !== fromSelector)
       rawOverrides.push(candidate)
       theme.value = { ...cloneTheme(theme.value), rawOverrides }
+      return true
     },
     setFoundation(path: string, value: unknown): void {
       if (isDerivedShadePath(path) || !isEditableFoundationPath(path)) return

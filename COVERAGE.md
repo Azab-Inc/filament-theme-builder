@@ -91,8 +91,24 @@ Capability inventory identifier: `preview.raw-inspector`.
   effects, no-reload/no-non-GET behavior, fragile warnings, and CSS download
   action are covered by `e2e/ftb-008-raw-inspector.spec.ts`.
 - `vanilla-css-export.spec.ts` covers attribution, readable minimal output,
-  explicit-only foundations, semantic rules, and raw rules. The preview bridge
-  mirrors raw validation and ordering in `PreviewInspectorBridgeTest`.
+  explicit-only foundations, every currently supported semantic override,
+  explicit rejection of unsupported semantic mappings, deterministic section /
+  rule / property ordering, and raw rules. `App.spec.ts` verifies actual
+  clipboard and Blob download payloads, including canonical JSON
+  `rawOverrides`; `theme-state.spec.ts` verifies raw reload, complete reset,
+  and rejected selector renames without stale state.
+- The preview bridge mirrors the TypeScript raw allowlist and semantic
+  mappings. `raw-overrides.spec.ts` and `PreviewInspectorBridgeTest` enforce
+  allowlist parity; Compose Playwright executes rejection of unsafe selectors,
+  unsafe values, and duplicate selectors, valid raw ordering, and applies the
+  downloaded CSS to a clean Filament fixture whose primary/raw computed styles
+  match the preview.
+- Final remediation evidence (2026-10-14): a clean full Compose Playwright run
+  passed 84 tests with 3 explicitly skipped; the final repeated run with
+  retries passed all changed raw/export tests and recorded one unrelated flaky
+  session-auth test after its first attempt. The full PHP suite passed 169
+  tests / 1,633 assertions; Pint passed 296 files; PHPStan passed 265 files;
+  `/api/health` returned `{"status":"ok"}`.
 - FTB-024 fully-explicit export and FTB-025 Tailwind export remain deferred.
 
 ## FTB-027 upload safety coverage

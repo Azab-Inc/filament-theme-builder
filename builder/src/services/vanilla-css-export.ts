@@ -4,7 +4,10 @@ import { projectFoundations } from '@/services/foundation-projection'
 import { validateRawOverrides } from '@/services/raw-override-validation'
 
 const semanticMappings = new Map([
+  ['button.primary\u0000background', { selector: '.fi-btn.fi-color-primary', property: 'background-color' }],
+  ['button.secondary\u0000background', { selector: '.fi-btn.fi-outlined', property: 'background-color' }],
   ['form.product-name\u0000background', { selector: '.fi-fo-text-input .fi-input', property: 'background-color' }],
+  ['global.primary\u0000primary', { selector: '.fi-color-primary', property: 'color' }],
 ])
 
 export function exportVanillaCss(theme: Readonly<ThemeStateV4>): string {
@@ -71,14 +74,21 @@ function renderProjection(projection: FoundationProjection): string {
 
 function renderSemanticOverrides(theme: ThemeStateV4): string {
   return theme.overrides
+    .slice()
+    .sort((left, right) => semanticOverrideKey(left).localeCompare(semanticOverrideKey(right)))
     .map((override) => {
       const mapping = semanticMappings.get(`${override.targetId}\u0000${override.controlId}`)
-      if (!mapping || typeof override.value !== 'string') return ''
-      const selector = override.scope === 'state' ? `${mapping.selector}:focus` : mapping.selector
+      if (!mapping) throw new Error(`Unsupported semantic override: ${override.targetId}.${override.controlId}`)
+      if (typeof override.value !== 'string') throw new Error(`Unsupported semantic override value: ${override.targetId}.${override.controlId}`)
+      const selector = override.scope === 'state' ? `${mapping.selector}:${override.stateId === 'hover' ? 'hover' : 'focus'}` : mapping.selector
       return `${selector} { ${mapping.property}: ${override.value} !important; }`
     })
     .filter(Boolean)
     .join('\n')
+}
+
+function semanticOverrideKey(override: ThemeStateV4['overrides'][number]): string {
+  return [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000')
 }
 
 function renderRawOverrides(theme: ThemeStateV4): string {

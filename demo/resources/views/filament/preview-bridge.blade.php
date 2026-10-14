@@ -80,8 +80,11 @@
             ['form.product-name\u0000background', { type: 'color', component: 'form', variants: ['default'], states: ['focus'] }],
             ['global.primary\u0000primary', { type: 'color', component: undefined, variants: [], states: [] }],
         ]);
-        const formControlMappings = new Map([
+        const semanticOverrideMappings = new Map([
+            ['button.primary\u0000background', { selector: '.fi-btn.fi-color-primary', property: 'background-color' }],
+            ['button.secondary\u0000background', { selector: '.fi-btn.fi-outlined', property: 'background-color' }],
             ['form.product-name\u0000background', { selector: '.fi-fo-text-input .fi-input', property: 'background-color' }],
+            ['global.primary\u0000primary', { selector: '.fi-color-primary', property: 'color' }],
         ]);
         const overrideIdentities = new Set(controlDefinitions.keys());
         const resolveColorReference = (value) => {
@@ -214,7 +217,7 @@
         const isAcceptedTheme = (message) => {
             if (!isRecord(message) || message.type !== 'ftb:theme:update' || message.schemaVersion !== 1 || !['light', 'dark'].includes(message.activeMode) || !isRecord(message.projection) || message.activeMode !== message.projection.mode || !isRecord(message.theme) || !(message.theme.schemaVersion === 4)) return false;
              const hasSupportedKeys = exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'branding']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding']);
-             return hasSupportedKeys && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && isFoundationRecord(message.theme.foundations) && Array.isArray(message.theme.overrides) && message.theme.overrides.every(isSafeOverride) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && Array.isArray(message.theme.rawOverrides) && message.theme.rawOverrides.every(isSafeRawOverride) && new Set(message.theme.rawOverrides.map((override) => override.selector)).size === message.theme.rawOverrides.length && message.theme.customCss === '' && (message.theme.branding === undefined || isSafeBranding(message.theme.branding)) && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && isAcceptedProjection(message.projection, message.theme.foundations);
+              return hasSupportedKeys && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && isFoundationRecord(message.theme.foundations) && Array.isArray(message.theme.overrides) && message.theme.overrides.every(isSafeOverride) && message.theme.overrides.every((override) => semanticOverrideMappings.has(`${override.targetId}\u0000${override.controlId}`)) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && Array.isArray(message.theme.rawOverrides) && message.theme.rawOverrides.every(isSafeRawOverride) && new Set(message.theme.rawOverrides.map((override) => override.selector)).size === message.theme.rawOverrides.length && message.theme.customCss === '' && (message.theme.branding === undefined || isSafeBranding(message.theme.branding)) && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && isAcceptedProjection(message.projection, message.theme.foundations);
         };
         const projectionMatchesCanonicalFoundation = (projection, foundations) => {
             const expectedMappings = [...canonicalFoundationMappings.values()].filter((entry) => {
@@ -294,15 +297,13 @@
                 else if (candidate.property === 'borderWidth') rules.push(`${selectors} { border-width: ${candidate.value}px; }`);
                 else if (candidate.property === 'shadow') rules.push(`${selectors} { box-shadow: ${shadowValues[candidate.value]}; }`);
             }
-            const productNameOverrides = message.theme.overrides.filter((override) => override.targetId === 'form.product-name' && override.controlId === 'background');
-             for (const scope of ['global', 'component', 'variant', 'state']) {
-                const override = productNameOverrides.find((candidate) => candidate.scope === scope);
-                if (!override) continue;
-                const mapping = formControlMappings.get(`${override.targetId}\u0000${override.controlId}`);
-                if (!mapping) continue;
-                const selector = scope === 'state' ? `${mapping.selector}:focus` : mapping.selector;
-                 rules.push(`${selector} { ${mapping.property}: ${override.value} !important; }`);
-             }
+              const semanticOverrides = [...message.theme.overrides].sort((left, right) => [left.targetId, left.controlId, left.scope, left.componentId ?? '', left.variantId ?? '', left.stateId ?? ''].join('\u0000').localeCompare([right.targetId, right.controlId, right.scope, right.componentId ?? '', right.variantId ?? '', right.stateId ?? ''].join('\u0000')));
+              for (const override of semanticOverrides) {
+                  const mapping = semanticOverrideMappings.get(`${override.targetId}\u0000${override.controlId}`);
+                  if (!mapping || typeof override.value !== 'string') return false;
+                  const selector = override.scope === 'state' ? `${mapping.selector}:${override.stateId === 'hover' ? 'hover' : 'focus'}` : mapping.selector;
+                  rules.push(`${selector} { ${mapping.property}: ${override.value} !important; }`);
+              }
              const rawOverrideRules = [...message.theme.rawOverrides].sort((left, right) => left.selector.localeCompare(right.selector)).map((override) => `${override.selector} { ${Object.entries(override.properties).sort(([left], [right]) => left.localeCompare(right)).map(([property, value]) => `${property}: ${value};`).join(' ')} }`);
              rules.push(...rawOverrideRules);
             const iconConfiguration = message.theme.icons ?? { pack: 'default', overrides: {} };

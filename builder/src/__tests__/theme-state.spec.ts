@@ -81,6 +81,44 @@ describe('theme state', () => {
     })
   })
 
+  it('restores raw overrides after a store reload', () => {
+    vi.useFakeTimers()
+    const store = createThemeState()
+    store.setRawOverride('.fi-input', 'border-radius', '0.75rem')
+    vi.advanceTimersByTime(300)
+
+    setActivePinia(createPinia())
+
+    expect(createThemeState().theme.rawOverrides).toEqual([{
+      selector: '.fi-input',
+      properties: { 'border-radius': '0.75rem' },
+    }])
+  })
+
+  it('resets a complete raw override and removes its empty rule', () => {
+    const store = createThemeState()
+    store.setRawOverride('.fi-input', 'color', '#0f766e')
+    store.setRawOverride('.fi-input', 'padding', '1rem')
+
+    store.resetRawOverride('.fi-input')
+
+    expect(store.theme.rawOverrides).toEqual([])
+  })
+
+  it('reports rejected raw selector renames without leaving a stale destination selected', () => {
+    const store = createThemeState()
+    store.setRawOverride('.fi-btn', 'color', '#0f766e')
+    store.setRawOverride('.fi-input', 'color', '#dc2626')
+
+    expect(store.renameRawOverride('.fi-btn', '.fi-input')).toBe(false)
+    expect(store.theme.rawOverrides).toEqual([
+      { selector: '.fi-btn', properties: { color: '#0f766e' } },
+      { selector: '.fi-input', properties: { color: '#dc2626' } },
+    ])
+    expect(store.renameRawOverride('.fi-btn', '.fi-section')).toBe(true)
+    expect(store.theme.rawOverrides).toContainEqual({ selector: '.fi-section', properties: { color: '#0f766e' } })
+  })
+
   it('selects an icon pack and resets individual semantic overrides', () => {
     const store = createThemeState()
 

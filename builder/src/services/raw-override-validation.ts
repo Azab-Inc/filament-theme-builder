@@ -61,7 +61,7 @@ export function validateRawElementOverride(value: unknown): RawValidationResult 
     if (!(ALL_RAW_VISUAL_PROPERTIES as readonly string[]).includes(property)) return { valid: false, error: `Unsupported raw property: ${property}` }
     if (!isSafePropertyValue(property as RawVisualProperty, propertyValue)) return { valid: false, error: `Invalid value for ${property}` }
   }
-  return { valid: true, value: structuredClone(value) as RawElementOverride }
+  return { valid: true, value: JSON.parse(JSON.stringify(value)) as RawElementOverride }
 }
 
 export function validateRawOverrides(value: unknown): RawValidationResult<RawElementOverride[]> {

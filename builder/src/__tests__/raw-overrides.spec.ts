@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
 
 import type { InspectorTargetEvidence } from '@/services/inspector-protocol'
 import { createThemeRegistry } from '@/registry/theme-registry'
@@ -18,6 +19,14 @@ const evidence = (candidateSelectors: string[]): InspectorTargetEvidence => ({
 })
 
 describe('raw Inspector overrides', () => {
+  it('keeps the bridge property allowlist in parity with the TypeScript allowlist', () => {
+    const bridge = readFileSync(`${process.cwd()}/../demo/resources/views/filament/preview-bridge.blade.php`, 'utf8')
+
+    for (const property of ALL_RAW_VISUAL_PROPERTIES) {
+      expect(bridge).toContain(`'${property}'`)
+    }
+  })
+
   it('prefers a single stable Filament class over a compound or structural candidate', () => {
     expect(proposeRawSelector(evidence(['.fi-btn > span', '.fi-btn.fi-color-primary', '.fi-btn']), registry)).toEqual({
       selector: '.fi-btn',

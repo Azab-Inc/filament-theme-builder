@@ -470,12 +470,14 @@ function setBrandTypography(event: Event): void {
 }
 
 function downloadText(filename: string, contents: string, type: string): void {
-  const url = `data:${type};charset=utf-8,${encodeURIComponent(contents)}`
+  const blob = new Blob([contents], { type })
+  const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
   link.download = filename
   document.body.append(link)
   link.click()
+  URL.revokeObjectURL(url)
   window.setTimeout(() => link.remove(), 0)
 }
 
@@ -558,7 +560,10 @@ function setRawSelector(event: Event): void {
     return
   }
   const previous = rawSelector.value
-  if (theme.theme.rawOverrides.some((override) => override.selector === previous)) theme.renameRawOverride(previous, next)
+  if (theme.theme.rawOverrides.some((override) => override.selector === previous)) {
+    if (theme.renameRawOverride(previous, next)) rawSelector.value = next
+    return
+  }
   rawSelector.value = next
 }
 

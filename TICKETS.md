@@ -317,6 +317,16 @@ Extend Inspector so a user can style an element even when the curated registry i
 - [x] Raw overrides participate in undo/redo, persistence, JSON export, and CSS export. Evidence: builder unit/export tests and Compose Playwright coverage.
 - [x] Raw overrides do not silently overwrite semantic registry data. Evidence: `theme-state.spec.ts` and `App.spec.ts`.
 
+Review-blocker remediation evidence for `e4ef5fa` (2026-10-14): builder unit
+tests (223 passed), type-check, and production build pass; CSS download bytes,
+clipboard content, canonical JSON `rawOverrides`, reload/reset, deterministic
+section/rule ordering, selector-rename conflict handling, and clean Filament
+fixture parity are covered by `App.spec.ts`, `theme-state.spec.ts`,
+`vanilla-css-export.spec.ts`, and the six Compose Playwright tests in
+`e2e/ftb-008-raw-inspector.spec.ts`. The bridge rejects unsafe selectors,
+unsafe values, duplicate selectors, and preserves valid ordering in browser
+behavior; PHP bridge tests pass (4 tests, 48 assertions).
+
 ---
 
 <a id="ftb-009"></a>

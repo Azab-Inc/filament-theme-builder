@@ -51,4 +51,114 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
     await page.getByRole('button', { name: 'Download vanilla CSS' }).click()
     await expect(page.getByRole('status', { name: /export/i })).toContainText(/download started/i)
   })
+
+  test('downloads deterministic CSS bytes containing the edited raw rule', async ({ page }) => {
+    const frame = page.frameLocator('iframe[title="Filament preview"]')
+    await page.getByRole('button', { name: 'Inspector' }).click()
+    await frame.locator('.fi-sidebar').first().click()
+    await page.locator('#raw-background-color').fill('#0f766e')
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Download vanilla CSS' }).click(),
+    ])
+    const stream = await download.createReadStream()
+    let css = ''
+    for await (const chunk of stream ?? []) css += chunk.toString()
+
+    expect(download.suggestedFilename()).toBe('theme.css')
+    expect(css).toContain('/* Generated with Filament Theme Builder */')
+    expect(css).toContain('.fi-sidebar {')
+    expect(css).toContain('background-color: #0f766e;')
+    expect(css.indexOf('/* Foundations */')).toBeLessThan(css.indexOf('/* Semantic overrides */'))
+    expect(css.indexOf('/* Semantic overrides */')).toBeLessThan(css.indexOf('/* Advanced raw-element overrides */'))
+  })
+
+  test('copies the exact CSS export content to the clipboard', async ({ page }) => {
+    await page.evaluate(() => {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: { writeText: (value: string) => { (window as Window & { __ftbCopied?: string }).__ftbCopied = value } },
+      })
+    })
+
+    await page.getByRole('button', { name: 'Copy vanilla CSS' }).click()
+
+    await expect.poll(() => page.evaluate(() => (window as Window & { __ftbCopied?: string }).__ftbCopied ?? '')).toContain('/* Generated with Filament Theme Builder */')
+    await expect(page.getByRole('status', { name: /export/i })).toContainText(/copied to clipboard/i)
+  })
+
+  test('applies exported CSS to a clean Filament fixture with the same visual effects', async ({ page, context }) => {
+    const frame = page.frameLocator('iframe[title="Filament preview"]')
+    await page.locator('input[aria-label="Primary color"]').fill('#0f766e')
+    await page.getByRole('button', { name: 'Inspector' }).click()
+    await frame.locator('.fi-sidebar').first().click()
+    await page.locator('#raw-background-color').fill('#fef3c7')
+
+    const previewValues = await frame.locator('.fi-sidebar').first().evaluate((element) => ({
+      background: getComputedStyle(element).backgroundColor,
+      primary: getComputedStyle(element.ownerDocument.querySelector('.fi-color-primary')!).color,
+    }))
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Download vanilla CSS' }).click(),
+    ])
+    const stream = await download.createReadStream()
+    let css = ''
+    for await (const chunk of stream ?? []) css += chunk.toString()
+
+    const clean = await context.newPage()
+    await clean.goto(`${baseUrl}/demo/admin`)
+    await clean.addStyleTag({ content: css })
+    const cleanValues = await clean.locator('.fi-sidebar').first().evaluate((element) => ({
+      background: getComputedStyle(element).backgroundColor,
+      primary: getComputedStyle(element.ownerDocument.querySelector('.fi-color-primary')!).color,
+    }))
+
+    expect(cleanValues).toEqual(previewValues)
+    await clean.close()
+  })
+
+  test('bridge rejects unsafe values and duplicate raw selectors without changing applied CSS', async ({ page }) => {
+    const payload = await page.evaluate(async () => {
+      const iframe = document.querySelector<HTMLIFrameElement>('iframe[title="Filament preview"]')!
+      const frameWindow = iframe.contentWindow!
+      let captured: any
+      frameWindow.addEventListener('message', (event) => { captured = event.data }, { once: false })
+      document.querySelector<HTMLInputElement>('input[aria-label="Primary color"]')!.value = '#0f766e'
+      document.querySelector<HTMLInputElement>('input[aria-label="Primary color"]')!.dispatchEvent(new Event('input', { bubbles: true }))
+      for (let attempt = 0; attempt < 20 && !captured; attempt++) await new Promise((resolve) => setTimeout(resolve, 25))
+      return captured
+    })
+    expect(payload?.type).toBe('ftb:theme:update')
+
+    const unchanged = await page.evaluate(async (basePayload) => {
+      const iframe = document.querySelector<HTMLIFrameElement>('iframe[title="Filament preview"]')!
+      const frameWindow = iframe.contentWindow!
+      const before = await frameWindow.eval('document.getElementById("ftb-managed-theme").textContent')
+      for (const rawOverrides of [
+        [{ selector: '.fi-btn, .fi-input', properties: { color: '#0f766e' } }],
+        [{ selector: '.fi-btn', properties: { color: 'red; background: blue' } }],
+        [{ selector: '.fi-btn', properties: { color: '#0f766e' } }, { selector: '.fi-btn', properties: { color: '#dc2626' } }],
+      ]) {
+        const invalid = structuredClone(basePayload)
+        invalid.theme.rawOverrides = rawOverrides
+        frameWindow.postMessage(invalid, location.origin)
+        await new Promise((resolve) => setTimeout(resolve, 25))
+        const after = await frameWindow.eval('document.getElementById("ftb-managed-theme").textContent')
+        if (after !== before) return false
+      }
+      const valid = structuredClone(basePayload)
+      valid.theme.rawOverrides = [
+        { selector: '.fi-input', properties: { padding: '1rem', color: '#0f766e' } },
+        { selector: '.fi-btn', properties: { color: '#dc2626' } },
+      ]
+      frameWindow.postMessage(valid, location.origin)
+      await new Promise((resolve) => setTimeout(resolve, 25))
+      const ordered = await frameWindow.eval('document.getElementById("ftb-managed-theme").textContent')
+      return ordered.indexOf('.fi-btn {') < ordered.indexOf('.fi-input {')
+    }, payload)
+
+    expect(unchanged).toBe(true)
+  })
 })
