@@ -145,15 +145,19 @@ describe('App', () => {
     wrapper.unmount()
   })
 
-  it('shows a visible export error instead of silently transforming unsupported semantic overrides', async () => {
+  it('shows raw export errors while retaining and copying valid CSS output', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
     const wrapper = mount(App, { global: { plugins: [createPinia()] } })
-    const exportSpy = vi.spyOn(vanillaCssExport, 'exportVanillaCss').mockImplementation(() => {
-      throw new Error('Unsupported semantic override state: button.primary.background.loading')
+    const exportSpy = vi.spyOn(vanillaCssExport, 'exportVanillaCss').mockReturnValue({
+      css: '/* Foundations */\n.fi-btn { color: #ffffff; }',
+      errors: ['Selector must contain only safe .fi-* class selectors and limited pseudo-classes'],
     })
 
     await wrapper.get('button[aria-label="Copy vanilla CSS"]').trigger('click')
 
-    expect(wrapper.get('[data-export-status]').text()).toMatch(/unsupported semantic override state/i)
+    expect(wrapper.get('[data-export-status]').text()).toMatch(/safe \.fi-\* class selectors/i)
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('/* Foundations */'))
     exportSpy.mockRestore()
     wrapper.unmount()
   })

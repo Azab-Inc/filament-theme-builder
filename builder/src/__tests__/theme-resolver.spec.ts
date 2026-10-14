@@ -14,7 +14,7 @@ const formResolverFixture: RegistryEntry = {
   selectors: ['.fi-test-form-control'],
   controls: [{ id: 'background', valueType: 'color', constraints: { pattern: /^#[\da-f]{6}$/i } }],
   variants: ['default', 'alternate'],
-  states: ['focus', 'disabled'],
+  states: ['focus'],
   filamentCompatibility: '5.x',
 }
 const resolverRegistry = validateRegistry([...registry.entries, formResolverFixture])
@@ -65,8 +65,8 @@ describe('theme validation and resolution', () => {
     )
 
     expect(resolveThemeValue(state, resolverRegistry, request)).toEqual({ status: 'resolved', value: '#4b5563', source: 'state' })
-    expect(resolveThemeValue(state, resolverRegistry, { ...request, stateId: 'disabled' })).toEqual({ status: 'resolved', value: '#374151', source: 'variant' })
-    expect(resolveThemeValue(state, resolverRegistry, { ...request, targetId: 'form.control.text', stateId: 'server-validation' })).toMatchObject({ status: 'invalid-request' })
+    expect(resolveThemeValue(state, resolverRegistry, { ...request, stateId: undefined })).toEqual({ status: 'resolved', value: '#374151', source: 'variant' })
+    expect(resolveThemeValue(state, registry, { ...request, targetId: 'form.control.text', stateId: 'hover' })).toMatchObject({ status: 'invalid-request' })
   })
 
   it('resolves the production Product name target through global, component, variant, and focus state inheritance', () => {

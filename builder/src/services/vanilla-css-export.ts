@@ -1,7 +1,9 @@
 import type { FoundationProjection, ThemeMode } from '@/models/foundations.model'
 import type { ThemeStateV4 } from '@/models/theme.model'
+import { SUPPORTED_PSEUDO_STATES } from '@/models/theme-registry.model'
+import { createThemeRegistry } from '@/registry/theme-registry'
 import { projectFoundations } from '@/services/foundation-projection'
-import { validateRawOverrides } from '@/services/raw-override-validation'
+import { validateRawElementOverride } from '@/services/raw-override-validation'
 
 const semanticMappings = new Map([
   ['button.primary\u0000background', { selector: '.fi-btn.fi-color-primary', globalSelector: '.fi-btn', componentSelector: '.fi-btn', property: 'background-color' }],
@@ -10,10 +12,11 @@ const semanticMappings = new Map([
   ['global.primary\u0000primary', { selector: '.fi-color-primary', property: 'color' }],
 ])
 
-const supportedPseudoStates = new Set(['hover', 'focus', 'active', 'disabled', 'checked', 'focus-visible', 'focus-within'])
+export type VanillaCssExportResult = { css: string; errors: string[] }
 
-export function exportVanillaCss(theme: Readonly<ThemeStateV4>): string {
+export function exportVanillaCss(theme: Readonly<ThemeStateV4>): VanillaCssExportResult {
   const canonical = theme as ThemeStateV4
+  const errors: string[] = []
   const sections = [
     '/* Generated with Filament Theme Builder */',
     '',
@@ -22,13 +25,13 @@ export function exportVanillaCss(theme: Readonly<ThemeStateV4>): string {
     renderDarkFoundations(canonical),
     '',
     '/* Semantic overrides */',
-    renderSemanticOverrides(canonical),
+    renderSemanticOverrides(canonical, errors),
     '',
     '/* Advanced raw-element overrides */',
-    renderRawOverrides(canonical),
+    renderRawOverrides(canonical, errors),
     '',
   ]
-  return sections.filter((section, index) => section !== '' || index > 0).join('\n')
+  return { css: sections.filter((section, index) => section !== '' || index > 0).join('\n'), errors }
 }
 
 function renderFoundations(theme: ThemeStateV4, mode: ThemeMode): string {
@@ -74,16 +77,21 @@ function renderProjection(projection: FoundationProjection): string {
   return rules.join('\n')
 }
 
-function renderSemanticOverrides(theme: ThemeStateV4): string {
+function renderSemanticOverrides(theme: ThemeStateV4, errors: string[]): string {
   return theme.overrides
     .slice()
     .sort((left, right) => semanticOverrideKey(left).localeCompare(semanticOverrideKey(right)))
-    .map((override) => {
+    .flatMap((override) => {
       const mapping = semanticMappings.get(`${override.targetId}\u0000${override.controlId}`)
-      if (!mapping) throw new Error(`Unsupported semantic override: ${override.targetId}.${override.controlId}`)
-      if (typeof override.value !== 'string') throw new Error(`Unsupported semantic override value: ${override.targetId}.${override.controlId}`)
-      const selector = semanticSelector(override, mapping)
-      return `${selector} { ${mapping.property}: ${override.value} !important; }`
+      if (!mapping) { errors.push(`Unsupported semantic override: ${override.targetId}.${override.controlId}`); return [] }
+      if (typeof override.value !== 'string') { errors.push(`Unsupported semantic override value: ${override.targetId}.${override.controlId}`); return [] }
+      try {
+        const selector = semanticSelector(override, mapping)
+        return [`${selector} { ${mapping.property}: ${override.value} !important; }`]
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : 'Unsupported semantic override')
+        return []
+      }
     })
     .filter(Boolean)
     .join('\n')
@@ -104,20 +112,31 @@ function semanticSelector(override: ThemeStateV4['overrides'][number], mapping: 
       : mapping.selector
 
   if (override.scope !== 'state') return baseSelector
-  if (!override.stateId || !supportedPseudoStates.has(override.stateId)) {
+  const registryEntry = createThemeRegistry().entries.find(({ id }) => id === override.targetId)
+  if (!override.stateId || !registryEntry?.states.includes(override.stateId) || (override.stateId !== 'default' && !(SUPPORTED_PSEUDO_STATES as readonly string[]).includes(override.stateId))) {
     throw new Error(`Unsupported semantic override state: ${override.targetId}.${override.controlId}.${override.stateId ?? 'missing'}`)
   }
-  return `${baseSelector}:${override.stateId}`
+  return override.stateId === 'default' ? baseSelector : `${baseSelector}:${override.stateId}`
 }
 
 function semanticOverrideKey(override: ThemeStateV4['overrides'][number]): string {
   return [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000')
 }
 
-function renderRawOverrides(theme: ThemeStateV4): string {
-  const validation = validateRawOverrides(theme.rawOverrides)
-  if (!validation.valid) return ''
-  return [...validation.value]
+function renderRawOverrides(theme: ThemeStateV4, errors: string[]): string {
+  if (!Array.isArray(theme.rawOverrides)) {
+    errors.push('Raw overrides must be an array')
+    return ''
+  }
+  const seenSelectors = new Set<string>()
+  const validOverrides = theme.rawOverrides.flatMap((candidate) => {
+    const validation = validateRawElementOverride(candidate)
+    if (!validation.valid) { errors.push(validation.error); return [] }
+    if (seenSelectors.has(validation.value.selector)) { errors.push(`Duplicate raw selector: ${validation.value.selector}`); return [] }
+    seenSelectors.add(validation.value.selector)
+    return [validation.value]
+  })
+  return validOverrides
     .sort((left, right) => left.selector.localeCompare(right.selector))
     .map((override) => {
       const declarations = Object.entries(override.properties)

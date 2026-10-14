@@ -11,7 +11,7 @@ describe('minimal vanilla CSS export', () => {
     theme.foundations.explicitPaths = ['palettes.primary.base']
     theme.rawOverrides = [{ selector: '.fi-btn', properties: { color: '#ffffff', padding: '0.5rem 1rem' } }]
 
-    const css = exportVanillaCss(theme)
+    const { css } = exportVanillaCss(theme)
 
     expect(css).toContain('/* Generated with Filament Theme Builder */')
     expect(css).toContain('/* Foundations */')
@@ -26,7 +26,7 @@ describe('minimal vanilla CSS export', () => {
   it('does not emit unedited foundations', () => {
     const theme = createDefaultThemeState()
 
-    expect(exportVanillaCss(theme)).not.toContain('--ftb-primary')
+    expect(exportVanillaCss(theme).css).not.toContain('--ftb-primary')
   })
 
   it('serializes every supported semantic override in stable order', () => {
@@ -61,7 +61,7 @@ describe('minimal vanilla CSS export', () => {
       },
     ]
 
-    const css = exportVanillaCss(theme)
+    const { css } = exportVanillaCss(theme)
 
     expect(css).toContain('.fi-btn { background-color: #0f766e !important; }')
     expect(css).toContain('.fi-btn { background-color: #dc2626 !important; }')
@@ -80,30 +80,49 @@ describe('minimal vanilla CSS export', () => {
       { targetId: 'button.primary', controlId: 'background', scope: 'variant', componentId: 'button', variantId: 'primary', value: '#333333' },
     ]
 
-    const css = exportVanillaCss(theme)
+    const { css } = exportVanillaCss(theme)
 
     expect(css).toContain('.fi-btn { background-color: #111111 !important; }')
     expect(css).toContain('.fi-btn { background-color: #222222 !important; }')
     expect(css).toContain('.fi-btn.fi-color-primary { background-color: #333333 !important; }')
   })
 
-  it.each(['hover', 'focus', 'active', 'disabled', 'checked', 'focus-visible', 'focus-within'] as const)(
-    'preserves the %s pseudo-state without rewriting it',
-    (stateId) => {
+  it('resolves the registered default state as the base variant selector', () => {
+    const theme = createDefaultThemeState()
+    theme.overrides = [{
+      targetId: 'button.primary',
+      controlId: 'background',
+      scope: 'state',
+      componentId: 'button',
+      variantId: 'primary',
+      stateId: 'default',
+      value: '#111111',
+    }]
+
+    expect(exportVanillaCss(theme).css).toContain('.fi-btn.fi-color-primary { background-color: #111111 !important; }')
+    expect(exportVanillaCss(theme).errors).toEqual([])
+  })
+
+  it.each([
+    { targetId: 'button.primary', controlId: 'background', componentId: 'button', variantId: 'primary', stateId: 'hover', selector: '.fi-btn.fi-color-primary:hover' },
+    { targetId: 'form.product-name', controlId: 'background', componentId: 'form', variantId: 'default', stateId: 'focus', selector: '.fi-fo-text-input .fi-input:focus' },
+  ] as const)(
+    'preserves the registered $stateId pseudo-state without rewriting it',
+    ({ targetId, controlId, componentId, variantId, stateId, selector }) => {
       const theme = createDefaultThemeState()
       theme.overrides = [{
-        targetId: 'button.primary',
-        controlId: 'background',
+        targetId,
+        controlId,
         scope: 'state',
-        componentId: 'button',
-        variantId: 'primary',
+        componentId,
+        variantId,
         stateId,
         value: '#111111',
       }]
 
-      const css = exportVanillaCss(theme)
+      const { css } = exportVanillaCss(theme)
 
-      expect(css).toContain(`.fi-btn.fi-color-primary:${stateId} { background-color: #111111 !important; }`)
+      expect(css).toContain(`${selector} { background-color: #111111 !important; }`)
     },
   )
 
@@ -115,11 +134,11 @@ describe('minimal vanilla CSS export', () => {
       scope: 'state',
       componentId: 'button',
       variantId: 'primary',
-      stateId: 'loading',
+      stateId: 'focus',
       value: '#111111',
     }]
 
-    expect(() => exportVanillaCss(theme)).toThrow(/Unsupported semantic override state/i)
+    expect(exportVanillaCss(theme).errors).toContainEqual(expect.stringMatching(/Unsupported semantic override state/i))
   })
 
   it('rejects an unsupported semantic override instead of silently omitting it', () => {
@@ -131,6 +150,22 @@ describe('minimal vanilla CSS export', () => {
       value: '#0f766e',
     }]
 
-    expect(() => exportVanillaCss(theme)).toThrow(/Unsupported semantic override/i)
+    expect(exportVanillaCss(theme).errors).toContainEqual(expect.stringMatching(/Unsupported semantic override/i))
+  })
+
+  it('returns validation errors alongside the valid CSS when a raw override is invalid', () => {
+    const theme = createDefaultThemeState()
+    theme.foundations.explicitPaths = ['palettes.primary.base']
+    theme.rawOverrides = [
+      { selector: '.fi-btn', properties: { color: '#ffffff' } },
+      { selector: '.unsafe', properties: { color: '#000000' } },
+    ]
+
+    const result = exportVanillaCss(theme)
+
+    expect(result.css).toContain('/* Foundations */')
+    expect(result.css).toContain('.fi-btn')
+    expect(result.css).not.toContain('.unsafe')
+    expect(result.errors).toContainEqual(expect.stringMatching(/safe \.fi-\* class selectors/i))
   })
 })

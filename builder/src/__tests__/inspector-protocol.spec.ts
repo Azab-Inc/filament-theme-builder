@@ -31,6 +31,11 @@ describe('inspector protocol', () => {
       target: evidence({ candidateSelectors: ['#anything'] }),
     })).toBe(false)
     expect(isInspectorEvent({
+      type: 'ftb:inspector:hover',
+      protocolVersion: INSPECTOR_PROTOCOL_VERSION,
+      target: evidence({ candidateSelectors: ['.fi-btn:active'] }),
+    })).toBe(false)
+    expect(isInspectorEvent({
       type: 'ftb:inspector:select',
       protocolVersion: INSPECTOR_PROTOCOL_VERSION,
       target: evidence({ semanticBreadcrumb: '<script>alert(1)</script>' }),

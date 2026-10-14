@@ -27,6 +27,17 @@ describe('raw Inspector overrides', () => {
     }
   })
 
+  it('keeps supported pseudo-state selectors aligned with the production registry and preview bridge', () => {
+    const bridge = readFileSync(`${process.cwd()}/../demo/resources/views/filament/preview-bridge.blade.php`, 'utf8')
+
+    expect(bridge).toContain("const supportedPseudoStates = ['hover', 'focus']")
+    expect(validateRawSelector('.fi-btn:hover').valid).toBe(true)
+    expect(validateRawSelector('.fi-input:focus').valid).toBe(true)
+    expect(validateRawSelector('.fi-btn:active').valid).toBe(false)
+    expect(bridge).not.toContain('focus-visible')
+    expect(bridge).not.toContain('focus-within')
+  })
+
   it('prefers a single stable Filament class over a compound or structural candidate', () => {
     expect(proposeRawSelector(evidence(['.fi-btn > span', '.fi-btn.fi-color-primary', '.fi-btn']), registry)).toEqual({
       selector: '.fi-btn',

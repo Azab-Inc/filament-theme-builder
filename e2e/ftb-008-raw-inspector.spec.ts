@@ -138,6 +138,7 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
       const before = await frameWindow.eval('document.getElementById("ftb-managed-theme").textContent')
       for (const rawOverrides of [
         [{ selector: '.fi-btn, .fi-input', properties: { color: '#0f766e' } }],
+        [{ selector: '.fi-btn:active', properties: { color: '#0f766e' } }],
         [{ selector: '.fi-btn', properties: { color: 'red; background: blue' } }],
         [{ selector: '.fi-btn', properties: { color: '#0f766e' } }, { selector: '.fi-btn', properties: { color: '#dc2626' } }],
       ]) {

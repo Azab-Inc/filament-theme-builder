@@ -1,4 +1,5 @@
 import type { FilamentRegistry, RegistryEntry } from '@/models/theme-registry.model'
+import { SUPPORTED_PSEUDO_STATES } from '@/models/theme-registry.model'
 
 export const INSPECTOR_PROTOCOL_VERSION = 1 as const
 
@@ -26,7 +27,8 @@ export type InspectorResolution =
   | { status: 'no-match'; breadcrumb: string }
   | { status: 'ambiguous' | 'incompatible'; breadcrumb: string; candidateIds?: string[]; required?: string }
 
-const selectorPattern = /^(?:\.fi-[A-Za-z0-9_-]+)(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus|active|disabled|checked|focus-visible|focus-within))?(?:\s+\.fi-[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus|active|disabled|checked|focus-visible|focus-within))?)*$/
+const pseudoStatesPattern = SUPPORTED_PSEUDO_STATES.join('|')
+const selectorPattern = new RegExp(`^(?:\\.fi-[A-Za-z0-9_-]+)(?:\\.[A-Za-z0-9_-]+)*(?::(?:${pseudoStatesPattern}))?(?:\\s+\\.fi-[A-Za-z0-9_-]+(?:\\.[A-Za-z0-9_-]+)*(?::(?:${pseudoStatesPattern}))?)*$`)
 const classPattern = /^fi-[A-Za-z0-9_-]+$/
 const breadcrumbPattern = /^[^<>]{1,200}$/
 const allowedTargetKeys = ['candidateSelectors', 'classNames', 'semanticBreadcrumb', 'componentId', 'variantId', 'stateId'] as const

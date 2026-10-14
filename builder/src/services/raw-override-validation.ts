@@ -1,5 +1,6 @@
 import type { FilamentRegistry } from '@/models/theme-registry.model'
 import type { InspectorTargetEvidence } from '@/services/inspector-protocol'
+import { SUPPORTED_PSEUDO_STATES } from '@/models/theme-registry.model'
 import {
   ALL_RAW_VISUAL_PROPERTIES,
   type RawElementOverride,
@@ -13,7 +14,8 @@ export type RawValidationResult<T = RawElementOverride> =
   | { valid: true; value: T }
   | { valid: false; error: string }
 
-const selectorPattern = /^(?:\.fi-[A-Za-z0-9_-]+)(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus|active|disabled|checked|focus-visible|focus-within))?(?:\s+\.fi-[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus|active|disabled|checked|focus-visible|focus-within))?)*$/
+const pseudoStatesPattern = SUPPORTED_PSEUDO_STATES.join('|')
+const selectorPattern = new RegExp(`^(?:\\.fi-[A-Za-z0-9_-]+)(?:\\.[A-Za-z0-9_-]+)*(?::(?:${pseudoStatesPattern}))?(?:\\s+\\.fi-[A-Za-z0-9_-]+(?:\\.[A-Za-z0-9_-]+)*(?::(?:${pseudoStatesPattern}))?)*$`)
 const singleClassPattern = /^\.fi-[A-Za-z0-9_-]+$/
 const colorPattern = /^(?:#[\da-f]{3,8}|(?:rgb|hsl|hwb|lab|lch|oklab|oklch)a?\([^;{}()]+\)|transparent|var\(--(?:color-)?(?:primary|success|warning|danger|info|gray)(?:-(?:50|100|200|300|400|500|600|700|800|900|950))?\))$/i
 const lengthToken = '(?:0|(?:0|[1-9]\\d{0,3})(?:\\.\\d+)?(?:px|rem|em|ex|ch|lh|rlh|vw|vh|vmin|vmax|%)?)'

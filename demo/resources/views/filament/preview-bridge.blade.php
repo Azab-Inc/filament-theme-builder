@@ -74,11 +74,11 @@
         const styleId = 'ftb-managed-theme';
         const safeToken = /^[a-z\d_.-]{1,100}$/i;
         const fontAllowlist = new Map([['Inter', 'Inter'], ['Roboto', 'Roboto']]);
-        const supportedPseudoStates = ['hover', 'focus', 'active', 'disabled', 'checked', 'focus-visible', 'focus-within'];
+        const supportedPseudoStates = ['hover', 'focus'];
         const controlDefinitions = new Map([
-            ['button.primary\u0000background', { type: 'color', component: 'button', variants: ['primary', 'secondary'], states: ['default', ...supportedPseudoStates] }],
-            ['button.secondary\u0000background', { type: 'color', component: 'button', variants: ['primary', 'secondary'], states: ['default', ...supportedPseudoStates] }],
-            ['form.product-name\u0000background', { type: 'color', component: 'form', variants: ['default'], states: supportedPseudoStates }],
+            ['button.primary\u0000background', { type: 'color', component: 'button', variants: ['primary', 'secondary'], states: ['default', 'hover'] }],
+            ['button.secondary\u0000background', { type: 'color', component: 'button', variants: ['primary', 'secondary'], states: ['default', 'hover'] }],
+            ['form.product-name\u0000background', { type: 'color', component: 'form', variants: ['default'], states: ['focus'] }],
             ['global.primary\u0000primary', { type: 'color', component: undefined, variants: [], states: [] }],
         ]);
         const semanticOverrideMappings = new Map([
@@ -192,7 +192,7 @@
             && ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl', 'full'].includes(branding.contentWidth)
             && ['collapsible', 'fully-collapsible', 'top-navigation'].includes(branding.sidebar);
         const rawVisualProperties = ['color', 'background-color', 'border-color', 'border-width', 'border-radius', 'box-shadow', 'opacity', 'padding', 'margin', 'font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'text-decoration', 'border-style', 'text-align', 'white-space'];
-        const rawSelectorPattern = /^(?:\.fi-[A-Za-z0-9_-]+)(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus|active|disabled|checked|focus-visible|focus-within))?(?:\s+\.fi-[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus|active|disabled|checked|focus-visible|focus-within))?)*$/;
+        const rawSelectorPattern = /^(?:\.fi-[A-Za-z0-9_-]+)(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus))?(?:\s+\.fi-[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus))?)*$/;
         const rawValuePattern = /[;{}<>]|\/\*|\*\/|url\s*\(|@(?:import|supports|media|layer|font-face)|expression\s*\(|javascript\s*:/i;
         const isSafeRawPropertyValue = (property, value) => {
             if (typeof value !== 'string' || value.length === 0 || value.length > 300 || rawValuePattern.test(value)) return false;
@@ -303,8 +303,9 @@
                   const mapping = semanticOverrideMappings.get(`${override.targetId}\u0000${override.controlId}`);
                   if (!mapping || typeof override.value !== 'string') return false;
                    const baseSelector = override.scope === 'global' ? (mapping.globalSelector ?? mapping.selector) : override.scope === 'component' ? (mapping.componentSelector ?? mapping.selector) : mapping.selector;
-                   if (override.scope === 'state' && !supportedPseudoStates.includes(override.stateId)) return false;
-                   const selector = override.scope === 'state' ? `${baseSelector}:${override.stateId}` : baseSelector;
+                    const definition = controlDefinitions.get(`${override.targetId}\u0000${override.controlId}`);
+                    if (override.scope === 'state' && (!definition?.states.includes(override.stateId) || (override.stateId !== 'default' && !supportedPseudoStates.includes(override.stateId)))) return false;
+                    const selector = override.scope === 'state' && override.stateId !== 'default' ? `${baseSelector}:${override.stateId}` : baseSelector;
                   rules.push(`${selector} { ${mapping.property}: ${override.value} !important; }`);
               }
              const rawOverrideRules = [...message.theme.rawOverrides].sort((left, right) => left.selector.localeCompare(right.selector)).map((override) => `${override.selector} { ${Object.entries(override.properties).sort(([left], [right]) => left.localeCompare(right)).map(([property, value]) => `${property}: ${value};`).join(' ')} }`);

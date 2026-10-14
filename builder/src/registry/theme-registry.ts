@@ -6,6 +6,7 @@ import type {
   RegistryLookupResult,
   RegistryValueType,
 } from '@/models/theme-registry.model'
+import { SUPPORTED_PSEUDO_STATES } from '@/models/theme-registry.model'
 import type { InspectorResolution, InspectorTargetEvidence } from '@/services/inspector-protocol'
 import { resolveInspectorTarget as resolveInspectorTargetFromEvidence } from '@/services/inspector-protocol'
 
@@ -29,7 +30,7 @@ const primaryButton: RegistryEntry = {
     },
   ],
   variants: ['primary', 'secondary'],
-  states: ['default', 'hover'],
+  states: ['default', ...SUPPORTED_PSEUDO_STATES.slice(0, 1)],
   filamentCompatibility: SUPPORTED_FILAMENT_COMPATIBILITY,
 }
 
@@ -109,7 +110,7 @@ const productNameInput: RegistryEntry = {
     },
   ],
   variants: ['default'],
-  states: ['focus'],
+  states: [SUPPORTED_PSEUDO_STATES[1]],
   filamentCompatibility: SUPPORTED_FILAMENT_COMPATIBILITY,
 }
 

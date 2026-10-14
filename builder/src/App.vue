@@ -417,28 +417,28 @@ function exportBrandingPhp(): void {
 
 function exportVanillaThemeCss(): void {
   try {
-    const contents = exportVanillaCss(theme.theme as unknown as ThemeStateV4)
-    downloadText('theme.css', contents, 'text/css')
-    exportStatus.value = 'Vanilla CSS download started.'
+    const result = exportVanillaCss(theme.theme as unknown as ThemeStateV4)
+    downloadText('theme.css', result.css, 'text/css')
+    exportStatus.value = result.errors.length ? `Vanilla CSS exported with errors: ${result.errors.join('; ')}` : 'Vanilla CSS download started.'
   } catch (error) {
     exportStatus.value = exportErrorMessage(error)
   }
 }
 
 async function copyVanillaThemeCss(): Promise<void> {
-  let contents: string
+  let result: ReturnType<typeof exportVanillaCss>
   try {
-    contents = exportVanillaCss(theme.theme as unknown as ThemeStateV4)
+    result = exportVanillaCss(theme.theme as unknown as ThemeStateV4)
   } catch (error) {
     exportStatus.value = exportErrorMessage(error)
     return
   }
   try {
-    await navigator.clipboard.writeText(contents)
-    exportStatus.value = 'Vanilla CSS copied to clipboard.'
+    await navigator.clipboard.writeText(result.css)
+    exportStatus.value = result.errors.length ? `Vanilla CSS copied with errors: ${result.errors.join('; ')}` : 'Vanilla CSS copied to clipboard.'
   } catch {
     const textarea = document.createElement('textarea')
-    textarea.value = contents
+    textarea.value = result.css
     textarea.setAttribute('readonly', '')
     textarea.style.position = 'fixed'
     textarea.style.opacity = '0'
@@ -446,7 +446,9 @@ async function copyVanillaThemeCss(): Promise<void> {
     textarea.select()
     const copied = document.execCommand('copy')
     textarea.remove()
-    exportStatus.value = copied ? 'Vanilla CSS copied to clipboard.' : 'Copy failed; use Download CSS instead.'
+    exportStatus.value = copied
+      ? result.errors.length ? `Vanilla CSS copied with errors: ${result.errors.join('; ')}` : 'Vanilla CSS copied to clipboard.'
+      : 'Copy failed; use Download CSS instead.'
   }
 }
 
