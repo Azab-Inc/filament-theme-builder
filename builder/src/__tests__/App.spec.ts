@@ -167,6 +167,33 @@ describe('App', () => {
     wrapper.unmount()
   })
 
+  it('clears the Inspector breadcrumb when the preview iframe navigates before re-enabling', async () => {
+    window.history.replaceState({}, '', '/')
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+    const iframe = wrapper.get('iframe')
+    const iframeWindow = { postMessage: () => undefined } as unknown as Window
+    Object.defineProperty(iframe.element, 'contentWindow', { configurable: true, value: iframeWindow })
+    await wrapper.get('button[aria-label="Inspector"]').trigger('click')
+
+    window.dispatchEvent(new MessageEvent('message', {
+      origin: window.location.origin,
+      source: iframeWindow,
+      data: {
+        type: 'ftb:inspector:select',
+        protocolVersion: 1,
+        target: { candidateSelectors: ['.fi-fo-text-input .fi-input'], classNames: ['fi-input'] },
+      },
+    }))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('[data-inspector-status]').text()).toContain('Product name input')
+
+    await iframe.trigger('load')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.get('[data-inspector-status]').text()).toBe('Inspector enabled')
+    wrapper.unmount()
+  })
+
   it('shows the throwaway prototype only when explicitly requested', () => {
     window.history.replaceState({}, '', '/?prototype=1&variant=B')
     const wrapper = mount(App, { global: { plugins: [createPinia()] } })

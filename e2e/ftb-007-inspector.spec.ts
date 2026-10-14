@@ -76,4 +76,27 @@ test.describe('FTB-007 semantic Inspector', () => {
     await expect(button).toHaveClass(/ftb-inspector-selected/)
     await expect(page.getByRole('status', { name: /inspector/i })).toContainText(/fi-btn|button/i)
   })
+
+  test('clears selection and breadcrumb on iframe navigation and reload', async ({ page }) => {
+    await page.getByRole('button', { name: 'Inspector' }).click()
+    const frame = page.frameLocator('iframe[title="Filament preview"]')
+    await frame.locator('.fi-sidebar').first().click()
+    await expect(page.getByRole('status', { name: /inspector/i })).toContainText(/sidebar|navigation/i)
+
+    await page.getByTitle('Filament preview').evaluate((element, url) => {
+      (element as HTMLIFrameElement).src = `${url}/demo/admin`
+    }, baseUrl)
+    await expect(frame.getByRole('heading', { name: /dashboard/i })).toBeVisible()
+    await expect(page.getByRole('status', { name: /inspector/i })).toHaveText('Inspector enabled')
+    await expect(frame.locator('.ftb-inspector-selected')).toHaveCount(0)
+
+    await frame.locator('.fi-sidebar').first().click()
+    await expect(page.getByRole('status', { name: /inspector/i })).toContainText(/sidebar|navigation/i)
+    await page.getByTitle('Filament preview').evaluate((element) => {
+      (element as HTMLIFrameElement).contentWindow?.location.reload()
+    })
+    await expect(frame.getByRole('heading', { name: /dashboard/i })).toBeVisible()
+    await expect(page.getByRole('status', { name: /inspector/i })).toHaveText('Inspector enabled')
+    await expect(frame.locator('.ftb-inspector-selected')).toHaveCount(0)
+  })
 })

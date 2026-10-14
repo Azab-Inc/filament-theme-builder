@@ -161,6 +161,7 @@ function handleInspectorMessage(event: MessageEvent): void {
 
 function onPreviewLoad(): void {
   runtimeLoading.value = false
+  inspectorResolution.value = null
   postTheme()
   postInspectorCommand()
 }

@@ -41,6 +41,7 @@ there is no domain mutation to expose or authorize.
 | `panel.branding` | `PanelBrandingSettings`, PanelProvider/runtime configuration | mutation | Local builder theme state; deployment/runtime configuration remains under project-owner control | Explicit user action before export/application; controlled reload where required | No MCP tool; not available |
 | `panel.branding.upload` | `POST /api/branding-assets` | mutation | Public preview upload boundary; project-owner authorization is bounded by `TemporaryUploadStorage`, which enforces image MIME/extension, size, per-session quota, global quota, private storage, and 24-hour purge | Explicit user action; no automatic application to a project | No MCP mutation tool for binary upload; not available |
 | `panel.branding.asset-read` | `GET /api/branding-assets/{reference}` | read-only | Public preview asset read uses an opaque validated temporary reference; missing/unsafe references return 404 | None | No MCP read tool; not available |
+| `preview.inspector` | Builder Inspector over the read-only Filament preview iframe | read-only / UI-only | Builder validates the exact preview origin and iframe source; the bridge returns DOM evidence and owns temporary/persistent outlines only; theme changes remain on existing validated builder paths | None | No MCP mutation tool; not available |
 
 ## Commerce operation boundary
 

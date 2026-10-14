@@ -288,7 +288,9 @@ Let the user enter Inspector mode, hover real Filament elements, see a visible h
 Evidence: `builder/src/__tests__/App.spec.ts`,
 `builder/src/__tests__/inspector-protocol.spec.ts`,
 `e2e/ftb-007-inspector.spec.ts`, `e2e/ftb-007-bridge.spec.ts`, and
-`demo/tests/Feature/PreviewInspectorBridgeTest.php`.
+`demo/tests/Feature/PreviewInspectorBridgeTest.php`. The capability contract is
+recorded as `preview.inspector` (read-only / UI-only, no MCP mutation tool) in
+`docs/ai-operability/demo-showcase-capability-inventory.md`.
 
 ---
 
