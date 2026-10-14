@@ -874,7 +874,7 @@ test.describe("foundation preview integration", () => {
       foundations: typeof validFoundations;
     };
 
-    expect(exported.schemaVersion).toBe(3);
+    expect(exported.schemaVersion).toBe(4);
     expect(exported.colors.primary).toBe("#0f766e");
     expect(exported.foundations.palettes.primary.base).toBe("#0f766e");
     expect(exported.foundations.palettes.primary.shades[500]).toBe("#123456");

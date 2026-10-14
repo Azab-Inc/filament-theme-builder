@@ -1,8 +1,9 @@
 import type { FilamentRegistry, RegistryEntry } from '@/models/theme-registry.model'
 import { migrateThemeState } from '@/models/theme.model'
-import type { ResolveRequest, ThemeOverride, ThemeScope, ThemeState, ThemeStateV2, ThemeStateV3 } from '@/models/theme.model'
+import type { ResolveRequest, ThemeOverride, ThemeScope, ThemeState, ThemeStateV2, ThemeStateV4 } from '@/models/theme.model'
 import { resolveThemeValue } from '@/services/theme-resolver'
 import { validateResolveRequest, validateThemeState } from '@/services/theme-validation'
+import { validateFoundationState } from '@/services/foundation-validation'
 
 export type ThemeSerializationMode = 'minimal' | 'fully-explicit'
 
@@ -20,8 +21,8 @@ export type ThemeDeserializeResult =
  * Unlike local persistence, public export retains generated palette shades so
  * the exported document exactly describes the rendered foundation state.
  */
-export function serializeCanonicalTheme(state: unknown): ThemeStateV3 {
-  return structuredClone(JSON.parse(JSON.stringify(state)) as ThemeStateV3)
+export function serializeCanonicalTheme(state: unknown): ThemeStateV4 {
+  return structuredClone(JSON.parse(JSON.stringify(state)) as ThemeStateV4)
 }
 
 export function serializeTheme(
@@ -58,6 +59,12 @@ export function deserializeTheme(input: unknown, registry: FilamentRegistry): Th
     } catch {
       return { valid: false, error: 'Invalid theme JSON' }
     }
+  }
+
+  if (isCanonicalThemeStateShape(parsed)) {
+    const validation = validateFoundationState(parsed)
+    if (!validation.valid) return { valid: false, error: validation.message }
+    return { valid: true, state: structuredClone(parsed) as ThemeState }
   }
 
   if (!isThemeStateShape(parsed)) return { valid: false, error: 'Invalid theme state' }
@@ -135,6 +142,10 @@ function isThemeStateShape(value: unknown): value is ThemeState {
   if (!isRecord(value) || (value.schemaVersion !== 1 && value.schemaVersion !== 2)) return false
   if (!isRecord(value.colors) || typeof value.colors.primary !== 'string') return false
   return value.schemaVersion === 1 || Array.isArray(value.overrides)
+}
+
+function isCanonicalThemeStateShape(value: unknown): value is ThemeState {
+  return isRecord(value) && (value.schemaVersion === 3 || value.schemaVersion === 4) && isRecord(value.colors) && typeof value.colors.primary === 'string' && isRecord(value.foundations)
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

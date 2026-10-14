@@ -23,4 +23,15 @@ class PreviewInspectorBridgeTest extends TestCase
             ->assertSee('compoundSelectors', false)
             ->assertSee('clearInspector', false);
     }
+
+    public function test_preview_bridge_contains_the_v4_raw_override_projection_contract(): void
+    {
+        $this->get('/demo/admin/login')
+            ->assertOk()
+            ->assertSee('rawOverrides', false)
+            ->assertSee('isSafeRawOverride', false)
+            ->assertSee('ftb-managed-theme', false)
+            ->assertSee('rawOverrideRules', false)
+            ->assertSee('url\\s*\\(', false);
+    }
 }

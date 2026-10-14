@@ -78,7 +78,7 @@ describe('foundation defaults', () => {
     first.foundations.surfaces.page.dark = '#abcdef'
     first.foundations.typography.body.name = 'Changed'
 
-    expect(second.schemaVersion).toBe(3)
+    expect(second.schemaVersion).toBe(4)
     expect(second.colors).toEqual({ primary: '#6366f1' })
     expect(second.overrides).toEqual([])
     expect(second.customCss).toBe('')

@@ -28,8 +28,9 @@ export type ThemeStateV2 = {
 }
 
 export type ThemeStateV3 = import('@/models/foundations.model').FoundationStateV3
+export type ThemeStateV4 = import('@/models/foundations.model').FoundationStateV4
 
-export type ThemeState = ThemeStateV1 | ThemeStateV2
+export type ThemeState = ThemeStateV1 | ThemeStateV2 | ThemeStateV3 | ThemeStateV4
 
 export function migrateThemeState(state: ThemeState): ThemeStateV2 {
   if (state.schemaVersion === 2) return structuredClone(state)

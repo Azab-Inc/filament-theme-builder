@@ -1,4 +1,4 @@
-import type { Density, DensityPreset, FoundationState, FoundationStateV3, PaletteName } from '@/models/foundations.model'
+import type { Density, DensityPreset, FoundationState, FoundationStateV4, PaletteName } from '@/models/foundations.model'
 import { PALETTE_NAMES } from '@/models/foundations.model'
 import { generatePalette } from '@/services/palette-generator'
 import { createDefaultIconConfiguration } from '@/registry/icon-registry'
@@ -80,12 +80,13 @@ export function createDefaultFoundationState(): FoundationState {
   return structuredClone(FOUNDATION_DEFAULTS)
 }
 
-export function createDefaultThemeState(): FoundationStateV3 {
+export function createDefaultThemeState(): FoundationStateV4 {
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     colors: { primary: PALETTE_BASES.primary },
     foundations: createDefaultFoundationState(),
     overrides: [],
+    rawOverrides: [],
     customCss: '',
     icons: createDefaultIconConfiguration(),
     branding: createDefaultPanelBrandingSettings(),

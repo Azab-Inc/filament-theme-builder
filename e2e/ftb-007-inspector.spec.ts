@@ -42,7 +42,7 @@ test.describe('FTB-007 semantic Inspector', () => {
   test('selector-only matches show a breadcrumb without navigating the editor', async ({ page }) => {
     const frame = page.frameLocator('iframe[title="Filament preview"]')
     await page.getByRole('button', { name: 'Inspector' }).click()
-    await frame.locator('.fi-section').first().click()
+    await frame.locator('.fi-section').filter({ hasText: 'Commerce overview' }).first().dispatchEvent('click')
     await expect(page.getByRole('status', { name: /inspector/i })).toContainText(/section/i)
     await expect(page).toHaveURL(/\/$/)
   })

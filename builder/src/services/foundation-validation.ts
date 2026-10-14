@@ -12,6 +12,7 @@ import { validateThemeOverride } from '@/services/theme-validation'
 import { isTrustedColor } from '@/registry/tailwind-color-catalog'
 import { validateIconConfiguration } from '@/registry/icon-registry'
 import { validatePanelBrandingSettings } from '@/services/panel-branding-validation'
+import { validateRawOverrides } from '@/services/raw-override-validation'
 
 type ValidationError = Exclude<FoundationValidationResult, { valid: true }>
 
@@ -52,9 +53,13 @@ export function isEditableFoundationPath(path: string): boolean {
 }
 
 function validateVersionedState(value: Record<string, unknown>): FoundationValidationResult {
-  const topLevel = checkKeys(value, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss', 'icons', 'branding'], ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss'], '')
+  const topLevel = checkKeys(value, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding'], ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss'], '')
   if (topLevel) return topLevel
-  if (value.schemaVersion !== 3) return invalid('invalid-value', 'schemaVersion', 'Unsupported foundation schema version')
+  if (value.schemaVersion !== 3 && value.schemaVersion !== 4) return invalid('invalid-value', 'schemaVersion', 'Unsupported foundation schema version')
+  if (value.schemaVersion === 4) {
+    const rawResult = validateRawOverrides(value.rawOverrides)
+    if (!rawResult.valid) return invalid('invalid-value', 'rawOverrides', rawResult.error)
+  }
   if (!isRecord(value.colors)) return invalid('invalid-value', 'colors', 'Colors must be an object')
   const colorKeys = checkKeys(value.colors, ['primary'], ['primary'], 'colors')
   if (colorKeys) return colorKeys

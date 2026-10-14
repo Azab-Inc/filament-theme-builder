@@ -187,10 +187,34 @@
             && (branding.brandTypography.kind !== 'custom' || branding.brandTypography.name === branding.brandTypography.family)
             && ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl', 'full'].includes(branding.contentWidth)
             && ['collapsible', 'fully-collapsible', 'top-navigation'].includes(branding.sidebar);
+        const rawVisualProperties = ['color', 'background-color', 'border-color', 'border-width', 'border-radius', 'box-shadow', 'opacity', 'padding', 'margin', 'font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'text-decoration', 'border-style', 'text-align', 'white-space'];
+        const rawSelectorPattern = /^(?:\.fi-[A-Za-z0-9_-]+)(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus|active|disabled|checked|focus-visible|focus-within))?(?:\s+\.fi-[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus|active|disabled|checked|focus-visible|focus-within))?)*$/;
+        const rawValuePattern = /[;{}<>]|\/\*|\*\/|url\s*\(|@(?:import|supports|media|layer|font-face)|expression\s*\(|javascript\s*:/i;
+        const isSafeRawPropertyValue = (property, value) => {
+            if (typeof value !== 'string' || value.length === 0 || value.length > 300 || rawValuePattern.test(value)) return false;
+            if (['color', 'background-color', 'border-color'].includes(property)) return /^(?:#[\da-f]{3,8}|(?:rgb|hsl|hwb|lab|lch|oklab|oklch)a?\([^;{}()]+\)|transparent|var\(--(?:color-)?(?:primary|success|warning|danger|info|gray)(?:-(?:50|100|200|300|400|500|600|700|800|900|950))?\))$/i.test(value);
+            if (['border-width', 'border-radius', 'font-size', 'letter-spacing'].includes(property)) return /^(?:0|(?:0|[1-9]\d{0,3})(?:\.\d+)?(?:px|rem|em|ex|ch|lh|rlh|vw|vh|vmin|vmax|%)?)$/i.test(value);
+            if (['padding', 'margin'].includes(property)) return /^(?:0|(?:0|[1-9]\d{0,3})(?:\.\d+)?(?:px|rem|em|ex|ch|lh|rlh|vw|vh|vmin|vmax|%)?)(?:\s+(?:0|(?:0|[1-9]\d{0,3})(?:\.\d+)?(?:px|rem|em|ex|ch|lh|rlh|vw|vh|vmin|vmax|%)?)){0,3}$/i.test(value);
+            if (property === 'opacity') return /^\d+(?:\.\d+)?$/.test(value) && Number(value) >= 0 && Number(value) <= 1;
+            if (property === 'font-family') return /^(?:[A-Za-z][A-Za-z0-9 _.-]{0,63})(?:\s*,\s*(?:[A-Za-z][A-Za-z0-9 _.-]{0,63}))*$/.test(value);
+            if (property === 'font-weight') return /^(?:normal|bold|100|200|300|400|500|600|700|800|900)$/.test(value);
+            if (property === 'line-height') return /^(?:normal|(?:0|\d+(?:\.\d+)?)(?:px|rem|em|%)?)$/.test(value);
+            if (property === 'box-shadow') return /^(?:none|(?:inset\s+)?(?:0|-?\d+(?:\.\d+)?(?:px|rem|em))(?:\s+(?:0|-?\d+(?:\.\d+)?(?:px|rem|em))){1,3}(?:\s+(?:#[\da-f]{3,8}|rgba?\([^;{}()]+\)|transparent))?)$/i.test(value);
+            if (property === 'text-decoration') return /^(?:none|underline|overline|line-through)$/.test(value);
+            if (property === 'border-style') return /^(?:none|solid|dashed|dotted|double)$/.test(value);
+            if (property === 'text-align') return /^(?:left|right|center|justify|start|end)$/.test(value);
+            if (property === 'white-space') return /^(?:normal|nowrap|pre|pre-wrap|pre-line|break-spaces)$/.test(value);
+            return false;
+        };
+        const isSafeRawOverride = (override) => isRecord(override)
+            && Object.keys(override).every((key) => ['selector', 'properties'].includes(key))
+            && typeof override.selector === 'string' && rawSelectorPattern.test(override.selector)
+            && isRecord(override.properties) && Object.keys(override.properties).length > 0
+            && Object.keys(override.properties).every((property) => rawVisualProperties.includes(property) && isSafeRawPropertyValue(property, override.properties[property]));
         const isAcceptedTheme = (message) => {
-            if (!isRecord(message) || message.type !== 'ftb:theme:update' || message.schemaVersion !== 1 || !['light', 'dark'].includes(message.activeMode) || !isRecord(message.projection) || message.activeMode !== message.projection.mode || !isRecord(message.theme) || !(message.theme.schemaVersion === 3)) return false;
-             const hasSupportedKeys = exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss', 'icons']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss', 'branding']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss', 'icons', 'branding']);
-             return hasSupportedKeys && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && isFoundationRecord(message.theme.foundations) && Array.isArray(message.theme.overrides) && message.theme.overrides.every(isSafeOverride) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && message.theme.customCss === '' && (message.theme.branding === undefined || isSafeBranding(message.theme.branding)) && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && isAcceptedProjection(message.projection, message.theme.foundations);
+            if (!isRecord(message) || message.type !== 'ftb:theme:update' || message.schemaVersion !== 1 || !['light', 'dark'].includes(message.activeMode) || !isRecord(message.projection) || message.activeMode !== message.projection.mode || !isRecord(message.theme) || !(message.theme.schemaVersion === 4)) return false;
+             const hasSupportedKeys = exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'branding']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding']);
+             return hasSupportedKeys && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && isFoundationRecord(message.theme.foundations) && Array.isArray(message.theme.overrides) && message.theme.overrides.every(isSafeOverride) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && Array.isArray(message.theme.rawOverrides) && message.theme.rawOverrides.every(isSafeRawOverride) && new Set(message.theme.rawOverrides.map((override) => override.selector)).size === message.theme.rawOverrides.length && message.theme.customCss === '' && (message.theme.branding === undefined || isSafeBranding(message.theme.branding)) && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && isAcceptedProjection(message.projection, message.theme.foundations);
         };
         const projectionMatchesCanonicalFoundation = (projection, foundations) => {
             const expectedMappings = [...canonicalFoundationMappings.values()].filter((entry) => {
@@ -271,14 +295,16 @@
                 else if (candidate.property === 'shadow') rules.push(`${selectors} { box-shadow: ${shadowValues[candidate.value]}; }`);
             }
             const productNameOverrides = message.theme.overrides.filter((override) => override.targetId === 'form.product-name' && override.controlId === 'background');
-            for (const scope of ['global', 'component', 'variant', 'state']) {
+             for (const scope of ['global', 'component', 'variant', 'state']) {
                 const override = productNameOverrides.find((candidate) => candidate.scope === scope);
                 if (!override) continue;
                 const mapping = formControlMappings.get(`${override.targetId}\u0000${override.controlId}`);
                 if (!mapping) continue;
                 const selector = scope === 'state' ? `${mapping.selector}:focus` : mapping.selector;
-                rules.push(`${selector} { ${mapping.property}: ${override.value} !important; }`);
-            }
+                 rules.push(`${selector} { ${mapping.property}: ${override.value} !important; }`);
+             }
+             const rawOverrideRules = [...message.theme.rawOverrides].sort((left, right) => left.selector.localeCompare(right.selector)).map((override) => `${override.selector} { ${Object.entries(override.properties).sort(([left], [right]) => left.localeCompare(right)).map(([property, value]) => `${property}: ${value};`).join(' ')} }`);
+             rules.push(...rawOverrideRules);
             const iconConfiguration = message.theme.icons ?? { pack: 'default', overrides: {} };
             const preset = iconPresets[iconConfiguration.pack];
             const iconValues = iconKeys.map((key, index) => iconConfiguration.overrides[key] ?? preset[index]);

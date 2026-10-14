@@ -35,9 +35,10 @@ describe('theme state', () => {
   it('creates a versioned default state and changes the primary color', () => {
     const theme = createThemeState()
 
-    expect(theme.theme.schemaVersion).toBe(3)
+    expect(theme.theme.schemaVersion).toBe(4)
     expect(theme.theme.colors.primary).toBe('#6366f1')
     expect(theme.theme.overrides).toEqual([])
+    expect(theme.theme.rawOverrides).toEqual([])
     for (const name of PALETTE_NAMES) {
       expect(theme.theme.foundations.palettes[name].shades).toEqual(
         generatePalette(theme.theme.foundations.palettes[name].base),
@@ -45,6 +46,39 @@ describe('theme state', () => {
     }
     theme.setPrimaryColor('#0f766e')
     expect(theme.theme.colors.primary).toBe('#0f766e')
+  })
+
+  it('keeps raw overrides separate and supports property reset through history', () => {
+    const store = createThemeState()
+
+    store.setRawOverride('.fi-btn', 'color', '#0f766e')
+    store.setRawOverride('.fi-btn', 'padding', '0.5rem 1rem')
+
+    expect(store.theme.overrides).toEqual([])
+    expect(store.theme.rawOverrides).toEqual([{
+      selector: '.fi-btn',
+      properties: { color: '#0f766e', padding: '0.5rem 1rem' },
+    }])
+
+    store.resetRawProperty('.fi-btn', 'color')
+    expect(store.theme.rawOverrides[0]?.properties).toEqual({ padding: '0.5rem 1rem' })
+    store.undo()
+    expect(store.theme.rawOverrides[0]?.properties).toEqual({ color: '#0f766e', padding: '0.5rem 1rem' })
+    store.redo()
+    expect(store.theme.rawOverrides[0]?.properties).toEqual({ padding: '0.5rem 1rem' })
+  })
+
+  it('persists raw overrides in the canonical V4 document', () => {
+    vi.useFakeTimers()
+    const store = createThemeState()
+    store.setRawOverride('.fi-input', 'border-radius', '0.75rem')
+
+    vi.advanceTimersByTime(300)
+
+    expect(JSON.parse(localStorage.getItem('ftb-theme')!)).toMatchObject({
+      schemaVersion: 4,
+      rawOverrides: [{ selector: '.fi-input', properties: { 'border-radius': '0.75rem' } }],
+    })
   })
 
   it('selects an icon pack and resets individual semantic overrides', () => {
@@ -176,7 +210,7 @@ describe('theme state', () => {
   it('migrates version-1 colors.primary into the current state without losing the color', () => {
     localStorage.setItem('ftb-theme', JSON.stringify({ schemaVersion: 1, colors: { primary: '#0f766e' } }))
     const store = useThemeStore()
-    expect(store.theme.schemaVersion).toBe(3)
+    expect(store.theme.schemaVersion).toBe(4)
     expect(store.theme.colors.primary).toBe('#0f766e')
     expect(store.theme.overrides).toEqual([])
     expect(store.theme.customCss).toBe('')
@@ -197,7 +231,7 @@ describe('theme state', () => {
 
     const store = useThemeStore()
 
-    expect(store.theme.schemaVersion).toBe(3)
+    expect(store.theme.schemaVersion).toBe(4)
     expect(store.theme.colors.primary).toBe('#0f766e')
     expect(store.theme.foundations.palettes.primary.base).toBe('#0f766e')
     expect(store.theme.overrides).toEqual([primaryButtonVariantOverride])
@@ -505,7 +539,7 @@ describe('theme state', () => {
     }))
 
     const store = useThemeStore()
-    expect(store.theme.schemaVersion).toBe(3)
+    expect(store.theme.schemaVersion).toBe(4)
     expect(store.theme.foundations.density).toBe('default')
     expect(() => store.setDensity('spacious')).not.toThrow()
   })
@@ -530,7 +564,7 @@ describe('theme state', () => {
       overrides: [primaryButtonVariantOverride, { ...primaryButtonVariantOverride, value: '#dc2626' }],
     }))
 
-    expect(useThemeStore().theme.schemaVersion).toBe(3)
+    expect(useThemeStore().theme.schemaVersion).toBe(4)
     expect(useThemeStore().theme.colors.primary).toBe('#6366f1')
     expect(useThemeStore().theme.overrides).toEqual([])
   })

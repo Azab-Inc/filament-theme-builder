@@ -75,6 +75,26 @@ Identifier: `ftb-007-inspector`
   `e2e/ftb-007-inspector.spec.ts`, `e2e/ftb-007-bridge.spec.ts`, and
   `demo/tests/Feature/PreviewInspectorBridgeTest.php`.
 
+## FTB-008 raw Inspector and FTB-004 vanilla CSS coverage
+
+Identifier: `ftb-008-raw-inspector` / `ftb-004-vanilla-css`
+Capability inventory identifier: `preview.raw-inspector`.
+
+- V4 canonical state stores typed `rawOverrides` separately from semantic
+  registry overrides; migration, validation, persistence, history, reset, and
+  JSON round-trip are covered by `raw-overrides.spec.ts`, `theme-state.spec.ts`,
+  and `theme-serialization.spec.ts`.
+- Selector proposals prefer stable single `.fi-*` classes, classify compound
+  or stateful selectors as fragile, and reject structural/unsafe selectors.
+- The Advanced Inspector exposes the editable selector and complete typed
+  visual property allowlist beside Semantic controls. Representative live
+  effects, no-reload/no-non-GET behavior, fragile warnings, and CSS download
+  action are covered by `e2e/ftb-008-raw-inspector.spec.ts`.
+- `vanilla-css-export.spec.ts` covers attribution, readable minimal output,
+  explicit-only foundations, semantic rules, and raw rules. The preview bridge
+  mirrors raw validation and ordering in `PreviewInspectorBridgeTest`.
+- FTB-024 fully-explicit export and FTB-025 Tailwind export remain deferred.
+
 ## FTB-027 upload safety coverage
 
 Identifier: `ftb-027-upload-safety`

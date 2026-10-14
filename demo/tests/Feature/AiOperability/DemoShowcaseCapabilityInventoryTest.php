@@ -47,7 +47,7 @@ class DemoShowcaseCapabilityInventoryTest extends TestCase
             'phase-1', 'dashboard.stats', 'dashboard.revenue-orders-chart', 'dashboard.recent-orders',
             'dashboard.low-stock', 'showcase.forms', 'showcase.tables', 'showcase.infolists',
             'showcase.actions', 'showcase.notifications', 'showcase.navigation', 'showcase.states',
-            'panel.icons', 'panel.branding',
+            'panel.icons', 'panel.branding', 'preview.raw-inspector',
         ] as $identifier) {
             $this->assertStringContainsString($identifier, $coverage);
         }

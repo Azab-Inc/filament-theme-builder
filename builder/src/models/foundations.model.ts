@@ -58,6 +58,11 @@ export type FoundationStateV3 = {
   branding: import('@/models/panel-branding.model').PanelBrandingSettings
 }
 
+export type FoundationStateV4 = Omit<FoundationStateV3, 'schemaVersion'> & {
+  schemaVersion: 4
+  rawOverrides: import('@/models/raw-overrides.model').RawElementOverride[]
+}
+
 export type FoundationValidationResult =
   | { valid: true; state: FoundationState }
   | { valid: false; code: 'unknown-key' | 'invalid-value' | 'unsafe-font' | 'duplicate-override' | 'unsupported-mapping'; path: string; message: string }

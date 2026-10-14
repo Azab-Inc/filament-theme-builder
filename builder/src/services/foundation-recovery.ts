@@ -1,9 +1,10 @@
-import type { FoundationState, FoundationStateV3, PaletteName } from '@/models/foundations.model'
+import type { FoundationState, FoundationStateV4, PaletteName } from '@/models/foundations.model'
 import { PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
 import { createDefaultThemeState } from '@/services/foundation-defaults'
 import { validateFoundationState } from '@/services/foundation-validation'
 import type { ThemeOverride } from '@/models/theme.model'
 import { applyPaletteOverrides, generatePalette } from '@/services/palette-generator'
+import { validateRawOverrides } from '@/services/raw-override-validation'
 
 export const LEGACY_RECOVERY_STORAGE_KEY = 'ftb-theme-legacy-recovery'
 
@@ -29,7 +30,7 @@ export function clearLegacyRecovery(): void {
   }
 }
 
-export function restoreLegacyTheme(value: unknown): FoundationStateV3 | null {
+export function restoreLegacyTheme(value: unknown): FoundationStateV4 | null {
   if (typeof value === 'string') {
     try {
       value = JSON.parse(value)
@@ -37,22 +38,24 @@ export function restoreLegacyTheme(value: unknown): FoundationStateV3 | null {
       return null
     }
   }
-  if (!isRecord(value) || value.schemaVersion !== 3 || !isRecord(value.foundations)) return null
+  if (!isRecord(value) || (value.schemaVersion !== 3 && value.schemaVersion !== 4) || !isRecord(value.foundations)) return null
   const legacy = JSON.parse(JSON.stringify(value)) as Record<string, any>
 
   const defaults = createDefaultThemeState()
   const foundations = mergeLegacyFoundations(defaults.foundations, legacy.foundations)
-  const restored: FoundationStateV3 = {
-    schemaVersion: 3,
+  const rawOverrides = validateRawOverrides(legacy.rawOverrides).valid ? structuredClone(legacy.rawOverrides) : []
+  const restored: FoundationStateV4 = {
+    schemaVersion: 4,
     colors: { primary: foundations.palettes.primary.base },
     foundations,
     overrides: Array.isArray(legacy.overrides) ? structuredClone(legacy.overrides) as ThemeOverride[] : [],
+    rawOverrides,
     customCss: typeof legacy.customCss === 'string' ? legacy.customCss : '',
     icons: defaults.icons,
     branding: defaults.branding,
   }
 
-  const validation = validateFoundationState(restored)
+  const validation = validateFoundationState(restored.foundations)
   return validation.valid ? restored : null
 }
 
@@ -64,7 +67,7 @@ export function legacyRecoveryError(value: string | null): string | null {
   } catch {
     return 'Archived data is not valid JSON. You can download it, but it cannot be restored.'
   }
-  if (!isRecord(parsed) || parsed.schemaVersion !== 3 || !isRecord(parsed.foundations)) {
+  if (!isRecord(parsed) || (parsed.schemaVersion !== 3 && parsed.schemaVersion !== 4) || !isRecord(parsed.foundations)) {
     return 'Archived data does not match the supported legacy theme format and cannot be restored.'
   }
   if (restoreLegacyTheme(parsed) === null) {

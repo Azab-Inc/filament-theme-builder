@@ -29,6 +29,22 @@ const globalOverride: ThemeOverride = {
   scope: 'global',
   value: '#334155',
 }
+
+describe('canonical V4 serialization', () => {
+  it('round-trips raw overrides without mixing them into semantic overrides', () => {
+    const state = createDefaultThemeState()
+    state.rawOverrides = [{ selector: '.fi-btn', properties: { color: '#0f766e' } }]
+
+    const restored = deserializeTheme(serializeCanonicalTheme(state), registry)
+
+    expect(restored).toMatchObject({ valid: true })
+    if (restored.valid) {
+      expect(restored.state.schemaVersion).toBe(4)
+      expect('rawOverrides' in restored.state ? restored.state.rawOverrides : undefined).toEqual(state.rawOverrides)
+      expect('overrides' in restored.state ? restored.state.overrides : undefined).toEqual([])
+    }
+  })
+})
 const equalChildOverride: ThemeOverride = {
   targetId: 'button.primary',
   controlId: 'background',
@@ -134,7 +150,7 @@ describe('theme serialization', () => {
 
     const exported = serializeCanonicalTheme(theme)
 
-    expect(exported.schemaVersion).toBe(3)
+    expect(exported.schemaVersion).toBe(4)
     expect(exported.foundations.palettes.primary.base).toBe('#0f766e')
     expect(exported.foundations.palettes.primary.shades[500]).toBe('#123456')
     expect(exported.foundations.explicitPaths).toEqual(['palettes.primary.base'])

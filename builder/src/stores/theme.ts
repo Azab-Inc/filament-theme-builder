@@ -10,11 +10,13 @@ import { archiveLegacyTheme, clearLegacyRecovery, legacyRecoveryError, readLegac
 import { clearExplicitPath, markExplicitPath, paletteOverridePath } from '@/services/foundation-provenance'
 import { applyPaletteOverrides, generatePalette } from '@/services/palette-generator'
 import { migrateThemeState } from '@/models/theme.model'
-import type { ResolveRequest, ResolveResult, ThemeOverride, ThemeState, ThemeStateV2, ThemeStateV3 } from '@/models/theme.model'
+import type { ResolveRequest, ResolveResult, ThemeOverride, ThemeState, ThemeStateV2, ThemeStateV4 } from '@/models/theme.model'
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { resolveThemeValue } from '@/services/theme-resolver'
 import { deserializeTheme } from '@/services/theme-serialization'
 import { validateThemeOverride } from '@/services/theme-validation'
+import { validateRawElementOverride, validateRawOverrides } from '@/services/raw-override-validation'
+import type { RawVisualProperty } from '@/models/raw-overrides.model'
 import type { IconPackName, ResourceIconKey } from '@/models/icons.model'
 import { createDefaultIconConfiguration, validateIconConfiguration } from '@/registry/icon-registry'
 import { createDefaultPanelBrandingSettings, validatePanelBrandingSettings } from '@/services/panel-branding-validation'
@@ -25,7 +27,7 @@ const registry = createThemeRegistry()
 const defaultTheme = createDefaultThemeState()
 
 export const useThemeStore = defineStore('theme', () => {
-  const theme = ref<ThemeStateV3>(restoreTheme())
+  const theme = ref<ThemeStateV4>(restoreTheme())
   const legacyRecovery = ref(readLegacyRecovery())
   const legacyRecoveryErrorMessage = ref(legacyRecoveryError(legacyRecovery.value))
   const history = [snapshot(theme.value)]
@@ -54,7 +56,7 @@ export const useThemeStore = defineStore('theme', () => {
     if (saveTimer) clearTimeout(saveTimer)
   })
 
-  function applyTheme(value: ThemeStateV3): void {
+  function applyTheme(value: ThemeStateV4): void {
     applyingHistory = true
     theme.value = structuredClone(value)
     applyingHistory = false
@@ -81,6 +83,41 @@ export const useThemeStore = defineStore('theme', () => {
       const overrides = theme.value.overrides.filter((existing) => !sameOverrideKey(existing, candidate))
       overrides.push(candidate)
       theme.value = { ...theme.value, overrides }
+    },
+    setRawOverride(selector: string, property: RawVisualProperty, value: string): void {
+      const existing = theme.value.rawOverrides.find((override) => override.selector === selector)
+      const candidateOverride = {
+        selector,
+        properties: { ...(existing?.properties ?? {}), [property]: value },
+      }
+      if (!validateRawElementOverride(candidateOverride).valid) return
+      const rawOverrides = theme.value.rawOverrides.filter((override) => override.selector !== selector)
+      rawOverrides.push(candidateOverride)
+      theme.value = { ...cloneTheme(theme.value), rawOverrides }
+    },
+    resetRawProperty(selector: string, property: RawVisualProperty): void {
+      const existing = theme.value.rawOverrides.find((override) => override.selector === selector)
+      if (!existing || !(property in existing.properties)) return
+      const properties = { ...existing.properties }
+      delete properties[property]
+      const rawOverrides = theme.value.rawOverrides
+        .filter((override) => override.selector !== selector)
+        .concat(Object.keys(properties).length > 0 ? [{ selector, properties }] : [])
+      theme.value = { ...cloneTheme(theme.value), rawOverrides }
+    },
+    resetRawOverride(selector: string): void {
+      if (!theme.value.rawOverrides.some((override) => override.selector === selector)) return
+      theme.value = { ...cloneTheme(theme.value), rawOverrides: theme.value.rawOverrides.filter((override) => override.selector !== selector) }
+    },
+    renameRawOverride(fromSelector: string, toSelector: string): void {
+      if (fromSelector === toSelector) return
+      const existing = theme.value.rawOverrides.find((override) => override.selector === fromSelector)
+      if (!existing || theme.value.rawOverrides.some((override) => override.selector === toSelector)) return
+      const candidate = { selector: toSelector, properties: structuredClone(existing.properties) }
+      if (!validateRawElementOverride(candidate).valid) return
+      const rawOverrides = theme.value.rawOverrides.filter((override) => override.selector !== fromSelector)
+      rawOverrides.push(candidate)
+      theme.value = { ...cloneTheme(theme.value), rawOverrides }
     },
     setFoundation(path: string, value: unknown): void {
       if (isDerivedShadePath(path) || !isEditableFoundationPath(path)) return
@@ -220,7 +257,7 @@ export const useThemeStore = defineStore('theme', () => {
         legacyRecoveryErrorMessage.value = 'Archived theme could not be restored.'
         return false
       }
-      applyTheme(restored)
+       applyTheme(restored)
       clearLegacyRecovery()
       legacyRecovery.value = null
       legacyRecoveryErrorMessage.value = null
@@ -250,7 +287,7 @@ export const useThemeStore = defineStore('theme', () => {
   }
 })
 
-function restoreTheme(): ThemeStateV3 {
+function restoreTheme(): ThemeStateV4 {
   try {
     const value = typeof localStorage === 'undefined' ? null : localStorage.getItem(storageKey)
     if (value) {
@@ -261,12 +298,13 @@ function restoreTheme(): ThemeStateV3 {
         archiveLegacyTheme(value)
         return structuredClone(defaultTheme)
       }
-      if (isVersionThree(parsed)) {
-        if (!hasTrustedProvenance(parsed)) archiveLegacyTheme(value)
-        const normalized = normalizeTheme(parsed)
-        const validation = validateFoundationState(normalized)
+      if (isVersionFour(parsed) || isLegacyVersionThree(parsed)) {
+        const current = isVersionFour(parsed) ? parsed : migrateCurrentVersion(parsed)
+        if (!hasTrustedProvenance(current)) archiveLegacyTheme(value)
+        const normalized = normalizeTheme(current)
+        const validation = validateFoundationState(normalized.foundations)
         if (validation.valid) {
-          if (!hasTrustedProvenance(parsed)) {
+          if (!hasTrustedProvenance(current)) {
             try {
               localStorage.setItem(storageKey, JSON.stringify(serializeTheme(normalized)))
             } catch {
@@ -286,11 +324,13 @@ function restoreTheme(): ThemeStateV3 {
   return structuredClone(defaultTheme)
 }
 
-function hasTrustedProvenance(value: ThemeStateV3): boolean {
+function hasTrustedProvenance(value: ThemeStateV4): boolean {
   return value.foundations.provenanceVersion === 1
 }
 
-function migrateToCurrent(state: ThemeState): ThemeStateV3 {
+function migrateToCurrent(state: ThemeState): ThemeStateV4 {
+  if (isVersionFour(state)) return normalizeTheme(state)
+  if (isLegacyVersionThree(state)) return migrateCurrentVersion(state)
   const legacy = migrateThemeState(state)
   const current = createDefaultThemeState()
   const defaultPrimary = current.colors.primary
@@ -300,12 +340,14 @@ function migrateToCurrent(state: ThemeState): ThemeStateV3 {
     markExplicitPath(current.foundations, 'palettes.primary.base')
   }
   current.overrides = structuredClone(legacy.overrides)
+  current.rawOverrides = []
   normalizePalettes(current)
   return current
 }
 
-function normalizeTheme(value: ThemeStateV3): ThemeStateV3 {
+function normalizeTheme(value: ThemeStateV4): ThemeStateV4 {
   const normalized = cloneTheme(value)
+  if (!Array.isArray(normalized.rawOverrides) || !validateRawOverrides(normalized.rawOverrides).valid) normalized.rawOverrides = []
   if (!normalized.icons) normalized.icons = createDefaultIconConfiguration()
   if (!normalized.branding) normalized.branding = createDefaultPanelBrandingSettings()
   if (normalized.foundations.provenanceVersion !== 1) {
@@ -318,12 +360,12 @@ function normalizeTheme(value: ThemeStateV3): ThemeStateV3 {
   return normalized
 }
 
-function normalizePalettes(value: ThemeStateV3): void {
+function normalizePalettes(value: ThemeStateV4): void {
   value.colors.primary = value.foundations.palettes.primary.base
   for (const palette of Object.values(value.foundations.palettes)) rebuildPalette(palette)
 }
 
-function serializeTheme(value: ThemeStateV3): unknown {
+function serializeTheme(value: ThemeStateV4): unknown {
   const serialized = cloneTheme(value)
   for (const palette of Object.values(serialized.foundations.palettes)) {
     delete (palette as unknown as { shades?: Record<number, string> }).shades
@@ -356,23 +398,23 @@ function matchesRequest(override: ThemeOverride, request: ResolveRequest, scope:
     && override.stateId === request.stateId
 }
 
-function sameTheme(left: ThemeStateV3, right: ThemeStateV3): boolean {
+function sameTheme(left: ThemeStateV4, right: ThemeStateV4): boolean {
   return JSON.stringify(left) === JSON.stringify(right)
 }
 
-function snapshot(value: ThemeStateV3): ThemeStateV3 {
-  return structuredClone(JSON.parse(JSON.stringify(toRaw(value))) as ThemeStateV3)
+function snapshot(value: ThemeStateV4): ThemeStateV4 {
+  return structuredClone(JSON.parse(JSON.stringify(toRaw(value))) as ThemeStateV4)
 }
 
-function cloneTheme(value: ThemeStateV3): ThemeStateV3 {
-  return structuredClone(JSON.parse(JSON.stringify(toRaw(value))) as ThemeStateV3)
+function cloneTheme(value: ThemeStateV4): ThemeStateV4 {
+  return structuredClone(JSON.parse(JSON.stringify(toRaw(value))) as ThemeStateV4)
 }
 
-function rebuildPalette(palette: ThemeStateV3['foundations']['palettes'][PaletteName]): void {
+function rebuildPalette(palette: ThemeStateV4['foundations']['palettes'][PaletteName]): void {
   palette.shades = applyPaletteOverrides(generatePalette(palette.base), palette.overrides)
 }
 
-function syncPalette(theme: ThemeStateV3, path: string): void {
+function syncPalette(theme: ThemeStateV4, path: string): void {
   const match = /^palettes\.(primary|success|warning|danger|info|gray)\.(base|overrides)(?:\.|$)/.exec(path)
   if (!match) return
   const name = match[1] as PaletteName
@@ -385,7 +427,7 @@ function isDerivedShadePath(path: string): boolean {
   return /^palettes\.(primary|success|warning|danger|info|gray)\.shades(?:\.|$)/.test(path)
 }
 
-function toLegacyTheme(value: ThemeStateV3): ThemeStateV2 {
+function toLegacyTheme(value: ThemeStateV4): ThemeStateV2 {
   return {
     schemaVersion: 2,
     colors: { primary: value.colors.primary },
@@ -427,8 +469,16 @@ function selectMode<T>(values: Record<string, { light: T; dark: T }>, mode: Them
   return Object.fromEntries(Object.entries(values).map(([key, value]) => [key, value[mode]]))
 }
 
-function isVersionThree(value: unknown): value is ThemeStateV3 {
+function isVersionFour(value: unknown): value is ThemeStateV4 {
+  return isRecord(value) && value.schemaVersion === 4 && Array.isArray(value.rawOverrides)
+}
+
+function isLegacyVersionThree(value: unknown): value is import('@/models/theme.model').ThemeStateV3 {
   return isRecord(value) && value.schemaVersion === 3
+}
+
+function migrateCurrentVersion(value: import('@/models/theme.model').ThemeStateV3): ThemeStateV4 {
+  return { ...structuredClone(value), schemaVersion: 4, rawOverrides: [] }
 }
 
 function isRecord(value: unknown): value is Record<string, any> {

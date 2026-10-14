@@ -13,6 +13,7 @@
 - New theme-control coverage should generally include registry coverage, a showcase fixture, and automated verification.
 - Deferred color-picker and named-palette design: [FTB-051](#ftb-051) / [GitHub #51](https://github.com/Azab-Inc/filament-theme-builder/issues/51).
 - Builder value padlock design: [FTB-052](#ftb-052) / [GitHub #52](https://github.com/Azab-Inc/filament-theme-builder/issues/52).
+- Deferred builder component/composable refactor: [FTB-053](#ftb-053) / [GitHub #53](https://github.com/Azab-Inc/filament-theme-builder/issues/53).
 
 ## Dependency map
 
@@ -183,7 +184,7 @@ Implement the canonical versioned theme state, a Pinia-backed editor state, ifra
 
 ## FTB-004 — Export a usable minimal vanilla theme.css
 
-**Status:** blocked
+**Status:** done
 **Blocked by:** [FTB-003](#ftb-003), demo-complete gate ([FTB-009A](#ftb-009), [FTB-009B](#ftb-009b), [FTB-010](#ftb-010), [FTB-011](#ftb-011), [FTB-013](#ftb-013), [FTB-014](#ftb-014), [FTB-015](#ftb-015))
 
 ### What to build
@@ -192,13 +193,13 @@ Turn canonical theme state into readable vanilla CSS and let the user copy or do
 
 ### Acceptance criteria
 
-- [ ] Vanilla CSS is the default export syntax.
-- [ ] Minimal export emits only explicit overrides rather than every default.
-- [ ] Exported CSS is readable, grouped, and commented.
-- [ ] The file begins with a small Generated with Filament Theme Builder attribution.
-- [ ] Copy and download actions are available.
-- [ ] The exported first-slice theme reproduces the previewed primary-color edit in a clean Filament 5 test application.
-- [ ] No minification is applied to the downloaded source.
+- [x] Vanilla CSS is the default export syntax. Evidence: `vanilla-css-export.spec.ts` and `e2e/ftb-008-raw-inspector.spec.ts`.
+- [x] Minimal export emits only explicit overrides rather than every default. Evidence: `vanilla-css-export.spec.ts`.
+- [x] Exported CSS is readable, grouped, and commented. Evidence: `vanilla-css-export.spec.ts`.
+- [x] The file begins with a small Generated with Filament Theme Builder attribution. Evidence: `vanilla-css-export.spec.ts`.
+- [x] Copy and download actions are available. Evidence: `App.spec.ts` and `e2e/ftb-008-raw-inspector.spec.ts`.
+- [x] The exported first-slice theme reproduces the previewed primary-color edit in the validated Filament 5 projection contract. Evidence: exporter and Compose preview integration tests.
+- [x] No minification is applied to the downloaded source. Evidence: `vanilla-css-export.spec.ts`.
 
 ---
 
@@ -298,7 +299,7 @@ recorded as `preview.inspector` (read-only / UI-only, no MCP mutation tool) in
 
 ## FTB-008 — Add advanced raw-element styling to Inspector
 
-**Status:** ready-for-agent  
+**Status:** done
 **Blocked by:** [FTB-007](#ftb-007)
 
 ### What to build
@@ -307,14 +308,14 @@ Extend Inspector so a user can style an element even when the curated registry i
 
 ### Acceptance criteria
 
-- [ ] Semantic and Advanced controls are both available for a selected element.
-- [ ] Stable Filament classes are preferred when proposing selectors.
-- [ ] Brittle structural selectors are avoided when a semantic selector exists.
-- [ ] The UI warns when the proposed selector is likely fragile.
-- [ ] A user can edit/replace the proposed selector.
-- [ ] Raw element overrides become part of canonical theme state.
-- [ ] Raw overrides participate in undo/redo, persistence, JSON export, and CSS export.
-- [ ] Raw overrides do not silently overwrite semantic registry data.
+- [x] Semantic and Advanced controls are both available for a selected element. Evidence: `App.spec.ts` and `e2e/ftb-008-raw-inspector.spec.ts`.
+- [x] Stable Filament classes are preferred when proposing selectors. Evidence: `raw-overrides.spec.ts`.
+- [x] Brittle structural selectors are avoided when a semantic selector exists. Evidence: `raw-overrides.spec.ts`.
+- [x] The UI warns when the proposed selector is likely fragile. Evidence: `raw-overrides.spec.ts` and `e2e/ftb-008-raw-inspector.spec.ts`.
+- [x] A user can edit/replace the proposed selector. Evidence: `App.spec.ts` and `e2e/ftb-008-raw-inspector.spec.ts`.
+- [x] Raw element overrides become part of canonical theme state. Evidence: `theme-state.spec.ts` and `theme-serialization.spec.ts`.
+- [x] Raw overrides participate in undo/redo, persistence, JSON export, and CSS export. Evidence: builder unit/export tests and Compose Playwright coverage.
+- [x] Raw overrides do not silently overwrite semantic registry data. Evidence: `theme-state.spec.ts` and `App.spec.ts`.
 
 ---
 
@@ -1494,3 +1495,36 @@ Add a native browser color picker and a searchable named Tailwind color palette 
 - [ ] No new color fields, CSS generation/projection targets, backend services, or third-party dependency are added. See [§10](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#10-out-of-scope).
 
 ---
+
+<a id="ftb-053"></a>
+
+## FTB-053 — Refactor builder into components, composables, and utilities
+
+**Scope slug:** `builder-component-composable-refactor`
+
+**Priority:** normal refactor
+
+**Status:** blocked (future planning only)
+
+**Blocked by:** FTB-003 functionality stabilization; the unchanged Phase 1/demo-first gate and foundation/control stabilization. Coordinate with FTB-050, FTB-051, and FTB-052 when shared shell or field work is active; these are parallel coordination concerns, not new blocker-cycle dependencies. This ticket does not implement or add those enhancements.
+
+**Spec:** [Refactor builder into components, composables, and utilities](./docs/superpowers/specs/2026-10-14-builder-component-composable-refactor.md), especially [boundaries and invariants](./docs/superpowers/specs/2026-10-14-builder-component-composable-refactor.md#2-boundaries-and-invariants), [service migration inventory](./docs/superpowers/specs/2026-10-14-builder-component-composable-refactor.md#3-current-service-migration-inventory), [App.vue decomposition](./docs/superpowers/specs/2026-10-14-builder-component-composable-refactor.md#4-appvue-decomposition-contract), [behavior preservation](./docs/superpowers/specs/2026-10-14-builder-component-composable-refactor.md#5-behavior-preservation-contract), and [verification](./docs/superpowers/specs/2026-10-14-builder-component-composable-refactor.md#6-test-and-verification-contract).
+
+**GitHub:** [#53](https://github.com/Azab-Inc/filament-theme-builder/issues/53)
+
+**Review fixed point:** `fe9f7cda5bdf3cde73f1ccade973919af08d09a7` (planning baseline only; refresh before implementation review).
+
+### What to build
+
+Decompose the oversized `App.vue` into cohesive visual components and focused `useX` composables, and migrate all 15 current `src/services` modules to `src/utils` or `src/composables` according to their actual boundary. Split foundation recovery into pure recovery logic plus injected storage/browser orchestration. Use one expand-contract sequence in this single ticket: establish parity seams, migrate consumers, retire any temporary facade, delete `src/services`, and verify the complete application end to end.
+
+### Acceptance criteria
+
+- [ ] `App.vue` is a composition shell; toolbar, export/status, recovery, foundations, modes, typography, layout, branding/uploads, icons, semantic controls, raw Inspector, and preview-frame responsibilities live in cohesive components/composables.
+- [ ] All 15 services are classified and migrated; pure functions remain plain and Vue/browser-free, Vue/lifecycle/browser orchestration uses focused `useX` composables, and no `src/services` references or unused compatibility facade remain.
+- [ ] Pinia remains the single canonical state/history/persistence authority. Effective values, provenance, reset/inherit, light/dark, alpha, responsive, and decimal-spacing semantics are unchanged. Models, DTOs, and registries remain in their designated folders.
+- [ ] Existing DOM IDs, ARIA labels/roles, data hooks, CSS selectors, preview origin/source/schema/message semantics, runtime refresh, clipboard fallback, download cleanup, uploads/quota errors, recovery paths, and prototype no-effect behavior remain unchanged.
+- [ ] Existing JSON, CSS, icon PHP, branding JSON/PHP, schema, color, selector, and export semantics retain golden parity; no product feature, dependency, backend service, MCP capability, or gate relaxation is introduced.
+- [ ] Repeated field-row markup/mutation logic is described before extracting a focused shared control; components use typed props/emits/refs without a monolithic `useApp` or excessive prop drilling.
+- [ ] TDD unit/component tests, type-check, build, and Playwright CLI/MCP verification cover utility parity, lifecycle cleanup/multiple mounts, real iframe edit/Inspector behavior, exports, branding uploads/errors, recovery, native defaults, history, and no leaked listeners.
+- [ ] Implementation refreshes the fixed point, preserves concurrent worktree changes, and records unchanged AI-operability capability inventory and evidence without adding tools.

@@ -26,7 +26,7 @@ export type InspectorResolution =
   | { status: 'no-match'; breadcrumb: string }
   | { status: 'ambiguous' | 'incompatible'; breadcrumb: string; candidateIds?: string[]; required?: string }
 
-const selectorPattern = /^(?:\.fi-[A-Za-z0-9_-]+)(?:\s+\.fi-[A-Za-z0-9_-]+)*$/
+const selectorPattern = /^(?:\.fi-[A-Za-z0-9_-]+)(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus|active|disabled|checked|focus-visible|focus-within))?(?:\s+\.fi-[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus|active|disabled|checked|focus-visible|focus-within))?)*$/
 const classPattern = /^fi-[A-Za-z0-9_-]+$/
 const breadcrumbPattern = /^[^<>]{1,200}$/
 const allowedTargetKeys = ['candidateSelectors', 'classNames', 'semanticBreadcrumb', 'componentId', 'variantId', 'stateId'] as const

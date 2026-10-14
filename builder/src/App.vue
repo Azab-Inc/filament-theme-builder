@@ -9,7 +9,7 @@ import type {
   PaletteShade,
   ThemeMode,
 } from '@/models/foundations.model'
-import type { ResolveRequest, ThemeOverride, ThemeScope } from '@/models/theme.model'
+import type { ResolveRequest, ThemeOverride, ThemeScope, ThemeStateV4 } from '@/models/theme.model'
 import type { IconPackName, ResourceIconKey } from '@/models/icons.model'
 import type { PanelBrandingSetting } from '@/models/panel-branding.model'
 import { ICON_PACK_NAMES, RESOURCE_ICON_KEYS } from '@/models/icons.model'
@@ -20,11 +20,14 @@ import { lookupFoundationMapping } from '@/registry/filament-foundation-inventor
 import { serializeCanonicalTheme } from '@/services/theme-serialization'
 import { exportIconConfigurationPhp } from '@/services/icon-export'
 import { exportPanelBrandingJson, exportPanelProviderBrandingPhp } from '@/services/panel-branding-export'
+import { exportVanillaCss } from '@/services/vanilla-css-export'
+import { ALL_RAW_VISUAL_PROPERTIES, type RawVisualProperty } from '@/models/raw-overrides.model'
+import { classifyRawSelector, proposeRawSelector, validateRawSelector } from '@/services/raw-override-validation'
 import { isExplicitPath } from '@/services/foundation-provenance'
 import { validateFoundationColor } from '@/services/foundation-validation'
 import { resolveInspectorTarget } from '@/registry/theme-registry'
 import { createThemeRegistry } from '@/registry/theme-registry'
-import { isInspectorEvent, INSPECTOR_PROTOCOL_VERSION, type InspectorCommand, type InspectorEvent, type InspectorResolution } from '@/services/inspector-protocol'
+import { isInspectorEvent, INSPECTOR_PROTOCOL_VERSION, type InspectorCommand, type InspectorEvent, type InspectorResolution, type InspectorTargetEvidence } from '@/services/inspector-protocol'
 import { useThemeStore } from '@/stores/theme'
 import ThrowawayThemePrototype from '@/components/ThrowawayThemePrototype.vue'
 import HoverInspectPrototype from '@/components/HoverInspectPrototype.vue'
@@ -40,6 +43,10 @@ const iframe = ref<HTMLIFrameElement>()
 const iframeSrc = ref(previewUrl)
 const inspectorEnabled = ref(false)
 const inspectorResolution = ref<InspectorResolution | null>(null)
+const selectedInspectorEvidence = ref<InspectorTargetEvidence | null>(null)
+const rawSelector = ref('')
+const rawSelectorError = ref<string | undefined>()
+const exportStatus = ref('')
 const runtimeLoading = ref(false)
 const { canUndo, canRedo } = storeToRefs(theme)
 const paletteNames = PALETTE_NAMES
@@ -123,6 +130,16 @@ const productNameRows = computed(() => productNameScopes.map((row) => {
   }
 }))
 const inspectorRegistry = createThemeRegistry()
+const rawProperties = ALL_RAW_VISUAL_PROPERTIES
+const rawSelectorProposal = computed(() => selectedInspectorEvidence.value
+  ? proposeRawSelector(selectedInspectorEvidence.value, inspectorRegistry)
+  : { selector: null, quality: 'unavailable' as const })
+const rawSelectorClassification = computed(() => rawSelector.value ? classifyRawSelector(rawSelector.value) : rawSelectorProposal.value)
+const selectedRawOverride = computed(() => theme.theme.rawOverrides.find((override) => override.selector === rawSelector.value))
+
+watch(rawSelectorProposal, (proposal) => {
+  if (!rawSelector.value || rawSelectorError.value) rawSelector.value = proposal.selector ?? ''
+}, { immediate: true })
 
 function postInspectorCommand(enabled = inspectorEnabled.value): void {
   const target = iframe.value?.contentWindow
@@ -150,10 +167,17 @@ function handleInspectorMessage(event: MessageEvent): void {
   }
   if (message.type === 'ftb:inspector:clear') {
     inspectorResolution.value = null
+    selectedInspectorEvidence.value = null
+    rawSelector.value = ''
     return
   }
   const resolution = resolveInspectorTarget(inspectorRegistry, message.target)
   inspectorResolution.value = resolution
+  if (message.type === 'ftb:inspector:select') {
+    selectedInspectorEvidence.value = message.target
+    rawSelectorError.value = undefined
+    rawSelector.value = rawSelectorProposal.value.selector ?? ''
+  }
   if (message.type === 'ftb:inspector:select' && resolution.status === 'editable' && resolution.editorTarget === 'form.product-name') {
     document.querySelector('[data-editor-target="form.product-name"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
@@ -162,6 +186,7 @@ function handleInspectorMessage(event: MessageEvent): void {
 function onPreviewLoad(): void {
   runtimeLoading.value = false
   inspectorResolution.value = null
+  selectedInspectorEvidence.value = null
   postTheme()
   postInspectorCommand()
 }
@@ -390,6 +415,30 @@ function exportBrandingPhp(): void {
   downloadText('filament-panel-branding.php', exportPanelProviderBrandingPhp(theme.theme.branding), 'text/plain')
 }
 
+function exportVanillaThemeCss(): void {
+  exportStatus.value = 'Vanilla CSS download started.'
+  downloadText('theme.css', exportVanillaCss(theme.theme as unknown as ThemeStateV4), 'text/css')
+}
+
+async function copyVanillaThemeCss(): Promise<void> {
+  const contents = exportVanillaCss(theme.theme as unknown as ThemeStateV4)
+  try {
+    await navigator.clipboard.writeText(contents)
+    exportStatus.value = 'Vanilla CSS copied to clipboard.'
+  } catch {
+    const textarea = document.createElement('textarea')
+    textarea.value = contents
+    textarea.setAttribute('readonly', '')
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.append(textarea)
+    textarea.select()
+    const copied = document.execCommand('copy')
+    textarea.remove()
+    exportStatus.value = copied ? 'Vanilla CSS copied to clipboard.' : 'Copy failed; use Download CSS instead.'
+  }
+}
+
 async function uploadBrandingAsset(setting: PanelBrandingSetting, event: Event): Promise<void> {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
@@ -421,13 +470,13 @@ function setBrandTypography(event: Event): void {
 }
 
 function downloadText(filename: string, contents: string, type: string): void {
-  const blob = new Blob([contents], { type })
-  const url = URL.createObjectURL(blob)
+  const url = `data:${type};charset=utf-8,${encodeURIComponent(contents)}`
   const link = document.createElement('a')
   link.href = url
   link.download = filename
+  document.body.append(link)
   link.click()
-  URL.revokeObjectURL(url)
+  window.setTimeout(() => link.remove(), 0)
 }
 
 function setIconPack(event: Event): void {
@@ -483,6 +532,36 @@ function resetProductNameValue(row: (typeof productNameRows.value)[number]): voi
   theme.resetOverride(row.request)
 }
 
+function rawPropertyValue(property: RawVisualProperty): string {
+  return selectedRawOverride.value?.properties[property] ?? ''
+}
+
+function setRawProperty(property: RawVisualProperty, event: Event): void {
+  if (!rawSelector.value || !validateRawSelector(rawSelector.value).valid) return
+  theme.setRawOverride(rawSelector.value, property, (event.target as HTMLInputElement).value.trim())
+}
+
+function resetRawProperty(property: RawVisualProperty): void {
+  if (rawSelector.value) theme.resetRawProperty(rawSelector.value, property)
+}
+
+function resetRawOverride(): void {
+  if (rawSelector.value) theme.resetRawOverride(rawSelector.value)
+}
+
+function setRawSelector(event: Event): void {
+  const next = (event.target as HTMLInputElement).value.trim()
+  const validation = validateRawSelector(next)
+  rawSelectorError.value = validation.valid ? undefined : validation.error
+  if (!validation.valid) {
+    rawSelector.value = next
+    return
+  }
+  const previous = rawSelector.value
+  if (theme.theme.rawOverrides.some((override) => override.selector === previous)) theme.renameRawOverride(previous, next)
+  rawSelector.value = next
+}
+
 function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
   return override.targetId === productNameTarget.targetId
     && override.controlId === productNameTarget.controlId
@@ -514,6 +593,12 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
       <button type="button" aria-label="Export theme JSON" @click="exportCanonicalJson">
         Export JSON
       </button>
+      <button type="button" aria-label="Copy vanilla CSS" @click="copyVanillaThemeCss">
+        Copy CSS
+      </button>
+      <button type="button" aria-label="Download vanilla CSS" @click="exportVanillaThemeCss">
+        Download CSS
+      </button>
       <button type="button" aria-label="Export PanelProvider icon config" @click="exportIconPhp">
         Export icon PHP
       </button>
@@ -527,6 +612,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
       <button type="button" aria-label="Redo" :disabled="!canRedo" @click="redo">Redo</button>
       <button type="button" aria-label="Inspector" :aria-pressed="inspectorEnabled" @click="toggleInspector">Inspector</button>
     </header>
+    <p v-if="exportStatus" role="status" aria-label="Export status" aria-live="polite" data-export-status>{{ exportStatus }}</p>
     <p role="status" aria-label="Inspector status" aria-live="polite" data-inspector-status>
       <template v-if="!inspectorEnabled">Inspector disabled</template>
       <template v-else-if="inspectorResolution">{{ inspectorResolution.breadcrumb }}</template>
@@ -885,6 +971,28 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         </div>
       </fieldset>
     </section>
+    <section v-if="selectedInspectorEvidence" class="advanced-inspector grid gap-4" aria-labelledby="advanced-inspector-heading" data-advanced-inspector>
+      <h2 id="advanced-inspector-heading">Advanced Inspector</h2>
+      <p>Raw visual overrides are validated typed properties and remain separate from Semantic controls.</p>
+      <fieldset class="grid gap-2 rounded-lg border border-zinc-200 p-4">
+        <legend>Raw element target</legend>
+        <label for="raw-selector">Selector</label>
+        <input id="raw-selector" aria-label="Raw element selector" :value="rawSelector" :aria-invalid="rawSelectorError ? 'true' : undefined" @input="setRawSelector" />
+        <p v-if="rawSelectorClassification.quality === 'fragile'" role="alert" data-selector-warning>{{ rawSelectorClassification.warning }}</p>
+        <p v-if="rawSelectorError" role="alert">{{ rawSelectorError }}</p>
+        <p v-else-if="rawSelectorClassification.quality === 'stable'" role="status">Stable Filament selector proposed.</p>
+        <p v-else-if="rawSelectorClassification.quality === 'unavailable'" role="alert">No safe selector was detected.</p>
+      </fieldset>
+      <fieldset class="grid gap-2 rounded-lg border border-zinc-200 p-4">
+        <legend>Visual properties</legend>
+        <div v-for="property in rawProperties" :key="property" class="raw-property-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto]">
+          <label :for="`raw-${property}`">{{ property }}</label>
+          <input :id="`raw-${property}`" :aria-label="`Raw ${property}`" :value="rawPropertyValue(property)" @input="setRawProperty(property, $event)" />
+          <button type="button" :aria-label="`Reset raw ${property}`" @click="resetRawProperty(property)">Reset</button>
+        </div>
+        <button type="button" aria-label="Reset raw element override" @click="resetRawOverride">Reset raw override</button>
+      </fieldset>
+    </section>
     <iframe
       ref="iframe"
       :src="iframeSrc"
@@ -955,5 +1063,21 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
   width: 100%;
   flex: 1;
   border: 0;
+}
+
+.advanced-inspector {
+  max-height: 45vh;
+  overflow: auto;
+  padding: 0 1rem 1rem;
+}
+
+.raw-property-row {
+  align-items: center;
+}
+
+@media (max-width: 767px) {
+  .advanced-inspector {
+    max-height: 50vh;
+  }
 }
 </style>
