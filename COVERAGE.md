@@ -57,6 +57,24 @@ Identifier: `nested-resource`
 - `e2e/smoke.spec.ts` covers the builder iframe, public panel, login/logout,
   preview message origin filtering, and Compose gateway/API/asset behavior.
 
+## FTB-007 semantic Inspector coverage
+
+Identifier: `ftb-007-inspector`
+
+- The builder keeps the iframe URL and normal preview navigation intact while
+  Inspector mode is toggled.
+- The bridge emits temporary/selected outlines and safe selector evidence;
+  ancestor selector chains preserve mapped controls such as the Product name
+  input without weakening origin, source, or protocol validation.
+- The builder accepts only versioned messages from the current iframe and exact
+  preview origin, resolves mapped controls to canonical editor breadcrumbs,
+  preserves bridge breadcrumbs for selector-only matches, and scrolls only the
+  mapped editor target.
+- Evidence: `builder/src/__tests__/App.spec.ts`,
+  `builder/src/__tests__/inspector-protocol.spec.ts`,
+  `e2e/ftb-007-inspector.spec.ts`, `e2e/ftb-007-bridge.spec.ts`, and
+  `demo/tests/Feature/PreviewInspectorBridgeTest.php`.
+
 ## FTB-027 upload safety coverage
 
 Identifier: `ftb-027-upload-safety`

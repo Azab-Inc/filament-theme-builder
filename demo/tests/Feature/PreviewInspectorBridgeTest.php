@@ -20,6 +20,7 @@ class PreviewInspectorBridgeTest extends TestCase
             ->assertSee('ftb-inspector-hover', false)
             ->assertSee('ftb-inspector-selected', false)
             ->assertSee('candidateSelectors', false)
+            ->assertSee('compoundSelectors', false)
             ->assertSee('clearInspector', false);
     }
 }

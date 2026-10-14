@@ -6,6 +6,8 @@ import type {
   RegistryLookupResult,
   RegistryValueType,
 } from '@/models/theme-registry.model'
+import type { InspectorResolution, InspectorTargetEvidence } from '@/services/inspector-protocol'
+import { resolveInspectorTarget as resolveInspectorTargetFromEvidence } from '@/services/inspector-protocol'
 
 const valueTypes: readonly RegistryValueType[] = ['boolean', 'color', 'number', 'string']
 const compatibilityPattern = /^(\d+)\.x$/
@@ -237,6 +239,10 @@ export function lookupRegistryEntry(registry: FilamentRegistry, evidence: Regist
   if (compatible.length > 1) return { status: 'ambiguous', candidateIds: compatible.map(({ id }) => id).sort() }
 
   return { status: 'matched', entry: compatible[0]! }
+}
+
+export function resolveInspectorTarget(registry: FilamentRegistry, evidence: InspectorTargetEvidence): InspectorResolution {
+  return resolveInspectorTargetFromEvidence(registry, evidence)
 }
 
 function validateEntry(entry: RegistryEntry, ids: Set<string>): void {

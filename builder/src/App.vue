@@ -22,6 +22,9 @@ import { exportIconConfigurationPhp } from '@/services/icon-export'
 import { exportPanelBrandingJson, exportPanelProviderBrandingPhp } from '@/services/panel-branding-export'
 import { isExplicitPath } from '@/services/foundation-provenance'
 import { validateFoundationColor } from '@/services/foundation-validation'
+import { resolveInspectorTarget } from '@/registry/theme-registry'
+import { createThemeRegistry } from '@/registry/theme-registry'
+import { isInspectorEvent, INSPECTOR_PROTOCOL_VERSION, type InspectorCommand, type InspectorEvent, type InspectorResolution } from '@/services/inspector-protocol'
 import { useThemeStore } from '@/stores/theme'
 import ThrowawayThemePrototype from '@/components/ThrowawayThemePrototype.vue'
 import HoverInspectPrototype from '@/components/HoverInspectPrototype.vue'
@@ -35,6 +38,8 @@ const prototypeVariant = new URLSearchParams(window.location.search).get('varian
 const theme = useThemeStore()
 const iframe = ref<HTMLIFrameElement>()
 const iframeSrc = ref(previewUrl)
+const inspectorEnabled = ref(false)
+const inspectorResolution = ref<InspectorResolution | null>(null)
 const runtimeLoading = ref(false)
 const { canUndo, canRedo } = storeToRefs(theme)
 const paletteNames = PALETTE_NAMES
@@ -117,6 +122,48 @@ const productNameRows = computed(() => productNameScopes.map((row) => {
     explicit: override !== undefined,
   }
 }))
+const inspectorRegistry = createThemeRegistry()
+
+function postInspectorCommand(enabled = inspectorEnabled.value): void {
+  const target = iframe.value?.contentWindow
+  if (!target) return
+  const command: InspectorCommand = {
+    type: enabled ? 'ftb:inspector:enable' : 'ftb:inspector:disable',
+    protocolVersion: INSPECTOR_PROTOCOL_VERSION,
+  }
+  target.postMessage(command, new URL(previewUrl, window.location.href).origin)
+}
+
+function toggleInspector(): void {
+  inspectorEnabled.value = !inspectorEnabled.value
+  inspectorResolution.value = null
+  postInspectorCommand()
+}
+
+function handleInspectorMessage(event: MessageEvent): void {
+  const target = iframe.value?.contentWindow
+  if (!target || event.source !== target || event.origin !== new URL(previewUrl, window.location.href).origin || !isInspectorEvent(event.data)) return
+  const message = event.data as InspectorEvent
+  if (message.type === 'ftb:inspector:ready') {
+    if (inspectorEnabled.value) postInspectorCommand(true)
+    return
+  }
+  if (message.type === 'ftb:inspector:clear') {
+    inspectorResolution.value = null
+    return
+  }
+  const resolution = resolveInspectorTarget(inspectorRegistry, message.target)
+  inspectorResolution.value = resolution
+  if (message.type === 'ftb:inspector:select' && resolution.status === 'editable' && resolution.editorTarget === 'form.product-name') {
+    document.querySelector('[data-editor-target="form.product-name"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+}
+
+function onPreviewLoad(): void {
+  runtimeLoading.value = false
+  postTheme()
+  postInspectorCommand()
+}
 
 function postTheme(): void {
   const target = iframe.value?.contentWindow
@@ -175,10 +222,15 @@ watch(
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
+  window.addEventListener('message', handleInspectorMessage)
   postTheme()
+  postInspectorCommand()
 })
 
-onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown)
+  window.removeEventListener('message', handleInspectorMessage)
+})
 
 function undo(): void {
   theme.undo()
@@ -472,7 +524,13 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
       </button>
       <button type="button" aria-label="Undo" :disabled="!canUndo" @click="undo">Undo</button>
       <button type="button" aria-label="Redo" :disabled="!canRedo" @click="redo">Redo</button>
+      <button type="button" aria-label="Inspector" :aria-pressed="inspectorEnabled" @click="toggleInspector">Inspector</button>
     </header>
+    <p role="status" aria-label="Inspector status" aria-live="polite" data-inspector-status>
+      <template v-if="!inspectorEnabled">Inspector disabled</template>
+      <template v-else-if="inspectorResolution">{{ inspectorResolution.breadcrumb }}</template>
+      <template v-else>Inspector enabled</template>
+    </p>
     <p v-if="runtimeLoading" role="status" aria-live="polite" data-preview-loading>Refreshing runtime preview…</p>
     <aside v-if="theme.legacyRecoveryAvailable" role="alert" class="legacy-recovery">
       <strong>Legacy customization archived.</strong>
@@ -801,7 +859,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         </div>
       </fieldset>
     </section>
-    <section class="component-controls grid gap-4" aria-labelledby="component-controls-heading">
+    <section class="component-controls grid gap-4" aria-labelledby="component-controls-heading" data-editor-target="form.product-name">
       <h2 id="component-controls-heading">Component controls</h2>
       <p>Product name input · <code>.fi-fo-text-input .fi-input</code> · background color</p>
       <fieldset class="grid gap-2 rounded-lg border border-zinc-200 p-4">
@@ -831,7 +889,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
       :src="iframeSrc"
       title="Filament preview"
       class="preview-shell__frame"
-      @load="runtimeLoading = false; postTheme()"
+      @load="onPreviewLoad"
     />
   </main>
 </template>

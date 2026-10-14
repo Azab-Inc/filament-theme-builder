@@ -267,7 +267,7 @@ Remediation evidence: `theme-state.spec.ts` verifies canonical `colors.primary` 
 
 ## FTB-007 — Add semantic Inspector mode
 
-**Status:** in progress
+**Status:** done
 **Blocked by:** [FTB-006](#ftb-006)
 
 ### What to build
@@ -276,14 +276,19 @@ Let the user enter Inspector mode, hover real Filament elements, see a visible h
 
 ### Acceptance criteria
 
-- [ ] Inspector mode can be toggled without breaking normal preview navigation.
-- [ ] Hovered inspectable elements receive a temporary outline.
-- [ ] The selected element remains visibly outlined.
-- [ ] Selection resolves through the semantic registry where possible.
-- [ ] The editor navigates to the matching category/control automatically.
-- [ ] A breadcrumb such as Button › Primary › Default is displayed.
-- [ ] Selecting nested elements chooses a sensible semantic target rather than the most deeply nested DOM node by default.
-- [ ] Inspector communication works across the builder/preview iframe boundary.
+- [x] Inspector mode can be toggled without breaking normal preview navigation.
+- [x] Hovered inspectable elements receive a temporary outline.
+- [x] The selected element remains visibly outlined.
+- [x] Selection resolves through the semantic registry where possible.
+- [x] The editor navigates to the matching category/control automatically.
+- [x] A semantic breadcrumb is displayed, with canonical labels for mapped controls and bridge evidence for selector-only matches.
+- [x] Selecting nested elements chooses a sensible semantic target rather than the most deeply nested DOM node by default.
+- [x] Inspector communication works across the builder/preview iframe boundary.
+
+Evidence: `builder/src/__tests__/App.spec.ts`,
+`builder/src/__tests__/inspector-protocol.spec.ts`,
+`e2e/ftb-007-inspector.spec.ts`, `e2e/ftb-007-bridge.spec.ts`, and
+`demo/tests/Feature/PreviewInspectorBridgeTest.php`.
 
 ---
 

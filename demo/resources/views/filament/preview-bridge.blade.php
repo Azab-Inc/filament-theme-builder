@@ -336,6 +336,8 @@
         const inspectorEvidence = (target) => {
             const classNames = [];
             const candidateSelectors = [];
+            const compoundSelectors = [];
+            const selectorPath = [];
             let current = target;
             for (let depth = 0; current && depth < 5; depth++, current = current.parentElement) {
                 const filamentClasses = [...current.classList].filter((name) => /^fi-[A-Za-z0-9_-]+$/.test(name));
@@ -343,9 +345,13 @@
                     classNames.push(name);
                     candidateSelectors.push(`.${name}`);
                 }
+                if (filamentClasses[0]) {
+                    selectorPath.unshift(`.${filamentClasses[0]}`);
+                    if (selectorPath.length > 1) compoundSelectors.push(selectorPath.join(' '));
+                }
                 if (classNames.length >= 30) break;
             }
-            const uniqueSelectors = [...new Set(candidateSelectors)].slice(0, 20);
+            const uniqueSelectors = [...new Set([...compoundSelectors, ...candidateSelectors])].slice(0, 20);
             const uniqueClasses = [...new Set(classNames)].slice(0, 30);
             const label = target.getAttribute('aria-label') || target.getAttribute('title');
             const semanticBreadcrumb = label ? label.slice(0, 200) : [...target.classList].filter((name) => name.startsWith('fi-')).slice(0, 3).join(' / ');
