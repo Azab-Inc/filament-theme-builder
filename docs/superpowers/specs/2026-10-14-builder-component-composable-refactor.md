@@ -1,0 +1,108 @@
+# Refactor builder into components, composables, and utilities
+
+**Status:** planning-only; future behavior-preserving refactor
+**Scope slug:** `builder-component-composable-refactor`
+**Ticket:** [FTB-053](../../../TICKETS.md#ftb-053) · [GitHub #53](https://github.com/Azab-Inc/filament-theme-builder/issues/53)
+**Review fixed point:** `fe9f7cda5bdf3cde73f1ccade973919af08d09a7` (refresh to the actual implementation base before work begins)
+
+This document defines the approved scope for the single future refactor ticket. The exclusive scope lock is recorded separately at `.scratch/spec-locks/builder-component-composable-refactor.lock`. This document does not approve implementation, change runtime behavior, or lift the repository's demo-first/root gate. The current worktree contains concurrent application changes; implementation must refresh its fixed point and preserve those changes.
+
+## 1. Goal and non-goals
+
+Move the oversized builder shell toward cohesive Vue components, focused composables, and framework-independent utilities. The refactor covers the current approximately 1,082-line `App.vue` and all current `builder/src/services` modules. It is structural only: existing behavior, contracts, selectors, IDs, accessible names, state shape, export output, and preview protocol remain unchanged.
+
+Out of scope: new product behavior, schema/color/CSS semantic changes, new MCP tools, new dependencies, backend changes, prototype promotion, layout redesign, Pinia domain redesign, model/DTO/registry relocation, or changing the demo-first gate. The existing prototypes remain prototypes; no real preview effects are added to prototype mode.
+
+## 2. Boundaries and invariants
+
+- Pinia remains the canonical state, history, persistence, and recovery authority. Composables coordinate it; they do not create competing state copies.
+- `src/composables/useX.ts` owns Vue reactivity, lifecycle registration, browser APIs, and orchestration of application effects. Do not create a monolithic `useApp` wrapper.
+- `src/utils/` owns deterministic validation, resolution, transformation, serialization, generation, and export functions. Utility modules must not import Vue, Pinia stores, components, composables, or browser globals, and retain plain-function APIs.
+- Domain models stay in `src/models/`, transfer-only shapes in `src/dtos/`, and semantic/Filament registries in `src/registry/`.
+- Components use typed props/emits/slots and focused composables. Pass reactive refs and callbacks rather than introducing a giant union of props or excessive prop drilling.
+- Any repeated field-row markup or mutation/reset/status logic found in more than two places must first be described in the implementation plan, then extracted to a focused reusable control/component. Do not abstract one-off markup merely to reduce line count.
+- Existing effective values, provenance labels, reset-to-inherit behavior, light/dark separation, alpha handling, responsive spacing, and decimal spacing values remain identical.
+
+## 3. Current service migration inventory
+
+Every current service is classified below. There must be no remaining `src/services` directory or import after the contract facade is retired.
+
+| Current module | Destination | Boundary decision |
+| --- | --- | --- |
+| `foundation-defaults` | `utils/foundation-defaults` | Pure defaults, cloning, density presets, and default theme construction. |
+| `foundation-projection` | `utils/foundation-projection` | Pure inventory-gated projection. |
+| `foundation-provenance` | `utils/foundation-provenance` | Pure explicit-path/provenance helpers. |
+| `foundation-recovery` | `utils/foundation-recovery` plus `composables/useRecovery` | Split parsing/merge/restore validation from injected local-storage reads/writes, errors, and recovery actions. |
+| `foundation-validation` | `utils/foundation-validation` | Pure allowlist, range, font, mapping, and state validation. |
+| `icon-export` | `utils/icon-export` | Pure PHP projection/export. |
+| `inspector-protocol` | `utils/inspector-protocol` | Pure protocol types, guards, and registry resolution; browser message ownership belongs to `useInspector`. |
+| `palette-generator` | `utils/palette-generator` | Pure palette generation and override application. |
+| `panel-branding-export` | `utils/panel-branding-export` | Pure JSON/PHP export. |
+| `panel-branding-validation` | `utils/panel-branding-validation` | Pure defaults, validation, and setting classification. |
+| `raw-override-validation` | `utils/raw-override-validation` | Pure selector/property validation and selector proposal; protocol types are imported from `utils`. |
+| `theme-resolver` | `utils/theme-resolver` | Pure inheritance resolution. |
+| `theme-serialization` | `utils/theme-serialization` | Pure canonical/minimal/fully-explicit serialization and deserialization. |
+| `theme-validation` | `utils/theme-validation` | Pure registry/theme/resolve-request validation. |
+| `vanilla-css-export` | `utils/vanilla-css-export` | Pure CSS projection/export; output ordering and formatting are frozen. |
+
+The migration must update stores, registry consumers, components, composables, tests, and any barrels/imports in one coherent graph. No compatibility wrapper may remain unused; an expand-contract facade is allowed only while consumers are being migrated and is deleted before completion.
+
+## 4. App.vue decomposition contract
+
+`App.vue` becomes a composition shell that selects the inspect/prototype/production branches, wires top-level components, and owns no feature markup or business workflow. The production branch is decomposed into cohesive sections without changing DOM behavior:
+
+- shell/header and toolbar;
+- export actions and export status;
+- undo/redo and legacy recovery status/actions;
+- foundations editor, including palette rows;
+- mode controls;
+- typography editor;
+- layout/density editor;
+- panel branding and uploads;
+- icon configuration;
+- semantic component controls;
+- raw/advanced Inspector controls;
+- preview frame.
+
+The existing DOM IDs, `data-*` hooks, ARIA labels/roles, section names, iframe title, event semantics, and CSS selectors are compatibility contracts. Components may share refs/reactive values through focused props and emits, but must not fork canonical theme state.
+
+Focused composable seams should cover the current responsibilities, using names such as `useFoundationEditor`, `usePreviewBridge`, `useInspector`, `useExportActions`, `useBrandingUploads`, and `useRecovery` where the extracted responsibility warrants them. Names are guidance, not permission to create trivial wrappers; each composable must own a coherent reactive/lifecycle/effect boundary and be independently testable.
+
+## 5. Behavior-preservation contract
+
+- Preview bridge behavior remains immediate: allowed origin, exact `event.source`, protocol version, message schema, target origin, theme projection, Inspector commands/events, and runtime-refresh behavior are unchanged.
+- Listener ownership is explicit and cleaned up on unmount. Multiple mounts cannot duplicate `keydown`/`message` listeners or share unintended mutable state. Runtime refresh is intentional and must not become a page reload for ordinary edits.
+- Clipboard uses the current native path and fallback semantics. Download URLs/blobs/data links and deferred cleanup remain safe and deterministic.
+- Branding upload errors, accepted references, quota/rejection messaging, and error recovery remain unchanged.
+- Legacy recovery preserves native defaults, malformed/unsupported archive handling, download behavior, restoration history, and injected storage failure behavior.
+- Foundation controls preserve validation, invalid-input feedback, reset, provenance/effective-value display, alpha colors, responsive behavior, and decimal spacing.
+- JSON, vanilla CSS, icon PHP, branding JSON/PHP, and any existing export outputs remain byte-for-byte or semantically golden-equivalent as currently specified; no output/schema migration is part of this ticket.
+
+## 6. Test and verification contract
+
+Implementation remains TDD: establish failing seams before each extraction, then migrate the smallest slice. Tests assert external behavior rather than private file placement.
+
+- Keep and relocate/update pure unit tests for every utility, including defaults/projection/provenance/recovery parsing, palette generation, validation, resolver, serialization, protocol guards, raw selectors, branding/icon exports, and vanilla CSS golden parity.
+- Add composable/component tests for lifecycle cleanup, multiple mounts, Pinia history/persistence authority, effective values/provenance, reset semantics, native defaults, alpha and decimal spacing behavior, clipboard fallback, download cleanup, uploads, quota/error handling, and recovery failure paths.
+- Use the existing DOM IDs, ARIA labels, and data hooks in component tests; do not replace them with implementation-specific selectors.
+- Run the existing unit/type/build checks from `builder/` and the relevant Playwright CLI tests before claiming completion. Use Playwright MCP against the real builder and iframe to verify edit-to-preview, Inspector origin/source/schema behavior, runtime refresh, export actions, branding uploads/errors, recovery, and no listener leaks across mount/unmount.
+- Verify both normal production mode and prototype query modes. Prototype mode must not create real preview bridge effects or iframe orchestration beyond its existing behavior.
+- Root Compose remains the canonical complete runtime; no new package or service may be installed or added.
+
+## 7. Sequencing and readiness
+
+This is one overall ticket, internally executed as an expand-contract sequence: (1) establish pure utility/composable/component seams and parity tests, (2) migrate consumers in coherent batches while any temporary compatibility facade is still used, (3) move all `App.vue` workflows/markup, (4) migrate all tests/barrels/registries/stores, (5) delete the facade and `src/services`, then (6) run full end-to-end verification. Every checkpoint must remain reviewable; the final checkpoint must prove no `src/services` references remain.
+
+The ticket is future and blocked by existing FTB-003 functionality stabilization, the unchanged Phase 1/demo-first gate and foundation/control stabilization, and coordination with FTB-050/051/052 when their shared builder rows or shell work is active. Those future enhancements are parallel coordination concerns, not new blocker-cycle dependencies. The refactor does not implement layout modes, color pickers, or padlocks and must not make them prerequisites for unrelated work.
+
+## 8. AI operability and capability inventory
+
+This structural refactor introduces no capability. Existing UI-only or MCP-backed operations retain their current inventory entries, authorization, confirmation, validation, and shared-service boundaries. Do not add tools or claim new AI-client capability. The implementation report must inventory unchanged capabilities, changed import paths, and test evidence without bypassing existing AI-operability contracts.
+
+## 9. Reciprocal publication links
+
+- Local tracker anchor: [FTB-053](../../../TICKETS.md#ftb-053)
+- GitHub tracker issue: [#53](https://github.com/Azab-Inc/filament-theme-builder/issues/53)
+- Root specification index: [SPECS.md](../../../SPECS.md#deferred-builder-component-composable-refactor)
+
+This document is design-only. Implementation must refresh the fixed point, repeat duplicate/ownership checks, and obtain the normal implementation approval before modifying application or test code.

@@ -15,14 +15,20 @@ These instructions apply to the Vue application in `builder/`.
 - Put domain and application data types in `src/models/`.
 - Name model files with the `.model.ts` suffix, such as `src/models/color.model.ts`.
 - Put transfer-only shapes in `src/dtos/` and name them with the `.dto.ts` suffix. A DTO is appropriate when only part of a model must be sent to another boundary.
-- Put reusable Vue composition logic in `src/composables/`.
-- Put reusable Vue components in `src/components/`.
+- Put reusable reactive behavior, lifecycle ownership, and application-effect orchestration in `src/composables/`.
+- Put deterministic validation, resolution, transformation, serialization, and generation functions in `src/utils/`. These modules remain independent of Vue and browser side effects.
+- Put cohesive visual sections and reusable controls in `src/components/` as `.vue` components.
 - Put route-level views in `src/pages/`.
 - Put Pinia state in `src/stores/`.
 
-Keep responsibilities in their designated layer. Do not duplicate a domain model as a DTO unless the transfer shape genuinely differs from the model.
+Keep responsibilities in their designated layer. Do not duplicate a domain model as a DTO unless the transfer shape genuinely differs from the model. The approved refactor migrates existing `src/services/` modules to these boundaries; new code belongs in the target folders.
 
 ## Vue Components
+
+- Give each cohesive visual section or reusable control its own `.vue` component in `src/components/`; group related native HTML elements within that component.
+- Keep `App.vue` as a composition shell that selects views and connects top-level components. Feature markup, editor controls, and application workflows belong in components and composables.
+- At approximately 100 lines, review a `.vue` file for separate responsibilities and extract meaningful components or composables. Use responsibility boundaries rather than splitting solely to meet a line count.
+- Components express UI through typed props, emits, slots, and focused composables. Keep business transformations and shared canonical state in their designated layers.
 
 Every Vue single-file component must keep its sections in this order:
 
@@ -31,6 +37,14 @@ Every Vue single-file component must keep its sections in this order:
 3. `<style>`
 
 Use `<style>` only when component-scoped CSS is necessary. Use Tailwind for styling throughout the application and avoid introducing separate CSS systems or ad hoc styling conventions.
+
+## Functionality
+
+- Name composable files and exports `useX`, and give each one a focused responsibility. Composables coordinate Vue reactivity, lifecycle, and browser/network/storage effects through explicit, testable inputs.
+- Reusable pure functions belong in `src/utils/`, even when composables and stores consume them. Preserve their plain-function APIs rather than adding artificial refs, watchers, or component-instance requirements.
+- Keep shared canonical application state in Pinia stores; composables expose or coordinate that state rather than create competing copies.
+- Register reactive effects and event listeners in the appropriate lifecycle/scope and clean them up when their owner is disposed. Independent component mounts must not duplicate listeners or share unintended mutable state.
+- Before extracting repeated code into an abstraction, describe the duplication and proposed boundary. Reuse focused controls and composables across editor sections instead of copying markup or mutation logic.
 
 ## Filament Theme Builder Context
 
