@@ -308,8 +308,121 @@
             window.dispatchEvent(new CustomEvent('ftb:theme:updated', { detail: message.theme }));
             return true;
         };
+        const INSPECTOR_PROTOCOL_VERSION = 1;
+        const inspectorTargetSelectors = [
+            '.fi-btn', '.fi-input', '.fi-select-input', '.fi-fo-textarea',
+            '.fi-section', '.fi-ta-ctn', '.fi-wi-stats-overview-stat',
+            '.fi-sidebar', '.fi-topbar', '.fi-page',
+        ];
+        const inspectorStyleId = 'ftb-inspector-style';
+        let inspectorEnabled = false;
+        let inspectorParentOrigin = null;
+        let hoveredTarget = null;
+        let selectedTarget = null;
+
+        const postInspectorEvent = (message) => {
+            if (inspectorParentOrigin && window.parent !== window) {
+                window.parent.postMessage({ protocolVersion: INSPECTOR_PROTOCOL_VERSION, ...message }, inspectorParentOrigin);
+            }
+        };
+        const inspectorTarget = (node) => {
+            if (!(node instanceof Element)) return null;
+            for (const selector of inspectorTargetSelectors) {
+                const target = node.closest(selector);
+                if (target) return target;
+            }
+            return null;
+        };
+        const inspectorEvidence = (target) => {
+            const classNames = [];
+            const candidateSelectors = [];
+            let current = target;
+            for (let depth = 0; current && depth < 5; depth++, current = current.parentElement) {
+                const filamentClasses = [...current.classList].filter((name) => /^fi-[A-Za-z0-9_-]+$/.test(name));
+                for (const name of filamentClasses) {
+                    classNames.push(name);
+                    candidateSelectors.push(`.${name}`);
+                }
+                if (classNames.length >= 30) break;
+            }
+            const uniqueSelectors = [...new Set(candidateSelectors)].slice(0, 20);
+            const uniqueClasses = [...new Set(classNames)].slice(0, 30);
+            const label = target.getAttribute('aria-label') || target.getAttribute('title');
+            const semanticBreadcrumb = label ? label.slice(0, 200) : [...target.classList].filter((name) => name.startsWith('fi-')).slice(0, 3).join(' / ');
+            return { candidateSelectors: uniqueSelectors, classNames: uniqueClasses, ...(semanticBreadcrumb ? { semanticBreadcrumb } : {}) };
+        };
+        const ensureInspectorStyle = () => {
+            let style = document.getElementById(inspectorStyleId);
+            if (!style) {
+                style = document.createElement('style');
+                style.id = inspectorStyleId;
+                style.textContent = '.ftb-inspector-hover { outline: 2px solid #f59e0b !important; outline-offset: 2px !important; } .ftb-inspector-selected { outline: 2px solid #2563eb !important; outline-offset: 2px !important; }';
+                document.head.append(style);
+            }
+        };
+        const setInspectorTarget = (target, className) => {
+            if (target === selectedTarget && className === 'ftb-inspector-hover') return;
+            target.classList.add(className);
+            if (className === 'ftb-inspector-hover') hoveredTarget = target;
+            else selectedTarget = target;
+        };
+        const clearInspector = () => {
+            if (hoveredTarget) hoveredTarget.classList.remove('ftb-inspector-hover');
+            if (selectedTarget) selectedTarget.classList.remove('ftb-inspector-selected');
+            hoveredTarget = null;
+            selectedTarget = null;
+            document.documentElement.classList.remove('ftb-inspector-enabled');
+            document.getElementById(inspectorStyleId)?.remove();
+        };
+        const enableInspector = (origin) => {
+            inspectorEnabled = true;
+            inspectorParentOrigin = origin;
+            document.documentElement.classList.add('ftb-inspector-enabled');
+            ensureInspectorStyle();
+            postInspectorEvent({ type: 'ftb:inspector:ready' });
+        };
+        const disableInspector = () => {
+            inspectorEnabled = false;
+            clearInspector();
+            postInspectorEvent({ type: 'ftb:inspector:clear' });
+            inspectorParentOrigin = null;
+        };
+        document.addEventListener('mouseover', (event) => {
+            if (!inspectorEnabled) return;
+            const target = inspectorTarget(event.target);
+            if (!target || target === hoveredTarget || target === selectedTarget) return;
+            if (hoveredTarget) hoveredTarget.classList.remove('ftb-inspector-hover');
+            ensureInspectorStyle();
+            setInspectorTarget(target, 'ftb-inspector-hover');
+            postInspectorEvent({ type: 'ftb:inspector:hover', target: inspectorEvidence(target) });
+        });
+        document.addEventListener('mouseout', (event) => {
+            if (!inspectorEnabled || !hoveredTarget || !(event.target instanceof Node) || !hoveredTarget.contains(event.target)) return;
+            if (event.relatedTarget instanceof Node && hoveredTarget.contains(event.relatedTarget)) return;
+            hoveredTarget.classList.remove('ftb-inspector-hover');
+            hoveredTarget = null;
+        });
+        document.addEventListener('click', (event) => {
+            if (!inspectorEnabled) return;
+            const target = inspectorTarget(event.target);
+            if (!target) return;
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            ensureInspectorStyle();
+            if (selectedTarget) selectedTarget.classList.remove('ftb-inspector-selected');
+            if (hoveredTarget) hoveredTarget.classList.remove('ftb-inspector-hover');
+            hoveredTarget = null;
+            setInspectorTarget(target, 'ftb-inspector-selected');
+            postInspectorEvent({ type: 'ftb:inspector:select', target: inspectorEvidence(target) });
+        }, true);
         window.addEventListener('message', (event) => {
             if (!allowedOrigins.includes(event.origin) || event.source !== window.parent) return;
+            const message = event.data;
+            if (message && message.protocolVersion === INSPECTOR_PROTOCOL_VERSION && Object.keys(message).length === 2) {
+                if (message.type === 'ftb:inspector:enable') enableInspector(event.origin);
+                else if (message.type === 'ftb:inspector:disable' && inspectorEnabled) disableInspector();
+            }
             if (updateTheme(event.data)) window.dispatchEvent(new CustomEvent('ftb:preview-message-accepted'));
         });
     })();
