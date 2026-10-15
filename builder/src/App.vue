@@ -198,6 +198,25 @@ function selectEditorSection(section: EditorSection): void {
   selectedEditorSection.value = section
 }
 
+function handleEditorTabKeydown(event: KeyboardEvent, section: EditorSection): void {
+  if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return
+  const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-editor-section-tab]'))
+  const currentIndex = tabs.findIndex((tab) => tab.dataset.editorSectionTab === section)
+  if (currentIndex < 0) return
+
+  event.preventDefault()
+  const nextIndex = event.key === 'Home'
+    ? 0
+    : event.key === 'End'
+      ? tabs.length - 1
+      : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length
+  const nextTab = tabs[nextIndex]
+  const nextSection = nextTab?.dataset.editorSectionTab as EditorSection | undefined
+  if (!nextTab || !nextSection) return
+  selectEditorSection(nextSection)
+  nextTab.focus()
+}
+
 function onPreviewLoad(): void {
   runtimeLoading.value = false
   inspectorResolution.value = null
@@ -616,33 +635,37 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
   />
   <main v-else class="preview-shell">
     <header class="preview-shell__header">
-      <h1>Filament Theme Builder</h1>
-      <p data-demo-notice>Preview demo data is temporary.</p>
-      <label
-        >Primary color
-        <input v-model="primaryColor" type="color" aria-label="Primary color" />
-      </label>
-      <button type="button" aria-label="Export theme JSON" @click="exportCanonicalJson">
-        Export JSON
-      </button>
-      <button type="button" aria-label="Copy vanilla CSS" @click="copyVanillaThemeCss">
-        Copy CSS
-      </button>
-      <button type="button" aria-label="Download vanilla CSS" @click="exportVanillaThemeCss">
-        Download CSS
-      </button>
-      <button type="button" aria-label="Export PanelProvider icon config" @click="exportIconPhp">
-        Export icon PHP
-      </button>
-      <button type="button" aria-label="Export panel branding JSON" @click="exportBrandingJson">
-        Export branding JSON
-      </button>
-      <button type="button" aria-label="Export PanelProvider branding config" @click="exportBrandingPhp">
-        Export branding PHP
-      </button>
-      <button type="button" aria-label="Undo" :disabled="!canUndo" @click="undo">Undo</button>
-      <button type="button" aria-label="Redo" :disabled="!canRedo" @click="redo">Redo</button>
-      <button type="button" aria-label="Inspector" :aria-pressed="inspectorEnabled" @click="toggleInspector">Inspector</button>
+      <div class="preview-shell__header-copy">
+        <h1>Filament Theme Builder</h1>
+        <p data-demo-notice>Preview demo data is temporary.</p>
+      </div>
+      <div class="preview-shell__header-controls" data-editor-header-controls>
+        <label
+          >Primary color
+          <input v-model="primaryColor" type="color" aria-label="Primary color" />
+        </label>
+        <button type="button" aria-label="Export theme JSON" @click="exportCanonicalJson">
+          Export JSON
+        </button>
+        <button type="button" aria-label="Copy vanilla CSS" @click="copyVanillaThemeCss">
+          Copy CSS
+        </button>
+        <button type="button" aria-label="Download vanilla CSS" @click="exportVanillaThemeCss">
+          Download CSS
+        </button>
+        <button type="button" aria-label="Export PanelProvider icon config" @click="exportIconPhp">
+          Export icon PHP
+        </button>
+        <button type="button" aria-label="Export panel branding JSON" @click="exportBrandingJson">
+          Export branding JSON
+        </button>
+        <button type="button" aria-label="Export PanelProvider branding config" @click="exportBrandingPhp">
+          Export branding PHP
+        </button>
+        <button type="button" aria-label="Undo" :disabled="!canUndo" @click="undo">Undo</button>
+        <button type="button" aria-label="Redo" :disabled="!canRedo" @click="redo">Redo</button>
+        <button type="button" aria-label="Inspector" :aria-pressed="inspectorEnabled" @click="toggleInspector">Inspector</button>
+      </div>
     </header>
     <p v-if="exportStatus" role="status" aria-label="Export status" aria-live="polite" data-export-status>{{ exportStatus }}</p>
     <p role="status" aria-label="Inspector status" aria-live="polite" data-inspector-status>
@@ -726,30 +749,36 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
           aria-label="Editor sections"
           role="tablist"
         >
-          <button
-            v-for="section in editorSections"
-            :key="section.id"
-            type="button"
-            role="tab"
-            :aria-selected="selectedEditorSection === section.id"
-            :data-editor-section-tab="section.id"
-            @click="selectEditorSection(section.id)"
-          >
+            <button
+              v-for="section in editorSections"
+              :key="section.id"
+              type="button"
+              role="tab"
+              :id="`editor-tab-${section.id}`"
+              :aria-selected="selectedEditorSection === section.id"
+              :aria-controls="`editor-panel-${section.id}`"
+              :data-editor-section-tab="section.id"
+              @click="selectEditorSection(section.id)"
+              @keydown="handleEditorTabKeydown($event, section.id)"
+            >
             {{ section.label }}
           </button>
-          <button
-            v-if="selectedInspectorEvidence"
-            type="button"
-            role="tab"
-            :aria-selected="selectedEditorSection === 'inspector'"
-            data-editor-section-tab="inspector"
-            @click="selectEditorSection('inspector')"
-          >
+            <button
+              v-if="selectedInspectorEvidence"
+              type="button"
+              role="tab"
+              id="editor-tab-inspector"
+              :aria-selected="selectedEditorSection === 'inspector'"
+              aria-controls="editor-panel-inspector"
+              data-editor-section-tab="inspector"
+              @click="selectEditorSection('inspector')"
+              @keydown="handleEditorTabKeydown($event, 'inspector')"
+            >
             Inspector
           </button>
         </nav>
         <div class="editor-content" data-editor-content>
-    <section v-if="selectedEditorSection === 'foundations'" class="foundations grid gap-4" aria-labelledby="foundations-heading" data-editor-section="foundations">
+     <section v-if="selectedEditorSection === 'foundations'" id="editor-panel-foundations" class="foundations grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-foundations" data-editor-section="foundations">
       <h2 id="foundations-heading">Foundations</h2>
       <p class="foundations__hint">
         Global values are persisted in the theme and projected only when the Filament 5.9
@@ -998,7 +1027,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         </div>
       </fieldset>
     </section>
-    <section v-if="selectedEditorSection === 'branding'" class="branding grid gap-4" aria-labelledby="branding-heading" data-editor-section="branding">
+    <section v-if="selectedEditorSection === 'branding'" id="editor-panel-branding" class="branding grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-branding" data-editor-section="branding">
       <h2 id="branding-heading">Panel branding and runtime</h2>
       <p>CSS-previewable values apply immediately. PanelProvider values refresh the iframe without losing this draft.</p>
       <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
@@ -1040,7 +1069,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         <button type="button" aria-label="Reset panel branding" @click="theme.resetBranding">Reset panel branding</button>
       </fieldset>
     </section>
-    <section v-if="selectedEditorSection === 'icons'" class="icons grid gap-4" aria-labelledby="icons-heading" data-editor-section="icons">
+    <section v-if="selectedEditorSection === 'icons'" id="editor-panel-icons" class="icons grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-icons" data-editor-section="icons">
       <h2 id="icons-heading">Icons</h2>
       <p>Heroicons are runtime Filament configuration. Preview changes apply to rendered icons immediately.</p>
       <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
@@ -1065,7 +1094,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         </div>
       </fieldset>
     </section>
-    <section v-if="selectedEditorSection === 'components'" class="component-controls grid gap-4" aria-labelledby="component-controls-heading" data-editor-target="form.product-name" data-editor-section="components">
+    <section v-if="selectedEditorSection === 'components'" id="editor-panel-components" class="component-controls grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-components" data-editor-target="form.product-name" data-editor-section="components">
       <h2 id="component-controls-heading">Component controls</h2>
       <p>Product name input · <code>.fi-fo-text-input .fi-input</code> · background color</p>
       <fieldset class="grid gap-2 rounded-lg border border-zinc-200 p-4">
@@ -1090,7 +1119,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         </div>
       </fieldset>
     </section>
-    <section v-if="selectedInspectorEvidence && selectedEditorSection === 'inspector'" class="advanced-inspector grid gap-4" aria-labelledby="advanced-inspector-heading" data-advanced-inspector data-editor-section="inspector">
+    <section v-if="selectedInspectorEvidence && selectedEditorSection === 'inspector'" id="editor-panel-inspector" class="advanced-inspector grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-inspector" data-advanced-inspector data-editor-section="inspector">
       <h2 id="advanced-inspector-heading">Advanced Inspector</h2>
       <p>Raw visual overrides are validated typed properties and remain separate from Semantic controls.</p>
       <fieldset class="grid gap-2 rounded-lg border border-zinc-200 p-4">
@@ -1118,6 +1147,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
       ref="iframe"
       :src="iframeSrc"
       title="Filament preview"
+      data-editor-iframe
       class="preview-shell__frame"
       @load="onPreviewLoad"
     />
@@ -1131,7 +1161,6 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
   flex-direction: column;
   height: 100vh;
   min-width: 0;
-  overflow: hidden;
 }
 
 .editor-workspace {
@@ -1149,7 +1178,6 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  overflow: hidden;
 }
 
 .editor-navigation-toggle {
@@ -1288,10 +1316,36 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
 }
 
 .preview-shell__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: start;
+  column-gap: 1rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-width: 0;
   padding: 0.5rem 1rem;
+  row-gap: 0.5rem;
+}
+
+.preview-shell__header-copy {
+  min-width: max-content;
+}
+
+.preview-shell__header-controls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 0.25rem 0.125rem;
+  scrollbar-width: thin;
+}
+
+.preview-shell__header-controls > * {
+  flex: 0 0 auto;
+}
+
+.preview-shell__header-controls button {
+  white-space: nowrap;
 }
 
 .preview-shell__header h1 {
@@ -1325,6 +1379,20 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
 }
 
 @media (max-width: 767px) {
+  .preview-shell__header {
+    grid-template-columns: minmax(0, 1fr);
+    padding-inline: 0.5rem;
+  }
+
+  .preview-shell__header-copy {
+    min-width: 0;
+  }
+
+  .preview-shell__header-controls {
+    flex-wrap: nowrap;
+    max-width: 100%;
+  }
+
   .editor-workspace {
     gap: 0.5rem;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
