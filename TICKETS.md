@@ -1471,6 +1471,8 @@ FTB-050 evidence (2026-10-15): production unit/type/build checks passed (`235` b
 
 Accessibility follow-up (2026-10-15): builder type-check, production build, and all `235` unit tests passed. The dedicated FTB-050 Playwright suite passed all `10` tests, including deterministic duplicate-ID/dangling-ARIA-reference checks, tablist/tab/tabpanel contract checks in both modes, hidden inactive panels, keyboard selection/focus, and `:focus-visible`. Full Compose Playwright passed `94` tests with `3` existing opt-in skips (`97` total); all three responsive viewport checks, iframe continuity, and dependent editor navigation tests passed. Sidebar now uses vertical arrow-key navigation and Top mode uses horizontal arrow-key navigation. `ThrowawayThemePrototype.vue` remains unchanged and no dependency was added.
 
+Reachability follow-up (2026-10-15): the dedicated FTB-050 200% zoom test passed twice at a 640px viewport, asserting the document's `scrollWidth` does not exceed its `clientWidth` (no overflow concealment), focus/visibility/in-viewport reachability of all seven export and Inspector header actions, Undo/Redo, both navigation-mode radios, and all four navigation tabs. The full Compose Playwright suite passed `94` tests with `3` existing opt-in skips (`97` total). Builder type-check, all `235` unit tests, and production build passed. The 900px editor/demo side-by-side check remains passing; no CSS changes were needed.
+
 ---
 
 <a id="ftb-051"></a>

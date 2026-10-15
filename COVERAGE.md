@@ -298,5 +298,8 @@ coverage by `e2e/ftb-050-editor-layout.spec.ts` (10 Playwright tests). In both
 Sidebar and Top modes, deterministic DOM checks assert unique IDs, resolved
 ARIA ID references, one tablist, valid tab/tabpanel relationships, and a single
 selected/visible panel. Keyboard checks cover mode-appropriate arrow navigation
-and visible `:focus-visible` treatment. The latest full Compose run passed 94 of
-97 tests; three existing opt-in tests were skipped.
+and visible `:focus-visible` treatment. The 640px/200% zoom test checks document
+`scrollWidth <= clientWidth` without hiding overflow and verifies visible,
+focusable, in-viewport access to the header export/Inspector actions, Undo/Redo,
+both navigation-mode controls, and all navigation tabs. The latest full Compose
+run passed 94 of 97 tests; three existing opt-in tests were skipped.

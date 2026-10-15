@@ -191,15 +191,33 @@ test.describe('FTB-050 promoted editor navigation', () => {
     await page.evaluate(() => { document.documentElement.style.zoom = '2' })
     await page.getByLabel('Primary color').fill('#0f766e')
 
-    for (const action of [page.getByRole('button', { name: 'Undo' }), page.getByRole('button', { name: 'Inspector' })]) {
-      await action.focus()
-      await expect(action).toBeFocused()
-      await expect(action).toBeInViewport()
+    const expectNoPageHorizontalOverflow = async () => {
+      const dimensions = await page.evaluate(() => ({
+        clientWidth: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+      }))
+      expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth)
     }
-    await page.getByRole('button', { name: 'Undo' }).click()
-    await page.getByRole('button', { name: 'Redo' }).focus()
-    await expect(page.getByRole('button', { name: 'Redo' })).toBeFocused()
-    await expect(page.getByRole('button', { name: 'Redo' })).toBeInViewport()
+    await expectNoPageHorizontalOverflow()
+
+    const undo = page.getByRole('button', { name: 'Undo' })
+    await undo.focus()
+    await expect(undo).toBeFocused()
+    await expect(undo).toBeVisible()
+    await expect(undo).toBeInViewport()
+    await undo.click()
+
+    const redo = page.getByRole('button', { name: 'Redo' })
+    await redo.focus()
+    await expect(redo).toBeFocused()
+    await expect(redo).toBeVisible()
+    await expect(redo).toBeInViewport()
+
+    const inspector = page.getByRole('button', { name: 'Inspector' })
+    await inspector.focus()
+    await expect(inspector).toBeFocused()
+    await expect(inspector).toBeVisible()
+    await expect(inspector).toBeInViewport()
 
     const actions = [
       page.getByRole('button', { name: 'Export theme JSON' }),
@@ -214,16 +232,27 @@ test.describe('FTB-050 promoted editor navigation', () => {
     for (const action of actions) {
       await action.focus()
       await expect(action).toBeFocused()
+      await expect(action).toBeVisible()
       await expect(action).toBeInViewport()
     }
 
-    await page.getByRole('radio', { name: 'Top navigation' }).check()
+    const sidebar = page.getByRole('radio', { name: 'Sidebar' })
+    const topNavigation = page.getByRole('radio', { name: 'Top navigation' })
+    for (const mode of [sidebar, topNavigation]) {
+      await mode.focus()
+      await expect(mode).toBeFocused()
+      await expect(mode).toBeVisible()
+      await expect(mode).toBeInViewport()
+    }
+    await topNavigation.check()
     for (const tabName of ['Foundations', 'Components', 'Branding', 'Icons']) {
       const tab = page.getByRole('tab', { name: tabName })
       await tab.focus()
       await expect(tab).toBeFocused()
+      await expect(tab).toBeVisible()
       await expect(tab).toBeInViewport()
     }
+    await expectNoPageHorizontalOverflow()
 
     await page.getByRole('tab', { name: 'Branding' }).click()
     await expect(page.locator('fieldset').filter({ hasText: 'PanelBrandingSettings' })).toBeVisible()
