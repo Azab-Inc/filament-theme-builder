@@ -1,25 +1,18 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import type { HoverInspectPrototypeProps } from '@/models/hover-inspect-prototype-props.model'
+import type { HoverInspectPrototypeTarget } from '@/models/hover-inspect-prototype-target.model'
+import type { HoverInspectPrototypeVariant } from '@/models/hover-inspect-prototype-variant.model'
 
 // PROTOTYPE: three same-origin hover-inspection treatments, switchable via ?inspect=1&variant=A|B|C.
-type Variant = 'A' | 'B' | 'C'
-type InspectionTarget = {
-  id: string
-  name: string
-  kind: string
-  classes: string[]
-  section: string | null
-  editable: string[]
-}
-
-const props = defineProps<{ initialVariant: string }>()
-const variants: Variant[] = ['A', 'B', 'C']
-const variantNames: Record<Variant, string> = {
+const props = defineProps<HoverInspectPrototypeProps>()
+const variants: HoverInspectPrototypeVariant[] = ['A', 'B', 'C']
+const variantNames: Record<HoverInspectPrototypeVariant, string> = {
   A: 'Docked inspector',
   B: 'Anchored tooltip',
   C: 'Split-context inspector',
 }
-const targets: Record<string, InspectionTarget> = {
+const targets: Record<string, HoverInspectPrototypeTarget> = {
   widget: {
     id: 'widget',
     name: 'Dashboard stats widget',
@@ -62,8 +55,8 @@ const targets: Record<string, InspectionTarget> = {
   },
 }
 
-const activeVariant = ref<Variant>(
-  variants.includes(props.initialVariant as Variant) ? (props.initialVariant as Variant) : 'A',
+const activeVariant = ref<HoverInspectPrototypeVariant>(
+  variants.includes(props.initialVariant as HoverInspectPrototypeVariant) ? (props.initialVariant as HoverInspectPrototypeVariant) : 'A',
 )
 const autoScroll = ref(true)
 const hoveredId = ref<string | null>(null)
@@ -81,7 +74,7 @@ const anchoredStyle = computed(() => ({
 }))
 let hoverTimer: ReturnType<typeof setTimeout> | undefined
 
-function updateUrl(variant: Variant): void {
+function updateUrl(variant: HoverInspectPrototypeVariant): void {
   activeVariant.value = variant
   const url = new URL(window.location.href)
   url.searchParams.set('inspect', '1')
