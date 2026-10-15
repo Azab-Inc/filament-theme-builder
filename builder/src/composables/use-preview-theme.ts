@@ -1,17 +1,6 @@
-import { onMounted, ref, toRaw, watch, type Ref } from 'vue'
+import { onMounted, ref, toRaw, watch } from 'vue'
 
-import type { ThemeMode } from '@/models/foundations.model'
-import type { useThemeStore } from '@/stores/theme'
-
-type PreviewThemeStore = Pick<ReturnType<typeof useThemeStore>, 'theme' | 'previewFoundation'>
-
-type UsePreviewThemeOptions = {
-  theme: PreviewThemeStore
-  activeMode: Ref<ThemeMode>
-  previewUrl: string
-  iframe: Ref<HTMLIFrameElement | undefined>
-  onPreviewLoad?: () => void
-}
+import type { UsePreviewThemeOptions } from '@/models/use-preview-theme-options.model'
 
 export function usePreviewTheme({
   theme,
