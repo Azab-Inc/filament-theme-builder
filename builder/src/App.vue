@@ -39,12 +39,14 @@ import BrandingSettingsPanel from './components/BrandingSettingsPanel.vue'
 import IconPackConfigurationPanel from './components/IconPackConfigurationPanel.vue'
 import FoundationsPaletteControls from './components/FoundationsPaletteControls.vue'
 import FoundationsSurfaceControls from './components/FoundationsSurfaceControls.vue'
+import FoundationsTypographyLayoutControls from './components/FoundationsTypographyLayoutControls.vue'
 import type {
   PaletteBaseChange,
   PaletteShadeChange,
   PaletteShadeReset,
 } from './components/foundations-palette-controls.model'
 import type { FoundationModeValueChange } from './components/foundations-surface-controls.model'
+import type { FoundationFontChoiceOption } from './components/foundations-typography-layout-controls.model'
 
 const previewUrl = import.meta.env.VITE_DEMO_URL ?? '/demo/admin'
 const inspectMode = new URLSearchParams(window.location.search).get('inspect') === '1'
@@ -73,7 +75,6 @@ const editorSections: ReadonlyArray<{ id: EditorSection; label: string }> = [
 const foundationErrors = ref<Record<string, string>>({})
 const uploadErrors = ref<Record<string, string>>({})
 const surfaceNames = ['page', 'sidebar', 'topbar', 'card', 'elevated', 'input'] as const
-const typographyNames = ['body', 'heading', 'mono'] as const
 const borderNames = ['default', 'strong'] as const
 const textNames = ['primary', 'muted', 'disabled'] as const
 const iconOptions = [
@@ -84,9 +85,7 @@ const iconOptions = [
 const iconPreviews = computed(() => Object.fromEntries(
   RESOURCE_ICON_KEYS.map((key) => [key, theme.theme.icons.overrides[key] ?? ICON_PACK_PRESETS[theme.theme.icons.pack][key]]),
 ) as Record<ResourceIconKey, string>)
-const radiusOptions = ['none', 'sm', 'md', 'lg', 'xl', 'full'] as const
-const shadowOptions = ['none', 'sm', 'md', 'lg', 'xl'] as const
-const fontChoices: ReadonlyArray<{ value: string; label: string; font?: FontChoice }> = [
+const fontChoices: ReadonlyArray<FoundationFontChoiceOption> = [
   {
     value: 'system',
     label: 'System',
@@ -112,7 +111,6 @@ const fontChoices: ReadonlyArray<{ value: string; label: string; font?: FontChoi
 const defaultFoundation = createDefaultFoundationState()
 const foundation = computed(() => theme.theme.foundations)
 const resolvedFoundation = computed(() => theme.resolveFoundation(activeMode.value))
-const spacingNames = computed(() => Object.keys(foundation.value.spacing))
 const primaryColor = computed({
   get: () => theme.theme.colors.primary,
   set: (color: string) => theme.setPrimaryColor(color),
@@ -310,13 +308,6 @@ function setFontName(name: 'body' | 'heading' | 'mono', event: Event): void {
   theme.setFoundation(`typography.${name}`, { kind: 'custom', name: value, family: value })
 }
 
-function fontSelection(name: 'body' | 'heading' | 'mono'): string {
-  const font = foundation.value.typography[name]
-  if (font.kind === 'custom') return 'custom'
-  if (font.kind === 'curated') return `curated:${font.name}`
-  return font.name === 'System Mono' ? 'system-mono' : 'system'
-}
-
 function setFontChoice(name: 'body' | 'heading' | 'mono', event: Event): void {
   const selection = (event.target as HTMLSelectElement).value
   const choice = fontChoices.find((font) => font.value === selection)
@@ -337,10 +328,6 @@ function setModeValue(change: FoundationModeValueChange): void {
 
 function foundationError(path: string): string | undefined {
   return foundationErrors.value[path]
-}
-
-function fontName(name: 'body' | 'heading' | 'mono'): string {
-  return foundation.value.typography[name].name
 }
 
 function reset(path: string): void {
@@ -717,127 +704,22 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
          @reset="reset"
        />
 
-      <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
-        <legend>Typography</legend>
-        <div v-for="name in typographyNames" :key="name" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
-          <label :for="`${name}-font-kind`">{{ name }} font type</label>
-          <select
-            :id="`${name}-font-kind`"
-            :aria-label="`${name} font type`"
-            :value="fontSelection(name)"
-            @change="setFontChoice(name, $event)"
-          >
-            <option v-for="choice in fontChoices" :key="choice.value" :value="choice.value">
-              {{ choice.label }}
-            </option>
-          </select>
-          <span role="status" aria-live="polite">{{ statusFor(`typography.${name}`) }}</span>
-          <button
-            type="button"
-            :aria-label="`Reset ${name} font`"
-            @click="reset(`typography.${name}`)"
-          >
-            Reset
-          </button>
-          <label :for="`${name}-font-name`">{{ name }} font name</label>
-          <input
-            :id="`${name}-font-name`"
-            type="text"
-            :aria-label="`${name} font name`"
-            :value="fontName(name)"
-            @input="setFontName(name, $event)"
-          />
-        </div>
-        <p>Font names are stored only; the builder never loads or hosts font files.</p>
-      </fieldset>
-
-      <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
-        <legend>Layout foundations</legend>
-        <div class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
-          <label for="density">Density</label>
-          <select
-            id="density"
-            :value="foundation.density"
-            @change="setDensity(($event.target as HTMLSelectElement).value as Density)"
-          >
-            <option value="compact">Compact</option>
-            <option value="default">Default</option>
-            <option value="spacious">Spacious</option>
-          </select>
-          <span role="status" aria-live="polite">{{ statusFor('density') }}</span>
-          <button type="button" aria-label="Reset density" @click="reset('density')">Reset</button>
-        </div>
-        <div role="group" aria-label="Density presets">
-          <button type="button" aria-label="Compact density" @click="setDensity('compact')">
-            Compact
-          </button>
-          <button type="button" aria-label="Default density" @click="setDensity('default')">
-            Default
-          </button>
-          <button type="button" aria-label="Spacious density" @click="setDensity('spacious')">
-            Spacious
-          </button>
-        </div>
-        <div v-for="key in spacingNames" :key="key" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
-          <label :for="`spacing-${key.replace('.', '-')}`">Spacing {{ key }}</label>
-          <input
-            :id="`spacing-${key.replace('.', '-')}`"
-            type="number"
-            min="0"
-            max="256"
-            :aria-label="`Spacing ${key}`"
-            :value="foundation.spacing[key]"
-            @input="setNumberFoundation(`spacing.${key}`, $event)"
-          />
-          <span role="status" aria-live="polite">{{ statusFor(`spacing.${key}`) }}</span>
-          <button
-            type="button"
-            :aria-label="`Reset spacing ${key}`"
-            @click="reset(`spacing.${key}`)"
-          >
-            Reset
-          </button>
-        </div>
-        <div class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
-          <label for="radius">Radius</label>
-          <select
-            id="radius"
-            :value="foundation.radius"
-            @change="setSelectFoundation('radius', $event)"
-          >
-            <option v-for="value in radiusOptions" :key="value" :value="value">{{ value }}</option>
-          </select>
-          <span role="status" aria-live="polite">{{ statusFor('radius') }}</span>
-          <button type="button" aria-label="Reset radius" @click="reset('radius')">Reset</button>
-        </div>
-        <div class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
-          <label for="border-width">Border width</label>
-          <input
-            id="border-width"
-            type="number"
-            min="0"
-            max="8"
-            :value="foundation.borderWidth"
-            @input="setNumberFoundation('borderWidth', $event)"
-          />
-          <span role="status" aria-live="polite">{{ statusFor('borderWidth') }}</span>
-          <button type="button" aria-label="Reset border width" @click="reset('borderWidth')">
-            Reset
-          </button>
-        </div>
-        <div class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
-          <label for="shadow">Shadow</label>
-          <select
-            id="shadow"
-            :value="foundation.shadow"
-            @change="setSelectFoundation('shadow', $event)"
-          >
-            <option v-for="value in shadowOptions" :key="value" :value="value">{{ value }}</option>
-          </select>
-          <span role="status" aria-live="polite">{{ statusFor('shadow') }}</span>
-          <button type="button" aria-label="Reset shadow" @click="reset('shadow')">Reset</button>
-        </div>
-      </fieldset>
+      <FoundationsTypographyLayoutControls
+        :typography="foundation.typography"
+        :spacing="foundation.spacing"
+        :density="foundation.density"
+        :radius="foundation.radius"
+        :border-width="foundation.borderWidth"
+        :shadow="foundation.shadow"
+        :font-choices="fontChoices"
+        :status-for="statusFor"
+        @set-font-choice="setFontChoice($event.name, $event.event)"
+        @set-font-name="setFontName($event.name, $event.event)"
+        @set-density="setDensity"
+        @set-number-foundation="setNumberFoundation($event.path, $event.event)"
+        @set-select-foundation="setSelectFoundation($event.path, $event.event)"
+        @reset="reset"
+      />
     </section>
     <BrandingSettingsPanel
       :active="selectedEditorSection === 'branding'"

@@ -82,6 +82,63 @@ describe('App', () => {
     wrapper.unmount()
   })
 
+  it('renders typography and layout foundations through the extracted editor control boundary', async () => {
+    window.history.replaceState({}, '', '/')
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+    const controls = wrapper.findComponent({ name: 'FoundationsTypographyLayoutControls' })
+
+    expect(controls.exists()).toBe(true)
+    expect(controls.findAll('fieldset legend').map((legend) => legend.text())).toEqual([
+      'Typography',
+      'Layout foundations',
+    ])
+    expect(controls.findAll('input, select').map((control) => control.attributes('id'))).toEqual([
+      'body-font-kind', 'body-font-name',
+      'heading-font-kind', 'heading-font-name',
+      'mono-font-kind', 'mono-font-name',
+      'density',
+      'spacing-0', 'spacing-1', 'spacing-2', 'spacing-3', 'spacing-4',
+      'spacing-6', 'spacing-8', 'spacing-px', 'spacing-0-5', 'spacing-1-5',
+      'radius', 'border-width', 'shadow',
+    ])
+    expect(wrapper.get('#body-font-kind').attributes('aria-label')).toBe('body font type')
+    expect(wrapper.get('#body-font-name').attributes('aria-label')).toBe('body font name')
+    expect(wrapper.get('#spacing-0-5').attributes('type')).toBe('number')
+    expect((wrapper.get('#spacing-0-5').element as HTMLInputElement).value).toBe('2')
+    expect(wrapper.get('#density').attributes('aria-label')).toBeUndefined()
+    expect(wrapper.get('[role="group"][aria-label="Density presets"]')).toBeTruthy()
+    expect(wrapper.get('#radius').element).toHaveProperty('value', 'md')
+    expect(wrapper.get('#border-width').attributes('min')).toBe('0')
+    expect(wrapper.get('#shadow').element).toHaveProperty('value', 'sm')
+    expect(wrapper.get('[aria-label="Reset spacing 0.5"]').text()).toBe('Reset')
+    wrapper.unmount()
+  })
+
+  it('keeps layout foundation input timing and undo/reset callbacks unchanged', async () => {
+    window.history.replaceState({}, '', '/')
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+    const spacing = wrapper.get('#spacing-1-5')
+
+    await spacing.setValue('7.25')
+
+    expect((spacing.element as HTMLInputElement).value).toBe('7.25')
+    expect(wrapper.get('button[aria-label="Undo"]').attributes('disabled')).toBeUndefined()
+    expect(spacing.element.nextElementSibling?.textContent).toBe('live-emulation')
+
+    await wrapper.get('button[aria-label="Undo"]').trigger('click')
+    expect(wrapper.get('#spacing-1-5').element).toHaveProperty('value', '6')
+    await wrapper.get('button[aria-label="Redo"]').trigger('click')
+    expect(wrapper.get('#spacing-1-5').element).toHaveProperty('value', '7.25')
+
+    await wrapper.get('[aria-label="Reset spacing 1.5"]').trigger('click')
+    expect(wrapper.get('#spacing-1-5').element).toHaveProperty('value', '6')
+    await wrapper.get('[aria-label="Compact density"]').trigger('click')
+    expect(wrapper.get('#density').element).toHaveProperty('value', 'compact')
+
+    wrapper.unmount()
+    window.history.replaceState({}, '', '/')
+  })
+
   it('removes the window listeners it owns when the builder unmounts', () => {
     window.history.replaceState({}, '', '/')
     const addListener = vi.spyOn(window, 'addEventListener')
