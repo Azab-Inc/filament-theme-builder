@@ -40,6 +40,14 @@ import IconPackConfigurationPanel from './components/IconPackConfigurationPanel.
 import FoundationsPaletteControls from './components/FoundationsPaletteControls.vue'
 import FoundationsSurfaceControls from './components/FoundationsSurfaceControls.vue'
 import FoundationsTypographyLayoutControls from './components/FoundationsTypographyLayoutControls.vue'
+import SemanticComponentControls from './components/SemanticComponentControls.vue'
+import AdvancedRawInspector from './components/AdvancedRawInspector.vue'
+import type { SemanticComponentRow } from './components/semantic-component-controls.model'
+import type {
+  RawPropertyChange,
+  RawPropertyReset,
+  RawSelectorChange,
+} from './components/advanced-raw-inspector.dto'
 import type {
   PaletteBaseChange,
   PaletteShadeChange,
@@ -475,7 +483,7 @@ function setIconOverride(key: ResourceIconKey, value: string): void {
   else theme.resetSemanticResourceIcon(key)
 }
 
-function setProductNameValue(row: (typeof productNameRows.value)[number], event: Event): void {
+function setProductNameValue(row: SemanticComponentRow, event: Event): void {
   const value = (event.target as HTMLInputElement).value
   if (!/^#[\da-f]{6}$/i.test(value)) return
   const override: ThemeOverride = {
@@ -490,7 +498,7 @@ function setProductNameValue(row: (typeof productNameRows.value)[number], event:
   theme.setOverride(override)
 }
 
-function resetProductNameValue(row: (typeof productNameRows.value)[number]): void {
+function resetProductNameValue(row: SemanticComponentRow): void {
   theme.resetOverride(row.request)
 }
 
@@ -498,12 +506,14 @@ function rawPropertyValue(property: RawVisualProperty): string {
   return selectedRawOverride.value?.properties[property] ?? ''
 }
 
-function setRawProperty(property: RawVisualProperty, event: Event): void {
+function setRawProperty(change: RawPropertyChange): void {
+  const { property, event } = change
   if (!rawSelector.value || !validateRawSelector(rawSelector.value).valid) return
   theme.setRawOverride(rawSelector.value, property, (event.target as HTMLInputElement).value.trim())
 }
 
-function resetRawProperty(property: RawVisualProperty): void {
+function resetRawProperty(change: RawPropertyReset): void {
+  const { property } = change
   if (rawSelector.value) theme.resetRawProperty(rawSelector.value, property)
 }
 
@@ -511,7 +521,8 @@ function resetRawOverride(): void {
   if (rawSelector.value) theme.resetRawOverride(rawSelector.value)
 }
 
-function setRawSelector(event: Event): void {
+function setRawSelector(change: RawSelectorChange): void {
+  const { event } = change
   const next = (event.target as HTMLInputElement).value.trim()
   const validation = validateRawSelector(next)
   rawSelectorError.value = validation.valid ? undefined : validation.error
@@ -743,53 +754,24 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
       @reset-override="theme.resetSemanticResourceIcon"
       @reset-configuration="theme.resetIconConfiguration"
     />
-    <section v-show="selectedEditorSection === 'components'" id="editor-panel-components" class="component-controls grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-components" data-editor-target="form.product-name" data-editor-section="components">
-      <h2 id="component-controls-heading">Component controls</h2>
-      <p>Product name input · <code>.fi-fo-text-input .fi-input</code> · background color</p>
-      <fieldset class="grid gap-2 rounded-lg border border-zinc-200 p-4">
-        <legend>Global → Component → Variant → State</legend>
-        <div
-          v-for="row in productNameRows"
-          :key="row.scope"
-          class="component-control-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]"
-        >
-          <label :for="`product-name-${row.scope}-background`">Product name {{ row.label }} background</label>
-          <input
-            :id="`product-name-${row.scope}-background`"
-            type="text"
-            :aria-label="`Product name ${row.scope} background`"
-            :value="row.value"
-            @input="setProductNameValue(row, $event)"
-          />
-          <span role="status" :data-theme-source="row.source">{{ row.explicit ? `Explicit (${row.source})` : `Inherited from ${row.source}` }}</span>
-          <button type="button" :aria-label="`Reset Product name ${row.scope} background`" @click="resetProductNameValue(row)">
-            Reset to inherit
-          </button>
-        </div>
-      </fieldset>
-    </section>
-    <section v-if="selectedInspectorEvidence && selectedEditorSection === 'inspector'" id="editor-panel-inspector" class="advanced-inspector grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-inspector" data-advanced-inspector data-editor-section="inspector">
-      <h2 id="advanced-inspector-heading">Advanced Inspector</h2>
-      <p>Raw visual overrides are validated typed properties and remain separate from Semantic controls.</p>
-      <fieldset class="grid gap-2 rounded-lg border border-zinc-200 p-4">
-        <legend>Raw element target</legend>
-        <label for="raw-selector">Selector</label>
-        <input id="raw-selector" aria-label="Raw element selector" :value="rawSelector" :aria-invalid="rawSelectorError ? 'true' : undefined" @input="setRawSelector" />
-        <p v-if="rawSelectorClassification.quality === 'fragile'" role="alert" data-selector-warning>{{ rawSelectorClassification.warning }}</p>
-        <p v-if="rawSelectorError" role="alert">{{ rawSelectorError }}</p>
-        <p v-else-if="rawSelectorClassification.quality === 'stable'" role="status">Stable Filament selector proposed.</p>
-        <p v-else-if="rawSelectorClassification.quality === 'unavailable'" role="alert">No safe selector was detected.</p>
-      </fieldset>
-      <fieldset class="grid gap-2 rounded-lg border border-zinc-200 p-4">
-        <legend>Visual properties</legend>
-        <div v-for="property in rawProperties" :key="property" class="raw-property-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto]">
-          <label :for="`raw-${property}`">{{ property }}</label>
-          <input :id="`raw-${property}`" :aria-label="`Raw ${property}`" :value="rawPropertyValue(property)" @input="setRawProperty(property, $event)" />
-          <button type="button" :aria-label="`Reset raw ${property}`" @click="resetRawProperty(property)">Reset</button>
-        </div>
-        <button type="button" aria-label="Reset raw element override" @click="resetRawOverride">Reset raw override</button>
-      </fieldset>
-    </section>
+     <SemanticComponentControls
+       v-show="selectedEditorSection === 'components'"
+       :rows="productNameRows"
+       @set-value="setProductNameValue($event.row, $event.event)"
+       @reset="resetProductNameValue($event.row)"
+     />
+     <AdvancedRawInspector
+       :visible="Boolean(selectedInspectorEvidence && selectedEditorSection === 'inspector')"
+       :selector="rawSelector"
+       :selector-error="rawSelectorError"
+       :selector-classification="rawSelectorClassification"
+       :properties="rawProperties"
+       :property-value="rawPropertyValue"
+       @set-selector="setRawSelector"
+       @set-property="setRawProperty"
+       @reset-property="resetRawProperty"
+       @reset-override="resetRawOverride"
+     />
         </div>
       </section>
     </PreviewFrame>

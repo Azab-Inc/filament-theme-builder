@@ -114,6 +114,31 @@ describe('App', () => {
     wrapper.unmount()
   })
 
+  it('renders semantic and advanced Inspector controls through dedicated component boundaries', async () => {
+    window.history.replaceState({}, '', '/')
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+
+    expect(wrapper.findComponent({ name: 'SemanticComponentControls' }).exists()).toBe(true)
+
+    const iframe = wrapper.get('iframe').element as HTMLIFrameElement
+    const iframeWindow = { postMessage: () => undefined } as unknown as Window
+    Object.defineProperty(iframe, 'contentWindow', { configurable: true, value: iframeWindow })
+    await wrapper.get('button[aria-label="Inspector"]').trigger('click')
+    window.dispatchEvent(new MessageEvent('message', {
+      origin: window.location.origin,
+      source: iframeWindow,
+      data: {
+        type: 'ftb:inspector:select',
+        protocolVersion: 1,
+        target: { candidateSelectors: ['.fi-btn'], classNames: ['fi-btn'] },
+      },
+    }))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.findComponent({ name: 'AdvancedRawInspector' }).exists()).toBe(true)
+    wrapper.unmount()
+  })
+
   it('keeps layout foundation input timing and undo/reset callbacks unchanged', async () => {
     window.history.replaceState({}, '', '/')
     const wrapper = mount(App, { global: { plugins: [createPinia()] } })
