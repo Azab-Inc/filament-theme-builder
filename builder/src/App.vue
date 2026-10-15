@@ -199,7 +199,9 @@ function selectEditorSection(section: EditorSection): void {
 }
 
 function handleEditorTabKeydown(event: KeyboardEvent, section: EditorSection): void {
-  if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return
+  const nextKey = editorNavigationMode.value === 'sidebar' ? 'ArrowDown' : 'ArrowRight'
+  const previousKey = editorNavigationMode.value === 'sidebar' ? 'ArrowUp' : 'ArrowLeft'
+  if (![nextKey, previousKey, 'Home', 'End'].includes(event.key)) return
   const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-editor-section-tab]'))
   const currentIndex = tabs.findIndex((tab) => tab.dataset.editorSectionTab === section)
   if (currentIndex < 0) return
@@ -209,7 +211,7 @@ function handleEditorTabKeydown(event: KeyboardEvent, section: EditorSection): v
     ? 0
     : event.key === 'End'
       ? tabs.length - 1
-      : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length
+      : (currentIndex + (event.key === nextKey ? 1 : -1) + tabs.length) % tabs.length
   const nextTab = tabs[nextIndex]
   const nextSection = nextTab?.dataset.editorSectionTab as EditorSection | undefined
   if (!nextTab || !nextSection) return
@@ -721,23 +723,35 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
           class="editor-nav-rail"
           data-editor-nav-rail
           aria-label="Editor sections"
+          role="tablist"
+          aria-orientation="vertical"
         >
           <button
             v-for="section in editorSections"
             :key="section.id"
             type="button"
-            :aria-current="selectedEditorSection === section.id ? 'page' : undefined"
+            role="tab"
+            :id="`editor-tab-${section.id}`"
+            :aria-selected="selectedEditorSection === section.id"
+            :aria-controls="`editor-panel-${section.id}`"
             :data-editor-section-button="section.id"
+            :data-editor-section-tab="section.id"
             @click="selectEditorSection(section.id)"
+            @keydown="handleEditorTabKeydown($event, section.id)"
           >
             {{ section.label }}
           </button>
           <button
             v-if="selectedInspectorEvidence"
             type="button"
-            :aria-current="selectedEditorSection === 'inspector' ? 'page' : undefined"
+            role="tab"
+            id="editor-tab-inspector"
+            :aria-selected="selectedEditorSection === 'inspector'"
+            aria-controls="editor-panel-inspector"
             data-editor-section-button="inspector"
+            data-editor-section-tab="inspector"
             @click="selectEditorSection('inspector')"
+            @keydown="handleEditorTabKeydown($event, 'inspector')"
           >
             Inspector
           </button>
@@ -778,7 +792,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
           </button>
         </nav>
         <div class="editor-content" data-editor-content>
-     <section v-if="selectedEditorSection === 'foundations'" id="editor-panel-foundations" class="foundations grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-foundations" data-editor-section="foundations">
+     <section v-show="selectedEditorSection === 'foundations'" id="editor-panel-foundations" class="foundations grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-foundations" data-editor-section="foundations">
       <h2 id="foundations-heading">Foundations</h2>
       <p class="foundations__hint">
         Global values are persisted in the theme and projected only when the Filament 5.9
@@ -1027,7 +1041,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         </div>
       </fieldset>
     </section>
-    <section v-if="selectedEditorSection === 'branding'" id="editor-panel-branding" class="branding grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-branding" data-editor-section="branding">
+    <section v-show="selectedEditorSection === 'branding'" id="editor-panel-branding" class="branding grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-branding" data-editor-section="branding">
       <h2 id="branding-heading">Panel branding and runtime</h2>
       <p>CSS-previewable values apply immediately. PanelProvider values refresh the iframe without losing this draft.</p>
       <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
@@ -1069,7 +1083,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         <button type="button" aria-label="Reset panel branding" @click="theme.resetBranding">Reset panel branding</button>
       </fieldset>
     </section>
-    <section v-if="selectedEditorSection === 'icons'" id="editor-panel-icons" class="icons grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-icons" data-editor-section="icons">
+    <section v-show="selectedEditorSection === 'icons'" id="editor-panel-icons" class="icons grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-icons" data-editor-section="icons">
       <h2 id="icons-heading">Icons</h2>
       <p>Heroicons are runtime Filament configuration. Preview changes apply to rendered icons immediately.</p>
       <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
@@ -1094,7 +1108,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         </div>
       </fieldset>
     </section>
-    <section v-if="selectedEditorSection === 'components'" id="editor-panel-components" class="component-controls grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-components" data-editor-target="form.product-name" data-editor-section="components">
+    <section v-show="selectedEditorSection === 'components'" id="editor-panel-components" class="component-controls grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-components" data-editor-target="form.product-name" data-editor-section="components">
       <h2 id="component-controls-heading">Component controls</h2>
       <p>Product name input · <code>.fi-fo-text-input .fi-input</code> · background color</p>
       <fieldset class="grid gap-2 rounded-lg border border-zinc-200 p-4">

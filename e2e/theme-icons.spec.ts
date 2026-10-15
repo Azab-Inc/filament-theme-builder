@@ -8,7 +8,7 @@ test.describe("icon configuration integration", () => {
 
   test("changes the real preview pack and semantic override immediately", async ({ page }) => {
     await page.goto(composeBaseUrl);
-    await page.getByRole("button", { name: "Icons" }).click();
+    await page.getByRole("tab", { name: "Icons" }).click();
     const preview = page.frameLocator('iframe[title="Filament preview"]');
     const firstIcon = preview.locator("svg").first();
     await expect(firstIcon).toHaveAttribute("data-ftb-icon-pack", "default");
@@ -27,7 +27,7 @@ test.describe("icon configuration integration", () => {
 
   test("persists icon state and exports JSON plus PanelProvider PHP", async ({ page }) => {
     await page.goto(composeBaseUrl);
-    await page.getByRole("button", { name: "Icons" }).click();
+    await page.getByRole("tab", { name: "Icons" }).click();
     await page.getByLabel("Icon pack").selectOption("mini");
     await page.getByLabel("Orders semantic icon override").selectOption("heroicon-m-cube");
 
@@ -39,7 +39,7 @@ test.describe("icon configuration integration", () => {
       overrides: { orders: "heroicon-m-cube" },
     });
     await page.reload();
-    await page.getByRole("button", { name: "Icons" }).click();
+    await page.getByRole("tab", { name: "Icons" }).click();
     await expect(page.getByLabel("Icon pack")).toHaveValue("mini");
     await expect(page.getByLabel("Orders semantic icon override")).toHaveValue("heroicon-m-cube");
 

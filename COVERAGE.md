@@ -290,3 +290,13 @@ operations require confirmation; they use the existing resource/domain service
 and model path. Read/view operations and dashboard/showcase reads are read-only.
 Forced states and presentation controls are not domain mutations and expose no
 MCP mutation tool.
+
+## Builder navigation accessibility evidence
+
+FTB-050 editor navigation accessibility is verified separately from demo-panel
+coverage by `e2e/ftb-050-editor-layout.spec.ts` (10 Playwright tests). In both
+Sidebar and Top modes, deterministic DOM checks assert unique IDs, resolved
+ARIA ID references, one tablist, valid tab/tabpanel relationships, and a single
+selected/visible panel. Keyboard checks cover mode-appropriate arrow navigation
+and visible `:focus-visible` treatment. The latest full Compose run passed 94 of
+97 tests; three existing opt-in tests were skipped.

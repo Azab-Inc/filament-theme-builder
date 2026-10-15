@@ -1469,6 +1469,8 @@ keep the prototype A/B/C visual references intact.
 
 FTB-050 evidence (2026-10-15): production unit/type/build checks passed (`235` builder unit tests); the dedicated Playwright suite passed `4` tests at 1280×900, 900×900, and 640×900 with no page horizontal overflow and unchanged iframe geometry/document; screenshots and live measurements recorded during verification were panel/iframe `511.125/693.875` px at 1280, `351.53125/473.46875` px at 900, and `292.5/292.5` px at 640, with 773/755/755 px heights respectively. Full Compose Playwright passed `88` tests with `3` pre-existing opt-in skips. Full PHP passed `169` tests/1,639 assertions, Pint passed 296 files, PHPStan passed 265 files, and `/api/health` returned `{"status":"ok"}`. `ThrowawayThemePrototype.vue` remains unchanged; production no longer imports or exposes its query gate. No MCP capability or dependency was added.
 
+Accessibility follow-up (2026-10-15): builder type-check, production build, and all `235` unit tests passed. The dedicated FTB-050 Playwright suite passed all `10` tests, including deterministic duplicate-ID/dangling-ARIA-reference checks, tablist/tab/tabpanel contract checks in both modes, hidden inactive panels, keyboard selection/focus, and `:focus-visible`. Full Compose Playwright passed `94` tests with `3` existing opt-in skips (`97` total); all three responsive viewport checks, iframe continuity, and dependent editor navigation tests passed. Sidebar now uses vertical arrow-key navigation and Top mode uses horizontal arrow-key navigation. `ThrowawayThemePrototype.vue` remains unchanged and no dependency was added.
+
 ---
 
 <a id="ftb-051"></a>

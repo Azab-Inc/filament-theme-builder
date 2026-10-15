@@ -43,7 +43,7 @@ test.describe('FTB-050 promoted editor navigation', () => {
 
       const src = await iframe.getAttribute('src')
       await page.getByRole('radio', { name: 'Sidebar' }).check()
-      await page.getByRole('button', { name: 'Foundations' }).click()
+      await page.getByRole('tab', { name: 'Foundations' }).click()
       await expect(page.locator('[data-editor-nav-rail]')).toBeVisible()
       await expect(page.locator('[data-editor-section="foundations"]')).toBeVisible()
       await expect(iframe).toHaveAttribute('src', src!)
@@ -69,6 +69,11 @@ test.describe('FTB-050 promoted editor navigation', () => {
   test('keeps navigation keyboard reachable with visible focus in both modes', async ({ page }) => {
     await page.goto(builderBaseUrl)
 
+    const sidebarFoundations = page.getByRole('tab', { name: 'Foundations' })
+    await sidebarFoundations.focus()
+    await page.keyboard.press('ArrowDown')
+    await expect(page.getByRole('tab', { name: 'Components' })).toBeFocused()
+
     const sidebar = page.getByRole('radio', { name: 'Sidebar' })
     const top = page.getByRole('radio', { name: 'Top navigation' })
     await sidebar.focus()
@@ -84,25 +89,64 @@ test.describe('FTB-050 promoted editor navigation', () => {
     await expect(foundations).toBeFocused()
     await expect(foundations).toHaveCSS('outline-style', 'solid')
     await page.keyboard.press('End')
-    await expect(page.getByRole('tab', { name: 'Icons' })).toBeFocused()
+    const icons = page.getByRole('tab', { name: 'Icons' })
+    await expect(icons).toBeFocused()
+    await expect.poll(() => icons.evaluate((element) => element.matches(':focus-visible'))).toBe(true)
   })
 
   test('exposes complete tab and tabpanel relationships', async ({ page }) => {
     await page.goto(builderBaseUrl)
-    await page.getByRole('radio', { name: 'Top navigation' }).check()
+    for (const mode of ['Sidebar', 'Top navigation']) {
+      await page.getByRole('radio', { name: mode }).check()
+      await expect(page.locator('[role="tablist"]')).toBeVisible()
+      await expect(page.getByRole('tab')).toHaveCount(4)
 
-    const tabs = page.getByRole('tab')
-    await expect(tabs).toHaveCount(4)
+      const audit = await page.locator('body').evaluate((body) => {
+        const elements = Array.from(body.querySelectorAll<HTMLElement>('*'))
+        const ids = elements.flatMap((element) => element.id ? [element.id] : [])
+        const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index)
+        const references = [
+          'aria-activedescendant', 'aria-controls', 'aria-describedby', 'aria-details',
+          'aria-errormessage', 'aria-flowto', 'aria-labelledby', 'aria-owns',
+        ]
+          .flatMap((attribute) => elements.flatMap((element) => (element.getAttribute(attribute) ?? '')
+            .split(/\s+/).filter(Boolean).map((id) => ({ attribute, id }))))
+        const danglingReferences = references.filter(({ id }) => !document.getElementById(id))
+        const tablists = elements.filter((element) => element.getAttribute('role') === 'tablist')
+        const tabs = elements.filter((element) => element.getAttribute('role') === 'tab')
+        const panels = elements.filter((element) => element.getAttribute('role') === 'tabpanel')
+        return {
+          duplicateIds,
+          danglingReferences,
+          tablistCount: tablists.length,
+          tabCount: tabs.length,
+          panelCount: panels.length,
+          selectedTabCount: tabs.filter((tab) => tab.getAttribute('aria-selected') === 'true').length,
+          visiblePanelCount: panels.filter((panel) => !panel.hidden && getComputedStyle(panel).display !== 'none').length,
+          invalidTabParents: tabs.filter((tab) => tab.parentElement?.getAttribute('role') !== 'tablist').length,
+          invalidTabSelections: tabs.filter((tab) => !['true', 'false'].includes(tab.getAttribute('aria-selected') ?? '')).length,
+          invalidPanelLabels: panels.filter((panel) => !panel.getAttribute('aria-labelledby')
+            || !document.getElementById(panel.getAttribute('aria-labelledby')!)?.matches('[role="tab"]')).length,
+          invalidTabControls: tabs.filter((tab) => !document.getElementById(tab.getAttribute('aria-controls') ?? '')
+            ?.matches('[role="tabpanel"]')).length,
+        }
+      })
+      expect(audit).toEqual({
+        duplicateIds: [], danglingReferences: [], tablistCount: 1, tabCount: 4,
+        panelCount: 4, selectedTabCount: 1, visiblePanelCount: 1,
+        invalidTabParents: 0, invalidTabSelections: 0,
+        invalidPanelLabels: 0, invalidTabControls: 0,
+      })
 
-    for (let index = 0; index < await tabs.count(); index += 1) {
-      const tab = tabs.nth(index)
-      const panelId = await tab.getAttribute('aria-controls')
-      expect(panelId).toBeTruthy()
-      await tab.click()
-      const panel = page.locator(`#${panelId}`)
-      await expect(panel).toBeVisible()
-      await expect(panel).toHaveAttribute('aria-labelledby', await tab.getAttribute('id') ?? '')
-      await expect(panel).toHaveAttribute('role', 'tabpanel')
+      for (const tab of await page.getByRole('tab').all()) {
+        const panelId = await tab.getAttribute('aria-controls')
+        expect(panelId).toBeTruthy()
+        await tab.click()
+        const panel = page.locator(`#${panelId}`)
+        await expect(panel).toBeVisible()
+        await expect(panel).toHaveAttribute('aria-labelledby', await tab.getAttribute('id') ?? '')
+        await expect(panel).toHaveAttribute('role', 'tabpanel')
+      }
     }
 
     await page.getByRole('tab', { name: 'Components' }).click()
