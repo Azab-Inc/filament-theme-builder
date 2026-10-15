@@ -5,11 +5,65 @@ import { createPinia } from 'pinia'
 import App from '../App.vue'
 import ThrowawayThemePrototype from '../components/ThrowawayThemePrototype.vue'
 import HoverInspectPrototype from '../components/HoverInspectPrototype.vue'
+import EditorToolbar from '../components/EditorToolbar.vue'
 import { createDefaultThemeState } from '@/utils/foundation-defaults'
 import { serializeCanonicalTheme } from '@/utils/theme-serialization'
 import * as vanillaCssExport from '@/utils/vanilla-css-export'
 
 describe('App', () => {
+  it('keeps the editor toolbar public hooks and forwards export and recovery actions', async () => {
+    const wrapper = mount(EditorToolbar, {
+      props: {
+        primaryColor: '#6366f1',
+        canUndo: false,
+        canRedo: true,
+        inspectorEnabled: true,
+        inspectorStatus: 'Product name input',
+        exportStatus: 'Vanilla CSS copied to clipboard.',
+        runtimeLoading: true,
+        legacyRecoveryAvailable: true,
+        legacyRecoveryError: 'Archive needs review',
+      },
+    })
+
+    for (const name of [
+      'Export theme JSON', 'Copy vanilla CSS', 'Download vanilla CSS',
+      'Export PanelProvider icon config', 'Export panel branding JSON',
+      'Export PanelProvider branding config', 'Undo', 'Redo', 'Inspector',
+      'Restore legacy customization', 'Download archived legacy JSON',
+    ]) {
+      expect(wrapper.get(`[aria-label="${name}"]`)).toBeTruthy()
+    }
+    expect(wrapper.get('[data-editor-header-controls]')).toBeTruthy()
+    expect(wrapper.get('[data-export-status]').text()).toBe('Vanilla CSS copied to clipboard.')
+    expect(wrapper.get('[data-inspector-status]').text()).toBe('Product name input')
+    expect(wrapper.get('[data-preview-loading]').text()).toBe('Refreshing runtime preview…')
+    expect(wrapper.get('[role="alert"].legacy-recovery').text()).toContain('Archive needs review')
+    expect((wrapper.get('[aria-label="Undo"]').element as HTMLButtonElement).disabled).toBe(true)
+    expect(wrapper.get('[aria-label="Inspector"]').attributes('aria-pressed')).toBe('true')
+
+    const actionButtons = {
+        exportCanonicalJson: 'Export theme JSON',
+        copyVanillaThemeCss: 'Copy vanilla CSS',
+        exportVanillaThemeCss: 'Download vanilla CSS',
+        exportIconPhp: 'Export PanelProvider icon config',
+        exportBrandingJson: 'Export panel branding JSON',
+        exportBrandingPhp: 'Export PanelProvider branding config',
+        undo: 'Undo',
+        redo: 'Redo',
+        toggleInspector: 'Inspector',
+        restoreLegacyRecovery: 'Restore legacy customization',
+        downloadLegacyRecovery: 'Download archived legacy JSON',
+    } as const
+    await wrapper.setProps({ canUndo: true, legacyRecoveryError: undefined })
+    for (const [action, accessibleName] of Object.entries(actionButtons)) {
+      await wrapper.get(`[aria-label="${accessibleName}"]`).trigger('click')
+      expect(wrapper.emitted(action)).toHaveLength(1)
+    }
+
+    wrapper.unmount()
+  })
+
   it('keeps the builder DOM hooks used by accessibility, automation, and preview tools', () => {
     window.history.replaceState({}, '', '/')
     const wrapper = mount(App, { global: { plugins: [createPinia()] } })

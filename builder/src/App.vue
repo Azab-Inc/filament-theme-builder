@@ -31,6 +31,7 @@ import { useRecovery } from '@/composables/use-recovery'
 import { usePreviewTheme } from '@/composables/use-preview-theme'
 import { useInspector, type EditorSection } from '@/composables/use-inspector'
 import HoverInspectPrototype from '@/components/HoverInspectPrototype.vue'
+import EditorToolbar from '@/components/EditorToolbar.vue'
 
 const previewUrl = import.meta.env.VITE_DEMO_URL ?? '/demo/admin'
 const inspectMode = new URLSearchParams(window.location.search).get('inspect') === '1'
@@ -540,57 +541,29 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
     :initial-variant="inspectVariant"
   />
   <main v-else class="preview-shell">
-    <header class="preview-shell__header">
-      <div class="preview-shell__header-copy">
-        <h1>Filament Theme Builder</h1>
-        <p data-demo-notice>Preview demo data is temporary.</p>
-      </div>
-      <div class="preview-shell__header-controls" data-editor-header-controls>
-        <label
-          >Primary color
-          <input v-model="primaryColor" type="color" aria-label="Primary color" />
-        </label>
-        <button type="button" aria-label="Export theme JSON" @click="exportCanonicalJson">
-          Export JSON
-        </button>
-        <button type="button" aria-label="Copy vanilla CSS" @click="copyVanillaThemeCss">
-          Copy CSS
-        </button>
-        <button type="button" aria-label="Download vanilla CSS" @click="exportVanillaThemeCss">
-          Download CSS
-        </button>
-        <button type="button" aria-label="Export PanelProvider icon config" @click="exportIconPhp">
-          Export icon PHP
-        </button>
-        <button type="button" aria-label="Export panel branding JSON" @click="exportBrandingJson">
-          Export branding JSON
-        </button>
-        <button type="button" aria-label="Export PanelProvider branding config" @click="exportBrandingPhp">
-          Export branding PHP
-        </button>
-        <button type="button" aria-label="Undo" :disabled="!canUndo" @click="undo">Undo</button>
-        <button type="button" aria-label="Redo" :disabled="!canRedo" @click="redo">Redo</button>
-        <button type="button" aria-label="Inspector" :aria-pressed="inspectorEnabled" @click="toggleInspector">Inspector</button>
-      </div>
-    </header>
-    <p v-if="exportStatus" role="status" aria-label="Export status" aria-live="polite" data-export-status>{{ exportStatus }}</p>
-    <p role="status" aria-label="Inspector status" aria-live="polite" data-inspector-status>
-      <template v-if="!inspectorEnabled">Inspector disabled</template>
-      <template v-else-if="inspectorResolution">{{ inspectorResolution.breadcrumb }}</template>
-      <template v-else>Inspector enabled</template>
-    </p>
-    <p v-if="runtimeLoading" role="status" aria-live="polite" data-preview-loading>Refreshing runtime preview…</p>
-    <aside v-if="theme.legacyRecoveryAvailable" role="alert" class="legacy-recovery">
-      <strong>Legacy customization archived.</strong>
-      <span>Unversioned foundation values are ambiguous; restore marks non-default legacy values explicit.</span>
-      <p v-if="theme.legacyRecoveryError" role="status">{{ theme.legacyRecoveryError }}</p>
-      <button type="button" aria-label="Restore legacy customization" :disabled="!!theme.legacyRecoveryError" @click="restoreLegacyRecovery">
-        Restore legacy customization
-      </button>
-      <button type="button" aria-label="Download archived legacy JSON" @click="downloadLegacyRecovery">
-        Download archived JSON
-      </button>
-    </aside>
+      <EditorToolbar
+        :primary-color="primaryColor"
+        :can-undo="canUndo"
+        :can-redo="canRedo"
+        :inspector-enabled="inspectorEnabled"
+        :inspector-status="!inspectorEnabled ? 'Inspector disabled' : inspectorResolution ? inspectorResolution.breadcrumb : 'Inspector enabled'"
+        :export-status="exportStatus"
+        :runtime-loading="runtimeLoading"
+        :legacy-recovery-available="theme.legacyRecoveryAvailable"
+        :legacy-recovery-error="theme.legacyRecoveryError"
+        @update:primary-color="primaryColor = $event"
+        @export-canonical-json="exportCanonicalJson"
+        @copy-vanilla-theme-css="copyVanillaThemeCss"
+        @export-vanilla-theme-css="exportVanillaThemeCss"
+        @export-icon-php="exportIconPhp"
+        @export-branding-json="exportBrandingJson"
+        @export-branding-php="exportBrandingPhp"
+        @undo="undo"
+        @redo="redo"
+        @toggle-inspector="toggleInspector"
+        @restore-legacy-recovery="restoreLegacyRecovery"
+        @download-legacy-recovery="downloadLegacyRecovery"
+      />
     <div class="editor-workspace" data-editor-workspace>
       <section class="editor-panel" data-editor-panel aria-label="Editor panel">
         <fieldset class="editor-navigation-toggle" data-editor-navigation>
