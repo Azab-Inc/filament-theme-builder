@@ -1,9 +1,8 @@
 import type { PaletteShade } from '@/models/foundations.model'
 import { PALETTE_SHADES } from '@/models/foundations.model'
-
-type Rgba = [red: number, green: number, blue: number, alpha: number]
-type Palette = Record<PaletteShade, string>
-type PaletteOverrides = Partial<Record<PaletteShade, string>>
+import type { Palette } from '@/models/palette.model'
+import type { PaletteOverrides } from '@/models/palette-overrides.model'
+import type { Rgba } from '@/models/rgba.model'
 
 const HEX_COLOR = /^#(?:[\da-fA-F]{6}|[\da-fA-F]{8})$/
 
