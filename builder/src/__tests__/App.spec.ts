@@ -6,9 +6,46 @@ import App from '../App.vue'
 import ThrowawayThemePrototype from '../components/ThrowawayThemePrototype.vue'
 import HoverInspectPrototype from '../components/HoverInspectPrototype.vue'
 import { createDefaultThemeState } from '@/services/foundation-defaults'
+import { serializeCanonicalTheme } from '@/services/theme-serialization'
 import * as vanillaCssExport from '@/services/vanilla-css-export'
 
 describe('App', () => {
+  it('keeps the builder DOM hooks used by accessibility, automation, and preview tools', () => {
+    window.history.replaceState({}, '', '/')
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+
+    expect(wrapper.get('iframe[title="Filament preview"]')).toBeTruthy()
+    expect(wrapper.get('[data-editor-workspace] [data-editor-panel][aria-label="Editor panel"]')).toBeTruthy()
+    expect(wrapper.get('[data-editor-navigation]')).toBeTruthy()
+    expect(wrapper.get('[data-editor-section="foundations"]#editor-panel-foundations[role="tabpanel"][aria-labelledby="editor-tab-foundations"]')).toBeTruthy()
+    expect(wrapper.get('[role="status"][aria-label="Inspector status"][data-inspector-status]')).toBeTruthy()
+    expect(wrapper.get('#density')).toBeTruthy()
+    expect(wrapper.get('#body-font-name')).toBeTruthy()
+    expect(wrapper.get('#spacing-1-5')).toBeTruthy()
+    expect(wrapper.get('[aria-label="Upload light logo"]')).toBeTruthy()
+    expect(wrapper.get('[data-editor-target="form.product-name"]')).toBeTruthy()
+
+    wrapper.unmount()
+  })
+
+  it('removes the window listeners it owns when the builder unmounts', () => {
+    window.history.replaceState({}, '', '/')
+    const addListener = vi.spyOn(window, 'addEventListener')
+    const removeListener = vi.spyOn(window, 'removeEventListener')
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+    const ownedListeners = addListener.mock.calls.filter(([type]) => type === 'keydown' || type === 'message')
+
+    wrapper.unmount()
+
+    for (const [type, listener] of ownedListeners) {
+      expect(removeListener).toHaveBeenCalledWith(type, listener)
+    }
+    expect(ownedListeners.map(([type]) => type)).toEqual(expect.arrayContaining(['keydown', 'message']))
+
+    addListener.mockRestore()
+    removeListener.mockRestore()
+  })
+
   it('mounts the hover inspector only behind the inspect query gate', () => {
     window.history.replaceState({}, '', '/?inspect=1&variant=B')
     const inspected = mount(App, { global: { plugins: [createPinia()] } })
@@ -176,6 +213,39 @@ describe('App', () => {
 
     const blob = createObjectURL.mock.calls[0]?.[0] as Blob
     expect(JSON.parse(await blob.text()).rawOverrides).toEqual(state.rawOverrides)
+    wrapper.unmount()
+  })
+
+  it('preserves the public export filenames and JSON export bytes', async () => {
+    localStorage.clear()
+    const downloads: string[] = []
+    const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:builder-export')
+    createObjectURL.mockClear()
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      downloads.push(this.download)
+    })
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+
+    await wrapper.get('button[aria-label="Export theme JSON"]').trigger('click')
+    const jsonBlob = createObjectURL.mock.calls[0]?.[0]
+    expect(jsonBlob).toBeInstanceOf(Blob)
+    expect(await (jsonBlob as Blob).text()).toBe(
+      JSON.stringify(serializeCanonicalTheme(createDefaultThemeState()), null, 2),
+    )
+
+    await wrapper.get('button[aria-label="Download vanilla CSS"]').trigger('click')
+    await wrapper.get('button[aria-label="Export PanelProvider icon config"]').trigger('click')
+    await wrapper.get('button[aria-label="Export panel branding JSON"]').trigger('click')
+    await wrapper.get('button[aria-label="Export PanelProvider branding config"]').trigger('click')
+
+    expect(downloads).toEqual([
+      'filament-theme.json',
+      'theme.css',
+      'filament-panel-icon-config.php',
+      'filament-panel-branding.json',
+      'filament-panel-branding.php',
+    ])
     wrapper.unmount()
   })
 

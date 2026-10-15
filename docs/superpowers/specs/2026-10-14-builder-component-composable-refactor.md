@@ -1,11 +1,19 @@
 # Refactor builder into components, composables, and utilities
 
-**Status:** planning-only; future behavior-preserving refactor
+**Status:** phase 1 in progress — characterization only; production extraction has not started
 **Scope slug:** `builder-component-composable-refactor`
 **Ticket:** [FTB-053](../../../TICKETS.md#ftb-053) · [GitHub #53](https://github.com/Azab-Inc/filament-theme-builder/issues/53)
-**Review fixed point:** `fe9f7cda5bdf3cde73f1ccade973919af08d09a7` (refresh to the actual implementation base before work begins)
+**Review fixed point:** `546818b828b68e51251121fb407b81015ad7b7a4` (2026-10-15 current `dev` characterization baseline)
 
-This document defines the approved scope for the single future refactor ticket. The exclusive scope lock is recorded separately at `.scratch/spec-locks/builder-component-composable-refactor.lock`. This document does not approve implementation, change runtime behavior, or lift the repository's demo-first/root gate. The current worktree contains concurrent application changes; implementation must refresh its fixed point and preserve those changes.
+This document defines the approved scope for the single refactor ticket. The exclusive scope lock is recorded separately at `.scratch/spec-locks/builder-component-composable-refactor.lock`. Phase 1 is restricted to tests and baseline evidence: no production behavior or file placement changes are included. This phase does not lift the repository's demo-first/root gate. The worktree contains unrelated concurrent changes that must be preserved.
+
+### Phase 1 evidence (2026-10-15)
+
+- Refreshed the characterization baseline to current `dev` HEAD `546818b828b68e51251121fb407b81015ad7b7a4`.
+- Added App characterization assertions for stable DOM/ARIA/data hooks, owned `keydown`/`message` listener cleanup, canonical JSON bytes, and all five public export filenames.
+- Added Playwright characterization for accepted multipart branding uploads and rejected-upload state preservation.
+- Existing unit and integration coverage continues to characterize schema/projection/protocol validation, Inspector and editor layout modes, prototype-query behavior, exports, recovery, and real iframe parity; see `builder/src/__tests__` and `e2e/`.
+- Baseline builder checks passed: unit tests, type-check, and production build. Compose Playwright run: 96 passed, 3 skipped (test-safe upload limits and production gateway are opt-in). This evidence does not complete phase 1 or authorize production extraction.
 
 ## 1. Goal and non-goals
 
