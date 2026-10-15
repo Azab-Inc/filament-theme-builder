@@ -1,10 +1,2 @@
-import type { SemanticComponentRow } from './semantic-component-controls.model'
-
-export type SemanticComponentValueChange = {
-  row: SemanticComponentRow
-  event: Event
-}
-
-export type SemanticComponentReset = {
-  row: SemanticComponentRow
-}
+export type { SemanticComponentValueChange } from '@/dtos/semantic-component-value-change.dto'
+export type { SemanticComponentReset } from '@/dtos/semantic-component-reset.dto'
