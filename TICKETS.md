@@ -14,6 +14,7 @@
 - Deferred color-picker and named-palette design: [FTB-051](#ftb-051) / [GitHub #51](https://github.com/Azab-Inc/filament-theme-builder/issues/51).
 - Builder value padlock design: [FTB-052](#ftb-052) / [GitHub #52](https://github.com/Azab-Inc/filament-theme-builder/issues/52).
 - Deferred builder component/composable refactor: [FTB-053](#ftb-053) / [GitHub #53](https://github.com/Azab-Inc/filament-theme-builder/issues/53).
+- Urgent hierarchical padding design: [FTB-054](#ftb-054) / [GitHub #54](https://github.com/Azab-Inc/filament-theme-builder/issues/54).
 
 ## Dependency map
 
@@ -1544,3 +1545,42 @@ Decompose the oversized `App.vue` into cohesive visual components and focused `u
 - [ ] Repeated field-row markup/mutation logic is described before extracting a focused shared control; components use typed props/emits/refs without a monolithic `useApp` or excessive prop drilling.
 - [ ] TDD unit/component tests, type-check, build, and Playwright CLI/MCP verification cover utility parity, lifecycle cleanup/multiple mounts, real iframe edit/Inspector behavior, exports, branding uploads/errors, recovery, native defaults, history, and no leaked listeners.
 - [ ] Implementation refreshes the fixed point, preserves concurrent worktree changes, and records unchanged AI-operability capability inventory and evidence without adding tools.
+
+---
+
+<a id="ftb-054"></a>
+
+## FTB-054 — Add hierarchical padding controls (Urgent)
+
+**Scope slug:** `hierarchical-padding-controls`
+
+**Priority:** high (urgent)
+
+**Status:** blocked (approved planning only)
+
+**Blocked by:** FTB-003 functionality stabilization and the unchanged demo-first gate; genuine FTB-006 registry/inheritance extension; FTB-022 versioned canonical JSON migration; and active FTB-053 work only when it touches the same core seams. FTB-053 is a coordination constraint, not a new dependency cycle. Existing FTB-004 vanilla CSS and canonical JSON parity are acceptance requirements, not a new blocker. FTB-012 remains partial only for density integration and is not silently closed. FTB-052 is future coordination only unless its implementation is present.
+
+**Coordination, not blockers:** FTB-024 Fully Explicit vanilla export and FTB-025 Tailwind `@apply` export integrate conditionally if those future modes exist; neither is required or implemented by this urgent ticket.
+
+**Spec:** [Hierarchical Padding Controls](./docs/superpowers/specs/2026-10-14-hierarchical-padding-controls.md), especially [coverage](./docs/superpowers/specs/2026-10-14-hierarchical-padding-controls.md#2-verified-target-coverage-contract), [canonical inheritance](./docs/superpowers/specs/2026-10-14-hierarchical-padding-controls.md#4-canonical-value-and-inheritance-contract), [preview/export parity](./docs/superpowers/specs/2026-10-14-hierarchical-padding-controls.md#6-preview-and-export-parity), [MCP](./docs/superpowers/specs/2026-10-14-hierarchical-padding-controls.md#9-mcp-and-capability-inventory-contract), and [verification](./docs/superpowers/specs/2026-10-14-hierarchical-padding-controls.md#10-test-and-verification-contract).
+
+**GitHub:** [#54](https://github.com/Azab-Inc/filament-theme-builder/issues/54)
+
+**Review fixed point:** `880e2ff6c536a44429b6f2fefbd7b8d99ee4996e` (2026-10-15 planning baseline; refresh the actual full `dev` HEAD before implementation review).
+
+### What to build
+
+Give users semantic padding controls that inherit from global default through section, individual component, and existing variant/state scopes. Users can edit linked all-sides padding or independent edges, see effective values and their source, reset explicit values back to inheritance/native Filament behavior, and observe immediate real-demo preview plus CSS/JSON export parity. The implementation must cover every verified mapped visual target without blanket DOM selectors or duplicate nested padding.
+
+### Acceptance criteria
+
+- [ ] A validated registry coverage matrix identifies stable target IDs, exact verified Filament selectors, group/visual boundaries, compatibility evidence, supported edges/units, and supported/unmapped/excluded status for global, Forms, Tables, Buttons, and other mapped registry groups. It includes concrete input, textarea, select, table container/header/header-cell/cell, and button targets where the real Filament fixtures verify them; it does not invent fake selectors or style icons, checkbox/radio internals, `html`, `body`, menus, or arbitrary wrappers.
+- [ ] The editor presents an explicit registry-driven tree: Global; Forms with Default, Input, Textarea, and Select; Tables with Default, Header, and Cell; Buttons with Default; and other verified groups. Variant/state controls remain beneath their mapped component target, while unsupported groups are identified rather than rendered as fake controls.
+- [ ] Padding stores four optional canonical edges; omission differs from explicit zero; each edge resolves most-specific inheritance through global → section → component → variant → state; effective value, source, explicitness, and native/unmapped status are exposed without persisting resolved copies. Parent changes preserve child explicit overrides and reset removes only the selected explicit edge/record.
+- [ ] Linked editing intentionally writes all four edges as one history entry; separate editing changes only the selected edge; switching presentation modes never silently overwrites heterogeneous edges and clearly represents mixed values. Existing density, spacing scale, light/dark, color, raw override, branding, and unrelated semantic state remain unchanged.
+- [ ] Values reuse the existing raw visual-value allowlist: unitless zero, nonzero numeric lengths with currently allowed units, and existing bounded nonnegative spacing lists where applicable; semantic spacing-scale choices resolve to canonical validated CSS lengths and never emit literal token names. Actual emitted CSS values are validated for finiteness, allowed syntax, and injection safety; no arbitrary `calc(...)`, `var(...)`, URL, declaration, or executable content is accepted, and unsupported input is rejected rather than silently coerced. Per-edge values remain individual declarations, not a composite shorthand.
+- [ ] The real Filament iframe updates immediately through the shared canonical preview path. Playwright computed-style evidence proves all four edges for global/Forms input/textarea/select/Tables container-header-cell/Buttons targets, native-before/after reset, no duplicate nested padding, keyboard/narrow/zoom behavior, and no reload or non-GET mutation.
+- [ ] Existing FTB-004 vanilla CSS and canonical JSON exports use the same resolver/registry result as preview. Padding inheritance is semantic, not DOM inheritance: preview and minimal CSS materialize resolved explicit global/section/component/variant/state values on each mapped target's verified selector. Reset recomputes the next explicit ancestor value or removes the declaration for native fallback. JSON retains only sparse explicit edges, including zero; native/unmapped values are not emitted. Future Fully Explicit/Tailwind exporters integrate only if available and are not prerequisites. Old-theme migration preserves all unrelated theme state.
+- [ ] Unit/store tests cover registry evidence, per-edge inheritance, source/effective resolution, parent preservation, native fallback, linked/separate history, reset/undo/redo, persistence, old JSON migration, validation quarantine, and preview/CSS/JSON parity. If FTB-052 exists, padding lock identities prevent locked per-edge bulk changes; padlocks are not otherwise implemented here.
+- [ ] Purpose-built MCP discovery/read/preview/confirm/set/reset capabilities use the same services, authorization, validation, resolver, export, and lock boundaries as the UI; confirmation and apply-time revalidation are tested with invalid/stale/unauthorized cases and an actual AI-client journey. The capability-to-tool inventory records this coverage and logs contain no sensitive values or arbitrary payloads.
+- [ ] The implementation refreshes the full review fixed point, preserves unrelated dirty worktree changes, adds no third-party dependency/server service, does not modify or close parent tickets, and does not claim the demo-first gate or FTB-012 complete.

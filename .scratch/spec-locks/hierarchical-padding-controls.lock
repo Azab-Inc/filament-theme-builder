@@ -1,0 +1,8 @@
+scope: hierarchical-padding-controls
+owner: documentation-and-tracker-publication
+claimed_at: 2026-10-15
+rule: exclusive planning lock; never overwrite this file
+source_changes: forbidden
+prototype_changes: forbidden
+test_changes: forbidden
+commit: none
