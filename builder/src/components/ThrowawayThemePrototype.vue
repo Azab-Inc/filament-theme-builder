@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import type { ThrowawayThemePrototypeProps } from '@/models/throwaway-theme-prototype-props.model'
+import type { ThrowawayThemePrototypeVariant } from '@/models/throwaway-theme-prototype-variant.model'
 
 // PROTOTYPE—throwaway exploration; not connected to theme state or production editing.
-type Variant = 'A' | 'B' | 'C'
-
-const props = defineProps<{ initialVariant: string; previewUrl: string }>()
-const variants: Variant[] = ['A', 'B', 'C']
-const activeVariant = ref<Variant>(
-  variants.includes(props.initialVariant as Variant) ? (props.initialVariant as Variant) : 'A',
+const props = defineProps<ThrowawayThemePrototypeProps>()
+const variants: ThrowawayThemePrototypeVariant[] = ['A', 'B', 'C']
+const activeVariant = ref<ThrowawayThemePrototypeVariant>(
+  variants.includes(props.initialVariant as ThrowawayThemePrototypeVariant)
+    ? (props.initialVariant as ThrowawayThemePrototypeVariant)
+    : 'A',
 )
 const variantName = computed(() => ({
   A: 'Split workspace',
@@ -15,7 +17,7 @@ const variantName = computed(() => ({
   C: 'Floating inspector',
 })[activeVariant.value])
 
-function setVariant(variant: Variant): void {
+function setVariant(variant: ThrowawayThemePrototypeVariant): void {
   activeVariant.value = variant
   const url = new URL(window.location.href)
   url.searchParams.set('prototype', '1')
