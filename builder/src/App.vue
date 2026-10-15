@@ -38,11 +38,13 @@ import PreviewFrame from '@/components/PreviewFrame.vue'
 import BrandingSettingsPanel from './components/BrandingSettingsPanel.vue'
 import IconPackConfigurationPanel from './components/IconPackConfigurationPanel.vue'
 import FoundationsPaletteControls from './components/FoundationsPaletteControls.vue'
+import FoundationsSurfaceControls from './components/FoundationsSurfaceControls.vue'
 import type {
   PaletteBaseChange,
   PaletteShadeChange,
   PaletteShadeReset,
 } from './components/foundations-palette-controls.model'
+import type { FoundationModeValueChange } from './components/foundations-surface-controls.model'
 
 const previewUrl = import.meta.env.VITE_DEMO_URL ?? '/demo/admin'
 const inspectMode = new URLSearchParams(window.location.search).get('inspect') === '1'
@@ -321,9 +323,9 @@ function setFontChoice(name: 'body' | 'heading' | 'mono', event: Event): void {
   if (choice?.font) theme.setFoundation(`typography.${name}`, choice.font)
 }
 
-function setModeValue(path: string, event: Event): void {
-  const fullPath = `${path}.${activeMode.value}`
-  const value = (event.target as HTMLInputElement).value
+function setModeValue(change: FoundationModeValueChange): void {
+  const fullPath = `${change.path}.${activeMode.value}`
+  const value = (change.event.target as HTMLInputElement).value
   const validation = validateFoundationColor(value)
   if (!validation.valid) {
     foundationErrors.value[fullPath] = validation.message
@@ -700,86 +702,20 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
          @reset-palette-shade="resetPaletteShade"
        />
 
-      <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
-        <legend>Surfaces, borders, text, and modes</legend>
-        <div role="group" aria-label="Preview mode">
-          <button
-            type="button"
-            aria-label="Light mode"
-            :aria-pressed="activeMode === 'light'"
-            @click="setMode('light')"
-          >
-            Light
-          </button>
-          <button
-            type="button"
-            aria-label="Dark mode"
-            :aria-pressed="activeMode === 'dark'"
-            @click="setMode('dark')"
-          >
-            Dark
-          </button>
-        </div>
-        <div v-for="name in surfaceNames" :key="name" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
-          <label :for="`${name}-surface`">{{ name }} surface {{ activeMode }}</label>
-          <input
-            :id="`${name}-surface`"
-            type="text"
-            :value="resolvedFoundation.surfaces[name]"
-            :aria-invalid="foundationError(`surfaces.${name}.${activeMode}`) ? 'true' : undefined"
-            @input="setModeValue(`surfaces.${name}`, $event)"
-          />
-          <span role="status" aria-live="polite">{{ statusFor(`surfaces.${name}`) }}</span>
-          <span v-if="foundationError(`surfaces.${name}.${activeMode}`)" :data-foundation-error="`surfaces.${name}.${activeMode}`" role="alert">{{ foundationError(`surfaces.${name}.${activeMode}`) }}</span>
-          <button
-            type="button"
-            :aria-label="`Reset ${name} surface`"
-            @click="reset(`surfaces.${name}.${activeMode}`)"
-          >
-            Reset
-          </button>
-        </div>
-        <div v-for="name in borderNames" :key="name" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
-          <label :for="`border-${name}-${activeMode}`">border {{ name }} {{ activeMode }}</label>
-          <input
-            :id="`border-${name}-${activeMode}`"
-            type="text"
-            :aria-label="`Border ${name} ${activeMode}`"
-            :value="resolvedFoundation.borders[name]"
-            :aria-invalid="foundationError(`borders.${name}.${activeMode}`) ? 'true' : undefined"
-            @input="setModeValue(`borders.${name}`, $event)"
-          />
-          <span role="status" aria-live="polite">{{ statusFor(`borders.${name}`) }}</span>
-          <span v-if="foundationError(`borders.${name}.${activeMode}`)" :data-foundation-error="`borders.${name}.${activeMode}`" role="alert">{{ foundationError(`borders.${name}.${activeMode}`) }}</span>
-          <button
-            type="button"
-            :aria-label="`Reset border ${name} ${activeMode}`"
-            @click="reset(`borders.${name}.${activeMode}`)"
-          >
-            Reset
-          </button>
-        </div>
-        <div v-for="name in textNames" :key="name" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
-          <label :for="`text-${name}-${activeMode}`">text {{ name }} {{ activeMode }}</label>
-          <input
-            :id="`text-${name}-${activeMode}`"
-            type="text"
-            :aria-label="`Text ${name} ${activeMode}`"
-            :value="resolvedFoundation.text[name]"
-            :aria-invalid="foundationError(`text.${name}.${activeMode}`) ? 'true' : undefined"
-            @input="setModeValue(`text.${name}`, $event)"
-          />
-          <span role="status" aria-live="polite">{{ statusFor(`text.${name}`) }}</span>
-          <span v-if="foundationError(`text.${name}.${activeMode}`)" :data-foundation-error="`text.${name}.${activeMode}`" role="alert">{{ foundationError(`text.${name}.${activeMode}`) }}</span>
-          <button
-            type="button"
-            :aria-label="`Reset text ${name} ${activeMode}`"
-            @click="reset(`text.${name}.${activeMode}`)"
-          >
-            Reset
-          </button>
-        </div>
-      </fieldset>
+       <FoundationsSurfaceControls
+         :active-mode="activeMode"
+         :surfaces="resolvedFoundation.surfaces"
+         :borders="resolvedFoundation.borders"
+         :text="resolvedFoundation.text"
+         :surface-names="surfaceNames"
+         :border-names="borderNames"
+         :text-names="textNames"
+         :status-for="statusFor"
+         :foundation-error="foundationError"
+         @set-mode="setMode"
+         @set-mode-value="setModeValue"
+         @reset="reset"
+       />
 
       <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
         <legend>Typography</legend>
