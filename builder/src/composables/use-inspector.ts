@@ -1,6 +1,7 @@
 import { onBeforeUnmount, onMounted, ref, type ComputedRef, type Ref } from 'vue'
 
 import type { FilamentRegistry } from '@/models/theme-registry.model'
+import type { EditorSection } from '@/models/editor.model'
 import {
   INSPECTOR_PROTOCOL_VERSION,
   isInspectorEvent,
@@ -9,8 +10,6 @@ import {
   type InspectorTargetEvidence,
 } from '@/utils/inspector-protocol'
 import { resolveInspectorTarget } from '@/registry/theme-registry'
-
-export type EditorSection = 'foundations' | 'components' | 'branding' | 'icons' | 'inspector'
 
 type RawSelectorProposal = { selector: string | null; quality: string }
 

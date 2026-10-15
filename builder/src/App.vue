@@ -11,6 +11,7 @@ import type {
 } from '@/models/foundations.model'
 import type { ResolveRequest, ThemeOverride, ThemeScope, ThemeStateV4 } from '@/models/theme.model'
 import type { IconPackName, ResourceIconKey } from '@/models/icons.model'
+import type { EditorNavigationMode, EditorSection } from '@/models/editor.model'
 import type { PanelBrandingSetting } from '@/models/panel-branding.model'
 import type { BrandingSettingChange } from './components/branding-settings-panel.model'
 import { ICON_PACK_NAMES, RESOURCE_ICON_KEYS } from '@/models/icons.model'
@@ -30,7 +31,7 @@ import { createThemeRegistry } from '@/registry/theme-registry'
 import { useThemeStore } from '@/stores/theme'
 import { useRecovery } from '@/composables/use-recovery'
 import { usePreviewTheme } from '@/composables/use-preview-theme'
-import { useInspector, type EditorSection } from '@/composables/use-inspector'
+import { useInspector } from '@/composables/use-inspector'
 import HoverInspectPrototype from '@/components/HoverInspectPrototype.vue'
 import EditorToolbar from '@/components/EditorToolbar.vue'
 import PreviewFrame from '@/components/PreviewFrame.vue'
@@ -59,8 +60,6 @@ const { canUndo, canRedo } = storeToRefs(theme)
 const paletteNames = PALETTE_NAMES
 const paletteShades = PALETTE_SHADES
 const activeMode = ref<ThemeMode>('light')
-type EditorNavigationMode = 'sidebar' | 'top'
-
 const editorNavigationMode = ref<EditorNavigationMode>('sidebar')
 const selectedEditorSection = ref<EditorSection>('foundations')
 const editorSections: ReadonlyArray<{ id: EditorSection; label: string }> = [

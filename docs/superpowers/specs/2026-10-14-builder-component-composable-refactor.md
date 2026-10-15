@@ -19,7 +19,14 @@ This document defines the approved scope for the single refactor ticket. The exc
 
 Move the oversized builder shell toward cohesive Vue components, focused composables, and framework-independent utilities. The refactor covers the current approximately 1,082-line `App.vue` and all current `builder/src/services` modules. It is structural only: existing behavior, contracts, selectors, IDs, accessible names, state shape, export output, and preview protocol remain unchanged.
 
-Out of scope: new product behavior, schema/color/CSS semantic changes, new MCP tools, new dependencies, backend changes, prototype promotion, layout redesign, Pinia domain redesign, model/DTO/registry relocation, or changing the demo-first gate. The existing prototypes remain prototypes; no real preview effects are added to prototype mode.
+Out of scope: new product behavior, schema/color/CSS semantic changes, new MCP tools, third-party dependencies beyond the explicitly approved builder Tailwind CSS 4.3.3 pipeline, backend changes, prototype promotion, layout redesign, Pinia domain redesign, model/DTO/registry relocation, or changing the demo-first gate. The existing prototypes remain prototypes; no real preview effects are added to prototype mode.
+
+### Approved builder CSS pipeline (review clarification)
+
+- The only approved builder dependency/configuration addition is the minimal Tailwind CSS 4.3.3 build-time pipeline: `tailwindcss` plus `@tailwindcss/vite` as builder dev dependencies, and the Tailwind Vite plugin.
+- Keep the CSS entrypoint import in `src/main.ts` as `import './app.css'`; `app.css` imports only Tailwind's theme and utilities layers (`tailwindcss/theme.css` and `tailwindcss/utilities.css`).
+- Do not import `tailwindcss` wholesale or enable Preflight. Preserving existing browser/native styles and prototype rendering is required.
+- No other third-party dependency may be added as part of this ticket.
 
 ## 2. Boundaries and invariants
 
@@ -27,6 +34,8 @@ Out of scope: new product behavior, schema/color/CSS semantic changes, new MCP t
 - `src/composables/useX.ts` owns Vue reactivity, lifecycle registration, browser APIs, and orchestration of application effects. Do not create a monolithic `useApp` wrapper.
 - `src/utils/` owns deterministic validation, resolution, transformation, serialization, generation, and export functions. Utility modules must not import Vue, Pinia stores, components, composables, or browser globals, and retain plain-function APIs.
 - Domain models stay in `src/models/`, transfer-only shapes in `src/dtos/`, and semantic/Filament registries in `src/registry/`.
+- Shared/domain types declared in `App.vue` or composables are moved to dedicated `.model.ts`/`.dto.ts` files in the appropriate boundary folder; component/composable-local implementation details may remain local.
+- Builder styling uses only the approved Tailwind CSS 4.3.3 pipeline above, imported once through `src/main.ts` and without Preflight.
 - Components use typed props/emits/slots and focused composables. Pass reactive refs and callbacks rather than introducing a giant union of props or excessive prop drilling.
 - Any repeated field-row markup or mutation/reset/status logic found in more than two places must first be described in the implementation plan, then extracted to a focused reusable control/component. Do not abstract one-off markup merely to reduce line count.
 - Existing effective values, provenance labels, reset-to-inherit behavior, light/dark separation, alpha handling, responsive spacing, and decimal spacing values remain identical.
@@ -72,7 +81,7 @@ The migration must update stores, registry consumers, components, composables, t
 - raw/advanced Inspector controls;
 - preview frame.
 
-The existing DOM IDs, `data-*` hooks, ARIA labels/roles, section names, iframe title, event semantics, and CSS selectors are compatibility contracts. Components may share refs/reactive values through focused props and emits, but must not fork canonical theme state.
+The existing DOM IDs, `data-*` hooks, ARIA labels/roles, section names, iframe title, event semantics, and CSS selectors are compatibility contracts. Components may share refs/reactive values through focused props and emits, but must not fork canonical theme state. Type-boundary checks must also keep shared editor types outside `App.vue` and composables.
 
 Focused composable seams should cover the current responsibilities, using names such as `useFoundationEditor`, `usePreviewBridge`, `useInspector`, `useExportActions`, `useBrandingUploads`, and `useRecovery` where the extracted responsibility warrants them. Names are guidance, not permission to create trivial wrappers; each composable must own a coherent reactive/lifecycle/effect boundary and be independently testable.
 
@@ -88,14 +97,14 @@ Focused composable seams should cover the current responsibilities, using names 
 
 ## 6. Test and verification contract
 
-Implementation remains TDD: establish failing seams before each extraction, then migrate the smallest slice. Tests assert external behavior rather than private file placement.
+Implementation remains TDD: establish failing seams before each extraction, then migrate the smallest slice. Tests assert external behavior rather than private file placement, except for the explicit type-boundary guard that ensures shared/domain types are declared in `.model.ts`/`.dto.ts` files.
 
 - Keep and relocate/update pure unit tests for every utility, including defaults/projection/provenance/recovery parsing, palette generation, validation, resolver, serialization, protocol guards, raw selectors, branding/icon exports, and vanilla CSS golden parity.
 - Add composable/component tests for lifecycle cleanup, multiple mounts, Pinia history/persistence authority, effective values/provenance, reset semantics, native defaults, alpha and decimal spacing behavior, clipboard fallback, download cleanup, uploads, quota/error handling, and recovery failure paths.
 - Use the existing DOM IDs, ARIA labels, and data hooks in component tests; do not replace them with implementation-specific selectors.
-- Run the existing unit/type/build checks from `builder/` and the relevant Playwright CLI tests before claiming completion. Use Playwright MCP against the real builder and iframe to verify edit-to-preview, Inspector origin/source/schema behavior, runtime refresh, export actions, branding uploads/errors, recovery, and no listener leaks across mount/unmount.
+- Run the existing unit/type/build checks from `builder/` and the relevant Compose Playwright tests before claiming completion. Use Playwright MCP against the real builder and iframe to verify edit-to-preview, Inspector origin/source/schema behavior, runtime refresh, export actions, branding uploads/errors, recovery, and no listener leaks across mount/unmount.
 - Verify both normal production mode and prototype query modes. Prototype mode must not create real preview bridge effects or iframe orchestration beyond its existing behavior.
-- Root Compose remains the canonical complete runtime; no new package or service may be installed or added.
+- Root Compose remains the canonical complete runtime. No new package or service may be installed or added beyond the approved builder Tailwind CSS 4.3.3 CSS pipeline above.
 
 ## 7. Sequencing and readiness
 

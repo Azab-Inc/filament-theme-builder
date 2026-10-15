@@ -7,7 +7,7 @@ import { usePreviewTheme } from '@/composables/use-preview-theme'
 import { useInspector } from '@/composables/use-inspector'
 import { useThemeStore } from '@/stores/theme'
 import { createThemeRegistry } from '@/registry/theme-registry'
-import type { EditorSection } from '@/composables/use-inspector'
+import type { EditorSection } from '@/models/editor.model'
 
 describe('preview effect composables', () => {
   it('synchronizes the canonical Pinia theme and reloads runtime branding without replacing the iframe element', async () => {
