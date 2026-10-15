@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import type { PaletteName, PaletteShade } from '@/models/foundations.model'
-import type {
-  FoundationsPaletteControlsEmits,
-  FoundationsPaletteControlsProps,
-} from './foundations-palette-controls.model'
+import type { FoundationsPaletteControlsEmits } from './foundations-palette-controls-emits.model'
+import type { FoundationsPaletteControlsProps } from './foundations-palette-controls-props.model'
 
 defineProps<FoundationsPaletteControlsProps>()
 const emit = defineEmits<FoundationsPaletteControlsEmits>()
