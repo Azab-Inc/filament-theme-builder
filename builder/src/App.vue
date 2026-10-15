@@ -36,6 +36,12 @@ import EditorToolbar from '@/components/EditorToolbar.vue'
 import PreviewFrame from '@/components/PreviewFrame.vue'
 import BrandingSettingsPanel from './components/BrandingSettingsPanel.vue'
 import IconPackConfigurationPanel from './components/IconPackConfigurationPanel.vue'
+import FoundationsPaletteControls from './components/FoundationsPaletteControls.vue'
+import type {
+  PaletteBaseChange,
+  PaletteShadeChange,
+  PaletteShadeReset,
+} from './components/foundations-palette-controls.model'
 
 const previewUrl = import.meta.env.VITE_DEMO_URL ?? '/demo/admin'
 const inspectMode = new URLSearchParams(window.location.search).get('inspect') === '1'
@@ -227,25 +233,20 @@ function redo(): void {
   theme.redo()
 }
 
-function setPaletteBase(name: PaletteName, event: Event): void {
-  theme.setPaletteBase(name, (event.target as HTMLInputElement).value)
+function setPaletteBase(change: PaletteBaseChange): void {
+  theme.setPaletteBase(change.name, change.value)
 }
 
 function resetPaletteBase(name: PaletteName): void {
   reset(`palettes.${name}.base`)
 }
 
-function shadeValue(name: PaletteName, shade: PaletteShade): string {
-  return foundation.value.palettes[name].overrides[shade] ?? ''
+function setPaletteShade(change: PaletteShadeChange): void {
+  if (change.value) theme.setPaletteShadeOverride(change.name, change.shade, change.value)
 }
 
-function setPaletteShade(name: PaletteName, shade: PaletteShade, event: Event): void {
-  const value = (event.target as HTMLInputElement).value
-  if (value) theme.setPaletteShadeOverride(name, shade, value)
-}
-
-function paletteStatus(name: PaletteName, shade: PaletteShade): string {
-  return statusFor(`palettes.${name}.shades.${shade}`)
+function resetPaletteShade(resetChange: PaletteShadeReset): void {
+  theme.resetPaletteShade(resetChange.name, resetChange.shade)
 }
 
 function setMode(mode: ThemeMode): void {
@@ -689,44 +690,16 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         compatibility inventory supports them.
       </p>
 
-      <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
-        <legend>Color palettes</legend>
-        <div v-for="name in paletteNames" :key="name" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
-          <label :for="`${name}-palette-base`">{{ name }} palette base</label>
-          <input
-            :id="`${name}-palette-base`"
-            type="text"
-            :value="foundation.palettes[name].base"
-            @input="setPaletteBase(name, $event)"
-          />
-          <span role="status" aria-live="polite">{{ statusFor(`palettes.${name}.base`) }}</span>
-          <button
-            type="button"
-            :aria-label="`Reset ${name} palette base`"
-            @click="resetPaletteBase(name)"
-          >
-            Reset
-          </button>
-          <template v-for="shade in paletteShades" :key="`${name}-${shade}`">
-            <label :for="`${name}-shade-${shade}`">{{ name }} shade {{ shade }} override</label>
-            <input
-              :id="`${name}-shade-${shade}`"
-              type="text"
-              :aria-label="`${name} shade ${shade} override`"
-              :value="shadeValue(name, shade)"
-              @input="setPaletteShade(name, shade, $event)"
-            />
-            <span role="status" aria-live="polite">{{ paletteStatus(name, shade) }}</span>
-            <button
-              type="button"
-              :aria-label="`Reset ${name} shade ${shade}`"
-              @click="theme.resetPaletteShade(name, shade)"
-            >
-              Reset
-            </button>
-          </template>
-        </div>
-      </fieldset>
+       <FoundationsPaletteControls
+         :palettes="foundation.palettes"
+         :palette-names="paletteNames"
+         :palette-shades="paletteShades"
+         :status-for="statusFor"
+         @set-palette-base="setPaletteBase"
+         @set-palette-shade="setPaletteShade"
+         @reset-palette-base="resetPaletteBase"
+         @reset-palette-shade="resetPaletteShade"
+       />
 
       <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
         <legend>Surfaces, borders, text, and modes</legend>
