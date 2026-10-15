@@ -1424,7 +1424,7 @@ identity checks without introducing GitHub Actions.
 
 **Scope slug:** `editor-layout-modes-promotion`
 
-**Status:** blocked
+**Status:** done
 
 **Blocked by:** [FTB-003](#ftb-003) functionality stabilization; Phase 1/demo-first gate ([FTB-009A](#ftb-009), [FTB-009B](#ftb-009b), [FTB-010](#ftb-010), [FTB-011](#ftb-011), [FTB-013](#ftb-013), [FTB-014](#ftb-014), [FTB-015](#ftb-015)); completion of remaining Phase 1 requirements [FTB-016](#ftb-016), [FTB-017](#ftb-017), and [FTB-018](#ftb-018); stabilization of existing builder functionality, including the current foundation/control projection work. FTB-012 remains partial only for theme-density integration and is not a gate blocker. Re-evaluate existing blockers before work; this ticket introduces no parent.
 
@@ -1454,18 +1454,20 @@ keep the prototype A/B/C visual references intact.
 
 ### Acceptance criteria
 
-- [ ] Production replacement begins only after the specified blockers are complete and promotion is explicitly approved.
-- [ ] Sidebar mode presents a vertical navigation rail inside the editor side panel, beside its selected section content; Top navigation mode presents horizontal section tabs inside that same panel above its selected content.
-- [ ] An accessible segmented/radio “Editor navigation” toggle selects Sidebar or Top navigation and supports keyboard operation.
-- [ ] Switching panel navigation modes does not change the overall builder/editor/demo split, move/resize/hide the real Filament demo, or reload/navigate its iframe.
-- [ ] Switching modes preserves canonical draft/theme state, unsaved edits, selected editor section/control, and relevant UI state; the same iframe document remains alive.
-- [ ] Existing theme controls in both modes display and mutate real canonical state; no inert or static mock controls/values are promoted.
-- [ ] At desktop, intermediate, and narrow widths, panel navigation and content remain reachable within the existing editor panel without page-level horizontal overflow; the live demo remains in its existing placement and usable.
-- [ ] Semantic structure, keyboard/focus behavior, zoom/reflow, iframe naming, and automated accessibility checks meet the design contract.
-- [ ] Playwright verifies real state-to-iframe updates, responsive panel behavior, accessibility-relevant interaction, and iframe continuity and unchanged placement.
-- [ ] Playwright verifies each panel mode at responsive widths, Sidebar→Top navigation→Sidebar state/draft persistence, keyboard-accessible mode switching, real state-to-iframe updates, and iframe document continuity.
-- [ ] After approval and verification, remove the prototype switcher/query path from production and replace it with the real A/B toggle; preserve prototype visual references A/B/C unchanged. No prototype-only content leaks into production; C is not selectable as a production mode.
-- [ ] No third-party dependency or new MCP capability is introduced; existing functionality remains the priority.
+- [x] Production replacement begins only after the specified blockers are complete and promotion is explicitly approved.
+- [x] Sidebar mode presents a vertical navigation rail inside the editor side panel, beside its selected section content; Top navigation mode presents horizontal section tabs inside that same panel above its selected content.
+- [x] An accessible segmented/radio “Editor navigation” toggle selects Sidebar or Top navigation and supports keyboard operation.
+- [x] Switching panel navigation modes does not change the overall builder/editor/demo split, move/resize/hide the real Filament demo, or reload/navigate its iframe.
+- [x] Switching modes preserves canonical draft/theme state, unsaved edits, selected editor section/control, and relevant UI state; the same iframe document remains alive.
+- [x] Existing theme controls in both modes display and mutate real canonical state; no inert or static mock controls/values are promoted.
+- [x] At desktop, intermediate, and narrow widths, panel navigation and content remain reachable within the existing editor panel without page-level horizontal overflow; the live demo remains in its existing placement and usable.
+- [x] Semantic structure, keyboard/focus behavior, zoom/reflow, iframe naming, and automated accessibility checks meet the design contract.
+- [x] Playwright verifies real state-to-iframe updates, responsive panel behavior, accessibility-relevant interaction, and iframe continuity and unchanged placement.
+- [x] Playwright verifies each panel mode at responsive widths, Sidebar→Top navigation→Sidebar state/draft persistence, keyboard-accessible mode switching, real state-to-iframe updates, and iframe document continuity.
+- [x] After approval and verification, remove the prototype switcher/query path from production and replace it with the real A/B toggle; preserve prototype visual references A/B/C unchanged. No prototype-only content leaks into production; C is not selectable as a production mode.
+- [x] No third-party dependency or new MCP capability is introduced; existing functionality remains the priority.
+
+FTB-050 evidence (2026-10-15): production unit/type/build checks passed (`235` builder unit tests); the dedicated Playwright suite passed `4` tests at 1280×900, 900×900, and 640×900 with no page horizontal overflow and unchanged iframe geometry/document; screenshots and live measurements recorded during verification were panel/iframe `511.125/693.875` px at 1280, `351.53125/473.46875` px at 900, and `292.5/292.5` px at 640, with 773/755/755 px heights respectively. Full Compose Playwright passed `88` tests with `3` pre-existing opt-in skips. Full PHP passed `169` tests/1,639 assertions, Pint passed 296 files, PHPStan passed 265 files, and `/api/health` returned `{"status":"ok"}`. `ThrowawayThemePrototype.vue` remains unchanged; production no longer imports or exposes its query gate. No MCP capability or dependency was added.
 
 ---
 

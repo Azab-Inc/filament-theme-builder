@@ -3,6 +3,7 @@ import { builderBaseUrl } from './urls'
 
 test('branding controls preserve the draft while runtime preview refreshes', async ({ page }) => {
   await page.goto(builderBaseUrl)
+  await page.getByRole('button', { name: 'Branding', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Panel branding and runtime' })).toBeVisible()
 
   await page.getByLabel('App name').fill('Acme Admin')
@@ -10,13 +11,16 @@ test('branding controls preserve the draft while runtime preview refreshes', asy
   await expect(page.getByLabel('App name')).toHaveValue('Acme Admin')
   await page.waitForTimeout(350)
   await page.reload()
+  await page.getByRole('button', { name: 'Branding', exact: true }).click()
   await expect(page.getByLabel('App name')).toHaveValue('Acme Admin')
 
+  await page.getByRole('button', { name: 'Foundations', exact: true }).click()
   await page.getByLabel('Dark mode').click()
   await expect(page.getByTitle('Filament preview')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Export panel branding JSON' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Export PanelProvider branding config' })).toBeVisible()
 
+  await page.getByRole('button', { name: 'Branding', exact: true }).click()
   await page.getByLabel('Custom Google Font family').fill('Source Sans 3')
   await page.getByLabel('Custom Google Font family').press('Tab')
   await expect(page.locator('iframe')).toHaveAttribute('src', /ftb_branding=/)

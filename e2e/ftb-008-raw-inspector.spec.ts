@@ -19,13 +19,13 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
     page.on('request', (request) => {
       if (request.method() !== 'GET') requests.push(request.method())
     })
-    const target = frame.locator('.fi-sidebar').first()
+    const target = frame.locator('.fi-section:visible').first()
     const beforeUrl = await page.getByTitle('Filament preview').getAttribute('src')
 
     await page.getByRole('button', { name: 'Inspector' }).click()
     await target.click()
     await expect(page.locator('[data-advanced-inspector]')).toBeVisible()
-    await expect(page.getByLabel('Raw element selector')).toHaveValue('.fi-sidebar')
+    await expect(page.getByLabel('Raw element selector')).toHaveValue('.fi-section')
 
     await page.locator('#raw-background-color').fill('#0f766e')
     await expect.poll(() => target.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(/15, 118, 110|rgb\(15, 118, 110\)/)
@@ -41,7 +41,7 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
   test('shows a fragile warning for an editable compound selector and exports raw CSS', async ({ page }) => {
     const frame = page.frameLocator('iframe[title="Filament preview"]')
     await page.getByRole('button', { name: 'Inspector' }).click()
-    await frame.locator('.fi-section').first().click()
+    await frame.locator('.fi-section:visible').first().click()
     await expect(page.getByLabel('Raw element selector')).toHaveValue('.fi-section')
 
     await page.getByLabel('Raw element selector').fill('.fi-section .fi-btn')
@@ -55,7 +55,7 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
   test('downloads deterministic CSS bytes containing the edited raw rule', async ({ page }) => {
     const frame = page.frameLocator('iframe[title="Filament preview"]')
     await page.getByRole('button', { name: 'Inspector' }).click()
-    await frame.locator('.fi-sidebar').first().click()
+    await frame.locator('.fi-section:visible').first().click()
     await page.locator('#raw-background-color').fill('#0f766e')
 
     const [download] = await Promise.all([
@@ -68,7 +68,7 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
 
     expect(download.suggestedFilename()).toBe('theme.css')
     expect(css).toContain('/* Generated with Filament Theme Builder */')
-    expect(css).toContain('.fi-sidebar {')
+    expect(css).toContain('.fi-section {')
     expect(css).toContain('background-color: #0f766e;')
     expect(css.indexOf('/* Foundations */')).toBeLessThan(css.indexOf('/* Semantic overrides */'))
     expect(css.indexOf('/* Semantic overrides */')).toBeLessThan(css.indexOf('/* Advanced raw-element overrides */'))
@@ -92,10 +92,10 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
     const frame = page.frameLocator('iframe[title="Filament preview"]')
     await page.locator('input[aria-label="Primary color"]').fill('#0f766e')
     await page.getByRole('button', { name: 'Inspector' }).click()
-    await frame.locator('.fi-sidebar').first().click()
+    await frame.locator('.fi-section:visible').first().click()
     await page.locator('#raw-background-color').fill('#fef3c7')
 
-    const previewValues = await frame.locator('.fi-sidebar').first().evaluate((element) => ({
+    const previewValues = await frame.locator('.fi-section:visible').first().evaluate((element) => ({
       background: getComputedStyle(element).backgroundColor,
       primary: getComputedStyle(element.ownerDocument.querySelector('.fi-color-primary')!).color,
     }))
@@ -110,7 +110,7 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
     const clean = await context.newPage()
     await clean.goto(`${baseUrl}/demo/admin`)
     await clean.addStyleTag({ content: css })
-    const cleanValues = await clean.locator('.fi-sidebar').first().evaluate((element) => ({
+    const cleanValues = await clean.locator('.fi-section').first().evaluate((element) => ({
       background: getComputedStyle(element).backgroundColor,
       primary: getComputedStyle(element.ownerDocument.querySelector('.fi-color-primary')!).color,
     }))

@@ -194,9 +194,10 @@ describe('App', () => {
     wrapper.unmount()
   })
 
-  it('marks the existing Product name control as the only inspector editor target', () => {
+  it('marks the existing Product name control as the only inspector editor target', async () => {
     window.history.replaceState({}, '', '/')
     const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+    await wrapper.get('[data-editor-section-button="components"]').trigger('click')
 
     expect(wrapper.findAll('[data-editor-target]').map((target) => target.attributes('data-editor-target')))
       .toEqual(['form.product-name'])
@@ -255,7 +256,7 @@ describe('App', () => {
     expect(wrapper.find('[data-advanced-inspector]').exists()).toBe(true)
     expect((wrapper.get('#raw-selector').element as HTMLInputElement).value).toBe('.fi-btn')
     expect(wrapper.find('[data-selector-warning]').exists()).toBe(false)
-    expect(wrapper.find('[data-editor-target="form.product-name"]').exists()).toBe(true)
+    expect(wrapper.find('[data-editor-section-button="components"]').exists()).toBe(true)
 
     await wrapper.get('[aria-label="Raw color"]').setValue('#0f766e')
     expect(wrapper.get('[aria-label="Raw color"]').element).toBeTruthy()
@@ -290,17 +291,6 @@ describe('App', () => {
     wrapper.unmount()
   })
 
-  it('shows the throwaway prototype only when explicitly requested', () => {
-    window.history.replaceState({}, '', '/?prototype=1&variant=B')
-    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
-
-    expect(wrapper.find('[data-prototype="B"]').exists()).toBe(true)
-    expect(wrapper.get('iframe').attributes('title')).toBe('Filament preview')
-
-    wrapper.unmount()
-    window.history.replaceState({}, '', '/')
-  })
-
   it('keeps the normal editor layout when prototype mode is absent', () => {
     window.history.replaceState({}, '', '/')
     const wrapper = mount(App, { global: { plugins: [createPinia()] } })
@@ -309,19 +299,50 @@ describe('App', () => {
     expect(wrapper.find('section.foundations').exists()).toBe(true)
   })
 
-  it('switches prototype variants with controls and arrow keys while updating the URL', async () => {
-    window.history.replaceState({}, '', '/?prototype=1&variant=A')
+  it('promotes accessible Sidebar and Top navigation modes without forking editor state', async () => {
+    window.history.replaceState({}, '', '/')
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+    const iframe = wrapper.get('iframe').element
+    const iframeSrc = wrapper.get('iframe').attributes('src')
+    const primary = wrapper.get('input[type="color"]')
+
+    expect(wrapper.get('[data-editor-navigation]')).toBeTruthy()
+    expect(wrapper.get('[data-editor-navigation] [role="radio"][aria-checked="true"]').attributes('aria-label')).toBe('Sidebar')
+    expect(wrapper.get('[data-editor-nav-rail]')).toBeTruthy()
+    expect(wrapper.get('[data-editor-section="foundations"]')).toBeTruthy()
+
+    await primary.setValue('#0f766e')
+    await wrapper.get('input[value="top"]').setValue(true)
+    await wrapper.get('[data-editor-section-tab="components"]').trigger('click')
+
+    expect(wrapper.get('[data-editor-navigation] [role="radio"][aria-checked="true"]').attributes('aria-label')).toBe('Top navigation')
+    expect(wrapper.get('[data-editor-tabs]')).toBeTruthy()
+    expect(wrapper.get('[data-editor-section="components"]')).toBeTruthy()
+    expect((primary.element as HTMLInputElement).value).toBe('#0f766e')
+    expect(wrapper.get('iframe').element).toBe(iframe)
+    expect(wrapper.get('iframe').attributes('src')).toBe(iframeSrc)
+
+    await wrapper.get('input[value="sidebar"]').setValue(true)
+
+    expect(wrapper.get('[data-editor-nav-rail]')).toBeTruthy()
+    expect(wrapper.get('[data-editor-section="components"]')).toBeTruthy()
+    expect(wrapper.get('iframe').element).toBe(iframe)
+
+    await wrapper.get('[data-editor-section-button="foundations"]').trigger('click')
+    expect(wrapper.get('[data-editor-section="foundations"]')).toBeTruthy()
+    expect((primary.element as HTMLInputElement).value).toBe('#0f766e')
+    expect(wrapper.get('iframe').element).toBe(iframe)
+
+    wrapper.unmount()
+    window.history.replaceState({}, '', '/')
+  })
+
+  it('does not expose the production prototype query path', () => {
+    window.history.replaceState({}, '', '/?prototype=1&variant=C')
     const wrapper = mount(App, { global: { plugins: [createPinia()] } })
 
-    await wrapper.get('button[aria-label="Next variant"]').trigger('click')
-    expect(wrapper.find('[data-prototype="B"]').exists()).toBe(true)
-    expect(window.location.search).toContain('variant=B')
-
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }))
-    await wrapper.vm.$nextTick()
-    expect(wrapper.find('[data-prototype="C"]').exists()).toBe(true)
-    expect(window.location.search).toContain('variant=C')
-    expect(wrapper.get('iframe').attributes('title')).toBe('Filament preview')
+    expect(wrapper.find('[data-prototype]').exists()).toBe(false)
+    expect(wrapper.find('[data-editor-navigation]').exists()).toBe(true)
 
     wrapper.unmount()
     window.history.replaceState({}, '', '/')

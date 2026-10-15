@@ -1,7 +1,7 @@
 # Editor Layout Modes Promotion
 
 **Date:** 2026-10-12
-**Status:** Approved for deferred implementation; production promotion requires a separate explicit approval
+**Status:** Production promotion explicitly approved and completed 2026-10-15
 **Scope slug:** `editor-layout-modes-promotion`
 **Ticket:** [FTB-050](../../../TICKETS.md#ftb-050) · [GitHub issue #50](https://github.com/Azab-Inc/filament-theme-builder/issues/50)
 **Product requirements:** existing [PRD.md](../../../PRD.md); this is a deferred layout design, not a new product requirement.

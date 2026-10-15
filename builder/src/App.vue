@@ -29,15 +29,11 @@ import { resolveInspectorTarget } from '@/registry/theme-registry'
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { isInspectorEvent, INSPECTOR_PROTOCOL_VERSION, type InspectorCommand, type InspectorEvent, type InspectorResolution, type InspectorTargetEvidence } from '@/services/inspector-protocol'
 import { useThemeStore } from '@/stores/theme'
-import ThrowawayThemePrototype from '@/components/ThrowawayThemePrototype.vue'
 import HoverInspectPrototype from '@/components/HoverInspectPrototype.vue'
 
 const previewUrl = import.meta.env.VITE_DEMO_URL ?? '/demo/admin'
-const prototypePreviewUrl = import.meta.env.VITE_DEMO_URL ?? 'http://127.0.0.1:4174/demo/admin'
 const inspectMode = new URLSearchParams(window.location.search).get('inspect') === '1'
 const inspectVariant = new URLSearchParams(window.location.search).get('variant') ?? 'A'
-const prototypeMode = new URLSearchParams(window.location.search).get('prototype') === '1'
-const prototypeVariant = new URLSearchParams(window.location.search).get('variant') ?? 'A'
 const theme = useThemeStore()
 const iframe = ref<HTMLIFrameElement>()
 const iframeSrc = ref(previewUrl)
@@ -52,6 +48,17 @@ const { canUndo, canRedo } = storeToRefs(theme)
 const paletteNames = PALETTE_NAMES
 const paletteShades = PALETTE_SHADES
 const activeMode = ref<ThemeMode>('light')
+type EditorNavigationMode = 'sidebar' | 'top'
+type EditorSection = 'foundations' | 'components' | 'branding' | 'icons' | 'inspector'
+
+const editorNavigationMode = ref<EditorNavigationMode>('sidebar')
+const selectedEditorSection = ref<EditorSection>('foundations')
+const editorSections: ReadonlyArray<{ id: EditorSection; label: string }> = [
+  { id: 'foundations', label: 'Foundations' },
+  { id: 'components', label: 'Components' },
+  { id: 'branding', label: 'Branding' },
+  { id: 'icons', label: 'Icons' },
+]
 const foundationErrors = ref<Record<string, string>>({})
 const uploadErrors = ref<Record<string, string>>({})
 const surfaceNames = ['page', 'sidebar', 'topbar', 'card', 'elevated', 'input'] as const
@@ -177,10 +184,18 @@ function handleInspectorMessage(event: MessageEvent): void {
     selectedInspectorEvidence.value = message.target
     rawSelectorError.value = undefined
     rawSelector.value = rawSelectorProposal.value.selector ?? ''
+    selectedEditorSection.value = resolution.status === 'editable' && resolution.editorTarget === 'form.product-name'
+      ? 'components'
+      : 'inspector'
   }
   if (message.type === 'ftb:inspector:select' && resolution.status === 'editable' && resolution.editorTarget === 'form.product-name') {
     document.querySelector('[data-editor-target="form.product-name"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
+}
+
+function selectEditorSection(section: EditorSection): void {
+  if (section === 'inspector' && !selectedInspectorEvidence.value) return
+  selectedEditorSection.value = section
 }
 
 function onPreviewLoad(): void {
@@ -599,11 +614,6 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
     v-if="inspectMode"
     :initial-variant="inspectVariant"
   />
-  <ThrowawayThemePrototype
-    v-else-if="prototypeMode"
-    :initial-variant="prototypeVariant"
-    :preview-url="prototypePreviewUrl"
-  />
   <main v-else class="preview-shell">
     <header class="preview-shell__header">
       <h1>Filament Theme Builder</h1>
@@ -652,7 +662,94 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         Download archived JSON
       </button>
     </aside>
-    <section class="foundations grid gap-4" aria-labelledby="foundations-heading">
+    <div class="editor-workspace" data-editor-workspace>
+      <section class="editor-panel" data-editor-panel aria-label="Editor panel">
+        <fieldset class="editor-navigation-toggle" data-editor-navigation>
+          <legend>Editor navigation</legend>
+          <label>
+            <input
+              type="radio"
+              role="radio"
+              aria-label="Sidebar"
+              name="editor-navigation"
+              value="sidebar"
+              :checked="editorNavigationMode === 'sidebar'"
+              :aria-checked="editorNavigationMode === 'sidebar'"
+              @change="editorNavigationMode = 'sidebar'"
+            />
+            <span>Sidebar</span>
+          </label>
+          <label>
+            <input
+              type="radio"
+              role="radio"
+              aria-label="Top navigation"
+              name="editor-navigation"
+              value="top"
+              :checked="editorNavigationMode === 'top'"
+              :aria-checked="editorNavigationMode === 'top'"
+              @change="editorNavigationMode = 'top'"
+            />
+            <span>Top navigation</span>
+          </label>
+        </fieldset>
+        <nav
+          v-if="editorNavigationMode === 'sidebar'"
+          class="editor-nav-rail"
+          data-editor-nav-rail
+          aria-label="Editor sections"
+        >
+          <button
+            v-for="section in editorSections"
+            :key="section.id"
+            type="button"
+            :aria-current="selectedEditorSection === section.id ? 'page' : undefined"
+            :data-editor-section-button="section.id"
+            @click="selectEditorSection(section.id)"
+          >
+            {{ section.label }}
+          </button>
+          <button
+            v-if="selectedInspectorEvidence"
+            type="button"
+            :aria-current="selectedEditorSection === 'inspector' ? 'page' : undefined"
+            data-editor-section-button="inspector"
+            @click="selectEditorSection('inspector')"
+          >
+            Inspector
+          </button>
+        </nav>
+        <nav
+          v-else
+          class="editor-tabs"
+          data-editor-tabs
+          aria-label="Editor sections"
+          role="tablist"
+        >
+          <button
+            v-for="section in editorSections"
+            :key="section.id"
+            type="button"
+            role="tab"
+            :aria-selected="selectedEditorSection === section.id"
+            :data-editor-section-tab="section.id"
+            @click="selectEditorSection(section.id)"
+          >
+            {{ section.label }}
+          </button>
+          <button
+            v-if="selectedInspectorEvidence"
+            type="button"
+            role="tab"
+            :aria-selected="selectedEditorSection === 'inspector'"
+            data-editor-section-tab="inspector"
+            @click="selectEditorSection('inspector')"
+          >
+            Inspector
+          </button>
+        </nav>
+        <div class="editor-content" data-editor-content>
+    <section v-if="selectedEditorSection === 'foundations'" class="foundations grid gap-4" aria-labelledby="foundations-heading" data-editor-section="foundations">
       <h2 id="foundations-heading">Foundations</h2>
       <p class="foundations__hint">
         Global values are persisted in the theme and projected only when the Filament 5.9
@@ -901,7 +998,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         </div>
       </fieldset>
     </section>
-    <section class="branding grid gap-4" aria-labelledby="branding-heading">
+    <section v-if="selectedEditorSection === 'branding'" class="branding grid gap-4" aria-labelledby="branding-heading" data-editor-section="branding">
       <h2 id="branding-heading">Panel branding and runtime</h2>
       <p>CSS-previewable values apply immediately. PanelProvider values refresh the iframe without losing this draft.</p>
       <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
@@ -943,7 +1040,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         <button type="button" aria-label="Reset panel branding" @click="theme.resetBranding">Reset panel branding</button>
       </fieldset>
     </section>
-    <section class="icons grid gap-4" aria-labelledby="icons-heading">
+    <section v-if="selectedEditorSection === 'icons'" class="icons grid gap-4" aria-labelledby="icons-heading" data-editor-section="icons">
       <h2 id="icons-heading">Icons</h2>
       <p>Heroicons are runtime Filament configuration. Preview changes apply to rendered icons immediately.</p>
       <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
@@ -968,7 +1065,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         </div>
       </fieldset>
     </section>
-    <section class="component-controls grid gap-4" aria-labelledby="component-controls-heading" data-editor-target="form.product-name">
+    <section v-if="selectedEditorSection === 'components'" class="component-controls grid gap-4" aria-labelledby="component-controls-heading" data-editor-target="form.product-name" data-editor-section="components">
       <h2 id="component-controls-heading">Component controls</h2>
       <p>Product name input · <code>.fi-fo-text-input .fi-input</code> · background color</p>
       <fieldset class="grid gap-2 rounded-lg border border-zinc-200 p-4">
@@ -993,7 +1090,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         </div>
       </fieldset>
     </section>
-    <section v-if="selectedInspectorEvidence" class="advanced-inspector grid gap-4" aria-labelledby="advanced-inspector-heading" data-advanced-inspector>
+    <section v-if="selectedInspectorEvidence && selectedEditorSection === 'inspector'" class="advanced-inspector grid gap-4" aria-labelledby="advanced-inspector-heading" data-advanced-inspector data-editor-section="inspector">
       <h2 id="advanced-inspector-heading">Advanced Inspector</h2>
       <p>Raw visual overrides are validated typed properties and remain separate from Semantic controls.</p>
       <fieldset class="grid gap-2 rounded-lg border border-zinc-200 p-4">
@@ -1015,6 +1112,8 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         <button type="button" aria-label="Reset raw element override" @click="resetRawOverride">Reset raw override</button>
       </fieldset>
     </section>
+        </div>
+      </section>
     <iframe
       ref="iframe"
       :src="iframeSrc"
@@ -1022,6 +1121,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
       class="preview-shell__frame"
       @load="onPreviewLoad"
     />
+    </div>
   </main>
 </template>
 
@@ -1030,10 +1130,138 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.editor-workspace {
+  display: grid;
+  flex: 1;
+  gap: 0.75rem;
+  grid-template-columns: minmax(20rem, 42%) minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  padding: 0 1rem 1rem;
+}
+
+.editor-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.editor-navigation-toggle {
+  align-items: center;
+  border: 1px solid #e4e4e7;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  padding: 0.5rem;
+}
+
+.editor-navigation-toggle legend {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-right: 0.25rem;
+}
+
+.editor-navigation-toggle label {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.editor-nav-rail {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 0.25rem;
+  overflow-y: auto;
+  padding: 0.25rem 0.5rem 0.5rem 0;
+  width: 9rem;
+}
+
+.editor-nav-rail button,
+.editor-tabs button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  color: #3f3f46;
+  cursor: pointer;
+  font: inherit;
+  padding: 0.5rem 0.625rem;
+  text-align: left;
+}
+
+.editor-nav-rail button[aria-current="page"],
+.editor-tabs button[aria-selected="true"] {
+  background: #f4f4f5;
+  border-color: #d4d4d8;
+  color: #18181b;
+  font-weight: 600;
+}
+
+.editor-nav-rail button:focus-visible,
+.editor-tabs button:focus-visible,
+.editor-navigation-toggle input:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.editor-tabs {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.25rem;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 0.25rem 0 0.5rem;
+  scrollbar-width: thin;
+}
+
+.editor-tabs button {
+  flex: 0 0 auto;
+  text-align: center;
+}
+
+.editor-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+}
+
+.editor-panel:has(.editor-nav-rail) .editor-content {
+  flex: 1;
+}
+
+.editor-panel:has(.editor-nav-rail) {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.editor-panel:has(.editor-nav-rail) .editor-navigation-toggle,
+.editor-panel:has(.editor-nav-rail) .editor-tabs {
+  grid-column: 1 / -1;
+}
+
+.editor-panel:has(.editor-nav-rail) .editor-nav-rail {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.editor-panel:has(.editor-nav-rail) .editor-content {
+  grid-column: 2;
+  grid-row: 2;
 }
 
 .foundations {
-  max-height: 45vh;
+  min-width: 0;
   overflow: auto;
   padding: 0 1rem 1rem;
 }
@@ -1054,10 +1282,6 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
 }
 
 @media (max-width: 767px) {
-  .foundations {
-    max-height: 50vh;
-  }
-
   .foundation-row {
     grid-template-columns: 1fr;
   }
@@ -1082,13 +1306,16 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
 }
 
 .preview-shell__frame {
+  display: block;
+  height: 100%;
+  min-height: 0;
   width: 100%;
   flex: 1;
   border: 0;
 }
 
 .advanced-inspector {
-  max-height: 45vh;
+  min-width: 0;
   overflow: auto;
   padding: 0 1rem 1rem;
 }
@@ -1098,8 +1325,29 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
 }
 
 @media (max-width: 767px) {
-  .advanced-inspector {
-    max-height: 50vh;
+  .editor-workspace {
+    gap: 0.5rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    padding-inline: 0.5rem;
+  }
+
+  .editor-panel:has(.editor-nav-rail) {
+    grid-template-columns: minmax(5rem, 30%) minmax(0, 1fr);
+  }
+
+  .editor-panel:has(.editor-nav-rail) .editor-nav-rail {
+    width: auto;
+  }
+
+  .editor-nav-rail {
+    padding-right: 0.25rem;
+  }
+
+  .editor-nav-rail button,
+  .editor-tabs button {
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
+    padding-inline: 0.35rem;
   }
 }
 </style>

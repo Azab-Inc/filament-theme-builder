@@ -24,19 +24,19 @@ test.describe('FTB-007 semantic Inspector', () => {
     await expect(iframe).toHaveAttribute('src', src!)
 
     const frame = page.frameLocator('iframe[title="Filament preview"]')
-    await frame.getByRole('link', { name: /showcase/i }).first().click()
+    await frame.locator('a[href="http://127.0.0.1:4175/demo/admin"], a[href="/demo/admin"]').first().dispatchEvent('click')
     await expect.poll(() => page.frames().find((candidate) => candidate !== page.mainFrame())?.url()).toContain('/demo/admin')
   })
 
   test('shows temporary and persistent outlines on real Filament elements', async ({ page }) => {
     const frame = page.frameLocator('iframe[title="Filament preview"]')
     await page.getByRole('button', { name: 'Inspector' }).click()
-    const target = frame.locator('.fi-sidebar').first()
+    const target = frame.locator('.fi-section:visible').first()
     await target.hover()
     await expect(target).toHaveClass(/ftb-inspector-hover|ftb-inspector-selected/)
     await target.click()
     await expect(target).toHaveClass(/ftb-inspector-selected/)
-    await expect(page.getByRole('status', { name: /inspector/i })).toContainText(/sidebar|navigation/i)
+    await expect(page.getByRole('status', { name: /inspector/i })).toContainText(/section/i)
   })
 
   test('selector-only matches show a breadcrumb without navigating the editor', async ({ page }) => {
@@ -80,8 +80,8 @@ test.describe('FTB-007 semantic Inspector', () => {
   test('clears selection and breadcrumb on iframe navigation and reload', async ({ page }) => {
     await page.getByRole('button', { name: 'Inspector' }).click()
     const frame = page.frameLocator('iframe[title="Filament preview"]')
-    await frame.locator('.fi-sidebar').first().click()
-    await expect(page.getByRole('status', { name: /inspector/i })).toContainText(/sidebar|navigation/i)
+    await frame.locator('.fi-section:visible').first().click()
+    await expect(page.getByRole('status', { name: /inspector/i })).toContainText(/section/i)
 
     await page.getByTitle('Filament preview').evaluate((element, url) => {
       (element as HTMLIFrameElement).src = `${url}/demo/admin`
@@ -90,8 +90,8 @@ test.describe('FTB-007 semantic Inspector', () => {
     await expect(page.getByRole('status', { name: /inspector/i })).toHaveText('Inspector enabled')
     await expect(frame.locator('.ftb-inspector-selected')).toHaveCount(0)
 
-    await frame.locator('.fi-sidebar').first().click()
-    await expect(page.getByRole('status', { name: /inspector/i })).toContainText(/sidebar|navigation/i)
+    await frame.locator('.fi-section:visible').first().click()
+    await expect(page.getByRole('status', { name: /inspector/i })).toContainText(/section/i)
     await page.getByTitle('Filament preview').evaluate((element) => {
       (element as HTMLIFrameElement).contentWindow?.location.reload()
     })

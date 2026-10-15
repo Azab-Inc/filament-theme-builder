@@ -77,6 +77,8 @@ test.describe("foundation preview integration", () => {
     await expect(page.getByRole("heading", { name: "Filament Theme Builder" })).toBeVisible()
     const iframe = page.locator('iframe[title="Filament preview"]')
     const nativePage = await page.context().newPage()
+    const iframeBox = await iframe.boundingBox()
+    await nativePage.setViewportSize({ width: Math.floor(iframeBox?.width ?? 700), height: Math.floor(iframeBox?.height ?? 700) })
     await nativePage.goto(`${composeBaseUrl}/demo/admin`)
     const nativeSidebarColor = await computedColorPixel(nativePage, '.fi-sidebar')
     const frame = page.frames().find((candidate) => candidate.url().includes("/demo/admin"))
@@ -332,6 +334,8 @@ test.describe("foundation preview integration", () => {
     await expect(page).toHaveURL(`${composeBaseUrl}/demo/admin`);
     await page.goto(composeBaseUrl);
     const nativePage = await page.context().newPage();
+    const iframeBox = await page.locator('iframe[title="Filament preview"]').boundingBox();
+    await nativePage.setViewportSize({ width: Math.floor(iframeBox?.width ?? 700), height: Math.floor(iframeBox?.height ?? 700) });
     await nativePage.goto(`${composeBaseUrl}/demo/admin/tables-showcase`);
     await page.evaluate(() => localStorage.clear());
     await page.reload();
@@ -741,7 +745,7 @@ test.describe("foundation preview integration", () => {
       page.getByRole("heading", { name: "Foundations" }),
     ).toBeVisible();
     await expect(page.locator("section.foundations")).toHaveClass(/grid/);
-    await expect(page.locator("fieldset").first()).toHaveCSS("display", "grid");
+    await expect(page.locator("section.foundations fieldset").first()).toHaveCSS("display", "grid");
     await expect(page.locator(".foundation-row").first()).toHaveCSS("display", "grid");
     await expect(page.locator(".foundation-row").first()).toHaveCSS("grid-template-columns", /.+/);
 

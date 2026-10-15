@@ -423,6 +423,7 @@ test.describe('forms and schemas showcase', () => {
   test('projects the Product name inheritance controls onto the real focused input', async ({ page }) => {
     test.skip(process.env.COMPOSE_E2E !== '1', 'This acceptance test targets the Compose gateway.')
     await page.goto(composeBaseUrl)
+    await page.getByRole('button', { name: 'Components' }).click()
     const frame = page.frame({ url: /\/demo\/admin/ })
     expect(frame).toBeTruthy()
     await frame!.goto(`${composeBaseUrl}/demo/admin/forms-showcase`)
