@@ -12,6 +12,7 @@ import type {
 import type { ResolveRequest, ThemeOverride, ThemeScope, ThemeStateV4 } from '@/models/theme.model'
 import type { IconPackName, ResourceIconKey } from '@/models/icons.model'
 import type { PanelBrandingSetting } from '@/models/panel-branding.model'
+import type { BrandingSettingChange } from './components/branding-settings-panel.model'
 import { ICON_PACK_NAMES, RESOURCE_ICON_KEYS } from '@/models/icons.model'
 import { ICON_PACK_PRESETS } from '@/registry/icon-registry'
 import { CURATED_FONT_CHOICES, PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
@@ -33,6 +34,8 @@ import { useInspector, type EditorSection } from '@/composables/use-inspector'
 import HoverInspectPrototype from '@/components/HoverInspectPrototype.vue'
 import EditorToolbar from '@/components/EditorToolbar.vue'
 import PreviewFrame from '@/components/PreviewFrame.vue'
+import BrandingSettingsPanel from './components/BrandingSettingsPanel.vue'
+import IconPackConfigurationPanel from './components/IconPackConfigurationPanel.vue'
 
 const previewUrl = import.meta.env.VITE_DEMO_URL ?? '/demo/admin'
 const inspectMode = new URLSearchParams(window.location.search).get('inspect') === '1'
@@ -66,13 +69,14 @@ const surfaceNames = ['page', 'sidebar', 'topbar', 'card', 'elevated', 'input'] 
 const typographyNames = ['body', 'heading', 'mono'] as const
 const borderNames = ['default', 'strong'] as const
 const textNames = ['primary', 'muted', 'disabled'] as const
-const iconPackNames = ICON_PACK_NAMES
-const resourceIconKeys = RESOURCE_ICON_KEYS
 const iconOptions = [
   'heroicon-o-cube', 'heroicon-o-star', 'heroicon-o-bolt', 'heroicon-o-heart', 'heroicon-o-check-circle',
   'heroicon-s-cube', 'heroicon-s-star', 'heroicon-s-bolt', 'heroicon-s-heart', 'heroicon-s-check-circle',
   'heroicon-m-cube', 'heroicon-m-star', 'heroicon-m-bolt', 'heroicon-m-heart', 'heroicon-m-check-circle',
 ]
+const iconPreviews = computed(() => Object.fromEntries(
+  RESOURCE_ICON_KEYS.map((key) => [key, theme.theme.icons.overrides[key] ?? ICON_PACK_PRESETS[theme.theme.icons.pack][key]]),
+) as Record<ResourceIconKey, string>)
 const radiusOptions = ['none', 'sm', 'md', 'lg', 'xl', 'full'] as const
 const shadowOptions = ['none', 'sm', 'md', 'lg', 'xl'] as const
 const fontChoices: ReadonlyArray<{ value: string; label: string; font?: FontChoice }> = [
@@ -432,6 +436,19 @@ async function uploadBrandingAsset(setting: PanelBrandingSetting, event: Event):
   theme.setBrandingSetting(setting, payload.reference)
 }
 
+function applyBrandingChange(change: BrandingSettingChange): void {
+  switch (change.setting) {
+    case 'appName': theme.setBrandingSetting('appName', change.value); break
+    case 'lightLogo': theme.setBrandingSetting('lightLogo', change.value); break
+    case 'darkLogo': theme.setBrandingSetting('darkLogo', change.value); break
+    case 'favicon': theme.setBrandingSetting('favicon', change.value); break
+    case 'logoHeight': theme.setBrandingSetting('logoHeight', change.value); break
+    case 'brandTypography': theme.setBrandingSetting('brandTypography', change.value); break
+    case 'contentWidth': theme.setBrandingSetting('contentWidth', change.value); break
+    case 'sidebar': theme.setBrandingSetting('sidebar', change.value); break
+  }
+}
+
 function setBrandTypography(event: Event): void {
   const value = (event.target as HTMLSelectElement).value
   if (value === 'System') {
@@ -441,6 +458,11 @@ function setBrandTypography(event: Event): void {
   if (value === 'Inter' || value === 'Roboto') {
     theme.setBrandingSetting('brandTypography', { kind: 'curated', name: value, family: value, provider: 'google-fonts' })
   }
+}
+
+function setCustomBrandTypography(event: Event): void {
+  const value = (event.target as HTMLInputElement).value.trim()
+  theme.setBrandingSetting('brandTypography', { kind: 'custom', name: value, family: value })
 }
 
 function downloadText(filename: string, contents: string, type: string): void {
@@ -455,26 +477,13 @@ function downloadText(filename: string, contents: string, type: string): void {
   window.setTimeout(() => link.remove(), 0)
 }
 
-function setIconPack(event: Event): void {
-  theme.setIconPack((event.target as HTMLSelectElement).value as IconPackName)
+function setIconPack(pack: IconPackName): void {
+  theme.setIconPack(pack)
 }
 
-function iconOverrideValue(key: ResourceIconKey): string {
-  return theme.theme.icons.overrides[key] ?? ''
-}
-
-function setIconOverride(key: ResourceIconKey, event: Event): void {
-  const value = (event.target as HTMLSelectElement).value
+function setIconOverride(key: ResourceIconKey, value: string): void {
   if (value) theme.setSemanticResourceIcon(key, value)
   else theme.resetSemanticResourceIcon(key)
-}
-
-function iconLabel(key: ResourceIconKey): string {
-  return key.charAt(0).toUpperCase() + key.slice(1)
-}
-
-function iconPreview(key: ResourceIconKey): string {
-  return theme.theme.icons.overrides[key] ?? ICON_PACK_PRESETS[theme.theme.icons.pack][key]
 }
 
 function setProductNameValue(row: (typeof productNameRows.value)[number], event: Event): void {
@@ -922,73 +931,28 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         </div>
       </fieldset>
     </section>
-    <section v-show="selectedEditorSection === 'branding'" id="editor-panel-branding" class="branding grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-branding" data-editor-section="branding">
-      <h2 id="branding-heading">Panel branding and runtime</h2>
-      <p>CSS-previewable values apply immediately. PanelProvider values refresh the iframe without losing this draft.</p>
-      <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
-        <legend>PanelBrandingSettings</legend>
-        <label for="brand-app-name">App name</label>
-        <input id="brand-app-name" aria-label="App name" :value="theme.theme.branding.appName" @input="theme.setBrandingSetting('appName', ($event.target as HTMLInputElement).value)" />
-        <label for="brand-light-logo">Light logo upload reference</label>
-        <input id="brand-light-logo-file" aria-label="Upload light logo" type="file" accept="image/jpeg,image/png,image/webp" @change="uploadBrandingAsset('lightLogo', $event)" />
-        <input id="brand-light-logo" aria-label="Light logo upload reference" :value="theme.theme.branding.lightLogo ?? ''" @input="theme.setBrandingSetting('lightLogo', ($event.target as HTMLInputElement).value || null)" />
-        <span v-if="uploadErrors.lightLogo" role="alert">{{ uploadErrors.lightLogo }}</span>
-        <label for="brand-dark-logo">Dark logo upload reference</label>
-        <input id="brand-dark-logo-file" aria-label="Upload dark logo" type="file" accept="image/jpeg,image/png,image/webp" @change="uploadBrandingAsset('darkLogo', $event)" />
-        <input id="brand-dark-logo" aria-label="Dark logo upload reference" :value="theme.theme.branding.darkLogo ?? ''" @input="theme.setBrandingSetting('darkLogo', ($event.target as HTMLInputElement).value || null)" />
-        <span v-if="uploadErrors.darkLogo" role="alert">{{ uploadErrors.darkLogo }}</span>
-        <label for="brand-favicon">Favicon upload reference</label>
-        <input id="brand-favicon-file" aria-label="Upload favicon" type="file" accept="image/jpeg,image/png,image/webp" @change="uploadBrandingAsset('favicon', $event)" />
-        <input id="brand-favicon" aria-label="Favicon upload reference" :value="theme.theme.branding.favicon ?? ''" @input="theme.setBrandingSetting('favicon', ($event.target as HTMLInputElement).value || null)" />
-        <span v-if="uploadErrors.favicon" role="alert">{{ uploadErrors.favicon }}</span>
-        <label for="brand-logo-height">Logo height (CSS-previewable)</label>
-        <input id="brand-logo-height" aria-label="Logo height" :value="theme.theme.branding.logoHeight" @input="theme.setBrandingSetting('logoHeight', ($event.target as HTMLInputElement).value)" />
-        <label for="brand-font">Brand typography</label>
-        <select id="brand-font" aria-label="Brand typography" :value="theme.theme.branding.brandTypography.name" @change="setBrandTypography">
-          <option value="System">System</option>
-          <option value="Inter">Inter (Google Fonts)</option>
-          <option value="Roboto">Roboto (Google Fonts)</option>
-        </select>
-        <label for="brand-custom-font">Custom Google Font family</label>
-        <input id="brand-custom-font" aria-label="Custom Google Font family" :value="theme.theme.branding.brandTypography.kind === 'custom' ? theme.theme.branding.brandTypography.family : ''" placeholder="Example: Source Sans 3" @change="theme.setBrandingSetting('brandTypography', { kind: 'custom', name: ($event.target as HTMLInputElement).value.trim(), family: ($event.target as HTMLInputElement).value.trim() })" />
-        <label for="brand-content-width">Content width</label>
-        <select id="brand-content-width" aria-label="Content width" :value="theme.theme.branding.contentWidth" @change="theme.setBrandingSetting('contentWidth', ($event.target as HTMLSelectElement).value as any)">
-          <option v-for="value in ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl', 'full']" :key="value" :value="value">{{ value }}</option>
-        </select>
-        <label for="brand-sidebar">Sidebar behavior</label>
-        <select id="brand-sidebar" aria-label="Sidebar behavior" :value="theme.theme.branding.sidebar" @change="theme.setBrandingSetting('sidebar', ($event.target as HTMLSelectElement).value as any)">
-          <option value="collapsible">Collapsible</option>
-          <option value="fully-collapsible">Fully collapsible</option>
-          <option value="top-navigation">Top navigation</option>
-        </select>
-        <button type="button" aria-label="Reset panel branding" @click="theme.resetBranding">Reset panel branding</button>
-      </fieldset>
-    </section>
-    <section v-show="selectedEditorSection === 'icons'" id="editor-panel-icons" class="icons grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-icons" data-editor-section="icons">
-      <h2 id="icons-heading">Icons</h2>
-      <p>Heroicons are runtime Filament configuration. Preview changes apply to rendered icons immediately.</p>
-      <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
-        <legend>IconPackConfiguration</legend>
-        <label for="icon-pack">Icon pack</label>
-        <select id="icon-pack" aria-label="Icon pack" :value="theme.theme.icons.pack" @change="setIconPack">
-          <option v-for="pack in iconPackNames" :key="pack" :value="pack">{{ pack }}</option>
-        </select>
-        <button type="button" aria-label="Reset icon configuration" @click="theme.resetIconConfiguration">Reset icon configuration</button>
-        <div
-          v-for="key in resourceIconKeys"
-          :key="key"
-          class="icon-control-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]"
-        >
-          <label :for="`${key}-semantic-icon`">{{ iconLabel(key) }} semantic icon override</label>
-          <select :id="`${key}-semantic-icon`" :aria-label="`${iconLabel(key)} semantic icon override`" :value="iconOverrideValue(key)" @change="setIconOverride(key, $event)">
-            <option value="">Inherited from pack ({{ iconPreview(key) }})</option>
-            <option v-for="icon in iconOptions" :key="icon" :value="icon">{{ icon }}</option>
-          </select>
-          <span role="status">{{ iconPreview(key) }}</span>
-          <button type="button" :aria-label="`Reset ${key} semantic icon`" @click="theme.resetSemanticResourceIcon(key)">Reset</button>
-        </div>
-      </fieldset>
-    </section>
+    <BrandingSettingsPanel
+      :active="selectedEditorSection === 'branding'"
+      :branding="theme.theme.branding"
+      :upload-errors="uploadErrors"
+      @change-branding="applyBrandingChange"
+      @upload-asset="uploadBrandingAsset($event.setting, $event.event)"
+      @set-brand-typography="setBrandTypography"
+      @set-custom-brand-typography="setCustomBrandTypography"
+      @reset-branding="theme.resetBranding"
+    />
+    <IconPackConfigurationPanel
+      :active="selectedEditorSection === 'icons'"
+      :configuration="theme.theme.icons"
+      :pack-names="ICON_PACK_NAMES"
+      :resource-keys="RESOURCE_ICON_KEYS"
+      :icon-options="iconOptions"
+      :previews="iconPreviews"
+      @change-pack="setIconPack"
+      @change-override="setIconOverride($event.key, $event.value)"
+      @reset-override="theme.resetSemanticResourceIcon"
+      @reset-configuration="theme.resetIconConfiguration"
+    />
     <section v-show="selectedEditorSection === 'components'" id="editor-panel-components" class="component-controls grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-components" data-editor-target="form.product-name" data-editor-section="components">
       <h2 id="component-controls-heading">Component controls</h2>
       <p>Product name input · <code>.fi-fo-text-input .fi-input</code> · background color</p>
