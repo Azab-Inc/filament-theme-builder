@@ -1,14 +1,3 @@
-import type { RawVisualProperty } from '@/models/raw-overrides.model'
-
-export type RawSelectorChange = {
-  event: Event
-}
-
-export type RawPropertyChange = {
-  property: RawVisualProperty
-  event: Event
-}
-
-export type RawPropertyReset = {
-  property: RawVisualProperty
-}
+export type { RawSelectorChange } from './raw-selector-change.dto'
+export type { RawPropertyChange } from './raw-property-change.dto'
+export type { RawPropertyReset } from './raw-property-reset.dto'
