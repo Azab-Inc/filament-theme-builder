@@ -1,0 +1,65 @@
+import type { RegistryEntry } from '@/models/theme-registry.model'
+import { showcaseEntry } from '@/registry/theme-registry-catalog-showcases-entry'
+
+export const componentShowcaseEntries: readonly RegistryEntry[] = [
+  showcaseEntry(
+    'action.button',
+    'Action button',
+    'action',
+    ['.fi-btn'],
+    ['primary', 'danger', 'success', 'warning', 'info', 'gray', 'outline', 'icon-only'],
+    ['default', 'disabled', 'loading'],
+  ),
+  showcaseEntry('action.group', 'Action group', 'action', ['.fi-ac'], ['grouped'], ['default']),
+  showcaseEntry('modal.content', 'Modal content', 'modal', ['.fi-modal-content'], [], ['open']),
+  showcaseEntry('modal.footer', 'Modal footer', 'modal', ['.fi-modal-footer'], [], ['open']),
+  showcaseEntry('modal.heading', 'Modal heading', 'modal', ['.fi-modal-heading'], [], ['open']),
+  showcaseEntry(
+    'modal.window',
+    'Modal window',
+    'modal',
+    ['.fi-modal-window'],
+    ['small', 'medium', 'large', 'extra-large', 'slide-over'],
+    ['open'],
+  ),
+  showcaseEntry(
+    'notification.container',
+    'Notification container',
+    'notification',
+    ['.fi-no'],
+    ['top-start', 'top-center', 'top-end', 'bottom-start', 'bottom-center', 'bottom-end'],
+    ['visible'],
+  ),
+  showcaseEntry(
+    'notification.item',
+    'Notification item',
+    'notification',
+    ['.fi-no-notification'],
+    ['success', 'danger', 'warning', 'info'],
+    ['persistent', 'transient'],
+  ),
+  showcaseEntry(
+    'dashboard.chart',
+    'Dashboard chart widget',
+    'dashboard',
+    ['.fi-wi-chart'],
+    [],
+    ['default'],
+  ),
+  showcaseEntry(
+    'dashboard.stats',
+    'Dashboard stats widget',
+    'dashboard',
+    ['.fi-wi-stats-overview'],
+    [],
+    ['default'],
+  ),
+  showcaseEntry(
+    'dashboard.table',
+    'Dashboard table widget',
+    'dashboard',
+    ['.fi-wi-table'],
+    [],
+    ['default'],
+  ),
+]

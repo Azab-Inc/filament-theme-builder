@@ -1,0 +1,1 @@
+export const SUPPORTED_FILAMENT_COMPATIBILITY = '5.x'
