@@ -41,6 +41,30 @@ describe('shared editor type boundaries', () => {
     )
   })
 
+  it('keeps typography and layout control types in dedicated files with compatibility exports', () => {
+    const compatibility = readFileSync(
+      `${sourceRoot}/components/foundations-typography-layout-controls.model.ts`,
+      'utf8',
+    )
+    const typeFiles = [
+      ['foundation-typography-name.model.ts', 'FoundationTypographyName'],
+      ['foundation-spacing-name.model.ts', 'FoundationSpacingName'],
+      ['foundation-font-choice-option.model.ts', 'FoundationFontChoiceOption'],
+      ['foundation-event-change.model.ts', 'FoundationEventChange'],
+      ['foundation-font-change.model.ts', 'FoundationFontChange'],
+      ['foundations-typography-layout-controls-props.dto.ts', 'FoundationsTypographyLayoutControlsProps'],
+      ['foundations-typography-layout-controls-emits.dto.ts', 'FoundationsTypographyLayoutControlsEmits'],
+    ] as const
+
+    expect(compatibility).not.toMatch(/export\s+type\s+(FoundationTypographyName|FoundationSpacingName|FoundationFontChoiceOption|FoundationEventChange|FoundationFontChange|FoundationsTypographyLayoutControlsProps|FoundationsTypographyLayoutControlsEmits)\s*=/)
+    for (const [file, name] of typeFiles) {
+      expect(readFileSync(`${sourceRoot}/${file.endsWith('.dto.ts') ? 'dtos' : 'models'}/${file}`, 'utf8')).toMatch(
+        new RegExp(`export type ${name}\\b`),
+      )
+      expect(compatibility).toContain(`export type { ${name} }`)
+    }
+  })
+
   it('keeps theme validation result types in dedicated model files', () => {
     const validation = readFileSync(`${sourceRoot}/utils/theme-validation.ts`, 'utf8')
     const modelFiles = [
