@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { PALETTE_NAMES, PALETTE_SHADES, type FoundationState } from '@/models/foundations.model'
+import type { FoundationMappingValidationResult } from '@/models/foundation-mapping-validation-result.model'
+import type { ValidationError } from '@/models/validation-error.model'
 import { createDefaultFoundationState } from '@/utils/foundation-defaults'
 import { validateFoundationMapping, validateFoundationState } from '@/utils/foundation-validation'
 import { TAILWIND_COLOR_FAMILIES, TAILWIND_COLOR_SHADES } from '@/registry/tailwind-color-catalog'
@@ -18,6 +20,14 @@ function expectError(value: unknown, code: string, path: string): void {
 }
 
 describe('validateFoundationState', () => {
+  it('exposes validation result types from their dedicated model boundaries', () => {
+    const error: ValidationError = { valid: false, code: 'invalid-value', path: 'state', message: 'Foundation state must be an object' }
+    const mappingResult: FoundationMappingValidationResult = validateFoundationMapping('palette.primary.base', validState())
+
+    expect(validateFoundationState(null)).toEqual(error)
+    expect(mappingResult).toMatchObject({ valid: true, mapping: { mapping: 'preview-emulatable' } })
+  })
+
   it('accepts the typed default foundation state', () => {
     expect(validateFoundationState(validState())).toMatchObject({ valid: true })
     expect(validState().explicitPaths).toEqual([])
