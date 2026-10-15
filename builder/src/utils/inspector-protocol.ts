@@ -1,31 +1,16 @@
-import type { FilamentRegistry, RegistryEntry } from '@/models/theme-registry.model'
+import type { FilamentRegistry } from '@/models/theme-registry.model'
 import { SUPPORTED_PSEUDO_STATES } from '@/models/theme-registry.model'
+import type { InspectorCommand } from '@/models/inspector-command.model'
+import type { InspectorEvent } from '@/models/inspector-event.model'
+import type { InspectorResolution } from '@/models/inspector-resolution.model'
+import type { InspectorTargetEvidence } from '@/models/inspector-target-evidence.model'
+
+export type { InspectorCommand } from '@/models/inspector-command.model'
+export type { InspectorEvent } from '@/models/inspector-event.model'
+export type { InspectorResolution } from '@/models/inspector-resolution.model'
+export type { InspectorTargetEvidence } from '@/models/inspector-target-evidence.model'
 
 export const INSPECTOR_PROTOCOL_VERSION = 1 as const
-
-export type InspectorTargetEvidence = {
-  candidateSelectors: string[]
-  classNames: string[]
-  semanticBreadcrumb?: string
-  componentId?: string
-  variantId?: string
-  stateId?: string
-}
-
-export type InspectorCommand =
-  | { type: 'ftb:inspector:enable'; protocolVersion: 1 }
-  | { type: 'ftb:inspector:disable'; protocolVersion: 1 }
-
-export type InspectorEvent =
-  | { type: 'ftb:inspector:ready'; protocolVersion: 1 }
-  | { type: 'ftb:inspector:hover' | 'ftb:inspector:select'; protocolVersion: 1; target: InspectorTargetEvidence }
-  | { type: 'ftb:inspector:clear'; protocolVersion: 1 }
-
-export type InspectorResolution =
-  | { status: 'editable'; entry: RegistryEntry; editorTarget: string; breadcrumb: string }
-  | { status: 'selector-only'; entry: RegistryEntry; breadcrumb: string }
-  | { status: 'no-match'; breadcrumb: string }
-  | { status: 'ambiguous' | 'incompatible'; breadcrumb: string; candidateIds?: string[]; required?: string }
 
 const pseudoStatesPattern = SUPPORTED_PSEUDO_STATES.join('|')
 const selectorPattern = new RegExp(`^(?:\\.fi-[A-Za-z0-9_-]+)(?:\\.[A-Za-z0-9_-]+)*(?::(?:${pseudoStatesPattern}))?(?:\\s+\\.fi-[A-Za-z0-9_-]+(?:\\.[A-Za-z0-9_-]+)*(?::(?:${pseudoStatesPattern}))?)*$`)
