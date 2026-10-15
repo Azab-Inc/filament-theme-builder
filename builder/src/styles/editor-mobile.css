@@ -1,0 +1,51 @@
+
+.advanced-inspector {
+  min-width: 0;
+  overflow: auto;
+  padding: 0 1rem 1rem;
+}
+
+.raw-property-row {
+  align-items: center;
+}
+
+@media (max-width: 767px) {
+  .preview-shell__header {
+    grid-template-columns: minmax(0, 1fr);
+    padding-inline: 0.5rem;
+  }
+
+  .preview-shell__header-copy {
+    min-width: 0;
+  }
+
+  .preview-shell__header-controls {
+    flex-wrap: nowrap;
+    max-width: 100%;
+  }
+
+  .editor-workspace {
+    gap: 0.5rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    padding-inline: 0.5rem;
+  }
+
+  .editor-panel:has(.editor-nav-rail) {
+    grid-template-columns: minmax(5rem, 30%) minmax(0, 1fr);
+  }
+
+  .editor-panel:has(.editor-nav-rail) .editor-nav-rail {
+    width: auto;
+  }
+
+  .editor-nav-rail {
+    padding-right: 0.25rem;
+  }
+
+  .editor-nav-rail button,
+  .editor-tabs button {
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
+    padding-inline: 0.35rem;
+  }
+}

@@ -1,0 +1,45 @@
+
+.editor-panel:has(.editor-nav-rail) .editor-content {
+  flex: 1;
+}
+
+.editor-panel:has(.editor-nav-rail) {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.editor-panel:has(.editor-nav-rail) .editor-navigation-toggle,
+.editor-panel:has(.editor-nav-rail) .editor-tabs {
+  grid-column: 1 / -1;
+}
+
+.editor-panel:has(.editor-nav-rail) .editor-nav-rail {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.editor-panel:has(.editor-nav-rail) .editor-content {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.foundations {
+  @apply min-w-0 overflow-auto;
+  padding: 0 1rem 1rem;
+}
+
+.foundations > fieldset {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  min-width: 0;
+}
+
+.foundation-row {
+  align-items: center;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(10rem, 1fr) minmax(12rem, 2fr) auto auto;
+  min-width: 0;
+}
