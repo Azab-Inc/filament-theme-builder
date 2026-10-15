@@ -23,6 +23,23 @@ test('untouched builder preview preserves native dashboard layout and table styl
     await builder.goto(baseUrl)
     await builder.evaluate(() => localStorage.clear())
     await builder.reload()
+    const builderIframeStyles = await builder.locator('iframe[title="Filament preview"]').evaluate((iframe) => {
+      const style = getComputedStyle(iframe)
+      return {
+        borderTopWidth: style.borderTopWidth,
+        borderTopStyle: style.borderTopStyle,
+        borderTopColor: style.borderTopColor,
+        borderRadius: style.borderRadius,
+        boxShadow: style.boxShadow,
+      }
+    })
+    expect(builderIframeStyles).toEqual({
+      borderTopWidth: '0px',
+      borderTopStyle: 'none',
+      borderTopColor: 'rgb(0, 0, 0)',
+      borderRadius: '0px',
+      boxShadow: 'none',
+    })
     const previewNavigation = builder.waitForEvent('framenavigated', (frame) => frame.url() === dashboardUrl)
     await builder.locator('iframe[title="Filament preview"]').evaluate((iframe, url) => {
       iframe.src = url
@@ -70,6 +87,21 @@ test('untouched builder preview preserves native dashboard layout and table styl
   } finally {
     await context.close()
   }
+})
+
+test('builder stylesheet preserves browser defaults without Tailwind Preflight', async ({ page }) => {
+  await page.goto(baseUrl)
+  const defaults = await page.evaluate(() => ({
+    bodyMargin: getComputedStyle(document.body).margin,
+    buttonFontFamily: getComputedStyle(document.querySelector('button')!).fontFamily,
+    iframeBorderStyle: getComputedStyle(document.querySelector('iframe')!).borderTopStyle,
+  }))
+
+  expect(defaults).toEqual({
+    bodyMargin: '8px',
+    buttonFontFamily: 'Arial',
+    iframeBorderStyle: 'none',
+  })
 })
 
 test('legacy foundation storage is migrated back to the native baseline', async ({ browser }) => {

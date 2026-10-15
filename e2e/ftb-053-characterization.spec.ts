@@ -100,4 +100,65 @@ test.describe('FTB-053 phase 1 builder characterization', () => {
       }
     })
   }
+
+  test('keeps HoverInspectPrototype generic state selectors inside its root', async ({ page }) => {
+    await page.goto(`${builderBaseUrl}/?inspect=1&variant=A`)
+    const leakingSelectors = await page.evaluate(() => {
+      const selectors: string[] = []
+      const visit = (rules: CSSRuleList) => {
+        for (const rule of Array.from(rules)) {
+          if (rule instanceof CSSStyleRule && rule.selectorText.includes('.is-active')) {
+            selectors.push(rule.selectorText)
+          } else if ('cssRules' in rule) {
+            visit(rule.cssRules)
+          }
+        }
+      }
+      for (const sheet of Array.from(document.styleSheets)) {
+        try {
+          visit(sheet.cssRules)
+        } catch {
+          // Cross-origin stylesheets are not part of the builder stylesheet.
+        }
+      }
+      return selectors.filter((selector) => !selector.includes('.inspect'))
+    })
+
+    expect(leakingSelectors).toEqual([])
+  })
+
+  for (const variant of ['a', 'b', 'c'] as const) {
+    test(`keeps throwaway prototype ${variant.toUpperCase()} CSS scoped and visually intact`, async ({ page }) => {
+      await page.goto(builderBaseUrl)
+      const styles = await page.evaluate((activeVariant) => {
+        const prototype = document.createElement('main')
+        prototype.className = `prototype prototype--${activeVariant}`
+        prototype.innerHTML = '<section class="prototype__editor"></section><section class="prototype__preview"><iframe></iframe></section>'
+        document.body.append(prototype)
+        const editor = prototype.querySelector('.prototype__editor')!
+        const frame = prototype.querySelector('iframe')!
+        const editorStyle = getComputedStyle(editor)
+        const frameStyle = getComputedStyle(frame)
+        const result = {
+          display: getComputedStyle(prototype).display,
+          editorWidth: editorStyle.width,
+          iframeBorder: frameStyle.borderTopWidth,
+          iframeRadius: frameStyle.borderRadius,
+          iframeShadow: frameStyle.boxShadow,
+          productionFrameRadius: getComputedStyle(document.querySelector('.preview-shell__frame')!).borderRadius,
+          productionFrameShadow: getComputedStyle(document.querySelector('.preview-shell__frame')!).boxShadow,
+        }
+        prototype.remove()
+        return result
+      }, variant)
+
+      expect(styles.display).toBe('flex')
+      expect(styles.editorWidth).toBe(variant === 'a' ? '410px' : variant === 'b' ? '1280px' : '280px')
+      expect(styles.iframeBorder).toBe('1px')
+      expect(styles.iframeRadius).toBe('8px')
+      expect(styles.iframeShadow).toBe('rgba(57, 56, 44, 0.07) 0px 8px 30px 0px')
+      expect(styles.productionFrameRadius).toBe('0px')
+      expect(styles.productionFrameShadow).toBe('none')
+    })
+  }
 })
