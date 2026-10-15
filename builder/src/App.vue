@@ -32,6 +32,7 @@ import { usePreviewTheme } from '@/composables/use-preview-theme'
 import { useInspector, type EditorSection } from '@/composables/use-inspector'
 import HoverInspectPrototype from '@/components/HoverInspectPrototype.vue'
 import EditorToolbar from '@/components/EditorToolbar.vue'
+import PreviewFrame from '@/components/PreviewFrame.vue'
 
 const previewUrl = import.meta.env.VITE_DEMO_URL ?? '/demo/admin'
 const inspectMode = new URLSearchParams(window.location.search).get('inspect') === '1'
@@ -39,6 +40,9 @@ const inspectVariant = new URLSearchParams(window.location.search).get('variant'
 const theme = useThemeStore()
 const { restoreLegacyRecovery, downloadLegacyRecovery } = useRecovery(theme)
 const iframe = ref<HTMLIFrameElement>()
+function setPreviewIframe(element: HTMLIFrameElement | null): void {
+  iframe.value = element ?? undefined
+}
 const rawSelector = ref('')
 const rawSelectorError = ref<string | undefined>()
 const exportStatus = ref('')
@@ -564,7 +568,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
         @restore-legacy-recovery="restoreLegacyRecovery"
         @download-legacy-recovery="downloadLegacyRecovery"
       />
-    <div class="editor-workspace" data-editor-workspace>
+    <PreviewFrame :iframe-src="iframeSrc" :set-iframe="setPreviewIframe" :on-preview-load="onPreviewLoad">
       <section class="editor-panel" data-editor-panel aria-label="Editor panel">
         <fieldset class="editor-navigation-toggle" data-editor-navigation>
           <legend>Editor navigation</legend>
@@ -1034,15 +1038,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
     </section>
         </div>
       </section>
-    <iframe
-      ref="iframe"
-      :src="iframeSrc"
-      title="Filament preview"
-      data-editor-iframe
-      class="preview-shell__frame"
-      @load="onPreviewLoad"
-    />
-    </div>
+    </PreviewFrame>
   </main>
 </template>
 
