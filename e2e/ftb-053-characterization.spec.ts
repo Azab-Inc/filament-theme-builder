@@ -48,4 +48,56 @@ test.describe('FTB-053 phase 1 builder characterization', () => {
     )
     await expect(page.getByLabel('Light logo upload reference')).toHaveValue(initialReference)
   })
+
+  test('loads the shared builder stylesheet without Vue style tags', async ({ page }) => {
+    await page.goto(builderBaseUrl)
+
+    const stylesheet = await page.evaluate(() => Array.from(document.styleSheets).some((sheet) => {
+      try {
+        return Array.from(sheet.cssRules).some((rule) => rule.cssText.includes('.editor-workspace'))
+      } catch {
+        return false
+      }
+    }))
+    expect(stylesheet).toBe(true)
+
+    const layout = await page.locator('[data-editor-workspace]').evaluate((element) => {
+      const style = getComputedStyle(element)
+      return {
+        display: style.display,
+        gridTemplateColumns: style.gridTemplateColumns,
+        paddingInlineStart: style.paddingInlineStart,
+      }
+    })
+
+    expect(layout.display).toBe('grid')
+    expect(layout.paddingInlineStart).toBe('16px')
+  })
+
+  for (const variant of ['A', 'B', 'C'] as const) {
+    test(`preserves inspection prototype ${variant} layout styling at desktop and mobile widths`, async ({ page }) => {
+      for (const width of [1280, 390]) {
+        await page.setViewportSize({ width, height: 900 })
+        await page.goto(`${builderBaseUrl}/?inspect=1&variant=${variant}`)
+
+        const prototype = page.locator(`[data-hover-inspect-prototype="${variant}"]`)
+        await expect(prototype).toBeVisible()
+        const layout = await prototype.evaluate((element) => {
+          const root = getComputedStyle(element)
+          const workspace = element.querySelector('.inspect__workspace')
+          return {
+            background: root.backgroundColor,
+            display: root.display,
+            workspaceDisplay: workspace ? getComputedStyle(workspace).display : '',
+          }
+        })
+
+        expect(layout).toEqual({
+          background: 'rgb(245, 247, 251)',
+          display: 'block',
+          workspaceDisplay: 'grid',
+        })
+      }
+    })
+  }
 })
