@@ -40,4 +40,20 @@ describe('shared editor type boundaries', () => {
       "export type { FoundationModeValueChange } from '@/dtos/foundation-mode-value-change.dto'",
     )
   })
+
+  it('keeps theme validation result types in dedicated model files', () => {
+    const validation = readFileSync(`${sourceRoot}/utils/theme-validation.ts`, 'utf8')
+    const modelFiles = [
+      'theme-validation-context.model.ts',
+      'theme-override-validation-failure.model.ts',
+      'theme-override-validation-result.model.ts',
+      'theme-state-validation-result.model.ts',
+      'resolve-request-validation-result.model.ts',
+    ]
+
+    expect(validation).not.toMatch(/export\s+type\s+(ThemeValidationContext|ThemeOverrideValidationFailure|ThemeOverrideValidationResult|ThemeStateValidationResult|ResolveRequestValidationResult)\b/)
+    for (const file of modelFiles) {
+      expect(readFileSync(`${sourceRoot}/models/${file}`, 'utf8')).toMatch(/export type /)
+    }
+  })
 })
