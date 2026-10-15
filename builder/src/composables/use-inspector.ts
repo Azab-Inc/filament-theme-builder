@@ -1,27 +1,13 @@
-import { onBeforeUnmount, onMounted, ref, type ComputedRef, type Ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 
-import type { FilamentRegistry } from '@/models/theme-registry.model'
-import type { EditorSection } from '@/models/editor.model'
+import type { UseInspectorOptions } from '@/models/inspector-composable-options.model'
+import type { InspectorTargetEvidence } from '@/models/inspector-target-evidence.model'
+import { useInspectorMessageHandler } from '@/composables/use-inspector-message-handler'
 import {
   INSPECTOR_PROTOCOL_VERSION,
-  isInspectorEvent,
   type InspectorCommand,
   type InspectorResolution,
-  type InspectorTargetEvidence,
 } from '@/utils/inspector-protocol'
-import { resolveInspectorTarget } from '@/registry/theme-registry'
-
-type RawSelectorProposal = { selector: string | null; quality: string }
-
-type UseInspectorOptions = {
-  iframe: Ref<HTMLIFrameElement | undefined>
-  previewUrl: string
-  inspectorRegistry: FilamentRegistry
-  selectedEditorSection: Ref<EditorSection>
-  rawSelector: Ref<string>
-  rawSelectorError: Ref<string | undefined>
-  rawSelectorProposal: ComputedRef<RawSelectorProposal>
-}
 
 export function useInspector({
   iframe,
@@ -31,11 +17,21 @@ export function useInspector({
   rawSelector,
   rawSelectorError,
   rawSelectorProposal,
+  selectedInspectorEvidence = ref<InspectorTargetEvidence | null>(null),
 }: UseInspectorOptions) {
   const inspectorEnabled = ref(false)
   const inspectorResolution = ref<InspectorResolution | null>(null)
-  const selectedInspectorEvidence = ref<InspectorTargetEvidence | null>(null)
   const targetOrigin = new URL(previewUrl, window.location.href).origin
+  const handleInspectorMessageForTarget = useInspectorMessageHandler({
+    inspectorRegistry,
+    inspectorEnabled,
+    inspectorResolution,
+    selectedInspectorEvidence,
+    selectedEditorSection,
+    rawSelector,
+    rawSelectorError,
+    rawSelectorProposal,
+  })
 
   function postInspectorCommand(enabled = inspectorEnabled.value): void {
     const target = iframe.value?.contentWindow
@@ -54,45 +50,7 @@ export function useInspector({
   }
 
   function handleInspectorMessage(event: MessageEvent): void {
-    const target = iframe.value?.contentWindow
-    if (
-      !target ||
-      event.source !== target ||
-      event.origin !== targetOrigin ||
-      !isInspectorEvent(event.data)
-    )
-      return
-    const message = event.data
-    if (message.type === 'ftb:inspector:ready') {
-      if (inspectorEnabled.value) postInspectorCommand(true)
-      return
-    }
-    if (message.type === 'ftb:inspector:clear') {
-      inspectorResolution.value = null
-      selectedInspectorEvidence.value = null
-      rawSelector.value = ''
-      return
-    }
-    const resolution = resolveInspectorTarget(inspectorRegistry, message.target)
-    inspectorResolution.value = resolution
-    if (message.type === 'ftb:inspector:select') {
-      selectedInspectorEvidence.value = message.target
-      rawSelectorError.value = undefined
-      rawSelector.value = rawSelectorProposal.value.selector ?? ''
-      selectedEditorSection.value =
-        resolution.status === 'editable' && resolution.editorTarget === 'form.product-name'
-          ? 'components'
-          : 'inspector'
-    }
-    if (
-      message.type === 'ftb:inspector:select' &&
-      resolution.status === 'editable' &&
-      resolution.editorTarget === 'form.product-name'
-    ) {
-      document
-        .querySelector('[data-editor-target="form.product-name"]')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+    handleInspectorMessageForTarget(event, iframe.value?.contentWindow ?? null, targetOrigin)
   }
 
   function handlePreviewLoad(): void {
