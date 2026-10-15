@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, toRaw, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import type {
@@ -25,11 +25,11 @@ import { ALL_RAW_VISUAL_PROPERTIES, type RawVisualProperty } from '@/models/raw-
 import { classifyRawSelector, proposeRawSelector, validateRawSelector } from '@/utils/raw-override-validation'
 import { isExplicitPath } from '@/utils/foundation-provenance'
 import { validateFoundationColor } from '@/utils/foundation-validation'
-import { resolveInspectorTarget } from '@/registry/theme-registry'
 import { createThemeRegistry } from '@/registry/theme-registry'
-import { isInspectorEvent, INSPECTOR_PROTOCOL_VERSION, type InspectorCommand, type InspectorEvent, type InspectorResolution, type InspectorTargetEvidence } from '@/utils/inspector-protocol'
 import { useThemeStore } from '@/stores/theme'
 import { useRecovery } from '@/composables/use-recovery'
+import { usePreviewTheme } from '@/composables/use-preview-theme'
+import { useInspector, type EditorSection } from '@/composables/use-inspector'
 import HoverInspectPrototype from '@/components/HoverInspectPrototype.vue'
 
 const previewUrl = import.meta.env.VITE_DEMO_URL ?? '/demo/admin'
@@ -38,20 +38,14 @@ const inspectVariant = new URLSearchParams(window.location.search).get('variant'
 const theme = useThemeStore()
 const { restoreLegacyRecovery, downloadLegacyRecovery } = useRecovery(theme)
 const iframe = ref<HTMLIFrameElement>()
-const iframeSrc = ref(previewUrl)
-const inspectorEnabled = ref(false)
-const inspectorResolution = ref<InspectorResolution | null>(null)
-const selectedInspectorEvidence = ref<InspectorTargetEvidence | null>(null)
 const rawSelector = ref('')
 const rawSelectorError = ref<string | undefined>()
 const exportStatus = ref('')
-const runtimeLoading = ref(false)
 const { canUndo, canRedo } = storeToRefs(theme)
 const paletteNames = PALETTE_NAMES
 const paletteShades = PALETTE_SHADES
 const activeMode = ref<ThemeMode>('light')
 type EditorNavigationMode = 'sidebar' | 'top'
-type EditorSection = 'foundations' | 'components' | 'branding' | 'icons' | 'inspector'
 
 const editorNavigationMode = ref<EditorNavigationMode>('sidebar')
 const selectedEditorSection = ref<EditorSection>('foundations')
@@ -146,54 +140,32 @@ const rawSelectorProposal = computed(() => selectedInspectorEvidence.value
 const rawSelectorClassification = computed(() => rawSelector.value ? classifyRawSelector(rawSelector.value) : rawSelectorProposal.value)
 const selectedRawOverride = computed(() => theme.theme.rawOverrides.find((override) => override.selector === rawSelector.value))
 
+const inspector = useInspector({
+  iframe,
+  previewUrl,
+  inspectorRegistry,
+  selectedEditorSection,
+  rawSelector,
+  rawSelectorError,
+  rawSelectorProposal,
+})
+const {
+  inspectorEnabled,
+  inspectorResolution,
+  selectedInspectorEvidence,
+  toggleInspector,
+} = inspector
+const { iframeSrc, runtimeLoading, onPreviewLoad } = usePreviewTheme({
+  theme,
+  activeMode,
+  previewUrl,
+  iframe,
+  onPreviewLoad: inspector.onPreviewLoad,
+})
+
 watch(rawSelectorProposal, (proposal) => {
   if (!rawSelector.value || rawSelectorError.value) rawSelector.value = proposal.selector ?? ''
 }, { immediate: true })
-
-function postInspectorCommand(enabled = inspectorEnabled.value): void {
-  const target = iframe.value?.contentWindow
-  if (!target) return
-  const command: InspectorCommand = {
-    type: enabled ? 'ftb:inspector:enable' : 'ftb:inspector:disable',
-    protocolVersion: INSPECTOR_PROTOCOL_VERSION,
-  }
-  target.postMessage(command, new URL(previewUrl, window.location.href).origin)
-}
-
-function toggleInspector(): void {
-  inspectorEnabled.value = !inspectorEnabled.value
-  inspectorResolution.value = null
-  postInspectorCommand()
-}
-
-function handleInspectorMessage(event: MessageEvent): void {
-  const target = iframe.value?.contentWindow
-  if (!target || event.source !== target || event.origin !== new URL(previewUrl, window.location.href).origin || !isInspectorEvent(event.data)) return
-  const message = event.data as InspectorEvent
-  if (message.type === 'ftb:inspector:ready') {
-    if (inspectorEnabled.value) postInspectorCommand(true)
-    return
-  }
-  if (message.type === 'ftb:inspector:clear') {
-    inspectorResolution.value = null
-    selectedInspectorEvidence.value = null
-    rawSelector.value = ''
-    return
-  }
-  const resolution = resolveInspectorTarget(inspectorRegistry, message.target)
-  inspectorResolution.value = resolution
-  if (message.type === 'ftb:inspector:select') {
-    selectedInspectorEvidence.value = message.target
-    rawSelectorError.value = undefined
-    rawSelector.value = rawSelectorProposal.value.selector ?? ''
-    selectedEditorSection.value = resolution.status === 'editable' && resolution.editorTarget === 'form.product-name'
-      ? 'components'
-      : 'inspector'
-  }
-  if (message.type === 'ftb:inspector:select' && resolution.status === 'editable' && resolution.editorTarget === 'form.product-name') {
-    document.querySelector('[data-editor-target="form.product-name"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-}
 
 function selectEditorSection(section: EditorSection): void {
   if (section === 'inspector' && !selectedInspectorEvidence.value) return
@@ -221,37 +193,6 @@ function handleEditorTabKeydown(event: KeyboardEvent, section: EditorSection): v
   nextTab.focus()
 }
 
-function onPreviewLoad(): void {
-  runtimeLoading.value = false
-  inspectorResolution.value = null
-  selectedInspectorEvidence.value = null
-  postTheme()
-  postInspectorCommand()
-}
-
-function postTheme(): void {
-  const target = iframe.value?.contentWindow
-  if (!target) return
-  const targetOrigin = new URL(previewUrl, window.location.href).origin
-  target.postMessage(
-    {
-      type: 'ftb:theme:update',
-       schemaVersion: 1,
-       activeMode: activeMode.value,
-       theme: structuredClone(JSON.parse(JSON.stringify(toRaw(theme.theme)))),
-      projection: theme.previewFoundation(activeMode.value),
-    },
-    targetOrigin,
-  )
-}
-
-function refreshRuntimePreview(): void {
-  runtimeLoading.value = true
-  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(theme.theme.branding))))
-  const separator = previewUrl.includes('?') ? '&' : '?'
-  iframeSrc.value = `${previewUrl}${separator}ftb_branding=${encodeURIComponent(encoded)}`
-}
-
 function handleKeydown(event: KeyboardEvent): void {
   if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'z') return
   const target = event.target
@@ -261,39 +202,12 @@ function handleKeydown(event: KeyboardEvent): void {
   else theme.undo()
 }
 
-watch(
-  () => theme.theme,
-  () => {
-    postTheme()
-  },
-  { deep: true },
-)
-
-watch(activeMode, postTheme)
-
-watch(() => theme.theme.branding.logoHeight, postTheme)
-watch(
-  () => JSON.stringify([
-    theme.theme.branding.appName,
-    theme.theme.branding.lightLogo,
-    theme.theme.branding.darkLogo,
-    theme.theme.branding.brandTypography,
-    theme.theme.branding.contentWidth,
-    theme.theme.branding.sidebar,
-  ]),
-  refreshRuntimePreview,
-)
-
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
-  window.addEventListener('message', handleInspectorMessage)
-  postTheme()
-  postInspectorCommand()
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown)
-  window.removeEventListener('message', handleInspectorMessage)
 })
 
 function undo(): void {
