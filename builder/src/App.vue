@@ -29,12 +29,14 @@ import { resolveInspectorTarget } from '@/registry/theme-registry'
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { isInspectorEvent, INSPECTOR_PROTOCOL_VERSION, type InspectorCommand, type InspectorEvent, type InspectorResolution, type InspectorTargetEvidence } from '@/utils/inspector-protocol'
 import { useThemeStore } from '@/stores/theme'
+import { useRecovery } from '@/composables/use-recovery'
 import HoverInspectPrototype from '@/components/HoverInspectPrototype.vue'
 
 const previewUrl = import.meta.env.VITE_DEMO_URL ?? '/demo/admin'
 const inspectMode = new URLSearchParams(window.location.search).get('inspect') === '1'
 const inspectVariant = new URLSearchParams(window.location.search).get('variant') ?? 'A'
 const theme = useThemeStore()
+const { restoreLegacyRecovery, downloadLegacyRecovery } = useRecovery(theme)
 const iframe = ref<HTMLIFrameElement>()
 const iframeSrc = ref(previewUrl)
 const inspectorEnabled = ref(false)
@@ -556,18 +558,6 @@ function iconPreview(key: ResourceIconKey): string {
   return theme.theme.icons.overrides[key] ?? ICON_PACK_PRESETS[theme.theme.icons.pack][key]
 }
 
-function downloadLegacyRecovery(): void {
-  const archived = theme.getLegacyRecoveryJson()
-  if (archived === null) return
-  const blob = new Blob([archived], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = 'filament-theme-legacy-recovery.json'
-  link.click()
-  URL.revokeObjectURL(url)
-}
-
 function setProductNameValue(row: (typeof productNameRows.value)[number], event: Event): void {
   const value = (event.target as HTMLInputElement).value
   if (!/^#[\da-f]{6}$/i.test(value)) return
@@ -680,7 +670,7 @@ function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean {
       <strong>Legacy customization archived.</strong>
       <span>Unversioned foundation values are ambiguous; restore marks non-default legacy values explicit.</span>
       <p v-if="theme.legacyRecoveryError" role="status">{{ theme.legacyRecoveryError }}</p>
-      <button type="button" aria-label="Restore legacy customization" :disabled="!!theme.legacyRecoveryError" @click="theme.restoreLegacyRecovery()">
+      <button type="button" aria-label="Restore legacy customization" :disabled="!!theme.legacyRecoveryError" @click="restoreLegacyRecovery">
         Restore legacy customization
       </button>
       <button type="button" aria-label="Download archived legacy JSON" @click="downloadLegacyRecovery">

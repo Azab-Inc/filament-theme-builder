@@ -46,6 +46,34 @@ describe('App', () => {
     removeListener.mockRestore()
   })
 
+  it('keeps listeners mount-local when multiple builders are mounted and disposed independently', () => {
+    window.history.replaceState({}, '', '/')
+    const addListener = vi.spyOn(window, 'addEventListener')
+    const removeListener = vi.spyOn(window, 'removeEventListener')
+    const first = mount(App, { global: { plugins: [createPinia()] } })
+    const second = mount(App, { global: { plugins: [createPinia()] } })
+    const firstListeners = addListener.mock.calls.filter(([type]) => type === 'keydown' || type === 'message')
+    const secondListeners = firstListeners.slice(2)
+
+    first.unmount()
+
+    for (const [type, listener] of firstListeners.slice(0, 2)) {
+      expect(removeListener).toHaveBeenCalledWith(type, listener)
+    }
+    for (const [type, listener] of secondListeners) {
+      expect(removeListener).not.toHaveBeenCalledWith(type, listener)
+    }
+
+    second.unmount()
+
+    for (const [type, listener] of secondListeners) {
+      expect(removeListener).toHaveBeenCalledWith(type, listener)
+    }
+
+    addListener.mockRestore()
+    removeListener.mockRestore()
+  })
+
   it('mounts the hover inspector only behind the inspect query gate', () => {
     window.history.replaceState({}, '', '/?inspect=1&variant=B')
     const inspected = mount(App, { global: { plugins: [createPinia()] } })

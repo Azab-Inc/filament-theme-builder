@@ -1,34 +1,10 @@
 import type { FoundationState, FoundationStateV4, PaletteName } from '@/models/foundations.model'
 import { PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
-import { createDefaultThemeState } from '@/utils/foundation-defaults'
-import { validateFoundationState } from '@/utils/foundation-validation'
 import type { ThemeOverride } from '@/models/theme.model'
+import { createDefaultThemeState } from '@/utils/foundation-defaults'
 import { applyPaletteOverrides, generatePalette } from '@/utils/palette-generator'
+import { validateFoundationState } from '@/utils/foundation-validation'
 import { validateRawOverrides } from '@/utils/raw-override-validation'
-
-export const LEGACY_RECOVERY_STORAGE_KEY = 'ftb-theme-legacy-recovery'
-
-export function archiveLegacyTheme(value: unknown): void {
-  if (typeof localStorage === 'undefined' || localStorage.getItem(LEGACY_RECOVERY_STORAGE_KEY) !== null) return
-  try {
-    localStorage.setItem(LEGACY_RECOVERY_STORAGE_KEY, typeof value === 'string' ? value : JSON.stringify(value))
-  } catch {
-    // A storage failure cannot prevent native defaults from loading.
-  }
-}
-
-export function readLegacyRecovery(): string | null {
-  if (typeof localStorage === 'undefined') return null
-  return localStorage.getItem(LEGACY_RECOVERY_STORAGE_KEY)
-}
-
-export function clearLegacyRecovery(): void {
-  try {
-    localStorage.removeItem(LEGACY_RECOVERY_STORAGE_KEY)
-  } catch {
-    // Ignore unavailable storage.
-  }
-}
 
 export function restoreLegacyTheme(value: unknown): FoundationStateV4 | null {
   if (typeof value === 'string') {
@@ -116,7 +92,7 @@ function legacyPaths(restored: FoundationState, defaults: FoundationState, legac
     }
   }
   for (const key of ['density', 'radius', 'borderWidth', 'shadow'] as const) if (restored[key] !== defaults[key]) paths.push(key)
-  return paths.filter((path) => path !== 'explicitPaths' && path !== 'provenanceVersion' && (legacyValueExists(legacy, path)))
+  return paths.filter((path) => path !== 'explicitPaths' && path !== 'provenanceVersion' && legacyValueExists(legacy, path))
 }
 
 function legacyValueExists(legacy: Record<string, unknown>, path: string): boolean {

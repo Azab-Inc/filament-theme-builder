@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import * as foundationDefaults from '@/utils/foundation-defaults'
+import * as foundationRecovery from '@/utils/foundation-recovery'
 import * as foundationProjection from '@/utils/foundation-projection'
 import * as foundationProvenance from '@/utils/foundation-provenance'
 import * as foundationValidation from '@/utils/foundation-validation'
@@ -20,6 +21,7 @@ const sourceRoot = join(process.cwd(), 'src')
 
 const migratedRuntimeExports = {
   foundationDefaults: ['createDefaultFoundationState', 'createDefaultThemeState', 'densityPreset'],
+  foundationRecovery: ['legacyRecoveryError', 'restoreLegacyTheme'],
   foundationProjection: ['projectFoundations'],
   foundationProvenance: ['markExplicitPath', 'clearExplicitPath', 'isExplicitPath', 'isPaletteExplicit', 'paletteOverridePath'],
   foundationValidation: ['validateFoundationState', 'validateFoundationMapping', 'isEditableFoundationPath', 'validateFoundationColor'],
@@ -37,6 +39,7 @@ const migratedRuntimeExports = {
 
 const migratedModules = [
   'foundation-defaults',
+  'foundation-recovery',
   'foundation-projection',
   'foundation-provenance',
   'foundation-validation',
@@ -63,6 +66,7 @@ describe('pure service migration', () => {
   it('preserves the characterized runtime export names at the utility boundary', () => {
     const modules = {
       foundationDefaults,
+      foundationRecovery,
       foundationProjection,
       foundationProvenance,
       foundationValidation,

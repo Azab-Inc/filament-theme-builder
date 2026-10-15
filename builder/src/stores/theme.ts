@@ -6,7 +6,7 @@ import { PALETTE_SHADES } from '@/models/foundations.model'
 import { createDefaultFoundationState, createDefaultThemeState } from '@/utils/foundation-defaults'
 import { projectFoundations } from '@/utils/foundation-projection'
 import { isEditableFoundationPath, validateFoundationState } from '@/utils/foundation-validation'
-import { archiveLegacyTheme, clearLegacyRecovery, legacyRecoveryError, readLegacyRecovery, restoreLegacyTheme } from '@/services/foundation-recovery'
+import { legacyRecoveryError, restoreLegacyTheme } from '@/utils/foundation-recovery'
 import { clearExplicitPath, markExplicitPath, paletteOverridePath } from '@/utils/foundation-provenance'
 import { applyPaletteOverrides, generatePalette } from '@/utils/palette-generator'
 import { migrateThemeState } from '@/models/theme.model'
@@ -23,6 +23,7 @@ import { createDefaultPanelBrandingSettings, validatePanelBrandingSettings } fro
 import type { PanelBrandingSettings, PanelBrandingSetting } from '@/models/panel-branding.model'
 
 const storageKey = 'ftb-theme'
+const legacyRecoveryStorageKey = 'ftb-theme-legacy-recovery'
 const registry = createThemeRegistry()
 const defaultTheme = createDefaultThemeState()
 
@@ -323,6 +324,28 @@ function restoreTheme(): ThemeStateV4 {
     // Invalid or unavailable persisted data falls back to a safe default.
   }
   return structuredClone(defaultTheme)
+}
+
+function archiveLegacyTheme(value: unknown): void {
+  if (typeof localStorage === 'undefined' || localStorage.getItem(legacyRecoveryStorageKey) !== null) return
+  try {
+    localStorage.setItem(legacyRecoveryStorageKey, typeof value === 'string' ? value : JSON.stringify(value))
+  } catch {
+    // A storage failure cannot prevent native defaults from loading.
+  }
+}
+
+function readLegacyRecovery(): string | null {
+  if (typeof localStorage === 'undefined') return null
+  return localStorage.getItem(legacyRecoveryStorageKey)
+}
+
+function clearLegacyRecovery(): void {
+  try {
+    localStorage.removeItem(legacyRecoveryStorageKey)
+  } catch {
+    // Ignore unavailable storage.
+  }
 }
 
 function hasTrustedProvenance(value: ThemeStateV4): boolean {
