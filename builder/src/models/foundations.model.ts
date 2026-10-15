@@ -42,6 +42,10 @@ export type FoundationState = {
   provenanceVersion: 1
 }
 
+export type FoundationSurfaceName = keyof FoundationState['surfaces']
+export type FoundationBorderName = keyof FoundationState['borders']
+export type FoundationTextName = keyof FoundationState['text']
+
 export type ResolvedFoundation = Omit<FoundationState, 'surfaces' | 'borders' | 'text'> & {
   surfaces: Record<'page' | 'sidebar' | 'topbar' | 'card' | 'elevated' | 'input', string>
   borders: Record<'default' | 'strong', string>

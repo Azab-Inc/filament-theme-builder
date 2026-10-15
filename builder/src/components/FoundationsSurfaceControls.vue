@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import type {
-  FoundationsSurfaceControlsEmits,
-  FoundationsSurfaceControlsProps,
-} from './foundations-surface-controls.model'
+import type { FoundationsSurfaceControlsEmits } from '@/dtos/foundations-surface-controls-emits.dto'
+import type { FoundationsSurfaceControlsProps } from '@/dtos/foundations-surface-controls-props.dto'
 
 defineProps<FoundationsSurfaceControlsProps>()
 const emit = defineEmits<FoundationsSurfaceControlsEmits>()

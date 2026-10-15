@@ -19,4 +19,25 @@ describe('shared editor type boundaries', () => {
     expect(app).not.toMatch(/type\s+EditorSection\s*=/)
     expect(inspector).not.toMatch(/type\s+EditorSection\s*=/)
   })
+
+  it('keeps surface-control domain and component contract types in dedicated boundaries', () => {
+    const foundations = readFileSync(`${sourceRoot}/models/foundations.model.ts`, 'utf8')
+    const modeValueChange = readFileSync(`${sourceRoot}/dtos/foundation-mode-value-change.dto.ts`, 'utf8')
+    const props = readFileSync(`${sourceRoot}/dtos/foundations-surface-controls-props.dto.ts`, 'utf8')
+    const emits = readFileSync(`${sourceRoot}/dtos/foundations-surface-controls-emits.dto.ts`, 'utf8')
+    const compatibility = readFileSync(`${sourceRoot}/components/foundations-surface-controls.model.ts`, 'utf8')
+    const component = readFileSync(`${sourceRoot}/components/FoundationsSurfaceControls.vue`, 'utf8')
+
+    expect(foundations).toContain("export type FoundationSurfaceName = keyof FoundationState['surfaces']")
+    expect(foundations).toContain("export type FoundationBorderName = keyof FoundationState['borders']")
+    expect(foundations).toContain("export type FoundationTextName = keyof FoundationState['text']")
+    expect(modeValueChange).toContain('export type FoundationModeValueChange =')
+    expect(props).toContain('export type FoundationsSurfaceControlsProps =')
+    expect(emits).toContain('export type FoundationsSurfaceControlsEmits =')
+    expect(component).toContain("from '@/dtos/foundations-surface-controls-props.dto'")
+    expect(component).toContain("from '@/dtos/foundations-surface-controls-emits.dto'")
+    expect(compatibility.trim()).toBe(
+      "export type { FoundationModeValueChange } from '@/dtos/foundation-mode-value-change.dto'",
+    )
+  })
 })
