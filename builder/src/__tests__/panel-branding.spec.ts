@@ -4,9 +4,9 @@ import {
   createDefaultPanelBrandingSettings,
   classifyPanelBrandingSetting,
   validatePanelBrandingSettings,
-} from '@/services/panel-branding-validation'
-import { exportPanelBrandingJson, exportPanelProviderBrandingPhp } from '@/services/panel-branding-export'
-import { createDefaultThemeState } from '@/services/foundation-defaults'
+} from '@/utils/panel-branding-validation'
+import { exportPanelBrandingJson, exportPanelProviderBrandingPhp } from '@/utils/panel-branding-export'
+import { createDefaultThemeState } from '@/utils/foundation-defaults'
 import { setActivePinia, createPinia } from 'pinia'
 import { useThemeStore } from '@/stores/theme'
 

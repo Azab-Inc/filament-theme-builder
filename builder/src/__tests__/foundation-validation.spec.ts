@@ -3,8 +3,8 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { PALETTE_NAMES, PALETTE_SHADES, type FoundationState } from '@/models/foundations.model'
-import { createDefaultFoundationState } from '@/services/foundation-defaults'
-import { validateFoundationMapping, validateFoundationState } from '@/services/foundation-validation'
+import { createDefaultFoundationState } from '@/utils/foundation-defaults'
+import { validateFoundationMapping, validateFoundationState } from '@/utils/foundation-validation'
 import { TAILWIND_COLOR_FAMILIES, TAILWIND_COLOR_SHADES } from '@/registry/tailwind-color-catalog'
 
 function validState(): FoundationState {

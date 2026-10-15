@@ -7,8 +7,8 @@ import type {
   RegistryValueType,
 } from '@/models/theme-registry.model'
 import { SUPPORTED_PSEUDO_STATES } from '@/models/theme-registry.model'
-import type { InspectorResolution, InspectorTargetEvidence } from '@/services/inspector-protocol'
-import { resolveInspectorTarget as resolveInspectorTargetFromEvidence } from '@/services/inspector-protocol'
+import type { InspectorResolution, InspectorTargetEvidence } from '@/utils/inspector-protocol'
+import { resolveInspectorTarget as resolveInspectorTargetFromEvidence } from '@/utils/inspector-protocol'
 
 const valueTypes: readonly RegistryValueType[] = ['boolean', 'color', 'number', 'string']
 const compatibilityPattern = /^(\d+)\.x$/

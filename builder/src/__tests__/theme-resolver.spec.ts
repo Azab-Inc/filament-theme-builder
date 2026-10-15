@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import type { FilamentRegistry, RegistryEntry } from '@/models/theme-registry.model'
 import type { ResolveRequest, ThemeOverride, ThemeState } from '@/models/theme.model'
 import { createThemeRegistry, validateRegistry } from '@/registry/theme-registry'
-import { resolveThemeValue } from '@/services/theme-resolver'
-import { validateThemeOverride, validateThemeState } from '@/services/theme-validation'
+import { resolveThemeValue } from '@/utils/theme-resolver'
+import { validateThemeOverride, validateThemeState } from '@/utils/theme-validation'
 
 const registry: FilamentRegistry = createThemeRegistry()
 const formResolverFixture: RegistryEntry = {

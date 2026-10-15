@@ -1,4 +1,4 @@
-import { createDefaultThemeState } from '@/services/foundation-defaults'
+import { createDefaultThemeState } from '@/utils/foundation-defaults'
 
 export type ThemeScope = 'global' | 'component' | 'variant' | 'state'
 

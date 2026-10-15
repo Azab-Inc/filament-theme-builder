@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { createDefaultThemeState } from '@/services/foundation-defaults'
+import { createDefaultThemeState } from '@/utils/foundation-defaults'
 import {
   ICON_PACK_PRESETS,
   RESOURCE_ICON_KEYS,
   resolveResourceIcon,
   validateIconConfiguration,
 } from '@/registry/icon-registry'
-import { serializeCanonicalTheme } from '@/services/theme-serialization'
+import { serializeCanonicalTheme } from '@/utils/theme-serialization'
 
 describe('icon configuration', () => {
   it('provides the default and alternative Heroicons presets', () => {

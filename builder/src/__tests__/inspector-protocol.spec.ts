@@ -6,7 +6,7 @@ import {
   isInspectorCommand,
   isInspectorEvent,
   type InspectorTargetEvidence,
-} from '@/services/inspector-protocol'
+} from '@/utils/inspector-protocol'
 
 const registry = createThemeRegistry()
 

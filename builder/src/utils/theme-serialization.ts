@@ -1,9 +1,9 @@
 import type { FilamentRegistry, RegistryEntry } from '@/models/theme-registry.model'
 import { migrateThemeState } from '@/models/theme.model'
 import type { ResolveRequest, ThemeOverride, ThemeScope, ThemeState, ThemeStateV2, ThemeStateV4 } from '@/models/theme.model'
-import { resolveThemeValue } from '@/services/theme-resolver'
-import { validateResolveRequest, validateThemeState } from '@/services/theme-validation'
-import { validateFoundationState } from '@/services/foundation-validation'
+import { resolveThemeValue } from '@/utils/theme-resolver'
+import { validateResolveRequest, validateThemeState } from '@/utils/theme-validation'
+import { validateFoundationState } from '@/utils/foundation-validation'
 
 export type ThemeSerializationMode = 'minimal' | 'fully-explicit'
 

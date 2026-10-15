@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-import type { InspectorTargetEvidence } from '@/services/inspector-protocol'
+import type { InspectorTargetEvidence } from '@/utils/inspector-protocol'
 import { createThemeRegistry } from '@/registry/theme-registry'
 import {
   ALL_RAW_VISUAL_PROPERTIES,
   proposeRawSelector,
   validateRawElementOverride,
   validateRawSelector,
-} from '@/services/raw-override-validation'
+} from '@/utils/raw-override-validation'
 
 const registry = createThemeRegistry()
 

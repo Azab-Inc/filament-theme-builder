@@ -1,6 +1,6 @@
 import type { FilamentRegistry } from '@/models/theme-registry.model'
 import type { ResolveRequest, ResolveResult, ThemeOverride, ThemeState } from '@/models/theme.model'
-import { validateResolveRequest, validateThemeOverride, validateThemeState } from '@/services/theme-validation'
+import { validateResolveRequest, validateThemeOverride, validateThemeState } from '@/utils/theme-validation'
 
 export function resolveThemeValue(state: ThemeState, registry: FilamentRegistry, request: ResolveRequest): ResolveResult {
   const requestValidation = validateResolveRequest(request, registry)

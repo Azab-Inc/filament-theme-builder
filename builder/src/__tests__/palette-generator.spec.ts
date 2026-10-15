@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { PALETTE_SHADES } from '@/models/foundations.model'
-import { applyPaletteOverrides, generatePalette, resetPaletteShade } from '@/services/palette-generator'
+import { applyPaletteOverrides, generatePalette, resetPaletteShade } from '@/utils/palette-generator'
 
 describe('generatePalette', () => {
   it('generates exactly the eleven palette shade keys', () => {

@@ -1,8 +1,8 @@
 import type { Density, DensityPreset, FoundationState, FoundationStateV4, PaletteName } from '@/models/foundations.model'
 import { PALETTE_NAMES } from '@/models/foundations.model'
-import { generatePalette } from '@/services/palette-generator'
+import { generatePalette } from '@/utils/palette-generator'
 import { createDefaultIconConfiguration } from '@/registry/icon-registry'
-import { createDefaultPanelBrandingSettings } from '@/services/panel-branding-validation'
+import { createDefaultPanelBrandingSettings } from '@/utils/panel-branding-validation'
 
 const PALETTE_BASES: Record<PaletteName, string> = {
   primary: '#6366f1',

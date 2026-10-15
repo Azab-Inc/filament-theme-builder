@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
 import type { ResolveRequest, ThemeOverride } from '@/models/theme.model'
-import { createDefaultThemeState } from '@/services/foundation-defaults'
-import { generatePalette } from '@/services/palette-generator'
+import { createDefaultThemeState } from '@/utils/foundation-defaults'
+import { generatePalette } from '@/utils/palette-generator'
 import { useThemeStore } from '@/stores/theme'
 
 const createThemeState = useThemeStore

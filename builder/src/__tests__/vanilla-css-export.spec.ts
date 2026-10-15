@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { createDefaultThemeState } from '@/services/foundation-defaults'
-import { exportVanillaCss } from '@/services/vanilla-css-export'
+import { createDefaultThemeState } from '@/utils/foundation-defaults'
+import { exportVanillaCss } from '@/utils/vanilla-css-export'
 
 describe('minimal vanilla CSS export', () => {
   it('emits readable explicit foundation, semantic, and raw rules in deterministic order', () => {

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
-import { createDefaultFoundationState, createDefaultThemeState, densityPreset } from '@/services/foundation-defaults'
-import { generatePalette } from '@/services/palette-generator'
+import { createDefaultFoundationState, createDefaultThemeState, densityPreset } from '@/utils/foundation-defaults'
+import { generatePalette } from '@/utils/palette-generator'
 
 describe('foundation defaults', () => {
   it('exposes the six supported palettes and eleven shade keys', () => {

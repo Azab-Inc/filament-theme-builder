@@ -2,8 +2,8 @@ import type { FoundationProjection, ThemeMode } from '@/models/foundations.model
 import type { ThemeStateV4 } from '@/models/theme.model'
 import { SUPPORTED_PSEUDO_STATES } from '@/models/theme-registry.model'
 import { createThemeRegistry } from '@/registry/theme-registry'
-import { projectFoundations } from '@/services/foundation-projection'
-import { validateRawElementOverride } from '@/services/raw-override-validation'
+import { projectFoundations } from '@/utils/foundation-projection'
+import { validateRawElementOverride } from '@/utils/raw-override-validation'
 
 const semanticMappings = new Map([
   ['button.primary\u0000background', { selector: '.fi-btn.fi-color-primary', globalSelector: '.fi-btn', componentSelector: '.fi-btn', property: 'background-color' }],

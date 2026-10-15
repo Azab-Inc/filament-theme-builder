@@ -4,8 +4,8 @@ import type { FilamentRegistry } from '@/models/theme-registry.model'
 import { migrateThemeState } from '@/models/theme.model'
 import type { ResolveRequest, ThemeOverride, ThemeState } from '@/models/theme.model'
 import { createThemeRegistry, validateRegistry } from '@/registry/theme-registry'
-import { createDefaultThemeState } from '@/services/foundation-defaults'
-import { deserializeTheme, serializeCanonicalTheme, serializeTheme } from '@/services/theme-serialization'
+import { createDefaultThemeState } from '@/utils/foundation-defaults'
+import { deserializeTheme, serializeCanonicalTheme, serializeTheme } from '@/utils/theme-serialization'
 
 const registry = createThemeRegistry()
 const expandedRegistry: FilamentRegistry = validateRegistry(registry.entries.map((entry) => entry.id === 'button.primary'

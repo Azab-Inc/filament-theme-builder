@@ -1,10 +1,10 @@
 import type { FoundationState, FoundationStateV4, PaletteName } from '@/models/foundations.model'
 import { PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
-import { createDefaultThemeState } from '@/services/foundation-defaults'
-import { validateFoundationState } from '@/services/foundation-validation'
+import { createDefaultThemeState } from '@/utils/foundation-defaults'
+import { validateFoundationState } from '@/utils/foundation-validation'
 import type { ThemeOverride } from '@/models/theme.model'
-import { applyPaletteOverrides, generatePalette } from '@/services/palette-generator'
-import { validateRawOverrides } from '@/services/raw-override-validation'
+import { applyPaletteOverrides, generatePalette } from '@/utils/palette-generator'
+import { validateRawOverrides } from '@/utils/raw-override-validation'
 
 export const LEGACY_RECOVERY_STORAGE_KEY = 'ftb-theme-legacy-recovery'
 

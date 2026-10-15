@@ -1,6 +1,6 @@
 import { FILAMENT_FOUNDATION_INVENTORY } from '@/registry/filament-foundation-inventory'
 import type { FoundationProjection, FoundationState, ThemeMode } from '@/models/foundations.model'
-import { isExplicitPath, isPaletteExplicit } from '@/services/foundation-provenance'
+import { isExplicitPath, isPaletteExplicit } from '@/utils/foundation-provenance'
 
 const PREVIEW_MAPPINGS = FILAMENT_FOUNDATION_INVENTORY.filter((entry) =>
   entry.mapping === 'preview-emulatable' || entry.mapping === 'live-emulation',

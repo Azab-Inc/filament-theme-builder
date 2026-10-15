@@ -8,11 +8,11 @@ import { CURATED_FONT_CHOICES } from '@/models/foundations.model'
 import type { ThemeOverride, ThemeScope, ThemeValue } from '@/models/theme.model'
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { lookupFoundationMapping, type FoundationInventoryEntry } from '@/registry/filament-foundation-inventory'
-import { validateThemeOverride } from '@/services/theme-validation'
+import { validateThemeOverride } from '@/utils/theme-validation'
 import { isTrustedColor } from '@/registry/tailwind-color-catalog'
 import { validateIconConfiguration } from '@/registry/icon-registry'
-import { validatePanelBrandingSettings } from '@/services/panel-branding-validation'
-import { validateRawOverrides } from '@/services/raw-override-validation'
+import { validatePanelBrandingSettings } from '@/utils/panel-branding-validation'
+import { validateRawOverrides } from '@/utils/raw-override-validation'
 
 type ValidationError = Exclude<FoundationValidationResult, { valid: true }>
 

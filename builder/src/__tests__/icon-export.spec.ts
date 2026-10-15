@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { createDefaultThemeState } from '@/services/foundation-defaults'
-import { exportIconConfigurationPhp } from '@/services/icon-export'
+import { createDefaultThemeState } from '@/utils/foundation-defaults'
+import { exportIconConfigurationPhp } from '@/utils/icon-export'
 
 describe('icon PHP export', () => {
   it('exports explicit PanelProvider icon mappings without CSS', () => {

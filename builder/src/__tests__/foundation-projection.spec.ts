@@ -7,9 +7,9 @@ import {
   FILAMENT_FOUNDATION_INVENTORY,
   lookupFoundationMapping,
 } from '@/registry/filament-foundation-inventory'
-import { createDefaultFoundationState } from '@/services/foundation-defaults'
-import { validateFoundationMapping } from '@/services/foundation-validation'
-import { projectFoundations } from '@/services/foundation-projection'
+import { createDefaultFoundationState } from '@/utils/foundation-defaults'
+import { validateFoundationMapping } from '@/utils/foundation-validation'
+import { projectFoundations } from '@/utils/foundation-projection'
 import {
   TAILWIND_COLOR_FAMILIES,
   TAILWIND_COLOR_SHADES,

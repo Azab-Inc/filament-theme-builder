@@ -1,5 +1,5 @@
 import type { FilamentRegistry } from '@/models/theme-registry.model'
-import type { InspectorTargetEvidence } from '@/services/inspector-protocol'
+import type { InspectorTargetEvidence } from '@/utils/inspector-protocol'
 import { SUPPORTED_PSEUDO_STATES } from '@/models/theme-registry.model'
 import {
   ALL_RAW_VISUAL_PROPERTIES,

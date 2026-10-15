@@ -5,9 +5,9 @@ import { createPinia } from 'pinia'
 import App from '../App.vue'
 import ThrowawayThemePrototype from '../components/ThrowawayThemePrototype.vue'
 import HoverInspectPrototype from '../components/HoverInspectPrototype.vue'
-import { createDefaultThemeState } from '@/services/foundation-defaults'
-import { serializeCanonicalTheme } from '@/services/theme-serialization'
-import * as vanillaCssExport from '@/services/vanilla-css-export'
+import { createDefaultThemeState } from '@/utils/foundation-defaults'
+import { serializeCanonicalTheme } from '@/utils/theme-serialization'
+import * as vanillaCssExport from '@/utils/vanilla-css-export'
 
 describe('App', () => {
   it('keeps the builder DOM hooks used by accessibility, automation, and preview tools', () => {
