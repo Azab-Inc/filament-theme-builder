@@ -1585,3 +1585,44 @@ Give users semantic padding controls that inherit from global default through se
 - [ ] Unit/store tests cover registry evidence, per-edge inheritance, source/effective resolution, parent preservation, native fallback, linked/separate history, reset/undo/redo, persistence, old JSON migration, validation quarantine, and preview/CSS/JSON parity. If FTB-052 exists, padding lock identities prevent locked per-edge bulk changes; padlocks are not otherwise implemented here.
 - [ ] Purpose-built MCP discovery/read/preview/confirm/set/reset capabilities use the same services, authorization, validation, resolver, export, and lock boundaries as the UI; confirmation and apply-time revalidation are tested with invalid/stale/unauthorized cases and an actual AI-client journey. The capability-to-tool inventory records this coverage and logs contain no sensitive values or arbitrary payloads.
 - [ ] The implementation refreshes the full review fixed point, preserves unrelated dirty worktree changes, adds no third-party dependency/server service, does not modify or close parent tickets, and does not claim the demo-first gate or FTB-012 complete.
+
+---
+
+<a id="ftb-055"></a>
+
+## FTB-055 — Add Filament panel topbar visibility control
+
+**Scope slug:** `filament-topbar-visibility`
+
+**Priority:** normal
+
+**Status:** blocked (planning only; not ready-for-agent)
+
+**Blocked by:** FTB-018 runtime/PanelProvider foundation and FTB-006 canonical theme-state, inheritance, and export foundation, pending prerequisite readiness review/evidence, plus existing repository gates. This Phase 1 runtime control is not blocked by a blanket all-Phase-1 release rule, and it introduces no parent ticket or dependency cycle.
+
+**Spec:** [Filament topbar visibility](./SPECS.md#filament-topbar-visibility)
+
+**GitHub:** [#55](https://github.com/Azab-Inc/filament-theme-builder/issues/55)
+
+**Review fixed point:** `5bd91bdb305c5c3873662fdaf55c750ba6522425` (actual full `dev` HEAD at planning publication; refresh before implementation review).
+
+### What to build
+
+Add a Show/Hide control in the builder's Panel/runtime group for the **Filament host panel topbar**. This is not the builder editor toolbar, topbar color styling, sidebar mode, or top navigation, and it must not be implemented as a blanket root CSS filter. The control must remain available in the builder while the host topbar is hidden and must re-enable the topbar without losing theme state.
+
+Use sparse tri-state canonical semantics: unset/inherited preserves the current host/native default; explicit values are strict booleans (`true` or `false`, never truthy strings). Existing JSON that lacks the field migrates with no change. Reset removes the explicit value and returns to the native/current default. The setting participates in canonical autosave/reload, JSON import/export, validation, reset, undo/redo, and controlled runtime preview refresh.
+
+The preview must use the existing runtime-refresh protocol. It may clear the active Inspector document only as the documented existing side effect, while retaining the editor draft and existing origin/protocol and runtime-side-effect guards. Verify real Filament 5.9 behavior with live DOM evidence for desktop/mobile, sidebar, and top-navigation combinations. Preserve native search, profile/user, notification, sidebar/mobile controls, and top-navigation contents; do not invent an alternate menu or artificially move hidden contents. Warn and preserve the selected setting for unsupported/conflicting combinations rather than silently changing it. The official Filament 5 `PanelProvider` contract is `->topbar(false)`; the installed runtime is authoritative.
+
+PanelProvider export emits `->topbar(true)` or `->topbar(false)` as valid PHP booleans and omits the call when inherited. CSS export and installation instructions must not claim that CSS alone hides the actual Filament topbar.
+
+### Acceptance criteria
+
+- [ ] The accessible builder control is in the Panel/runtime group, remains mutable when the host topbar is hidden, and is distinct from the builder's own toolbar, sidebar/top-navigation mode, and topbar color controls.
+- [ ] Unset/true/false state is canonical and strictly validated; old JSON without the field is unchanged after migration; reset returns to the native/current default; autosave, reload, JSON import/export, invalid-state recovery, undo, and redo preserve the semantics.
+- [ ] Controlled preview refresh follows the existing bridge protocol, retains the editor draft, applies origin/protocol guards, and records the existing Inspector-document side effect without broad CSS hiding.
+- [ ] Real Filament DOM Playwright evidence confirms removal/restoration on desktop and mobile, including sidebar and top-navigation combinations, while recording native search, profile/user, notification, sidebar/mobile, and top-navigation behavior.
+- [ ] PanelProvider export tests assert `->topbar(true)` and `->topbar(false)`, valid PHP booleans, omission for inherited, and no CSS-only hiding claim.
+- [ ] Any unsupported/conflicting navigation combination warns without silently changing the selected topbar value or promising an alternate menu UI.
+- [ ] Purpose-built MCP discovery/read/preview/confirm/set/reset uses the same domain services, authorization, strict validation, confirmation, and apply-time revalidation as the UI. Capability inventory coverage, meaningful authorization tests, and actual AI-client verification are required; no UI-only mutation shortcut or unsupported capability claim is added.
+- [ ] No third-party dependency, server service, parent-ticket edit, or unrelated worktree change is introduced; implementation refreshes the recorded full fixed point and does not claim FTB-012 or any unrelated release gate complete.

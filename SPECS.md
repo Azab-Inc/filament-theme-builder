@@ -20,6 +20,9 @@
 <a id="deferred-hierarchical-padding-controls"></a>
 **Urgent hierarchical padding design:** [Hierarchical Padding Controls](./docs/superpowers/specs/2026-10-14-hierarchical-padding-controls.md) ([FTB-054](./TICKETS.md#ftb-054), [GitHub #54](https://github.com/Azab-Inc/filament-theme-builder/issues/54)). This is an approved planning contract only; it remains blocked by the genuine registry, canonical migration/export, demo-first, and shared-core coordination prerequisites recorded in the design and ticket.
 
+<a id="deferred-filament-topbar-visibility"></a>
+**Deferred Filament topbar visibility:** [FTB-055](./TICKETS.md#ftb-055) / [GitHub #55](https://github.com/Azab-Inc/filament-theme-builder/issues/55), specified at [#filament-topbar-visibility](#filament-topbar-visibility). This is a concise planning contract for a Phase 1 Filament runtime control, not the builder toolbar or a Phase 2 feature; readiness remains subject to prerequisite evidence and existing repository gates.
+
 This is the implementation contract. PRD.md defines the product problem and outcomes. TICKETS.md contains the executable vertical slices. Each section below links to the ticket or tickets that implement it.
 
 Remaining builder feature work follows the demo-complete gate recorded in TICKETS.md and remains blocked: FTB-009A/B/010 are done, while FTB-011/013/014/015 are in progress because their implemented showcase slices do not satisfy all acceptance criteria (including registry/inheritance, coverage, and forced-state work). FTB-012 remains partial only for theme-density integration and is not a blocker. FTB-016/017/018 requirements must also be resolved before builder work resumes. Operational FTB-027 and FTB-028 are done; FTB-028's focused acceptance evidence is complete, while the full PHP suite retains pre-existing documentation-mount failures documented in the implementation report.
@@ -180,7 +183,20 @@ Every such setting is classified as:
 
 The preview may emulate a setting only when the result accurately represents Filament behavior. Otherwise use controlled refresh or clearly mark it export-only.
 
-**Tickets:** [FTB-018](./TICKETS.md#ftb-018), [FTB-026](./TICKETS.md#ftb-026)
+<a id="filament-topbar-visibility"></a>
+### Filament panel topbar visibility
+
+FTB-055 adds an explicit Show/Hide control for the **Filament host panel topbar** in the builder's Panel/runtime group. It is not the builder's own toolbar, a CSS topbar-color control, a sidebar/top-navigation mode, or a blanket root-style filter. The canonical value is sparse and tri-state: unset/inherited preserves the host's current native default; explicit values are validated booleans only. Existing JSON without the field migrates with no change, and reset removes the explicit value to return to that default. The control remains accessible while the host topbar is hidden and can re-enable it without losing the editor theme or draft.
+
+The value participates in canonical autosave/reload, JSON import/export, reset, undo/redo, validation, and the existing controlled runtime-refresh bridge. Runtime refresh may clear the active Inspector document only as an existing protocol side effect; it must retain the editor draft and existing origin/protocol and runtime-side-effect safeguards. Preview evidence must use the real Filament DOM, including desktop/mobile, sidebar, and top-navigation combinations, and must preserve native search, profile/user, notification, sidebar/mobile, and top-navigation behavior without inventing alternate menus or moving hidden contents. Unsupported/conflicting combinations warn and preserve the selected setting rather than silently changing it.
+
+PanelProvider export emits `->topbar(true)` or `->topbar(false)` as valid PHP booleans and omits the method when the value is inherited. CSS export and installation guidance must not claim that CSS alone hides the actual Filament topbar. The installed Filament 5.9 baseline and official Filament 5 documentation (`topbar(false)`) are the authority for runtime behavior.
+
+**Tickets:** [FTB-055](./TICKETS.md#ftb-055), [GitHub #55](https://github.com/Azab-Inc/filament-theme-builder/issues/55)
+
+**AI operability:** Purpose-built MCP discovery/read/preview/confirm/set/reset must use the same domain services, strict boolean validation, authorization, confirmation, and apply-time revalidation as the UI. Capability inventory coverage, meaningful authorization tests, and an actual AI-client verification flow are required before completion; no UI-only mutation shortcut or unsupported capability claim is permitted.
+
+**Tickets:** [FTB-018](./TICKETS.md#ftb-018), [FTB-026](./TICKETS.md#ftb-026), [FTB-055](./TICKETS.md#ftb-055)
 
 ## 9. Inspector
 
@@ -423,7 +439,7 @@ Snippet mode is recommended for existing applications.
 
 The UI clearly distinguishes CSS settings from PHP/runtime/icon/branding settings and never encourages overwriting unrelated provider logic.
 
-**Tickets:** [FTB-018](./TICKETS.md#ftb-018), [FTB-026](./TICKETS.md#ftb-026)
+**Tickets:** [FTB-018](./TICKETS.md#ftb-018), [FTB-026](./TICKETS.md#ftb-026), [FTB-055](./TICKETS.md#ftb-055)
 
 ## 26. Installation guidance
 
