@@ -55,3 +55,18 @@ Added a regression test that forces index failure followed by pointer-rollback f
 ## Round 3 fix
 
 Reworked active deletion and last-theme recreation to publish in a safer order: replacement records are written first, the index is published while retaining the old record, the new active pointer is published, and only then is the final index published and the old record removed. Index failures preserve the old pointer and records; pointer failures preserve both valid records and the old pointer. Added next-load regression coverage for repeated index failures and pointer failure after index success, including non-last active deletion.
+
+## Round 4 regression
+
+Added a storage fake that allows the first `ftb-themes` index write during last-theme recreation and rejects the second, final index write. The regression verifies that the persisted active pointer resolves to an indexed record after reload and that both state/history records remain retained, with no dangling pointer.
+
+Focused regression verification:
+
+- `npm run test:unit -- --run src/__tests__/local-theme-transaction.spec.ts`: passed (4 tests)
+
+Final verification:
+
+- `npm run test:unit`: passed (78 files, 325 tests)
+- `npm run type-check`: passed
+- `npm run build`: passed
+- `git diff --check`: passed
