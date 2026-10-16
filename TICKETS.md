@@ -643,7 +643,7 @@ Provide a small curated set of distinct editable theme presets while keeping sto
 
 ## FTB-021 — Manage multiple named local themes
 
-**Status:** ready-for-agent  
+**Status:** done
 **Blocked by:** [FTB-003](#ftb-003)
 
 ### What to build
@@ -652,12 +652,14 @@ Turn local persistence from one autosaved draft into a small anonymous local pro
 
 ### Acceptance criteria
 
-- [ ] Users can create multiple named local themes.
-- [ ] Themes can be renamed, duplicated, deleted, and opened.
-- [ ] Editing autosaves to the active local theme with a debounce.
-- [ ] The current theme is clearly identified.
-- [ ] Destructive deletion asks for confirmation.
-- [ ] Theme history/undo applies to the active theme without corrupting other saved themes.
+- [x] Users can create multiple named local themes. Evidence: `local-theme-store.spec.ts` and the focused Compose journey `e2e/ftb-021-local-themes.spec.ts`.
+- [x] Themes can be renamed, duplicated, deleted, and opened. Evidence: `local-theme-store.spec.ts`, `LocalThemeManager.spec.ts`, and the focused Compose journey.
+- [x] Editing autosaves to the active local theme with a debounce. Evidence: `local-theme-persistence.spec.ts`, `local-theme-persistence-switch.spec.ts`, and the focused Compose reload journey.
+- [x] The current theme is clearly identified. Evidence: `LocalThemeManager.spec.ts` and the focused Compose active-marker journey.
+- [x] Destructive deletion asks for confirmation. Evidence: `LocalThemeManager.spec.ts` and the focused Compose delete-confirmation journey.
+- [x] Theme history/undo applies to the active theme without corrupting other saved themes. Evidence: `local-theme-persistence-history.spec.ts`, `local-theme-store.spec.ts`, and the focused Compose reopen/history journey.
+
+FTB-021 verification evidence: builder type-check, full unit suite (79 files, 333 tests), production build, and focused Compose Playwright (4 passed) passed. The configured full Compose Playwright suite reached 105 passed, 2 unrelated pre-existing failures, 3 explicit skips, and 3 tests not run after the first failure path; the failures are in `demo-showcase.spec.ts` inheritance status and `native-default-styles.spec.ts` legacy foundation migration, not FTB-021. The FTB-020 preset-isolation criterion/journey is deferred because FTB-020 is not implemented; no preset capability or unsupported claim is included here. Local-theme MCP remains deferred to FTB-048.
 
 ---
 
