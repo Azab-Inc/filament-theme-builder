@@ -38,6 +38,7 @@ describe('theme state persistence and recovery', () => {
     expect(localStorage.getItem('ftb-theme')).not.toBe('{invalid')
     expect(localStorage.getItem('ftb-theme-legacy-recovery')).toBe('{invalid')
 
+    for (const key of Object.keys(localStorage)) if (key.startsWith('ftb-themes') || key.startsWith('ftb-theme-active') || key.startsWith('ftb-theme:')) localStorage.removeItem(key)
     localStorage.setItem('ftb-theme', JSON.stringify({ schemaVersion: 1, colors: { primary: 'red' } }))
     setActivePinia(createPinia())
     expect(createThemeState().theme.colors.primary).toBe('#6366f1')

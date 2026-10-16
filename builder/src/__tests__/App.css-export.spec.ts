@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { beforeEach, describe, it, expect, vi } from 'vitest'
 
 import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
@@ -7,6 +7,8 @@ import { createDefaultThemeState } from '@/utils/foundation-defaults'
 import * as vanillaCssExport from '@/utils/vanilla-css-export'
 
 describe('App CSS export', () => {
+  beforeEach(() => localStorage.clear())
+
   it('copies the exact generated CSS content to the clipboard', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })

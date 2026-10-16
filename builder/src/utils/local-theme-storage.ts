@@ -2,7 +2,8 @@ import type { LocalThemeCollection, LocalThemeHistory, LocalThemeRecord } from '
 import type { ThemeState, ThemeStateV4 } from '@/models/theme.model'
 import { createDefaultThemeState } from '@/utils/foundation-defaults'
 import { isSafeLocalThemeId, parseLocalThemeCollection, parseLocalThemeHistory } from '@/utils/local-theme-validation'
-import { migrateToCurrent } from '@/utils/theme-store-normalization'
+import { migrateToCurrent, normalizeTheme } from '@/utils/theme-store-normalization'
+import { validateFoundationState } from '@/utils/foundation-validation'
 
 export type StorageOperationResult = { ok: true } | { ok: false; error: string }
 export type LocalThemeLoadResult = { collection: LocalThemeCollection; state: ThemeStateV4; history: LocalThemeHistory; error: string | null }
@@ -11,7 +12,7 @@ const ACTIVE = 'ftb-theme-active'
 const LEGACY = 'ftb-theme'
 const validateState = (value: unknown): ThemeStateV4 | null => {
   if (!isTheme(value)) return null
-  try { return migrateToCurrent(value) } catch { return null }
+  try { const state = normalizeTheme(migrateToCurrent(value)); return validateFoundationState(state.foundations).valid ? state : null } catch { return null }
 }
 
 export function themeStateKey(id: string): string { assertId(id); return `ftb-theme:${id}` }
@@ -30,6 +31,15 @@ export function loadLocalThemeCollection(storage: Storage): LocalThemeLoadResult
   } catch (error) { return failed(createDefaultThemeState(), message(error)) }
 }
 
+export function loadLocalThemeById(storage: Storage, id: string): { state: ThemeStateV4; history: LocalThemeHistory; error: string | null } {
+  try {
+    const state = validateState(parse(storage.getItem(themeStateKey(id))))
+    const history = parseLocalThemeHistory(parse(storage.getItem(themeHistoryKey(id))), validateState)
+    if (!state || !history) return { state: createDefaultThemeState(), history: { snapshots: [createDefaultThemeState()], cursor: 0 }, error: 'Theme state or history is invalid' }
+    return { state, history, error: null }
+  } catch (error) { return { state: createDefaultThemeState(), history: { snapshots: [createDefaultThemeState()], cursor: 0 }, error: message(error) } }
+}
+
 export function writeAndVerifyLocalTheme(storage: Storage, id: string, state: ThemeStateV4, history: LocalThemeHistory): StorageOperationResult {
   assertId(id)
   const valid = validateState(state)
@@ -40,13 +50,13 @@ export function writeAndVerifyLocalTheme(storage: Storage, id: string, state: Th
     JSON.stringify(parseLocalThemeHistory(parse(storage.getItem(themeHistoryKey(id))), validateState)) === JSON.stringify(parsedHistory))
 }
 
-export function initializeLocalThemeStorage(storage: Storage, defaultState: ThemeStateV4, migrateState: (state: ThemeState) => ThemeStateV4): LocalThemeLoadResult {
+export function initializeLocalThemeStorage(storage: Storage, defaultState: ThemeStateV4, migrateState: (state: ThemeState) => ThemeStateV4, preferDefaultState = false): LocalThemeLoadResult {
   try {
     if (storage.getItem(INDEX) !== null) return loadLocalThemeCollection(storage)
     if (hasNewFormatRemnants(storage)) return failed(defaultState, 'Partial local theme storage detected; existing records were preserved')
     const bytes = storage.getItem(LEGACY)
     let state = defaultState
-    if (bytes !== null) {
+    if (bytes !== null && !preferDefaultState) {
       const parsed = parse(bytes)
       if (!isTheme(parsed)) return failed(defaultState, 'Legacy theme is invalid')
       state = migrateState(parsed)
@@ -58,7 +68,7 @@ export function initializeLocalThemeStorage(storage: Storage, defaultState: Them
     const payload = JSON.stringify([record])
     const result = writeVerified(storage, [[themeStateKey(id), JSON.stringify(state)], [themeHistoryKey(id), JSON.stringify(history)], [INDEX, payload], [ACTIVE, id]], () => loadLocalThemeCollection(storage).error === null && storage.getItem(ACTIVE) === id)
     if (!result.ok) return failed(defaultState, result.error)
-    if (bytes !== null) storage.removeItem(LEGACY)
+    if (bytes !== null && !preferDefaultState) storage.removeItem(LEGACY)
     return loadLocalThemeCollection(storage)
   } catch (error) { return failed(defaultState, message(error)) }
 }

@@ -12,8 +12,8 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
   const themes = ref<LocalThemeRecord[]>([]); const activeThemeId = ref('')
   const activeState = ref(cloneTheme(options.initialState)); const activeHistory = ref<LocalThemeHistory>({ snapshots: [cloneTheme(options.initialState)], cursor: 0 })
   const storageError = ref<string | null>(null); const pending = new Map<string, PendingSave>()
-  function initialize(): LocalThemeLoadResult {
-    const loaded = initializeLocalThemeStorage(options.storage, options.initialState, migrateToCurrent)
+  function initialize(preferInitialState = false): LocalThemeLoadResult {
+    const loaded = initializeLocalThemeStorage(options.storage, options.initialState, migrateToCurrent, preferInitialState)
     themes.value = loaded.collection.themes; activeThemeId.value = loaded.collection.activeId; activeState.value = loaded.state; activeHistory.value = loaded.history; storageError.value = loaded.error
     if (!activeThemeId.value) { const id = nextId(); activeThemeId.value = id; themes.value = [{ id, name: 'Untitled', updatedAt: options.now() }] }
     return loaded
@@ -24,7 +24,7 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
   }
   function flush(id: string): StorageOperationResult {
     const saved = pending.get(id); if (!saved) return { ok: true }; const result = writeAndVerifyLocalTheme(options.storage, id, saved.state, saved.history)
-    if (!result.ok) { storageError.value = result.error; return result }; options.cancel(saved.timer); pending.delete(id); storageError.value = null; touch(id); return result
+    if (!result.ok) { storageError.value = result.error; return result }; options.cancel(saved.timer); pending.delete(id); storageError.value = null; return touch(id)
   }
   function switchTo(id: string): StorageOperationResult {
     if (!themes.value.some((theme) => theme.id === id)) return failure('Theme does not exist')
@@ -50,8 +50,10 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
     const timer = pending.get(id); if (timer) options.cancel(timer.timer); pending.delete(id); if (!result.ok) return result
     const remaining = themes.value.filter((theme) => theme.id !== id)
     if (!remaining.length) return recreateAfterDelete(id)
-    const next = wasActive ? newest(remaining).id : activeThemeId.value; const previous = themes.value; themes.value = remaining
-    if (!writeIndex() || !setActive(next)) { themes.value = previous; return failure('Theme index could not be saved') }
+    const next = wasActive ? newest(remaining).id : activeThemeId.value; const previous = themes.value
+    if (wasActive && !setActive(next)) return failure(storageError.value ?? 'Theme pointer could not be saved')
+    themes.value = remaining
+    if (!writeIndex()) { themes.value = previous; if (wasActive) setActive(id); return failure('Theme index could not be saved') }
     removeRecords(id); if (wasActive) switchTo(next); return { ok: true }
   }
   if (getCurrentScope()) onScopeDispose(() => { for (const save of pending.values()) options.cancel(save.timer) })
@@ -63,11 +65,19 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
   }
   function recreateAfterDelete(id: string): StorageOperationResult {
     const state = cloneTheme(options.initialState); const record = { id: nextId(), name: 'Untitled', updatedAt: options.now() }
-    if (!persistNewTheme(record, state, { snapshots: [cloneTheme(state)], cursor: 0 })) return failure('Theme could not be recreated')
-    themes.value = themes.value.filter((theme) => theme.id !== id); if (!writeIndex() || !setActive(record.id)) return failure('Theme index could not be saved'); removeRecords(id); return { ok: true }
+    const previous = themes.value; const previousActive = activeThemeId.value
+    const saved = writeAndVerifyLocalTheme(options.storage, record.id, state, { snapshots: [cloneTheme(state)], cursor: 0 })
+    if (!saved.ok) { storageError.value = saved.error; return saved }
+    if (!setActive(record.id)) { removeRecords(record.id); return failure(storageError.value ?? 'Theme pointer could not be saved') }
+    themes.value = [record]
+    if (!writeIndex()) { themes.value = previous; setActive(previousActive); removeRecords(record.id); return failure('Theme index could not be saved') }
+    removeRecords(id); return { ok: true }
   }
   function removeRecords(id: string): void { try { options.storage.removeItem(themeStateKey(id)); options.storage.removeItem(themeHistoryKey(id)) } catch (error) { storageError.value = message(error) } }
-  function touch(id: string): void { const theme = themes.value.find((entry) => entry.id === id); if (theme) { theme.updatedAt = options.now(); writeIndex() } }
+  function touch(id: string): StorageOperationResult {
+    const theme = themes.value.find((entry) => entry.id === id); if (!theme) return failure('Theme does not exist')
+    const previous = theme.updatedAt; theme.updatedAt = options.now(); if (writeIndex()) return { ok: true }; theme.updatedAt = previous; return failure(storageError.value ?? 'Theme metadata could not be saved')
+  }
   function failure(error: string): StorageOperationResult { storageError.value = error; return { ok: false, error } }
   function nextId(): string { let id = `theme-${options.now()}`; let suffix = 1; while (themes.value.some((theme) => theme.id === id)) id = `theme-${options.now()}-${suffix++}`; return id }
   function newest(records: LocalThemeRecord[]): LocalThemeRecord { return records.reduce((best, theme) => theme.updatedAt > best.updatedAt ? theme : best, records[0]!) }

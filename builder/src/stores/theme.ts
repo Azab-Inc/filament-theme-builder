@@ -20,7 +20,6 @@ const recoveryStorageKey = 'ftb-theme-legacy-recovery'
 export const useThemeStore = defineStore('theme', () => {
   const persistence = useThemePersistence(storageKey, recoveryStorageKey)
   const restored = persistence.restore()
-  try { localStorage.removeItem(storageKey) } catch { /* local theme storage remains authoritative */ }
   const localPersistence = useLocalThemePersistence({
     storage: localStorage,
     initialState: restored,
@@ -28,13 +27,11 @@ export const useThemeStore = defineStore('theme', () => {
     schedule: setTimeout,
     cancel: clearTimeout,
   })
-  localPersistence.initialize()
-  try { localStorage.setItem(storageKey, JSON.stringify(persistence.serialize(localPersistence.activeState.value))) } catch { /* local theme storage remains authoritative */ }
+  localPersistence.initialize(true)
   const theme = localPersistence.activeState
   const registry = createThemeRegistry()
   let legacyTimer: ReturnType<typeof setTimeout> | undefined
   const history = useThemeHistory(theme, persistence.serialize, storageKey, localPersistence.activeHistory.value, (state, savedHistory) => {
-    localPersistence.activeHistory.value = savedHistory
     localPersistence.scheduleSave(localPersistence.activeThemeId.value, state, savedHistory)
     if (legacyTimer) clearTimeout(legacyTimer)
     legacyTimer = setTimeout(() => {

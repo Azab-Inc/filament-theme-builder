@@ -29,3 +29,19 @@ The complete `npm run test:unit` run has 4 failures in existing App/state tests 
 - No packages were added.
 - Unrelated dirty worktree files were preserved.
 - Touched maintainer-facing source files remain at or below 100 lines.
+
+## Round 1 fixes
+
+- Removed the synchronous `ftb-theme` initialization write and preserved legacy migration/recovery reads while seeding the new collection from the already-restored state.
+- Reordered active deletion/recreation persistence and added rollback behavior so pointer failures retain a valid active record/pointer and publish `storageError`.
+- Made `flush()` return metadata/index failures from timestamp updates.
+- Kept `useThemeHistory` as the live history authority; persistence now receives immutable snapshots instead of maintaining a second live history authority.
+- Added coverage for fallback ties, non-active deletion, pointer failures, metadata failures/updates, and invalid IDs.
+- Isolated legacy-only and App export tests from intentional per-theme local storage.
+
+Round 1 verification:
+
+- Full unit suite: **77 files, 321 tests passed**
+- `npm run type-check`: passed
+- `npm run build`: passed
+- `git diff --check`: passed
