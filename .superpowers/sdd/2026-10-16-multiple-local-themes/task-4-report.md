@@ -45,3 +45,9 @@ Round 1 verification:
 - `npm run type-check`: passed
 - `npm run build`: passed
 - `git diff --check`: passed
+
+## Round 2 fix
+
+Fixed the last-theme recreation rollback edge case. If replacement state/history and pointer writes succeed but the collection index fails, and restoring the old pointer also fails, the replacement remains indexed and persisted. The store now keeps the replacement as the active in-memory state/history, reports both failure causes through `storageError`, and never removes the records targeted by `ftb-theme-active`.
+
+Added a regression test that forces index failure followed by pointer-rollback failure and verifies the active pointer resolves to present replacement records.

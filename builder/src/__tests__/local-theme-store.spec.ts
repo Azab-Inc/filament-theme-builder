@@ -6,15 +6,11 @@ describe('local theme store collection', () => {
   beforeEach(() => { vi.useFakeTimers({ now: 1000 }) })
   afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
   it('initializes one active default theme with public collection state', () => {
-    const store = setup()
-    expect(store.themes).toHaveLength(1)
-    expect(store.activeThemeId).toBe(store.themes[0]?.id)
-    expect(store.activeThemeName).toBe('Untitled')
-    expect(store.storageError).toBeNull()
+    const store = setup(); expect(store.themes).toHaveLength(1); expect(store.activeThemeId).toBe(store.themes[0]?.id)
+    expect(store.activeThemeName).toBe('Untitled'); expect(store.storageError).toBeNull()
   })
   it('creates unique themes and renames using trimmed display names', () => {
-    const store = setup()
-    const first = store.createTheme()
+    const store = setup(); const first = store.createTheme()
     const second = store.createTheme()
     expect(second.id).not.toBe(first.id)
     expect(second.updatedAt).toBeGreaterThanOrEqual(first.updatedAt)
@@ -52,25 +48,33 @@ describe('local theme store collection', () => {
     store.deleteTheme(third.id); expect(store.activeThemeId).toBe(first)
     store.deleteTheme(first); expect(store.activeThemeId).toBe(second.id)
   })
-
   it('reports active-pointer failures without deleting the active record', () => {
     const store = setup(); const id = store.activeThemeId; const original = Storage.prototype.setItem
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, key, value) { if (key === 'ftb-theme-active') throw new Error('pointer denied'); return original.call(this, key, value) })
     store.deleteTheme(id)
     expect(store.activeThemeId).toBe(id); expect(store.themes.some((theme) => theme.id === id)).toBe(true); expect(store.storageError).toContain('pointer denied')
   })
-
+  it('keeps replacement records when index and pointer rollback both fail', () => {
+    const store = setup(); const oldId = store.activeThemeId; const original = Storage.prototype.setItem; let pointerWrites = 0; let indexFailed = false
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, key, value) {
+      if (key === 'ftb-theme-active' && ++pointerWrites === 2) throw new Error('rollback denied')
+      if (key === 'ftb-themes' && !indexFailed) { indexFailed = true; throw new Error('index denied') }
+      return original.call(this, key, value)
+    })
+    store.deleteTheme(oldId)
+    const activeId = localStorage.getItem('ftb-theme-active')!
+    expect(activeId).not.toBe(oldId); expect(store.themes.some(({ id }) => id === activeId)).toBe(true)
+    expect(localStorage.getItem(`ftb-theme:${activeId}`)).not.toBeNull(); expect(store.activeThemeId).toBe(activeId); expect(store.canUndo).toBe(false); expect(store.storageError).toContain('index denied')
+  })
   it('rejects invalid duplicate and delete IDs', () => {
     const store = setup(); const copy = store.duplicateTheme('missing')
     expect(store.deleteTheme('missing')).toBeUndefined(); expect(copy.id).not.toBe('missing'); expect(store.storageError).toContain('does not exist')
   })
-
   it('updates metadata after an edit is flushed', () => {
     const store = setup(); const before = store.themes[0]!.updatedAt
     vi.setSystemTime(2000); store.setPrimaryColor('#0f766e'); vi.advanceTimersByTime(300)
     expect(store.themes[0]!.updatedAt).toBeGreaterThan(before)
   })
-
   it('reports a metadata write failure from flush', () => {
     const store = setup(); const original = Storage.prototype.setItem
     store.setPrimaryColor('#0f766e')
@@ -78,16 +82,13 @@ describe('local theme store collection', () => {
     vi.advanceTimersByTime(300)
     expect(store.storageError).toContain('metadata denied')
   })
-
   it('isolates preset edits to the active theme', () => {
     const store = setup(); const first = store.activeThemeId; const second = store.createTheme()
-    expect(second.id).not.toBe(first)
-    store.openTheme(first); store.setDensity('compact'); expect(store.canUndo).toBe(true)
+    expect(second.id).not.toBe(first); store.openTheme(first); store.setDensity('compact'); expect(store.canUndo).toBe(true)
     store.openTheme(second.id)
     expect(store.theme.foundations.density).toBe('default')
     expect(store.canUndo).toBe(false)
   })
-
   it('keeps memory and active pointer usable when storage rejects a mutation', () => {
     const store = setup(); const original = Storage.prototype.setItem
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, key, value) { if (key === 'ftb-themes') throw new Error('quota'); return original.call(this, key, value) })

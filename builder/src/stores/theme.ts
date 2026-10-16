@@ -53,7 +53,10 @@ export const useThemeStore = defineStore('theme', () => {
   }
   const deleteTheme = (id: string): void => {
     const wasActive = localPersistence.activeThemeId.value === id
-    if (localPersistence.deleteTheme(id).ok && wasActive) { openTheme(localPersistence.activeThemeId.value) }
+    const result = localPersistence.deleteTheme(id)
+    if (wasActive && localPersistence.activeThemeId.value !== id) {
+      history.replaceHistory(localPersistence.activeHistory.value); history.applyTheme(localPersistence.activeState.value)
+    } else if (result.ok && wasActive) openTheme(localPersistence.activeThemeId.value)
   }
 
   return {

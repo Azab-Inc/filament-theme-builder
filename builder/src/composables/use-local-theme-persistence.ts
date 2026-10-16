@@ -70,7 +70,12 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
     if (!saved.ok) { storageError.value = saved.error; return saved }
     if (!setActive(record.id)) { removeRecords(record.id); return failure(storageError.value ?? 'Theme pointer could not be saved') }
     themes.value = [record]
-    if (!writeIndex()) { themes.value = previous; setActive(previousActive); removeRecords(record.id); return failure('Theme index could not be saved') }
+    if (!writeIndex()) {
+      const indexError = storageError.value ?? 'Theme index could not be saved'; themes.value = previous
+      if (setActive(previousActive)) { removeRecords(record.id); return failure('Theme index could not be saved') }
+      themes.value = [record]; activeState.value = state; activeHistory.value = { snapshots: [cloneTheme(state)], cursor: 0 }
+      writeIndex(); removeRecords(id); return failure(`${indexError}; active pointer rollback failed; replacement was preserved`)
+    }
     removeRecords(id); return { ok: true }
   }
   function removeRecords(id: string): void { try { options.storage.removeItem(themeStateKey(id)); options.storage.removeItem(themeHistoryKey(id)) } catch (error) { storageError.value = message(error) } }
