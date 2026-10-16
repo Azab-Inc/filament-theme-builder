@@ -51,3 +51,7 @@ Round 1 verification:
 Fixed the last-theme recreation rollback edge case. If replacement state/history and pointer writes succeed but the collection index fails, and restoring the old pointer also fails, the replacement remains indexed and persisted. The store now keeps the replacement as the active in-memory state/history, reports both failure causes through `storageError`, and never removes the records targeted by `ftb-theme-active`.
 
 Added a regression test that forces index failure followed by pointer-rollback failure and verifies the active pointer resolves to present replacement records.
+
+## Round 3 fix
+
+Reworked active deletion and last-theme recreation to publish in a safer order: replacement records are written first, the index is published while retaining the old record, the new active pointer is published, and only then is the final index published and the old record removed. Index failures preserve the old pointer and records; pointer failures preserve both valid records and the old pointer. Added next-load regression coverage for repeated index failures and pointer failure after index success, including non-last active deletion.

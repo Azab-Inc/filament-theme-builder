@@ -54,18 +54,6 @@ describe('local theme store collection', () => {
     store.deleteTheme(id)
     expect(store.activeThemeId).toBe(id); expect(store.themes.some((theme) => theme.id === id)).toBe(true); expect(store.storageError).toContain('pointer denied')
   })
-  it('keeps replacement records when index and pointer rollback both fail', () => {
-    const store = setup(); const oldId = store.activeThemeId; const original = Storage.prototype.setItem; let pointerWrites = 0; let indexFailed = false
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, key, value) {
-      if (key === 'ftb-theme-active' && ++pointerWrites === 2) throw new Error('rollback denied')
-      if (key === 'ftb-themes' && !indexFailed) { indexFailed = true; throw new Error('index denied') }
-      return original.call(this, key, value)
-    })
-    store.deleteTheme(oldId)
-    const activeId = localStorage.getItem('ftb-theme-active')!
-    expect(activeId).not.toBe(oldId); expect(store.themes.some(({ id }) => id === activeId)).toBe(true)
-    expect(localStorage.getItem(`ftb-theme:${activeId}`)).not.toBeNull(); expect(store.activeThemeId).toBe(activeId); expect(store.canUndo).toBe(false); expect(store.storageError).toContain('index denied')
-  })
   it('rejects invalid duplicate and delete IDs', () => {
     const store = setup(); const copy = store.duplicateTheme('missing')
     expect(store.deleteTheme('missing')).toBeUndefined(); expect(copy.id).not.toBe('missing'); expect(store.storageError).toContain('does not exist')

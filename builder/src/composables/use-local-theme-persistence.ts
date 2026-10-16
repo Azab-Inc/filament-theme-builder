@@ -51,10 +51,10 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
     const remaining = themes.value.filter((theme) => theme.id !== id)
     if (!remaining.length) return recreateAfterDelete(id)
     const next = wasActive ? newest(remaining).id : activeThemeId.value; const previous = themes.value
-    if (wasActive && !setActive(next)) return failure(storageError.value ?? 'Theme pointer could not be saved')
+    if (wasActive) return publishActiveDeletion(id, next, previous, remaining)
     themes.value = remaining
-    if (!writeIndex()) { themes.value = previous; if (wasActive) setActive(id); return failure('Theme index could not be saved') }
-    removeRecords(id); if (wasActive) switchTo(next); return { ok: true }
+    if (!writeIndex()) { themes.value = previous; return failure('Theme index could not be saved') }
+    removeRecords(id); return { ok: true }
   }
   if (getCurrentScope()) onScopeDispose(() => { for (const save of pending.values()) options.cancel(save.timer) })
   return { themes, activeThemeId, activeState, activeHistory, storageError: readonly(storageError), initialize, scheduleSave, flush, switchTo, createTheme, renameTheme, duplicateTheme, deleteTheme }
@@ -65,17 +65,23 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
   }
   function recreateAfterDelete(id: string): StorageOperationResult {
     const state = cloneTheme(options.initialState); const record = { id: nextId(), name: 'Untitled', updatedAt: options.now() }
-    const previous = themes.value; const previousActive = activeThemeId.value
-    const saved = writeAndVerifyLocalTheme(options.storage, record.id, state, { snapshots: [cloneTheme(state)], cursor: 0 })
+    const previous = themes.value; const replacementHistory = { snapshots: [cloneTheme(state)], cursor: 0 }
+    const saved = writeAndVerifyLocalTheme(options.storage, record.id, state, replacementHistory)
     if (!saved.ok) { storageError.value = saved.error; return saved }
-    if (!setActive(record.id)) { removeRecords(record.id); return failure(storageError.value ?? 'Theme pointer could not be saved') }
+    themes.value = [...previous, record]
+    if (!writeIndex()) { themes.value = previous; removeRecords(record.id); return failure(storageError.value ?? 'Theme index could not be saved') }
+    if (!setActive(record.id)) { return failure(storageError.value ?? 'Theme pointer could not be saved') }
     themes.value = [record]
-    if (!writeIndex()) {
-      const indexError = storageError.value ?? 'Theme index could not be saved'; themes.value = previous
-      if (setActive(previousActive)) { removeRecords(record.id); return failure('Theme index could not be saved') }
-      themes.value = [record]; activeState.value = state; activeHistory.value = { snapshots: [cloneTheme(state)], cursor: 0 }
-      writeIndex(); removeRecords(id); return failure(`${indexError}; active pointer rollback failed; replacement was preserved`)
-    }
+    if (!writeIndex()) { themes.value = [...previous, record]; return failure(storageError.value ?? 'Theme index could not be finalized') }
+    activeState.value = state; activeHistory.value = replacementHistory; removeRecords(id); return { ok: true }
+  }
+  function publishActiveDeletion(id: string, next: string, previous: LocalThemeRecord[], remaining: LocalThemeRecord[]): StorageOperationResult {
+    const loaded = loadLocalThemeById(options.storage, next); if (loaded.error) return failure(loaded.error)
+    themes.value = previous
+    if (!writeIndex()) return failure(storageError.value ?? 'Theme index could not be published')
+    if (!setActive(next)) return failure(storageError.value ?? 'Theme pointer could not be saved')
+    activeState.value = loaded.state; activeHistory.value = loaded.history; themes.value = remaining
+    if (!writeIndex()) { themes.value = previous; return failure(storageError.value ?? 'Theme index could not be finalized') }
     removeRecords(id); return { ok: true }
   }
   function removeRecords(id: string): void { try { options.storage.removeItem(themeStateKey(id)); options.storage.removeItem(themeHistoryKey(id)) } catch (error) { storageError.value = message(error) } }
