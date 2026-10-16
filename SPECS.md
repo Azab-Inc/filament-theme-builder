@@ -23,6 +23,8 @@
 <a id="deferred-filament-topbar-visibility"></a>
 **Deferred Filament topbar visibility:** [FTB-055](./TICKETS.md#ftb-055) / [GitHub #55](https://github.com/Azab-Inc/filament-theme-builder/issues/55), specified at [#filament-topbar-visibility](#filament-topbar-visibility). This is a concise planning contract for a Phase 1 Filament runtime control, not the builder toolbar or a Phase 2 feature; readiness remains subject to prerequisite evidence and existing repository gates.
 
+**Deferred comprehensive component text-color controls:** [FTB-056](./TICKETS.md#ftb-056) / [GitHub #56](https://github.com/Azab-Inc/filament-theme-builder/issues/56), specified at [Component text-color controls](#component-text-color-controls). This is a planning contract for registry-verified foreground controls across mapped Filament text targets, not a generic root `color` override; readiness remains blocked by the existing gate and prerequisite evidence.
+
 This is the implementation contract. PRD.md defines the product problem and outcomes. TICKETS.md contains the executable vertical slices. Each section below links to the ticket or tickets that implement it.
 
 Remaining builder feature work follows the demo-complete gate recorded in TICKETS.md and remains blocked: FTB-009A/B/010 are done, while FTB-011/013/014/015 are in progress because their implemented showcase slices do not satisfy all acceptance criteria (including registry/inheritance, coverage, and forced-state work). FTB-012 remains partial only for theme-density integration and is not a blocker. FTB-016/017/018 requirements must also be resolved before builder work resumes. Operational FTB-027 and FTB-028 are done; FTB-028's focused acceptance evidence is complete, while the full PHP suite retains pre-existing documentation-mount failures documented in the implementation report.
@@ -696,3 +698,14 @@ This specification excludes:
 - automatic deployment solely because a new Filament version was released.
 
 Future work that introduces these items requires new tickets/specification rather than silent scope expansion.
+
+<a id="component-text-color-controls"></a>
+## 45. Component text-color controls
+
+FTB-056 defines a registry-driven foreground contract for verified mapped text targets across the Filament preview. Coverage includes body, headings, widgets/cards/stats, button labels, badges, links, navigation, breadcrumbs, tabs, menus, forms, tables, empty states, pagination, notifications, modals, infolists, and other targets only where the installed Filament registry and fixtures provide exact selector evidence. It must not be implemented as a blanket DOM-root color rule, and unsupported targets remain explicitly unmapped.
+
+The canonical value is sparse and inherits global → component → variant → state. Each supported target exposes effective value and source, independent light/dark values, and only verified normal/hover/focus/active/selected/disabled states. Button foreground is separate from button background; icons are not implicitly recolored. Placeholder pseudo-elements and child labels use separately verified selectors. Native defaults, semantic badge/error colors, existing token references, unrelated state, and old themes remain unchanged unless explicitly overridden.
+
+Preview uses the existing iframe bridge without reloads, network mutations, or raw CSS injection. Canonical JSON, migration, validation, autosave, history, reset, vanilla foreground export, and safe stale/invalid apply behavior remain authoritative. Purpose-built MCP discovery/read/preview/confirm/set/reset uses the same registry, resolver, validation, authorization, confirmation, and apply-time revalidation as the UI, with capability inventory and AI-client evidence. FTB-051 picker/palette controls and FTB-052 locks are reused when present without becoming hard blockers; FTB-031 contrast guidance remains separate and non-blocking.
+
+**Tickets:** [FTB-056](./TICKETS.md#ftb-056), [GitHub #56](https://github.com/Azab-Inc/filament-theme-builder/issues/56)

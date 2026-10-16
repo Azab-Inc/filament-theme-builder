@@ -1626,3 +1626,47 @@ PanelProvider export emits `->topbar(true)` or `->topbar(false)` as valid PHP bo
 - [ ] Any unsupported/conflicting navigation combination warns without silently changing the selected topbar value or promising an alternate menu UI.
 - [ ] Purpose-built MCP discovery/read/preview/confirm/set/reset uses the same domain services, authorization, strict validation, confirmation, and apply-time revalidation as the UI. Capability inventory coverage, meaningful authorization tests, and actual AI-client verification are required; no UI-only mutation shortcut or unsupported capability claim is added.
 - [ ] No third-party dependency, server service, parent-ticket edit, or unrelated worktree change is introduced; implementation refreshes the recorded full fixed point and does not claim FTB-012 or any unrelated release gate complete.
+
+---
+
+<a id="ftb-056"></a>
+
+## FTB-056 — Add comprehensive component text-color controls
+
+**Scope slug:** `component-text-color-controls`
+
+**Priority:** normal
+
+**Status:** blocked (planning only; not ready-for-agent)
+
+**Blocked by:** the genuine demo-first gate and existing foundation/control projection stabilization; verified FTB-006 registry/inheritance extension; and the FTB-022 canonical JSON/migration boundary. FTB-053 is coordination only when shared builder seams are touched. FTB-051 and FTB-052 are reusable-control/padlock coordination only when those capabilities exist, not new dependency cycles. FTB-031 remains separate, non-blocking contrast guidance. FTB-024/FTB-025 are future export coordination only and are not required to start this feature.
+
+**Spec:** [Component text-color controls](./SPECS.md#component-text-color-controls)
+
+**GitHub:** [#56](https://github.com/Azab-Inc/filament-theme-builder/issues/56)
+
+**Related tickets:** [FTB-005](#ftb-005), [FTB-006](#ftb-006), [FTB-007](#ftb-007), [FTB-008](#ftb-008), [FTB-016](#ftb-016), [FTB-022](#ftb-022), [FTB-031](#ftb-031), [FTB-051](#ftb-051), [FTB-052](#ftb-052), [FTB-053](#ftb-053), [FTB-054](#ftb-054)
+
+**Review fixed point:** `7e506177994f5785147ed98a869ed27b4b53834a` (actual full `dev` HEAD at planning publication; refresh before implementation review).
+
+### What to build
+
+Add registry-driven foreground text-color controls for all verified mapped text targets, not only headings. The target scope includes body/heading/widget/card/stat text, button labels for every supported variant/state/size without changing button backgrounds, badges, links, navigation items, breadcrumbs, tabs, dropdown/menu selections, forms (input/textarea/select values, placeholders, labels, help/hint/error/validation text), table headers/rows/cells, empty states, pagination, notifications, modals, infolists, and any other target the current Filament registry verifies. Unsupported or unverified targets must be explicitly reported rather than represented by guessed selectors or fake controls.
+
+Use the existing shared color field/picker and Tailwind choices from FTB-051 when available, and integrate FTB-052 value locks when present without making either ticket a hard blocker. Build a focused component/composable from the repository's existing boundaries; do not grow a monolithic `App.vue` implementation, add a competing inheritance resolver, or add dependencies.
+
+### Contract
+
+- [ ] A coverage matrix records each target class, exact verified selector/child slot and pseudo-element, computed foreground color, mode, state, support status, and fixture evidence. Selectors are verified against the installed Filament runtime; a generic `color` property is not claimed to cover the full UI.
+- [ ] Sparse inheritance/resolution is global foundation → component → variant → state. Each supported component exposes effective value and source. Group/category controls exist only where the registry has a common verified layer. Native defaults are preserved when unset; semantic badge/error colors are not erased by blanket styling.
+- [ ] Light/dark values are independent. Only actual verified normal/hover/focus/active/selected/disabled states are exposed. `::placeholder` rules and child-label selectors are separately verified for specificity; no class names or state mappings are invented.
+- [ ] Button text foreground is separate from button background. Inherited text does not implicitly recolor icon families; icons change only where an existing registry/design contract explicitly verifies that behavior.
+- [ ] Canonical state remains sparse and preserves old-theme migration, validation, autosave/reload, undo/redo, reset, preview bridge, and vanilla foreground export. Themes without this scope retain unrelated values unchanged; invalid values fail safely and stale applies cannot overwrite newer state.
+- [ ] Preview uses the existing iframe protocol with no full reload, network mutation, or raw CSS injection. Export reproduces the verified foreground mapping and does not claim runtime configuration support.
+- [ ] Purpose-built MCP discovery/read/preview/confirm/set/reset uses the same registry, resolver, validation, authorization, confirmation, and apply-time revalidation as the UI. Capability inventory and actual AI-client evidence are required; this is not UI-only behavior.
+
+### Verification
+
+- [ ] TDD unit/store/resolver tests cover the complete inventory, inheritance/source/effective values, mode/state separation, child slots and placeholder specificity, native fallback, unrelated numeric and non-color values remaining untouched, invalid input, stale apply, persistence/migration, reset, undo/redo, and export parity.
+- [ ] Playwright against the real Filament iframe verifies computed colors for representative primary/secondary/hover/disabled buttons, form values/placeholders/labels, table headers/cells, navigation links, badges, widgets, modal/notification/infolist text, native-before/after reset, no reload/non-GET mutation, and clean native baseline behavior.
+- [ ] MCP discovery, preview confirmation, authorization, apply revalidation, and AI-client verification pass. No third-party dependency, prototype, unrelated app/style/test change, parent-ticket edit, or gate relaxation is introduced.
