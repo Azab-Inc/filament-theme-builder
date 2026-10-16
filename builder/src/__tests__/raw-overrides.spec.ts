@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-
 import type { InspectorTargetEvidence } from '@/utils/inspector-protocol'
 import { createThemeRegistry } from '@/registry/theme-registry'
 import {
@@ -9,7 +8,6 @@ import {
   validateRawElementOverride,
   validateRawSelector,
 } from '@/utils/raw-override-validation'
-
 const registry = createThemeRegistry()
 
 const evidence = (candidateSelectors: string[]): InspectorTargetEvidence => ({
@@ -17,7 +15,6 @@ const evidence = (candidateSelectors: string[]): InspectorTargetEvidence => ({
   classNames: candidateSelectors.map((selector) => selector.replace(/^\./, '').split(' ').join('-')),
   semanticBreadcrumb: 'Button / Primary',
 })
-
 describe('raw Inspector overrides', () => {
   it('keeps the bridge property allowlist in parity with the TypeScript allowlist', () => {
     const bridge = readFileSync(`${process.cwd()}/../demo/resources/views/filament/preview-bridge.blade.php`, 'utf8')
@@ -26,7 +23,6 @@ describe('raw Inspector overrides', () => {
       expect(bridge).toContain(`'${property}'`)
     }
   })
-
   it('keeps supported pseudo-state selectors aligned with the production registry and preview bridge', () => {
     const bridge = readFileSync(`${process.cwd()}/../demo/resources/views/filament/preview-bridge.blade.php`, 'utf8')
 
@@ -37,14 +33,12 @@ describe('raw Inspector overrides', () => {
     expect(bridge).not.toContain('focus-visible')
     expect(bridge).not.toContain('focus-within')
   })
-
   it('prefers a single stable Filament class over a compound or structural candidate', () => {
     expect(proposeRawSelector(evidence(['.fi-btn > span', '.fi-btn.fi-color-primary', '.fi-btn']), registry)).toEqual({
       selector: '.fi-btn',
       quality: 'stable',
     })
   })
-
   it('marks safe compound selectors as fragile and rejects structural selectors', () => {
     expect(proposeRawSelector(evidence(['.fi-section .fi-btn']), registry)).toMatchObject({
       selector: '.fi-section .fi-btn',
@@ -52,7 +46,6 @@ describe('raw Inspector overrides', () => {
     })
     expect(validateRawSelector('.fi-section > div').valid).toBe(false)
   })
-
   it('accepts the complete typed visual property allowlist with representative values', () => {
     expect(ALL_RAW_VISUAL_PROPERTIES).toEqual(expect.arrayContaining([
       'color', 'background-color', 'border-color', 'border-width', 'border-radius',
@@ -87,7 +80,6 @@ describe('raw Inspector overrides', () => {
 
     expect(result.valid).toBe(true)
   })
-
   it('rejects injection-shaped selectors and values', () => {
     expect(validateRawSelector('.fi-btn, .fi-input').valid).toBe(false)
     expect(validateRawSelector('.fi-btn[onclick]').valid).toBe(false)
