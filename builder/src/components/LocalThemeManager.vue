@@ -30,7 +30,7 @@ function restoreFocus(): void {
 <template>
   <div data-local-theme-manager>
     <button ref="opener" type="button" aria-label="Manage themes" @click="openManager">Manage themes</button>
-    <span data-active-theme-name>{{ activeThemeId ? themes.find(({ id }) => id === activeThemeId)?.name : '' }}</span>
+    <span aria-label="Active theme" data-active-theme-name>{{ activeThemeId ? themes.find(({ id }) => id === activeThemeId)?.name : '' }}</span>
     <p v-if="storageError" role="status" aria-live="polite" data-local-theme-storage-status>{{ storageError }}</p>
     <LocalThemeDialog ref="dialog" :themes="themes" :active-theme-id="activeThemeId" :storage-error="storageError" @create="emit('create')" @open="emit('open', $event)" @rename="relayRename" @duplicate="emit('duplicate', $event)" @delete="emit('delete', $event)" @close="restoreFocus" />
   </div>

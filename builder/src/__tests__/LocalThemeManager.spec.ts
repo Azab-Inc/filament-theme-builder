@@ -7,16 +7,13 @@ const themes: LocalThemeRecord[] = [
   { id: 'one', name: 'Marketing', updatedAt: 1 },
   { id: 'two', name: 'Admin', updatedAt: 2 },
 ]
-
 const mountManager = (storageError: string | null = null) => mount(LocalThemeManager, {
   props: { themes, activeThemeId: 'one', storageError },
 })
-
 describe('LocalThemeManager', () => {
   it('opens an accessible dialog from a named trigger and marks the active theme', async () => {
     const wrapper = mountManager()
     await wrapper.get('[aria-label="Manage themes"]').trigger('click')
-
     const dialog = wrapper.get('dialog')
     expect(dialog.attributes('aria-labelledby')).toBe('local-theme-dialog-title')
     expect(dialog.attributes('open')).toBeDefined()
@@ -24,7 +21,6 @@ describe('LocalThemeManager', () => {
     expect(wrapper.get('[data-local-theme-row="one"]').text()).toContain('Active')
     expect(wrapper.find('[data-local-theme-storage-status]').exists()).toBe(false)
   })
-
   it('emits create, open, rename, duplicate, and delete only after confirmation', async () => {
     const wrapper = mountManager()
     await wrapper.get('[aria-label="Manage themes"]').trigger('click')
@@ -46,7 +42,6 @@ describe('LocalThemeManager', () => {
     expect(wrapper.emitted('duplicate')).toEqual([['one']])
     expect(wrapper.emitted('delete')).toEqual([['one']])
   })
-
   it('rejects a blank rename with an accessible error', async () => {
     const wrapper = mountManager()
     await wrapper.get('[aria-label="Manage themes"]').trigger('click')
@@ -57,7 +52,6 @@ describe('LocalThemeManager', () => {
     expect(wrapper.get('[role="alert"][data-local-theme-rename-error]').text()).toContain('name is required')
     expect(wrapper.emitted('rename')).toBeUndefined()
   })
-
   it('closes on Escape and restores focus to the trigger', async () => {
     const wrapper = mountManager()
     const trigger = wrapper.get('[aria-label="Manage themes"]')
@@ -70,6 +64,22 @@ describe('LocalThemeManager', () => {
     expect(dialog.attributes('open')).toBeUndefined()
     expect(focus).toHaveBeenCalled()
     expect(wrapper.emitted('close')).toHaveLength(1)
+  })
+  it('moves focus into delete confirmation and disables underlying actions', async () => {
+    const wrapper = mountManager()
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+    await wrapper.get('[aria-label="Manage themes"]').trigger('click')
+    await wrapper.get('[aria-label="Delete Marketing"]').trigger('click')
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    const confirmation = wrapper.get('[role="alertdialog"]')
+    expect(confirmation.attributes('aria-modal')).toBe('true')
+    expect((wrapper.get('[aria-label="Confirm delete Marketing"]').element as HTMLButtonElement).disabled).toBe(false)
+    expect((wrapper.get('[aria-label="Open Marketing"]').element as HTMLButtonElement).disabled).toBe(true)
+    expect((wrapper.get('[aria-label="Create theme"]').element as HTMLButtonElement).disabled).toBe(true)
+    expect(focus).toHaveBeenCalled()
   })
 
   it('announces storage errors without disabling editor controls', async () => {
