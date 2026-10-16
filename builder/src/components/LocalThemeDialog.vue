@@ -21,7 +21,12 @@ function requestDelete(theme: LocalThemeRecord): void {
   nextTick(() => nextTick(() => confirmation.value?.querySelector<HTMLElement>('button')?.focus()))
 }
 function cancelDelete(): void { deleting.value = null }
-function confirmDelete(): void { if (deleting.value) emit('delete', deleting.value.id); deleting.value = null }
+function confirmDelete(): void {
+  if (!deleting.value) return
+  const id = deleting.value.id
+  deleting.value = null
+  emit('delete', id)
+}
 function handleEscape(event: KeyboardEvent): void {
   if (deleting.value) { cancelDelete(); return }
   requestClose(event.currentTarget as HTMLDialogElement)
