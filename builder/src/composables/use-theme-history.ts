@@ -7,8 +7,9 @@ import { cloneTheme, sameTheme, snapshot } from '@/utils/theme-store-helpers'
 export function useThemeHistory(theme: Ref<ThemeStateV4>, serialize: (value: ThemeStateV4) => unknown, storageKey: string, initial?: LocalThemeHistory, save?: (state: ThemeStateV4, history: LocalThemeHistory) => void) {
   const history = (initial?.snapshots ?? [snapshot(theme.value)]).map(snapshot)
   const historyIndex = ref(initial?.cursor ?? 0)
+  const historyRevision = ref(0)
   const canUndo = computed(() => historyIndex.value > 0)
-  const canRedo = computed(() => historyIndex.value < history.length - 1)
+  const canRedo = computed(() => { historyRevision.value; return historyIndex.value < history.length - 1 })
   let applyingHistory = false
   let saveTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -36,6 +37,7 @@ export function useThemeHistory(theme: Ref<ThemeStateV4>, serialize: (value: The
   function replaceHistory(value: LocalThemeHistory): void {
     history.splice(0, history.length, ...value.snapshots.map(snapshot))
     historyIndex.value = value.cursor
+    historyRevision.value += 1
   }
 
   onScopeDispose(() => { if (saveTimer) clearTimeout(saveTimer) })

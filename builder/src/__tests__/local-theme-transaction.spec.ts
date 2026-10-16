@@ -68,7 +68,7 @@ describe('local theme deletion publication order', () => {
   })
 
   it('keeps the old active pointer during non-last active deletion failure', () => {
-    const store = setup(); const oldId = store.activeThemeId; const next = store.createTheme(); const original = Storage.prototype.setItem
+    const store = setup(); const oldId = store.activeThemeId; const next = store.createTheme(); store.openTheme(oldId); const original = Storage.prototype.setItem
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, key, value) { if (key === 'ftb-theme-active') throw new Error('pointer denied'); return original.call(this, key, value) })
     store.deleteTheme(oldId)
     const index = JSON.parse(localStorage.getItem('ftb-themes')!) as { id: string }[]

@@ -10,12 +10,15 @@ describe('local theme store collection', () => {
     expect(store.activeThemeName).toBe('Untitled'); expect(store.storageError).toBeNull()
   })
   it('creates unique themes and renames using trimmed display names', () => {
-    const store = setup(); const first = store.createTheme()
+    const store = setup(); const first = store.createTheme(); expect(store.activeThemeId).toBe(first.id)
     const second = store.createTheme()
+    const secondState = JSON.stringify(store.theme)
     expect(second.id).not.toBe(first.id)
     expect(second.updatedAt).toBeGreaterThanOrEqual(first.updatedAt)
     expect(store.renameTheme(second.id, '  Marketing  ')).toBe(true)
     expect(store.themes.find(({ id }) => id === second.id)?.name).toBe('Marketing')
+    expect(store.activeThemeId).toBe(second.id)
+    expect(JSON.stringify(store.theme)).toBe(secondState)
     expect(store.renameTheme(second.id, '   ')).toBe(false)
     store.openTheme('missing'); expect(store.storageError).toContain('does not exist')
   })
@@ -47,6 +50,15 @@ describe('local theme store collection', () => {
     const store = setup(); const first = store.activeThemeId; const second = store.createTheme(); const third = store.createTheme()
     store.deleteTheme(third.id); expect(store.activeThemeId).toBe(first)
     store.deleteTheme(first); expect(store.activeThemeId).toBe(second.id)
+  })
+  it('restores each theme redo history after reopening it', () => {
+    const store = setup(); const first = store.activeThemeId
+    store.setPrimaryColor('#0f766e'); vi.advanceTimersByTime(300); store.undo(); vi.advanceTimersByTime(300)
+    const second = store.createTheme(); store.openTheme(second.id)
+    expect(store.canRedo).toBe(false)
+    store.openTheme(first)
+    expect(store.canRedo).toBe(true); store.redo()
+    expect(store.theme.colors.primary).toBe('#0f766e')
   })
   it('reports active-pointer failures without deleting the active record', () => {
     const store = setup(); const id = store.activeThemeId; const original = Storage.prototype.setItem

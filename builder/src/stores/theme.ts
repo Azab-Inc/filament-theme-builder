@@ -51,6 +51,11 @@ export const useThemeStore = defineStore('theme', () => {
     if (localPersistence.activeThemeId.value === record.id) { history.replaceHistory(localPersistence.activeHistory.value); history.applyTheme(localPersistence.activeState.value) }
     return record
   }
+  const createTheme = () => {
+    const record = localPersistence.createTheme()
+    if (localPersistence.themes.value.some(({ id }) => id === record.id)) openTheme(record.id)
+    return record
+  }
   const deleteTheme = (id: string): void => {
     const wasActive = localPersistence.activeThemeId.value === id
     const result = localPersistence.deleteTheme(id)
@@ -76,7 +81,7 @@ export const useThemeStore = defineStore('theme', () => {
     ...recovery,
     undo: history.undo,
     redo: history.redo,
-    createTheme: localPersistence.createTheme,
+    createTheme,
     openTheme,
     renameTheme: localPersistence.renameTheme,
     duplicateTheme,
