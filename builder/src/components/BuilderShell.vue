@@ -22,6 +22,9 @@ const shell = reactive(model)
       :runtime-loading="shell.preview.runtimeLoading"
       :legacy-recovery-available="shell.theme.legacyRecoveryAvailable"
       :legacy-recovery-error="shell.theme.legacyRecoveryError"
+      :themes="shell.theme.themes"
+      :active-theme-id="shell.theme.activeThemeId"
+      :storage-error="shell.theme.storageError"
       @update:primary-color="shell.primaryColor = $event"
       @export-canonical-json="shell.exportCanonicalJson"
       @copy-vanilla-theme-css="shell.copyVanillaThemeCss"
@@ -34,6 +37,11 @@ const shell = reactive(model)
       @toggle-inspector="shell.inspector.toggleInspector"
       @restore-legacy-recovery="shell.restoreLegacyRecovery"
       @download-legacy-recovery="shell.downloadLegacyRecovery"
+      @create="shell.theme.createTheme"
+      @open="shell.theme.openTheme"
+      @rename="shell.theme.renameTheme"
+      @duplicate="shell.theme.duplicateTheme"
+      @delete="shell.theme.deleteTheme"
     />
     <PreviewFrame :iframe-src="shell.preview.iframeSrc" :set-iframe="shell.setPreviewIframe" :on-preview-load="shell.preview.onPreviewLoad">
       <EditorWorkspace :shell="model" />

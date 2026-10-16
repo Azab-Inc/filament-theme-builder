@@ -1,5 +1,7 @@
 <script setup lang="ts">
-defineProps<{
+import LocalThemeManager from '@/components/LocalThemeManager.vue'
+import type { LocalThemeRecord } from '@/models/local-theme.model'
+withDefaults(defineProps<{
   primaryColor: string
   canUndo: boolean
   canRedo: boolean
@@ -9,7 +11,10 @@ defineProps<{
   runtimeLoading: boolean
   legacyRecoveryAvailable: boolean
   legacyRecoveryError: string | null
-}>()
+  themes?: ReadonlyArray<LocalThemeRecord>
+  activeThemeId?: string
+  storageError?: string | null
+}>(), { themes: () => [], activeThemeId: '', storageError: null })
 
 const emit = defineEmits<{
   'update:primaryColor': [color: string]
@@ -24,7 +29,15 @@ const emit = defineEmits<{
   toggleInspector: []
   restoreLegacyRecovery: []
   downloadLegacyRecovery: []
+  create: []
+  open: [id: string]
+  rename: [id: string, name: string]
+  duplicate: [id: string]
+  delete: [id: string]
+  close: []
 }>()
+
+function relayRename(id: string, name: string): void { emit('rename', id, name) }
 </script>
 
 <template>
@@ -59,6 +72,7 @@ const emit = defineEmits<{
       <button type="button" aria-label="Undo" :disabled="!canUndo" @click="emit('undo')">Undo</button>
       <button type="button" aria-label="Redo" :disabled="!canRedo" @click="emit('redo')">Redo</button>
       <button type="button" aria-label="Inspector" :aria-pressed="inspectorEnabled" @click="emit('toggleInspector')">Inspector</button>
+      <LocalThemeManager :themes="themes" :active-theme-id="activeThemeId" :storage-error="storageError" @create="emit('create')" @open="emit('open', $event)" @rename="relayRename" @duplicate="emit('duplicate', $event)" @delete="emit('delete', $event)" @close="emit('close')" />
     </div>
   </header>
   <p v-if="exportStatus" role="status" aria-label="Export status" aria-live="polite" data-export-status>{{ exportStatus }}</p>
