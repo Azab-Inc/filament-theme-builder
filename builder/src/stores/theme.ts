@@ -1,7 +1,6 @@
-import { readonly, ref } from 'vue'
+import { computed, onScopeDispose, readonly } from 'vue'
 import { defineStore } from 'pinia'
 
-import type { ThemeStateV4 } from '@/models/theme.model'
 import type { ThemeStoreContext } from '@/models/theme-store.model'
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { useThemeFoundationActions } from '@/composables/use-theme-foundation-actions'
@@ -13,20 +12,59 @@ import { useThemeProjection } from '@/composables/use-theme-projection'
 import { useThemeHistory } from '@/composables/use-theme-history'
 import { useThemePersistence } from '@/composables/use-theme-persistence'
 import { useThemeRecovery } from '@/composables/use-theme-recovery'
+import { useLocalThemePersistence } from '@/composables/use-local-theme-persistence'
 
 const storageKey = 'ftb-theme'
 const recoveryStorageKey = 'ftb-theme-legacy-recovery'
 
 export const useThemeStore = defineStore('theme', () => {
   const persistence = useThemePersistence(storageKey, recoveryStorageKey)
-  const theme = ref<ThemeStateV4>(persistence.restore())
+  const restored = persistence.restore()
+  try { localStorage.removeItem(storageKey) } catch { /* local theme storage remains authoritative */ }
+  const localPersistence = useLocalThemePersistence({
+    storage: localStorage,
+    initialState: restored,
+    now: () => Date.now(),
+    schedule: setTimeout,
+    cancel: clearTimeout,
+  })
+  localPersistence.initialize()
+  try { localStorage.setItem(storageKey, JSON.stringify(persistence.serialize(localPersistence.activeState.value))) } catch { /* local theme storage remains authoritative */ }
+  const theme = localPersistence.activeState
   const registry = createThemeRegistry()
-  const history = useThemeHistory(theme, persistence.serialize, storageKey)
+  let legacyTimer: ReturnType<typeof setTimeout> | undefined
+  const history = useThemeHistory(theme, persistence.serialize, storageKey, localPersistence.activeHistory.value, (state, savedHistory) => {
+    localPersistence.activeHistory.value = savedHistory
+    localPersistence.scheduleSave(localPersistence.activeThemeId.value, state, savedHistory)
+    if (legacyTimer) clearTimeout(legacyTimer)
+    legacyTimer = setTimeout(() => {
+      try { localStorage.setItem(storageKey, JSON.stringify(persistence.serialize(state))) } catch { /* per-theme storage remains authoritative */ }
+      legacyTimer = undefined
+    }, 300)
+  })
+  onScopeDispose(() => { if (legacyTimer) clearTimeout(legacyTimer) })
   const context: ThemeStoreContext = { theme, registry }
   const recovery = useThemeRecovery(theme, persistence, history.applyTheme)
+  const openTheme = (id: string): void => {
+    const result = localPersistence.switchTo(id)
+    if (result.ok) { history.replaceHistory(localPersistence.activeHistory.value); history.applyTheme(localPersistence.activeState.value) }
+  }
+  const duplicateTheme = (id: string) => {
+    const record = localPersistence.duplicateTheme(id)
+    if (localPersistence.activeThemeId.value === record.id) { history.replaceHistory(localPersistence.activeHistory.value); history.applyTheme(localPersistence.activeState.value) }
+    return record
+  }
+  const deleteTheme = (id: string): void => {
+    const wasActive = localPersistence.activeThemeId.value === id
+    if (localPersistence.deleteTheme(id).ok && wasActive) { openTheme(localPersistence.activeThemeId.value) }
+  }
 
   return {
     theme: readonly(theme),
+    themes: readonly(localPersistence.themes),
+    activeThemeId: localPersistence.activeThemeId,
+    activeThemeName: computed(() => localPersistence.themes.value.find(({ id }) => id === localPersistence.activeThemeId.value)?.name ?? ''),
+    storageError: computed(() => localPersistence.storageError.value),
     canUndo: history.canUndo,
     canRedo: history.canRedo,
     ...useThemeFoundationActions(context),
@@ -38,5 +76,10 @@ export const useThemeStore = defineStore('theme', () => {
     ...recovery,
     undo: history.undo,
     redo: history.redo,
+    createTheme: localPersistence.createTheme,
+    openTheme,
+    renameTheme: localPersistence.renameTheme,
+    duplicateTheme,
+    deleteTheme,
   }
 })
