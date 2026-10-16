@@ -29,4 +29,4 @@ export function useBuilderShell(previewUrl: string) {
   return { ...state, ...foundations, ...controls, ...exports, ...actions, ...uploads, primaryColor, setPreviewIframe, handleKeydown, rawProperties: ALL_RAW_VISUAL_PROPERTIES, rawSelectorClassification, selectedRawOverride }
 }
 
-export type BuilderShell = ReturnType<typeof useBuilderShell>
+export type { BuilderShell } from '@/models/builder-shell.model'
