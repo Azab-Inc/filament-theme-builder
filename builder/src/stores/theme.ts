@@ -1,4 +1,4 @@
-import { computed, onScopeDispose, readonly } from 'vue'
+import { computed, readonly } from 'vue'
 import { defineStore } from 'pinia'
 
 import type { ThemeStoreContext } from '@/models/theme-store.model'
@@ -27,19 +27,12 @@ export const useThemeStore = defineStore('theme', () => {
     schedule: (callback, delay) => window.setTimeout(callback, delay) as unknown as ReturnType<typeof setTimeout>,
     cancel: (handle) => window.clearTimeout(handle as unknown as number),
   })
-  localPersistence.initialize(true)
+  localPersistence.initialize()
   const theme = localPersistence.activeState
   const registry = createThemeRegistry()
-  let legacyTimer: ReturnType<typeof setTimeout> | undefined
   const history = useThemeHistory(theme, persistence.serialize, storageKey, localPersistence.activeHistory.value, (state, savedHistory) => {
     localPersistence.scheduleSave(localPersistence.activeThemeId.value, state, savedHistory)
-    if (legacyTimer) clearTimeout(legacyTimer)
-    legacyTimer = setTimeout(() => {
-      try { localStorage.setItem(storageKey, JSON.stringify(persistence.serialize(state))) } catch { /* per-theme storage remains authoritative */ }
-      legacyTimer = undefined
-    }, 300)
   })
-  onScopeDispose(() => { if (legacyTimer) clearTimeout(legacyTimer) })
   const context: ThemeStoreContext = { theme, registry }
   const recovery = useThemeRecovery(theme, persistence, history.applyTheme)
   const openTheme = (id: string): void => {

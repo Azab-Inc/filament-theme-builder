@@ -75,4 +75,25 @@ describe('local theme deletion publication order', () => {
     expect(localStorage.getItem('ftb-theme-active')).toBe(oldId); expect(index.map(({ id }) => id)).toEqual(expect.arrayContaining([oldId, next.id]))
     const reloaded = reload(); expect(reloaded.activeThemeId).toBe(oldId); expect(reloaded.themes).toHaveLength(2)
   })
+
+  it('never leaves the pointer on an unindexed record when pointer and rollback writes fail', () => {
+    const store = setup(); const oldId = store.activeThemeId; const next = store.createTheme(); store.openTheme(oldId)
+    const original = Storage.prototype.setItem
+    let pointerWrites = 0
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, key, value) {
+      if (key === 'ftb-theme-active' && ++pointerWrites > 1) throw new Error('pointer rollback denied')
+      if (key === 'ftb-themes' && JSON.parse(value).length === 1) throw new Error('index rollback denied')
+      return original.call(this, key, value)
+    })
+
+    store.deleteTheme(oldId)
+
+    const persistedIndex = JSON.parse(localStorage.getItem('ftb-themes')!) as { id: string }[]
+    const persistedActiveId = localStorage.getItem('ftb-theme-active')!
+    expect(persistedIndex.map(({ id }) => id)).toContain(persistedActiveId)
+    expect(persistedIndex.map(({ id }) => id)).toContain(oldId)
+    expect(localStorage.getItem(`ftb-theme:${persistedActiveId}`)).not.toBeNull()
+    expect(reload().activeThemeId).toBe(persistedActiveId)
+    expect(next.id).toBe(persistedActiveId)
+  })
 })

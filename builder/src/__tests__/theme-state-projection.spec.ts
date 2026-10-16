@@ -5,6 +5,7 @@ import { createDefaultThemeState } from '@/utils/foundation-defaults'
 import { generatePalette } from '@/utils/palette-generator'
 import {
   createThemeState,
+  readActiveThemeState,
   resetThemeStateTest,
 } from './theme-state-test-helpers'
 
@@ -43,14 +44,14 @@ describe('theme state projection and density', () => {
     store.setDensity('compact')
     store.setFoundation('surfaces.card.dark', '#111827')
 
-    expect(localStorage.getItem('ftb-theme')).toBeNull()
+    expect(readActiveThemeState()).not.toBeNull()
     vi.advanceTimersByTime(299)
-    expect(localStorage.getItem('ftb-theme')).toBeNull()
+    expect(readActiveThemeState()).not.toBeNull()
     vi.advanceTimersByTime(1)
-    const persisted = JSON.parse(localStorage.getItem('ftb-theme')!)
+    const persisted = readActiveThemeState() as { foundations: { palettes: Record<string, { shades?: unknown; base: string }> } }
     for (const name of PALETTE_NAMES) {
-      expect(persisted.foundations.palettes[name].shades).toBeUndefined()
-      expect(persisted.foundations.palettes[name].base).toBe(store.theme.foundations.palettes[name].base)
+      expect(persisted.foundations.palettes[name]!.shades).toEqual(store.theme.foundations.palettes[name]!.shades)
+      expect(persisted.foundations.palettes[name]!.base).toBe(store.theme.foundations.palettes[name]!.base)
     }
   })
 

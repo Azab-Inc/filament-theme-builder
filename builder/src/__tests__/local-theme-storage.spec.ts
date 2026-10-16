@@ -148,4 +148,44 @@ describe('local theme storage', () => {
     expect(initializeLocalThemeStorage(storage, state, () => state).error).toContain('remove denied')
     expect(base.getItem('ftb-theme')).not.toBeNull()
   })
+
+  it('recovers valid individual records and durably publishes a fallback', () => {
+    const storage = window.localStorage
+    storage.clear()
+    const validId = 'theme_valid'
+    storage.setItem('ftb-themes', JSON.stringify([
+      { id: validId, name: 'Valid', updatedAt: 2 },
+      { id: 'theme_broken', name: 'Broken', updatedAt: 1 },
+    ]))
+    storage.setItem('ftb-theme-active', 'theme_broken')
+    storage.setItem(themeStateKey(validId), JSON.stringify(state))
+    storage.setItem(themeHistoryKey(validId), JSON.stringify(history))
+    storage.setItem(themeStateKey('theme_broken'), '{bad')
+    storage.setItem(themeHistoryKey('theme_broken'), '{bad')
+
+    const loaded = loadLocalThemeCollection(storage)
+
+    expect(loaded.error).toBeTruthy()
+    expect(loaded.collection).toEqual({
+      themes: [{ id: validId, name: 'Valid', updatedAt: 2 }],
+      activeId: validId,
+    })
+    expect(storage.getItem('ftb-theme-active')).toBe(validId)
+    expect(JSON.parse(storage.getItem('ftb-themes')!)).toEqual(loaded.collection.themes)
+    expect(loadLocalThemeCollection(storage).collection.activeId).toBe(validId)
+  })
+
+  it('recovers valid records when the index itself is malformed', () => {
+    const storage = window.localStorage
+    storage.clear()
+    storage.setItem('ftb-themes', '{bad')
+    storage.setItem('ftb-theme:theme_valid', JSON.stringify(state))
+    storage.setItem('ftb-theme-history:theme_valid', JSON.stringify(history))
+
+    const loaded = loadLocalThemeCollection(storage)
+
+    expect(loaded.collection.themes).toHaveLength(1)
+    expect(loaded.collection.activeId).toBe(loaded.collection.themes[0]?.id)
+    expect(loaded.error).toBeTruthy()
+  })
 })

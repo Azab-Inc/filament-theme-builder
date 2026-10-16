@@ -5,6 +5,7 @@ import {
   createThemeState,
   resetThemeStateTest,
 } from './theme-state-test-helpers'
+import { themeStateKey } from '@/utils/local-theme-storage'
 
 describe('theme state persistence and recovery', () => {
   resetThemeStateTest()
@@ -15,9 +16,10 @@ describe('theme state persistence and recovery', () => {
     theme.setPrimaryColor('#0f766e')
     expect(localStorage.getItem('ftb-theme')).toBeNull()
     vi.advanceTimersByTime(300)
-    const persisted = JSON.parse(localStorage.getItem('ftb-theme')!)
+    const persistedId = localStorage.getItem('ftb-theme-active')!
+    const persisted = JSON.parse(localStorage.getItem(themeStateKey(persistedId))!)
     expect(persisted.colors).toEqual(theme.theme.colors)
-    expect(persisted.foundations.palettes.primary.shades).toBeUndefined()
+    expect(persisted.foundations.palettes.primary.shades).toEqual(theme.theme.foundations.palettes.primary.shades)
 
     setActivePinia(createPinia())
     expect(createThemeState().theme.colors.primary).toBe('#0f766e')
@@ -35,7 +37,8 @@ describe('theme state persistence and recovery', () => {
     expect(store.legacyRecoveryError).toMatch(/valid JSON/i)
     store.setPrimaryColor('#0f766e')
     vi.advanceTimersByTime(300)
-    expect(localStorage.getItem('ftb-theme')).not.toBe('{invalid')
+    const persistedId = localStorage.getItem('ftb-theme-active')!
+    expect(localStorage.getItem(themeStateKey(persistedId))).not.toBeNull()
     expect(localStorage.getItem('ftb-theme-legacy-recovery')).toBe('{invalid')
 
     for (const key of Object.keys(localStorage)) if (key.startsWith('ftb-themes') || key.startsWith('ftb-theme-active') || key.startsWith('ftb-theme:')) localStorage.removeItem(key)

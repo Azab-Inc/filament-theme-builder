@@ -1,17 +1,16 @@
 import { getCurrentScope, onScopeDispose, readonly, ref } from 'vue'
-import type { LocalThemeHistory, LocalThemeRecord, LocalThemePersistenceOptions as PersistenceOptions } from '@/models/local-theme.model'
+import type { LocalThemeHistory, LocalThemePendingSave, LocalThemePersistenceOptions as PersistenceOptions, LocalThemeRecord, StorageOperationResult } from '@/models/local-theme.model'
 import type { ThemeStateV4 } from '@/models/theme.model'
-import { initializeLocalThemeStorage, loadLocalThemeById, themeHistoryKey, themeStateKey, writeAndVerifyLocalTheme, type LocalThemeLoadResult, type StorageOperationResult } from '@/utils/local-theme-storage'
+import { initializeLocalThemeStorage, loadLocalThemeById, themeHistoryKey, themeStateKey, writeAndVerifyLocalTheme } from '@/utils/local-theme-storage'
+import type { LocalThemeLoadResult } from '@/models/local-theme.model'
 import { migrateToCurrent } from '@/utils/theme-store-normalization'
 import { cloneTheme } from '@/utils/theme-store-helpers'
-
+import { cloneLocalThemeHistory, localThemeStorageMessage } from '@/utils/local-theme-persistence-helpers'
 const INDEX = 'ftb-themes'; const ACTIVE = 'ftb-theme-active'; const DELAY = 300
-type PendingSave = { state: ThemeStateV4; history: LocalThemeHistory; timer: ReturnType<typeof setTimeout> }
-
 export function useLocalThemePersistence(options: PersistenceOptions) {
   const themes = ref<LocalThemeRecord[]>([]); const activeThemeId = ref('')
   const activeState = ref(cloneTheme(options.initialState)); const activeHistory = ref<LocalThemeHistory>({ snapshots: [cloneTheme(options.initialState)], cursor: 0 })
-  const storageError = ref<string | null>(null); const pending = new Map<string, PendingSave>()
+  const storageError = ref<string | null>(null); const pending = new Map<string, LocalThemePendingSave>()
   function initialize(preferInitialState = false): LocalThemeLoadResult {
     const loaded = initializeLocalThemeStorage(options.storage, options.initialState, migrateToCurrent, preferInitialState)
     themes.value = loaded.collection.themes; activeThemeId.value = loaded.collection.activeId; activeState.value = loaded.state; activeHistory.value = loaded.history; storageError.value = loaded.error
@@ -20,7 +19,7 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
   }
   function scheduleSave(id: string, state: ThemeStateV4, history: LocalThemeHistory): void {
     const prior = pending.get(id); if (prior) options.cancel(prior.timer)
-    const saved = { state: cloneTheme(state), history: cloneHistory(history) }; const timer = options.schedule(() => { flush(id) }, DELAY); pending.set(id, { ...saved, timer })
+    const saved = { state: cloneTheme(state), history: cloneLocalThemeHistory(history) }; const timer = options.schedule(() => { flush(id) }, DELAY); pending.set(id, { ...saved, timer })
   }
   function flush(id: string): StorageOperationResult {
     const saved = pending.get(id); if (!saved) return { ok: true }; const result = writeAndVerifyLocalTheme(options.storage, id, saved.state, saved.history)
@@ -58,7 +57,7 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
   }
   if (getCurrentScope()) onScopeDispose(() => { for (const save of pending.values()) options.cancel(save.timer) })
   return { themes, activeThemeId, activeState, activeHistory, storageError: readonly(storageError), initialize, scheduleSave, flush, switchTo, createTheme, renameTheme, duplicateTheme, deleteTheme }
-  function writeIndex(records = themes.value): boolean { try { options.storage.setItem(INDEX, JSON.stringify(records)); return true } catch (error) { storageError.value = message(error); return false } }
+  function writeIndex(records = themes.value): boolean { try { options.storage.setItem(INDEX, JSON.stringify(records)); return true } catch (error) { storageError.value = localThemeStorageMessage(error); return false } }
   function persistNewTheme(record: LocalThemeRecord, state: ThemeStateV4, history: LocalThemeHistory): boolean {
     const saved = writeAndVerifyLocalTheme(options.storage, record.id, state, history); if (!saved.ok) { storageError.value = saved.error; return false }
     themes.value.push(record); if (writeIndex()) { storageError.value = null; return true }; themes.value = themes.value.filter((theme) => theme.id !== record.id); removeRecords(record.id); return false
@@ -77,21 +76,25 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
   }
   function publishActiveDeletion(id: string, next: string, previous: LocalThemeRecord[], remaining: LocalThemeRecord[]): StorageOperationResult {
     const loaded = loadLocalThemeById(options.storage, next); if (loaded.error) return failure(loaded.error)
+    if (!setActive(next)) return failure(storageError.value ?? 'Theme pointer could not be saved')
     themes.value = remaining
-    if (!writeIndex(remaining)) { themes.value = previous; return failure(storageError.value ?? 'Theme index could not be published') }
-    if (!setActive(next)) { themes.value = previous; writeIndex(previous); return failure(storageError.value ?? 'Theme pointer could not be saved') }
+    if (!writeIndex(remaining)) {
+      const indexError = storageError.value ?? 'Theme index could not be published'
+      themes.value = previous
+      if (setActive(id)) { storageError.value = indexError; return failure(indexError) }
+      themes.value = previous
+      activeThemeId.value = next
+      return failure(`${indexError}; active pointer retained on indexed fallback`)
+    }
     activeState.value = loaded.state; activeHistory.value = loaded.history
     removeRecords(id); return { ok: true }
   }
-  function removeRecords(id: string): void { try { options.storage.removeItem(themeStateKey(id)); options.storage.removeItem(themeHistoryKey(id)) } catch (error) { storageError.value = message(error) } }
+  function removeRecords(id: string): void { try { options.storage.removeItem(themeStateKey(id)); options.storage.removeItem(themeHistoryKey(id)) } catch (error) { storageError.value = localThemeStorageMessage(error) } }
   function touch(id: string): StorageOperationResult {
     const theme = themes.value.find((entry) => entry.id === id); if (!theme) return failure('Theme does not exist')
     const previous = theme.updatedAt; theme.updatedAt = options.now(); if (writeIndex()) return { ok: true }; theme.updatedAt = previous; return failure(storageError.value ?? 'Theme metadata could not be saved')
   }
-  function failure(error: string): StorageOperationResult { storageError.value = error; return { ok: false, error } }
-  function nextId(): string { let id = `theme-${options.now()}`; let suffix = 1; while (themes.value.some((theme) => theme.id === id)) id = `theme-${options.now()}-${suffix++}`; return id }
+  function failure(error: string): StorageOperationResult { storageError.value = error; return { ok: false, error } }; function nextId(): string { let id = `theme-${options.now()}`; let suffix = 1; while (themes.value.some((theme) => theme.id === id)) id = `theme-${options.now()}-${suffix++}`; return id }
   function newest(records: LocalThemeRecord[]): LocalThemeRecord { return records.reduce((best, theme) => theme.updatedAt > best.updatedAt ? theme : best, records[0]!) }
-  function setActive(id: string): boolean { try { options.storage.setItem(ACTIVE, id); activeThemeId.value = id; return true } catch (error) { storageError.value = message(error); return false } }
+  function setActive(id: string): boolean { try { options.storage.setItem(ACTIVE, id); activeThemeId.value = id; return true } catch (error) { storageError.value = localThemeStorageMessage(error); return false } }
 }
-function cloneHistory(history: LocalThemeHistory): LocalThemeHistory { return { snapshots: history.snapshots.map(cloneTheme), cursor: history.cursor } }
-function message(error: unknown): string { return error instanceof Error ? error.message : 'Local theme storage failed' }

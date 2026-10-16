@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { PALETTE_NAMES } from '@/models/foundations.model'
 import {
   createThemeState,
+  readActiveThemeState,
   resetThemeStateTest,
 } from './theme-state-test-helpers'
 
@@ -69,7 +70,7 @@ describe('theme state foundations', () => {
 
     expect(store.theme.foundations.explicitPaths).toContain('surfaces.page.light')
     vi.advanceTimersByTime(300)
-    expect(JSON.parse(localStorage.getItem('ftb-theme')!).foundations.explicitPaths).toContain('surfaces.page.light')
+    expect((readActiveThemeState() as { foundations: { explicitPaths: string[] } }).foundations.explicitPaths).toContain('surfaces.page.light')
     store.resetFoundation('surfaces.page.light')
     expect(store.theme.foundations.explicitPaths).not.toContain('surfaces.page.light')
   })

@@ -45,6 +45,14 @@ is preserved below. No full-suite pass/failure claim is made.
 - The full-suite attempt is not evidence that FTB-021 is broken: the Compose gateway was unavailable and the run never reached a terminal result. The four FTB-021 failures observed in the interrupted run are recorded verbatim above; they are environment-contaminated by the same gateway timeouts.
 - Pre-existing dirty files were preserved: `.gitignore`, `builder/AGENTS.md`, `builder/src/models/local-theme.model.ts`, `demo/tests/Feature/FilamentPanelTest.php`, and three untracked plan documents.
 
+## Fix-wave report — 2026-10-17
+
+- Hardened the committed model boundary: persistence options, load/result, operation, and pending-save types now live in `builder/src/models/local-theme.model.ts`; storage recovery and persistence helper responsibilities are split below the 100-line application-source limit.
+- `theme.ts` now initializes through the one-time legacy migration path and no longer schedules canonical writes to `ftb-theme`. Valid legacy bytes are removed only after verified new-format publication; invalid legacy bytes remain available to the existing recovery UI.
+- Load now scans valid individual records, repairs invalid history, quarantines malformed listed records, and durably republishes a valid index/active fallback. Active deletion publishes the fallback pointer before shrinking the index, so combined publication/rollback failures retain an indexed active record.
+- Added regression coverage for malformed/partial collections, legacy migration ownership, and combined active-delete failure. Focused local-theme tests: **42 passed**; full builder unit suite: **79 files, 336 tests passed**; type-check and build: **PASS**.
+- The requested focused Compose Playwright rerun was **INCOMPLETE** because `http://127.0.0.1:4175` was unavailable (`ERR_CONNECTION_REFUSED`, 4 tests could not navigate). The earlier four-test pass remains historical evidence only. Full Compose verification remains explicitly incomplete due the recorded gateway/npm environment failures.
+
 ## Intended evidence change
 
 Only the FTB-021 section of `TICKETS.md` is updated with reproducible focused evidence,

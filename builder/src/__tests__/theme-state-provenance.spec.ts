@@ -6,6 +6,7 @@ import {
   createThemeState,
   primaryButtonVariantOverride,
   resetThemeStateTest,
+  readActiveThemeState,
 } from './theme-state-test-helpers'
 
 describe('theme state provenance and recovery', () => {
@@ -23,8 +24,9 @@ describe('theme state provenance and recovery', () => {
     expect(store.theme.foundations.borderWidth).toBe(1)
     expect(store.theme.foundations.explicitPaths).toEqual([])
     expect(store.previewFoundation('light').mappings).toEqual([])
-    expect(JSON.parse(localStorage.getItem('ftb-theme')!).foundations.provenanceVersion).toBe(1)
-    expect(JSON.parse(localStorage.getItem('ftb-theme')!).foundations.borderWidth).toBe(1)
+    const persisted = readActiveThemeState() as { foundations: { provenanceVersion: number; borderWidth: number } }
+    expect(persisted.foundations.provenanceVersion).toBe(1)
+    expect(persisted.foundations.borderWidth).toBe(1)
   })
 
   it('archives unversioned V3 values before native normalization without overwriting an archive', () => {

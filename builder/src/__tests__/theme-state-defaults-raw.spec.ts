@@ -5,6 +5,7 @@ import { PALETTE_NAMES } from '@/models/foundations.model'
 import { generatePalette } from '@/utils/palette-generator'
 import {
   createThemeState,
+  readActiveThemeState,
   resetThemeStateTest,
 } from './theme-state-test-helpers'
 
@@ -54,7 +55,7 @@ describe('theme state defaults and raw overrides', () => {
 
     vi.advanceTimersByTime(300)
 
-    expect(JSON.parse(localStorage.getItem('ftb-theme')!)).toMatchObject({
+    expect(readActiveThemeState()).toMatchObject({
       schemaVersion: 4,
       rawOverrides: [{ selector: '.fi-input', properties: { 'border-radius': '0.75rem' } }],
     })

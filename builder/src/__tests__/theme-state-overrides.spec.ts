@@ -6,6 +6,7 @@ import {
   primaryButtonVariantOverride,
   primaryButtonVariantRequest,
   resetThemeStateTest,
+  readActiveThemeState,
 } from './theme-state-test-helpers'
 
 describe('theme state overrides', () => {
@@ -66,9 +67,9 @@ describe('theme state overrides', () => {
       value: '#4f46e5',
     })
     vi.advanceTimersByTime(300)
-    const persisted = JSON.parse(localStorage.getItem('ftb-theme')!)
+    const persisted = readActiveThemeState() as { overrides: unknown; foundations: { palettes: { primary: { shades?: unknown } } } }
     expect(persisted.overrides).toEqual(store.theme.overrides)
-    expect(persisted.foundations.palettes.primary.shades).toBeUndefined()
+    expect(persisted.foundations.palettes.primary.shades).toEqual(store.theme.foundations.palettes.primary.shades)
     expect(persisted.overrides).not.toContainEqual(expect.objectContaining({ scope: 'state', value: '#4f46e5' }))
   })
 
