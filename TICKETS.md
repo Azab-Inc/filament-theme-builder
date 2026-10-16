@@ -1521,15 +1521,15 @@ Add a native browser color picker and a searchable named Tailwind color palette 
 
 **Priority:** normal refactor
 
-**Status:** blocked (future planning only)
+**Status:** done
 
-**Blocked by:** FTB-003 functionality stabilization; the unchanged Phase 1/demo-first gate and foundation/control stabilization. Coordinate with FTB-050, FTB-051, and FTB-052 when shared shell or field work is active; these are parallel coordination concerns, not new blocker-cycle dependencies. This ticket does not implement or add those enhancements.
+**Blocked by:** None. FTB-003, the Phase 1/demo-first gate, and foundation/control stabilization prerequisites are satisfied. FTB-050, FTB-051, and FTB-052 remain separate coordination concerns.
 
 **Spec:** [Refactor builder into components, composables, and utilities](./docs/superpowers/specs/2026-10-14-builder-component-composable-refactor.md), especially [boundaries and invariants](./docs/superpowers/specs/2026-10-14-builder-component-composable-refactor.md#2-boundaries-and-invariants), [service migration inventory](./docs/superpowers/specs/2026-10-14-builder-component-composable-refactor.md#3-current-service-migration-inventory), [App.vue decomposition](./docs/superpowers/specs/2026-10-14-builder-component-composable-refactor.md#4-appvue-decomposition-contract), [behavior preservation](./docs/superpowers/specs/2026-10-14-builder-component-composable-refactor.md#5-behavior-preservation-contract), and [verification](./docs/superpowers/specs/2026-10-14-builder-component-composable-refactor.md#6-test-and-verification-contract).
 
 **GitHub:** [#53](https://github.com/Azab-Inc/filament-theme-builder/issues/53)
 
-**Review fixed point:** `fe9f7cda5bdf3cde73f1ccade973919af08d09a7` (planning baseline only; refresh before implementation review).
+**Review fixed point:** `8ef2524` (implementation verification point).
 
 ### What to build
 
@@ -1537,15 +1537,17 @@ Decompose the oversized `App.vue` into cohesive visual components and focused `u
 
 ### Acceptance criteria
 
-- [ ] `App.vue` is a composition shell; toolbar, export/status, recovery, foundations, modes, typography, layout, branding/uploads, icons, semantic controls, raw Inspector, and preview-frame responsibilities live in cohesive components/composables.
-- [ ] All 15 services are classified and migrated; pure functions remain plain and Vue/browser-free, Vue/lifecycle/browser orchestration uses focused `useX` composables, and no `src/services` references or unused compatibility facade remain.
-- [ ] Pinia remains the single canonical state/history/persistence authority. Effective values, provenance, reset/inherit, light/dark, alpha, responsive, and decimal-spacing semantics are unchanged. Models, DTOs, and registries remain in their designated folders.
-- [ ] Existing DOM IDs, ARIA labels/roles, data hooks, CSS selectors, preview origin/source/schema/message semantics, runtime refresh, clipboard fallback, download cleanup, uploads/quota errors, recovery paths, and prototype no-effect behavior remain unchanged.
-- [ ] Existing JSON, CSS, icon PHP, branding JSON/PHP, schema, color, selector, and export semantics retain golden parity; no product feature, third-party dependency beyond the approved Tailwind CSS 4.3.3 builder CSS pipeline, backend service, MCP capability, or gate relaxation is introduced. Tailwind is imported once by `src/main.ts` through `src/app.css`; that stylesheet imports only Tailwind theme and utilities layers and does not enable Preflight.
-- [ ] All shared/domain types declared in `App.vue` or composables are moved into dedicated `.model.ts`/`.dto.ts` files; type-boundary tests/checks prevent the editor's shared navigation/section types from being redeclared in those implementation files.
-- [ ] Repeated field-row markup/mutation logic is described before extracting a focused shared control; components use typed props/emits/refs without a monolithic `useApp` or excessive prop drilling.
-- [ ] TDD unit/component tests, type-check, build, and Playwright CLI/MCP verification cover utility parity, lifecycle cleanup/multiple mounts, real iframe edit/Inspector behavior, exports, branding uploads/errors, recovery, native defaults, history, and no leaked listeners.
-- [ ] Implementation refreshes the fixed point, preserves concurrent worktree changes, and records unchanged AI-operability capability inventory and evidence without adding tools.
+- [x] `App.vue` is a composition shell; toolbar, export/status, recovery, foundations, modes, typography, layout, branding/uploads, icons, semantic controls, raw Inspector, and preview-frame responsibilities live in cohesive components/composables.
+- [x] All 15 services are classified and migrated; pure functions remain plain and Vue/browser-free, Vue/lifecycle/browser orchestration uses focused `useX` composables, and no `src/services` references or unused compatibility facade remain.
+- [x] Pinia remains the single canonical state/history/persistence authority. Effective values, provenance, reset/inherit, light/dark, alpha, responsive, and decimal-spacing semantics are unchanged. Models, DTOs, and registries remain in their designated folders.
+- [x] Existing DOM IDs, ARIA labels/roles, data hooks, CSS selectors, preview origin/source/schema/message semantics, runtime refresh, clipboard fallback, download cleanup, uploads/quota errors, recovery paths, and prototype no-effect behavior remain unchanged.
+- [x] Existing JSON, CSS, icon PHP, branding JSON/PHP, schema, color, selector, and export semantics retain golden parity; no product feature, third-party dependency beyond the approved Tailwind CSS 4.3.3 builder CSS pipeline, backend service, MCP capability, or gate relaxation is introduced. Tailwind is imported once by `src/main.ts` through `src/app.css`; that stylesheet imports only Tailwind theme and utilities layers and does not enable Preflight.
+- [x] All shared/domain types declared in `App.vue` or composables are moved into dedicated `.model.ts`/`.dto.ts` files; type-boundary tests/checks prevent the editor's shared navigation/section types from being redeclared in those implementation files.
+- [x] Repeated field-row markup/mutation logic is described before extracting a focused shared control; components use typed props/emits/refs without a monolithic `useApp` or excessive prop drilling.
+- [x] TDD unit/component tests, type-check, build, and Playwright CLI/MCP verification cover utility parity, lifecycle cleanup/multiple mounts, real iframe edit/Inspector behavior, exports, branding uploads/errors, recovery, native defaults, history, and no leaked listeners.
+- [x] Implementation refreshes the fixed point, preserves concurrent worktree changes, and records unchanged AI-operability capability inventory and evidence without adding tools.
+
+**Completion evidence (2026-10-16):** 70 builder test files / 269 tests passed; type-check and production build passed; final builder audit found no files over 100 lines and no named type declarations outside dedicated model/DTO files; Compose Playwright smoke, Inspector, exports, branding/icons, foundation mutation, and FTB-050 layout-mode checks passed with zero browser errors.
 
 ---
 
