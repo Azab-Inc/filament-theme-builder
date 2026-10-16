@@ -1631,7 +1631,7 @@ PanelProvider export emits `->topbar(true)` or `->topbar(false)` as valid PHP bo
 
 <a id="ftb-056"></a>
 
-## FTB-056 — Add comprehensive component text-color controls
+## FTB-056 — Make all text colors customizable throughout Filament
 
 **Scope slug:** `component-text-color-controls`
 
@@ -1651,18 +1651,21 @@ PanelProvider export emits `->topbar(true)` or `->topbar(false)` as valid PHP bo
 
 ### What to build
 
-Add registry-driven foreground text-color controls for all verified mapped text targets, not only headings. The target scope includes body/heading/widget/card/stat text, button labels for every supported variant/state/size without changing button backgrounds, badges, links, navigation items, breadcrumbs, tabs, dropdown/menu selections, forms (input/textarea/select values, placeholders, labels, help/hint/error/validation text), table headers/rows/cells, empty states, pagination, notifications, modals, infolists, and any other target the current Filament registry verifies. Unsupported or unverified targets must be explicitly reported rather than represented by guessed selectors or fake controls.
+Make every text color throughout the Filament application customizable, not just headings or existing mapped controls. This includes body/heading/widget/card/stat text and chart labels/legends; button/action labels across variants, sizes, and states; badges, links, navigation/sidebar/topbar items, breadcrumbs, tabs, menus, tooltips, user/tenant controls; form values/options/placeholders/labels/legends/hints/help/errors/validation/affixes/upload/rich-editor text; table headers/cells/summaries/filters/sorting/pagination; empty/loading/error states; notifications, modals, slide-overs, infolists; authentication/profile/showcase surfaces; and all other application-rendered text. This is a minimum list, not an exhaustive whitelist.
+
+Add missing registry mappings, semantic controls, fixtures, and preview/export support as part of this ticket. A target being currently unmapped is not a reason to exclude it or close the ticket as complete. Verify real selectors or the actual text-rendering mechanism rather than guessing, applying one root color, or requiring manual Advanced/raw CSS as the solution.
 
 Use the existing shared color field/picker and Tailwind choices from FTB-051 when available, and integrate FTB-052 value locks when present without making either ticket a hard blocker. Build a focused component/composable from the repository's existing boundaries; do not grow a monolithic `App.vue` implementation, add a competing inheritance resolver, or add dependencies.
 
 ### Contract
 
-- [ ] A coverage matrix records each target class, exact verified selector/child slot and pseudo-element, computed foreground color, mode, state, support status, and fixture evidence. Selectors are verified against the installed Filament runtime; a generic `color` property is not claimed to cover the full UI.
+- [ ] An exhaustive coverage matrix inventories all application-rendered text across routes, components, nested slots, dynamic overlays, interaction states, and light/dark modes. Each entry links its verified selector or rendering mechanism, semantic editor control, effective color/source, and real preview/export evidence. Missing mappings and controls are implemented, not excluded.
+- [ ] Automated inventory checks fail for uncovered in-scope text targets. Newly discovered text is added and implemented; an unsupported/unmapped row remains an open acceptance gap. Representative browser journeys alone cannot satisfy complete coverage.
 - [ ] Sparse inheritance/resolution is global foundation → component → variant → state. Each supported component exposes effective value and source. Group/category controls exist only where the registry has a common verified layer. Native defaults are preserved when unset; semantic badge/error colors are not erased by blanket styling.
-- [ ] Light/dark values are independent. Only actual verified normal/hover/focus/active/selected/disabled states are exposed. `::placeholder` rules and child-label selectors are separately verified for specificity; no class names or state mappings are invented.
+- [ ] Light/dark values are independent. Actual normal/hover/focus/active/selected/disabled states are covered wherever applicable. `::placeholder`, child labels, text-fill properties, SVG text, and chart/editor renderer text use their verified rendering mechanism; no class names or state mappings are invented.
 - [ ] Button text foreground is separate from button background. Inherited text does not implicitly recolor icon families; icons change only where an existing registry/design contract explicitly verifies that behavior.
 - [ ] Canonical state remains sparse and preserves old-theme migration, validation, autosave/reload, undo/redo, reset, preview bridge, and vanilla foreground export. Themes without this scope retain unrelated values unchanged; invalid values fail safely and stale applies cannot overwrite newer state.
-- [ ] Preview uses the existing iframe protocol with no full reload, network mutation, or raw CSS injection. Export reproduces the verified foreground mapping and does not claim runtime configuration support.
+- [ ] Preview uses the existing iframe protocol with no full reload, network mutation, or raw CSS injection. Export reproduces each target's verified rendering mechanism; renderer/configuration-based text has a matching integration/export path and is never misrepresented as controllable by CSS alone.
 - [ ] Purpose-built MCP discovery/read/preview/confirm/set/reset uses the same registry, resolver, validation, authorization, confirmation, and apply-time revalidation as the UI. Capability inventory and actual AI-client evidence are required; this is not UI-only behavior.
 
 ### Verification
