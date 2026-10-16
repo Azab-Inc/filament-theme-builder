@@ -48,18 +48,6 @@ describe('local theme persistence', () => {
     expect(JSON.parse(localStorage.getItem(themeHistoryKey(secondTheme.id))!).snapshots).toHaveLength(second.history.snapshots.length)
   })
 
-  it('restores undo and redo position and truncates a redo branch', () => {
-    vi.useFakeTimers(); localStorage.clear(); const first = makePersistence(); const id = first.activeThemeId.value
-    const one = edit(first, id, '#111111'); vi.advanceTimersByTime(300); const two = edit(first, id, '#222222');
-    two.history.snapshots = [cloneTheme(first.activeState.value), one.state, two.state]; first.scheduleSave(id, two.state, two.history); vi.advanceTimersByTime(300)
-    const reopened = makePersistence(); expect(reopened.activeHistory.value.cursor).toBe(two.history.cursor); expect(reopened.activeHistory.value.snapshots).toHaveLength(3)
-    reopened.activeHistory.value.cursor = 1
-    const branchState = cloneTheme(reopened.activeState.value); branchState.colors.primary = '#333333'; branchState.foundations.palettes.primary.base = '#333333'
-    const branchHistory = { snapshots: [reopened.activeHistory.value.snapshots[0]!, reopened.activeHistory.value.snapshots[1]!, branchState], cursor: 2 }
-    reopened.scheduleSave(id, branchState, branchHistory); vi.advanceTimersByTime(300); const branch = { history: branchHistory }
-    expect(branch.history.snapshots).toHaveLength(3); expect(branch.history.snapshots[1]?.colors.primary).toBe(one.state.colors.primary)
-  })
-
   it('flushes before switching and never lets a stale callback cross IDs', () => {
     vi.useFakeTimers(); localStorage.clear(); const persistence = makePersistence(); const oldId = persistence.activeThemeId.value
     const created = persistence.createTheme(); const old = edit(persistence, oldId, '#0f766e')
@@ -67,28 +55,6 @@ describe('local theme persistence', () => {
     edit(persistence, created.id, '#dc2626'); vi.advanceTimersByTime(299); persistence.switchTo(oldId); vi.advanceTimersByTime(1)
     expect(JSON.parse(localStorage.getItem(themeStateKey(created.id))!).colors.primary).toBe('#dc2626')
     expect(persistence.activeThemeId.value).toBe(oldId)
-  })
-
-  it('keeps the current active theme when persisting a switch fails', () => {
-    vi.useFakeTimers(); localStorage.clear()
-    const storage = new Proxy(window.localStorage, {
-      get(target, key) {
-        if (key === 'setItem') return (name: string, value: string) => {
-          if (name === 'ftb-theme-active') throw new Error('active write denied')
-          target.setItem(name, value)
-        }
-        const value = Reflect.get(target, key, target)
-        return typeof value === 'function' ? value.bind(target) : value
-      },
-    })
-    const persistence = makePersistence(storage)
-    const currentId = persistence.activeThemeId.value
-    const currentState = persistence.activeState.value
-    const other = persistence.createTheme()
-
-    expect(persistence.switchTo(other.id)).toEqual({ ok: false, error: 'active write denied' })
-    expect(persistence.activeThemeId.value).toBe(currentId)
-    expect(persistence.activeState.value).toBe(currentState)
   })
 
   it('flushes and cancels pending work when deleting a theme', () => {

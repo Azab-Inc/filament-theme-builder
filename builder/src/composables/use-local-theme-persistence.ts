@@ -58,9 +58,8 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
   }
 
   function createTheme(): LocalThemeRecord {
-    const record = { id: `theme-${options.now()}`, name: 'Untitled', updatedAt: options.now() }
-    themes.value.push(record); writeIndex(); const state = cloneTheme(options.initialState)
-    writeAndVerifyLocalTheme(options.storage, record.id, state, { snapshots: [state], cursor: 0 });
+    const record = { id: `theme-${options.now()}`, name: 'Untitled', updatedAt: options.now() }; const state = cloneTheme(options.initialState)
+    persistNewTheme(record, state, { snapshots: [state], cursor: 0 })
     return record
   }
 
@@ -71,7 +70,9 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
 
   function duplicateTheme(id: string): LocalThemeRecord {
     const source = loadLocalThemeById(options.storage, id); const record = { id: `theme-${options.now()}`, name: `${themes.value.find((theme) => theme.id === id)?.name ?? 'Untitled'} copy`, updatedAt: options.now() }
-    themes.value.push(record); writeAndVerifyLocalTheme(options.storage, record.id, source.state, source.history); writeIndex(); return record
+    if (source.error) { failure(source.error); return record }
+    persistNewTheme(record, source.state, source.history)
+    return record
   }
 
   function deleteTheme(id: string): StorageOperationResult {
@@ -85,6 +86,12 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
   return { themes, activeThemeId, activeState, activeHistory, storageError: readonly(storageError), initialize, scheduleSave, flush, switchTo, createTheme, renameTheme, duplicateTheme, deleteTheme }
 
   function writeIndex(): boolean { try { options.storage.setItem(INDEX, JSON.stringify(themes.value)); return true } catch (error) { storageError.value = message(error); return false } }
+  function persistNewTheme(record: LocalThemeRecord, state: ThemeStateV4, history: LocalThemeHistory): void {
+    const saved = writeAndVerifyLocalTheme(options.storage, record.id, state, history)
+    if (!saved.ok) { storageError.value = saved.error; return }
+    themes.value.push(record); if (writeIndex()) { storageError.value = null; return }
+    themes.value = themes.value.filter((theme) => theme.id !== record.id); try { options.storage.removeItem(themeStateKey(record.id)); options.storage.removeItem(themeHistoryKey(record.id)) } catch { /* report the index failure */ }
+  }
   function touch(id: string): void { const theme = themes.value.find((entry) => entry.id === id); if (theme) { theme.updatedAt = options.now(); writeIndex() } }
   function failure(error: string): StorageOperationResult { storageError.value = error; return { ok: false, error } }
 }
