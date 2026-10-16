@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createDefaultThemeState } from '@/utils/foundation-defaults'
+import { migrateToCurrent } from '@/utils/theme-store-normalization'
 import { initializeLocalThemeStorage, loadLocalThemeCollection, themeHistoryKey, themeStateKey, writeAndVerifyLocalTheme } from '@/utils/local-theme-storage'
 
 const state = createDefaultThemeState()
@@ -78,5 +79,73 @@ describe('local theme storage', () => {
     } })
     expect(loadLocalThemeCollection(storage).error).toContain('denied')
     expect(writeAndVerifyLocalTheme(storage, id, state, history)).toMatchObject({ ok: false })
+  })
+  it('does not initialize over orphaned active or theme keys', () => {
+    const base = window.localStorage
+    base.clear()
+    base.setItem('ftb-theme-active', 'orphan')
+    base.setItem('ftb-theme:orphan', 'untouched-state')
+    base.setItem('ftb-theme-history:orphan', 'untouched-history')
+    const result = initializeLocalThemeStorage(base, state, () => state)
+    expect(result.error).toBeTruthy()
+    expect(base.getItem('ftb-themes')).toBeNull()
+    expect(base.getItem('ftb-theme:orphan')).toBe('untouched-state')
+    expect(base.getItem('ftb-theme-history:orphan')).toBe('untouched-history')
+  })
+  it('rejects unsafe index IDs and invalid active state or history', () => {
+    const storage = window.localStorage
+    storage.clear()
+    storage.setItem('ftb-themes', JSON.stringify([{ id: '../bad', name: 'x', updatedAt: 1 }]))
+    expect(loadLocalThemeCollection(storage).error).toBeTruthy()
+    storage.setItem('ftb-themes', JSON.stringify([{ id, name: 'ok', updatedAt: 1 }]))
+    storage.setItem('ftb-theme-active', id)
+    storage.setItem(themeStateKey(id), JSON.stringify({ schemaVersion: 4 }))
+    storage.setItem(themeHistoryKey(id), JSON.stringify({ snapshots: [{ schemaVersion: 4 }], cursor: 0 }))
+    expect(loadLocalThemeCollection(storage).error).toBeTruthy()
+    storage.setItem(themeStateKey(id), JSON.stringify(state))
+    storage.setItem(themeHistoryKey(id), JSON.stringify({ snapshots: [], cursor: 0 }))
+    expect(loadLocalThemeCollection(storage).error).toBeTruthy()
+  })
+  it('migrates supported older state with the provided sequential migration', () => {
+    const storage = window.localStorage
+    storage.clear()
+    const old = { schemaVersion: 1 as const, colors: { primary: '#123456' } }
+    storage.setItem('ftb-theme', JSON.stringify(old))
+    const result = initializeLocalThemeStorage(storage, state, (legacy) => migrateToCurrent(legacy))
+    expect(result.error).toBeNull()
+    expect(result.state.schemaVersion).toBe(4)
+    expect(result.state.colors.primary).toBe('#123456')
+  })
+  it('returns a failure and preserves prior bytes when writes fail or read-back is ignored', () => {
+    const base = window.localStorage
+    base.clear()
+    base.setItem(themeStateKey(id), 'prior')
+    const storage = new Proxy(base, { get(target, key) {
+      if (key === 'setItem') return (name: string, value: string) => { if (name === themeHistoryKey(id)) return; target.setItem(name, value) }
+      const value = Reflect.get(target, key, target)
+      return typeof value === 'function' ? value.bind(target) : value
+    } })
+    expect(writeAndVerifyLocalTheme(storage, id, state, history).ok).toBe(false)
+    expect(base.getItem(themeStateKey(id))).toBe('prior')
+    const denied = new Proxy(base, { get(target, key) {
+      if (key === 'setItem') return () => { throw new Error('set denied') }
+      if (key === 'removeItem') return () => { throw new Error('remove denied') }
+      const value = Reflect.get(target, key, target)
+      return typeof value === 'function' ? value.bind(target) : value
+    } })
+    expect(writeAndVerifyLocalTheme(denied, id, state, history)).toMatchObject({ ok: false, error: 'set denied' })
+    expect(initializeLocalThemeStorage(denied, state, () => state).error).toContain('Partial local theme storage')
+  })
+  it('retains valid migration bytes when legacy removal throws', () => {
+    const base = window.localStorage
+    base.clear()
+    base.setItem('ftb-theme', JSON.stringify(state))
+    const storage = new Proxy(base, { get(target, key) {
+      if (key === 'removeItem') return () => { throw new Error('remove denied') }
+      const value = Reflect.get(target, key, target)
+      return typeof value === 'function' ? value.bind(target) : value
+    } })
+    expect(initializeLocalThemeStorage(storage, state, () => state).error).toContain('remove denied')
+    expect(base.getItem('ftb-theme')).not.toBeNull()
   })
 })

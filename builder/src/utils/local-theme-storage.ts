@@ -43,6 +43,7 @@ export function writeAndVerifyLocalTheme(storage: Storage, id: string, state: Th
 export function initializeLocalThemeStorage(storage: Storage, defaultState: ThemeStateV4, migrateState: (state: ThemeState) => ThemeStateV4): LocalThemeLoadResult {
   try {
     if (storage.getItem(INDEX) !== null) return loadLocalThemeCollection(storage)
+    if (hasNewFormatRemnants(storage)) return failed(defaultState, 'Partial local theme storage detected; existing records were preserved')
     const bytes = storage.getItem(LEGACY)
     let state = defaultState
     if (bytes !== null) {
@@ -75,6 +76,14 @@ function writeVerified(storage: Storage, writes: [string, string][], verify: () 
   }
 }
 function assertId(id: string): void { if (!isSafeLocalThemeId(id)) throw new Error('Unsafe local theme ID') }
+function hasNewFormatRemnants(storage: Storage): boolean {
+  if (storage.getItem(ACTIVE) !== null) return true
+  for (let index = 0; index < storage.length; index++) {
+    const key = storage.key(index)
+    if (key?.startsWith('ftb-theme:') || key?.startsWith('ftb-theme-history:')) return true
+  }
+  return false
+}
 function parse(value: string | null): unknown { return value === null ? null : JSON.parse(value) as unknown }
 function isTheme(value: unknown): value is ThemeState { return typeof value === 'object' && value !== null && 'schemaVersion' in value }
 function message(error: unknown): string { return error instanceof Error ? error.message : 'Local theme storage failed' }
