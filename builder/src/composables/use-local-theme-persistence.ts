@@ -58,7 +58,7 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
   }
   if (getCurrentScope()) onScopeDispose(() => { for (const save of pending.values()) options.cancel(save.timer) })
   return { themes, activeThemeId, activeState, activeHistory, storageError: readonly(storageError), initialize, scheduleSave, flush, switchTo, createTheme, renameTheme, duplicateTheme, deleteTheme }
-  function writeIndex(): boolean { try { options.storage.setItem(INDEX, JSON.stringify(themes.value)); return true } catch (error) { storageError.value = message(error); return false } }
+  function writeIndex(records = themes.value): boolean { try { options.storage.setItem(INDEX, JSON.stringify(records)); return true } catch (error) { storageError.value = message(error); return false } }
   function persistNewTheme(record: LocalThemeRecord, state: ThemeStateV4, history: LocalThemeHistory): boolean {
     const saved = writeAndVerifyLocalTheme(options.storage, record.id, state, history); if (!saved.ok) { storageError.value = saved.error; return false }
     themes.value.push(record); if (writeIndex()) { storageError.value = null; return true }; themes.value = themes.value.filter((theme) => theme.id !== record.id); removeRecords(record.id); return false
@@ -77,11 +77,10 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
   }
   function publishActiveDeletion(id: string, next: string, previous: LocalThemeRecord[], remaining: LocalThemeRecord[]): StorageOperationResult {
     const loaded = loadLocalThemeById(options.storage, next); if (loaded.error) return failure(loaded.error)
-    themes.value = previous
-    if (!writeIndex()) return failure(storageError.value ?? 'Theme index could not be published')
-    if (!setActive(next)) return failure(storageError.value ?? 'Theme pointer could not be saved')
-    activeState.value = loaded.state; activeHistory.value = loaded.history; themes.value = remaining
-    if (!writeIndex()) { themes.value = previous; return failure(storageError.value ?? 'Theme index could not be finalized') }
+    themes.value = remaining
+    if (!writeIndex(remaining)) { themes.value = previous; return failure(storageError.value ?? 'Theme index could not be published') }
+    if (!setActive(next)) { themes.value = previous; writeIndex(previous); return failure(storageError.value ?? 'Theme pointer could not be saved') }
+    activeState.value = loaded.state; activeHistory.value = loaded.history
     removeRecords(id); return { ok: true }
   }
   function removeRecords(id: string): void { try { options.storage.removeItem(themeStateKey(id)); options.storage.removeItem(themeHistoryKey(id)) } catch (error) { storageError.value = message(error) } }

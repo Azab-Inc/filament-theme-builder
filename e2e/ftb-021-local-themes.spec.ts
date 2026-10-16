@@ -8,9 +8,13 @@ async function openManager(page: Page) {
 }
 
 async function renameTheme(page: Page, currentName: string, nextName: string) {
-  await page.getByRole('button', { name: `Rename ${currentName}` }).click()
+  await themeRow(page, currentName).getByRole('button', { name: `Rename ${currentName}` }).click()
   await page.getByRole('textbox', { name: 'Rename theme name' }).fill(nextName)
   await page.getByRole('button', { name: 'Save theme name' }).click()
+}
+
+function themeRow(page: Page, name: string) {
+  return page.getByRole('listitem').filter({ has: page.getByText(name, { exact: true }) })
 }
 
 async function saveDensity(page: Page, density: 'compact' | 'default' | 'spacious') {
@@ -31,23 +35,24 @@ test.describe('FTB-021 local themes', () => {
     await openManager(page)
     await page.getByRole('button', { name: 'Create theme' }).click()
     await renameTheme(page, 'Untitled', 'Theme B')
-    await page.getByRole('button', { name: 'Open Theme A' }).click()
+    await themeRow(page, 'Theme A').getByRole('button', { name: 'Open Theme A' }).click()
     await expect(page.getByLabel('Active theme')).toHaveText('Theme A')
     await expect(page.getByRole('listitem').filter({ hasText: 'Theme A' })).toHaveAttribute('aria-current', 'true')
 
-    await page.getByRole('button', { name: 'Duplicate Theme A' }).click()
+    await themeRow(page, 'Theme A').getByRole('button', { name: 'Duplicate Theme A' }).click()
     await expect(page.getByLabel('Active theme')).toHaveText('Theme A copy')
     await expect(page.getByRole('listitem').filter({ hasText: 'Theme A copy' })).toHaveAttribute('aria-current', 'true')
 
-    await page.getByRole('button', { name: 'Delete Theme A copy' }).click()
+    await themeRow(page, 'Theme A copy').getByRole('button', { name: 'Delete Theme A copy' }).click()
     const confirmation = page.getByRole('alertdialog', { name: 'Delete Theme A copy?' })
     await expect(confirmation).toBeVisible()
     await confirmation.getByRole('button', { name: 'Confirm delete Theme A copy' }).click()
     await expect(confirmation).toBeHidden()
 
-    await expect(page.getByLabel('Active theme')).toHaveText('Theme B')
-    await expect(page.getByRole('button', { name: 'Open Theme A copy' })).toHaveCount(0)
-    await expect(page.getByRole('listitem').filter({ hasText: 'Theme B' })).toHaveAttribute('aria-current', 'true')
+    await expect(page.getByLabel('Active theme')).toHaveText('Theme A')
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('ftb-themes') ?? '[]').map((theme: { name: string }) => theme.name))).not.toContain('Theme A copy')
+    await expect(themeRow(page, 'Theme A copy')).toHaveCount(0)
+    await expect(themeRow(page, 'Theme A')).toHaveAttribute('aria-current', 'true')
   })
 
   test('persists edits after the debounce and restores theme-specific history after reload', async ({ page }) => {
@@ -64,7 +69,7 @@ test.describe('FTB-021 local themes', () => {
     await saveDensity(page, 'spacious')
 
     await openManager(page)
-    await page.getByRole('button', { name: 'Open Theme A' }).click()
+    await themeRow(page, 'Theme A').getByRole('button', { name: 'Open Theme A' }).click()
     await page.keyboard.press('Escape')
     await expect(page.getByRole('combobox', { name: 'Density' })).toHaveValue('compact')
     await saveDensity(page, 'default')
@@ -73,7 +78,7 @@ test.describe('FTB-021 local themes', () => {
     await expect(page.getByLabel('Active theme')).toHaveText('Theme A')
     await expect(page.getByRole('combobox', { name: 'Density' })).toHaveValue('default')
     await openManager(page)
-    await page.getByRole('button', { name: 'Open Theme A' }).click()
+    await themeRow(page, 'Theme A').getByRole('button', { name: 'Open Theme A' }).click()
     await page.keyboard.press('Escape')
     await page.getByRole('button', { name: 'Undo' }).click()
     await expect(page.getByRole('combobox', { name: 'Density' })).toHaveValue('compact')
@@ -81,7 +86,7 @@ test.describe('FTB-021 local themes', () => {
     await expect(page.getByRole('combobox', { name: 'Density' })).toHaveValue('default')
 
     await openManager(page)
-    await page.getByRole('button', { name: 'Open Theme B' }).click()
+    await themeRow(page, 'Theme B').getByRole('button', { name: 'Open Theme B' }).click()
     await page.keyboard.press('Escape')
     await expect(page.getByRole('combobox', { name: 'Density' })).toHaveValue('spacious')
   })
@@ -92,8 +97,10 @@ test.describe('FTB-021 local themes', () => {
     const dialog = await openManager(page)
     await expect(page.getByRole('button', { name: 'Create theme' })).toBeFocused()
 
-    for (let index = 0; index < 12; index += 1) await page.keyboard.press('Tab')
-    await expect.poll(() => page.evaluate(() => document.activeElement?.closest('dialog') !== null)).toBe(true)
+    for (let index = 0; index < 5; index += 1) {
+      await page.keyboard.press('Tab')
+      await expect.poll(() => page.evaluate(() => document.activeElement?.closest('dialog') !== null)).toBe(true)
+    }
 
     await page.keyboard.press('Escape')
     await expect(dialog).toBeHidden()

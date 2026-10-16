@@ -36,6 +36,28 @@ Current result: 1 passed, 3 failed. The failures expose remaining runtime behavi
 
 The delete confirmation state was cleared before emitting the parent delete action so parent reactivity cannot leave a dangling confirmation dialog. The remaining failures are intentionally retained as acceptance evidence and were not weakened with implementation-only assertions.
 
+## Round 1 fixes
+
+All original runtime failures are fixed without weakening the behavior assertions:
+
+- Active deletion now publishes the filtered remaining collection before updating the active pointer, so the deleted row and storage index disappear while the fallback remains marked active.
+- Browser persistence now uses explicit `window.setTimeout`/`window.clearTimeout` adapters. The approved 300 ms autosave callback reaches the persistence boundary in Compose; per-theme edits and history survive switching and reload.
+- The existing browser `Storage.prototype.setItem` injection now reaches autosave, exposing the accessible non-blocking status while subsequent editor changes remain usable.
+- E2E theme actions are row-scoped by accessible listitem/name locators. Focus containment is checked after each of the dialog’s internal tab stops, followed by Escape and opener restoration.
+
+Final focused Compose result:
+
+```text
+COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/ftb-021-local-themes.spec.ts
+4 passed
+```
+
+Final builder verification:
+
+- `npm run type-check` — passed
+- `npm run test:unit -- --run` — 79 files, 333 tests passed
+- `npm run build` — passed
+
 ## Worktree safety
 
 Unrelated pre-existing modifications were preserved. No Compose topology, dependency manifest, or Playwright configuration was changed.

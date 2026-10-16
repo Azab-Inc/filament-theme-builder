@@ -24,8 +24,8 @@ export const useThemeStore = defineStore('theme', () => {
     storage: localStorage,
     initialState: restored,
     now: () => Date.now(),
-    schedule: setTimeout,
-    cancel: clearTimeout,
+    schedule: (callback, delay) => window.setTimeout(callback, delay) as unknown as ReturnType<typeof setTimeout>,
+    cancel: (handle) => window.clearTimeout(handle as unknown as number),
   })
   localPersistence.initialize(true)
   const theme = localPersistence.activeState
