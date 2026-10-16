@@ -1,7 +1,4 @@
-type RecoveryStoreActions = Pick<{
-  getLegacyRecoveryJson(): string | null
-  restoreLegacyRecovery(): boolean
-}, 'getLegacyRecoveryJson' | 'restoreLegacyRecovery'>
+import type { RecoveryStoreActions } from '@/models/recovery.model'
 
 export function useRecovery(store: RecoveryStoreActions) {
   function restoreLegacyRecovery(): boolean {
