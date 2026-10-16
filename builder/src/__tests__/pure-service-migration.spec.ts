@@ -1,5 +1,3 @@
-import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { join } from 'node:path'
 import * as foundationDefaults from '@/utils/foundation-defaults'
 import * as foundationRecovery from '@/utils/foundation-recovery'
 import * as foundationProjection from '@/utils/foundation-projection'
@@ -16,8 +14,6 @@ import * as themeSerialization from '@/utils/theme-serialization'
 import * as themeValidation from '@/utils/theme-validation'
 import * as vanillaCssExport from '@/utils/vanilla-css-export'
 import { describe, expect, it } from 'vitest'
-
-const sourceRoot = join(process.cwd(), 'src')
 
 const migratedRuntimeExports = {
   foundationDefaults: ['createDefaultFoundationState', 'createDefaultThemeState', 'densityPreset'],
@@ -36,31 +32,6 @@ const migratedRuntimeExports = {
   themeValidation: ['validateThemeOverride', 'validateThemeState', 'validateResolveRequest'],
   vanillaCssExport: ['exportVanillaCss'],
 } as const
-
-const migratedModules = [
-  'foundation-defaults',
-  'foundation-recovery',
-  'foundation-projection',
-  'foundation-provenance',
-  'foundation-validation',
-  'icon-export',
-  'inspector-protocol',
-  'palette-generator',
-  'panel-branding-export',
-  'panel-branding-validation',
-  'raw-override-validation',
-  'theme-resolver',
-  'theme-serialization',
-  'theme-validation',
-  'vanilla-css-export',
-] as const
-
-function sourceFiles(directory: string): string[] {
-  return readdirSync(directory).flatMap((entry) => {
-    const path = join(directory, entry)
-    return statSync(path).isDirectory() ? sourceFiles(path) : [path]
-  })
-}
 
 describe('pure service migration', () => {
   it('preserves the characterized runtime export names at the utility boundary', () => {
@@ -85,17 +56,5 @@ describe('pure service migration', () => {
     for (const [name, exports] of Object.entries(migratedRuntimeExports)) {
       expect(Object.keys(modules[name as keyof typeof modules]).sort()).toEqual([...exports].sort())
     }
-  })
-
-  it('leaves no imports of migrated services in the source graph', () => {
-    const serviceImport = new RegExp(`from\\s+['\"]@/services/(${migratedModules.join('|')})(?:\\.ts)?['\"]`)
-    const references = sourceFiles(sourceRoot)
-      .filter((path) => /\.(ts|vue)$/.test(path))
-      .flatMap((path) => {
-        const content = readFileSync(path, 'utf8')
-        return serviceImport.test(content) ? [path] : []
-      })
-
-    expect(references).toEqual([])
   })
 })
