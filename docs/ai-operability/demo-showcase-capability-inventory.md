@@ -43,6 +43,7 @@ there is no domain mutation to expose or authorize.
 | `panel.branding.asset-read` | `GET /api/branding-assets/{reference}` | read-only | Public preview asset read uses an opaque validated temporary reference; missing/unsafe references return 404 | None | No MCP read tool; not available |
 | `preview.inspector` | Builder Inspector over the read-only/UI-only Filament preview iframe | read-only | Public preview; builder validates the exact preview origin and iframe source; the bridge returns DOM evidence and owns temporary/persistent outlines only; theme changes remain on existing validated builder paths | None | No MCP read tool; not available |
 | `preview.raw-inspector` | Builder Advanced Inspector raw visual overrides and minimal vanilla CSS export | mutation | Local builder theme state only; raw selectors, properties, and values are validated by typed allowlists and the iframe bridge revalidates the same contract | Explicit user action in the builder; no server commit | No MCP mutation tool; not available |
+| `builder.local-themes` | `LocalThemeManager` and local theme store | browser-local UI-only mutation | Local browser owner; no server identity | Explicit delete confirmation | No MCP tool; deferred to FTB-048 |
 
 ## Commerce operation boundary
 
