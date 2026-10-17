@@ -37,6 +37,7 @@ export type LocalThemeRecoveredRecords = {
   records: LocalThemeRecord[]
   values: Map<string, { state: ThemeStateV4; history: LocalThemeHistory }>
   repaired: boolean
+  repairError: string | null
 }
 
 export type LocalThemePersistenceOptions = {

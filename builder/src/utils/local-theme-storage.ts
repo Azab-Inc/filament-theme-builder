@@ -1,28 +1,29 @@
 import type { LocalThemeHistory, LocalThemeLoadResult, LocalThemeRecord, StorageOperationResult } from '@/models/local-theme.model'
 import type { ThemeState, ThemeStateV4 } from '@/models/theme.model'
 import { createDefaultThemeState } from '@/utils/foundation-defaults'
-import { isSafeLocalThemeId, parseLocalThemeCollection, parseLocalThemeHistory } from '@/utils/local-theme-validation'
+import { parseLocalThemeCollection, parseLocalThemeHistory } from '@/utils/local-theme-validation'
 import { migrateToCurrent, normalizeTheme } from '@/utils/theme-store-normalization'
 import { validateFoundationState } from '@/utils/foundation-validation'
 import { parseIndex, recoverLocalThemeRecords } from '@/utils/local-theme-recovery'
 import { failedLocalThemeLoad, hasNewFormatRemnants, isThemeValue, parseStorageJson, storageErrorMessage } from '@/utils/local-theme-storage-helpers'
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { deserializeTheme } from '@/utils/theme-serialization'
+import { assertLocalThemeId, writeVerified } from '@/utils/local-theme-storage-writes'
 const INDEX = 'ftb-themes'
 const ACTIVE = 'ftb-theme-active'; const LEGACY = 'ftb-theme'
 const validateState = (value: unknown): ThemeStateV4 | null => {
   if (!isThemeValue(value)) return null
   try { const state = normalizeTheme(migrateToCurrent(value)); return validateFoundationState(state.foundations).valid ? state : null } catch { return null }
 }
-export function themeStateKey(id: string): string { assertId(id); return `ftb-theme:${id}` }
-export function themeHistoryKey(id: string): string { assertId(id); return `ftb-theme-history:${id}` }
+export function themeStateKey(id: string): string { assertLocalThemeId(id); return `ftb-theme:${id}` }
+export function themeHistoryKey(id: string): string { assertLocalThemeId(id); return `ftb-theme-history:${id}` }
 export function loadLocalThemeCollection(storage: Storage): LocalThemeLoadResult {
   try {
     const rawIndex = storage.getItem(INDEX)
     const indexed = parseIndex(rawIndex)
     const indexError = rawIndex !== null && indexed === null ? 'Theme index was repaired' : null
     const activeId = storage.getItem(ACTIVE)
-    const recovered = recoverLocalThemeRecords(storage, indexed ?? [], validateState, (id, state, history) => writeAndVerifyLocalTheme(storage, id, state, history).ok)
+    const recovered = recoverLocalThemeRecords(storage, indexed ?? [], validateState, (id, state, history) => writeAndVerifyLocalTheme(storage, id, state, history))
     if (!recovered.records.length) return failedLocalThemeLoad(createDefaultThemeState(), indexed ? 'Theme records are invalid' : 'Theme index is missing or invalid')
     const nextActiveId = activeId && recovered.records.some((theme) => theme.id === activeId) ? activeId : recovered.records[0]!.id
     const active = recovered.values.get(nextActiveId)!
@@ -32,7 +33,7 @@ export function loadLocalThemeCollection(storage: Storage): LocalThemeLoadResult
       const published = writeVerified(storage, [[INDEX, JSON.stringify(collection.themes)], [ACTIVE, nextActiveId]], () => storage.getItem(ACTIVE) === nextActiveId && parseLocalThemeCollection(parseStorageJson(storage.getItem(INDEX))) !== null)
       if (!published.ok) return { collection, state: active.state, history: active.history, error: published.error }
     }
-    return { collection, state: active.state, history: active.history, error: indexError ?? (recovered.repaired ? 'Invalid theme records were repaired or quarantined' : null) }
+    return { collection, state: active.state, history: active.history, error: indexError ?? recovered.repairError ?? (recovered.repaired ? 'Invalid theme records were repaired or quarantined' : null) }
   } catch (error) { return failedLocalThemeLoad(createDefaultThemeState(), storageErrorMessage(error)) }
 }
 
@@ -46,7 +47,7 @@ export function loadLocalThemeById(storage: Storage, id: string): { state: Theme
 }
 
 export function writeAndVerifyLocalTheme(storage: Storage, id: string, state: ThemeStateV4, history: LocalThemeHistory): StorageOperationResult {
-  assertId(id)
+  assertLocalThemeId(id)
   const valid = validateState(state)
   const parsedHistory = parseLocalThemeHistory(history, validateState)
   if (!valid || !parsedHistory) return { ok: false, error: 'Invalid theme state or history' }
@@ -89,16 +90,3 @@ export function initializeLocalThemeStorage(storage: Storage, defaultState: Them
     return legacyError ? { ...loaded, error: legacyError } : loaded
   } catch (error) { return failedLocalThemeLoad(defaultState, storageErrorMessage(error)) }
 }
-
-function writeVerified(storage: Storage, writes: [string, string][], verify: () => boolean): StorageOperationResult {
-  let previous: readonly (readonly [string, string | null])[] = []
-  try {
-    previous = writes.map(([key]) => [key, storage.getItem(key)] as const)
-    for (const [key, value] of writes) storage.setItem(key, value)
-    if (!verify()) throw new Error('Storage read-back verification failed')
-    return { ok: true }
-  } catch (error) {
-    for (const [key, value] of [...previous].reverse()) { try { value === null ? storage.removeItem(key) : storage.setItem(key, value) } catch { /* report partial failure */ } }
-    return { ok: false, error: storageErrorMessage(error) }
-  }
-} function assertId(id: string): void { if (!isSafeLocalThemeId(id)) throw new Error('Unsafe local theme ID') }

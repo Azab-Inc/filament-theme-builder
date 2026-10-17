@@ -28,7 +28,6 @@ function restoreTheme(storageKey: string, recoveryStorageKey: string): ThemeStat
       if (!hasTrustedProvenance(parsed)) archiveLegacyTheme(recoveryStorageKey, value)
       const normalized = normalizeTheme(isVersionFour(parsed) ? parsed : { ...parsed, schemaVersion: 4, rawOverrides: [] })
       if (validateFoundationState(normalized.foundations).valid) {
-        if (!hasTrustedProvenance(parsed)) save(storageKey, normalized)
         return normalized
       }
     } else {
@@ -46,8 +45,4 @@ function hasTrustedProvenance(value: ThemeStateV4 | { foundations?: { provenance
 function archiveLegacyTheme(key: string, value: unknown): void {
   if (typeof localStorage === 'undefined' || localStorage.getItem(key) !== null) return
   try { localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value)) } catch { /* unavailable storage */ }
-}
-
-function save(key: string, value: ThemeStateV4): void {
-  try { localStorage.setItem(key, JSON.stringify(serializeTheme(value))) } catch { /* unavailable storage */ }
 }

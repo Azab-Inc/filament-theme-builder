@@ -188,4 +188,27 @@ describe('local theme storage', () => {
     expect(loaded.collection.activeId).toBe(loaded.collection.themes[0]?.id)
     expect(loaded.error).toBeTruthy()
   })
+
+  it('reports a denied malformed-history repair without claiming it was repaired', () => {
+    const base = window.localStorage
+    base.clear()
+    base.setItem('ftb-themes', JSON.stringify([{ id, name: 'Broken history', updatedAt: 1 }]))
+    base.setItem('ftb-theme-active', id)
+    base.setItem(themeStateKey(id), JSON.stringify(state))
+    base.setItem(themeHistoryKey(id), '{bad')
+    const storage = new Proxy(base, { get(target, key) {
+      if (key === 'setItem') return (name: string, value: string) => {
+        if (name === themeHistoryKey(id)) throw new Error('history repair denied')
+        target.setItem(name, value)
+      }
+      const value = Reflect.get(target, key, target)
+      return typeof value === 'function' ? value.bind(target) : value
+    } })
+
+    const loaded = loadLocalThemeCollection(storage)
+
+    expect(loaded.error).toContain('history repair denied')
+    expect(loaded.error).not.toContain('were repaired')
+    expect(base.getItem(themeHistoryKey(id))).toBe('{bad')
+  })
 })

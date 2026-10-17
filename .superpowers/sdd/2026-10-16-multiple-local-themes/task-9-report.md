@@ -58,3 +58,43 @@ is preserved below. No full-suite pass/failure claim is made.
 Only the FTB-021 section of `TICKETS.md` is updated with reproducible focused evidence,
 the incomplete full-suite attempt, the FTB-020 deferral, and MCP deferral. This report
 does not upgrade the full-suite claim or alter FTB-020/FTB-048 scope.
+
+## Final blocker follow-up — 2026-10-17
+
+### Scope
+
+This follow-up addresses only the four authorized FTB-021 findings: legacy canonical
+write ownership, combined active-delete failure state, truthful malformed-history repair
+reporting, and the 100-line storage boundary.
+
+### Changes
+
+- `useThemePersistence.restore()` now treats `ftb-theme` as read-only. It archives
+  recovery bytes when needed but does not normalize-write the legacy key; new-format
+  migration remains the only path that removes it after verified publication.
+- Combined active-delete publication failure now retains the fallback ID, fallback
+  canonical state/history, and remaining in-memory records together. Regression coverage
+  verifies both the current store and a reload never expose the deleted state under the
+  fallback ID.
+- `recoverLocalThemeRecords()` marks repair success only after the repair operation
+  succeeds and returns the actual repair failure. Denied malformed-history repair is
+  preserved and surfaced without the false “repaired” status.
+- The 104-line storage boundary was split into `local-theme-storage.ts` (92 lines) and
+  `local-theme-storage-writes.ts` (20 lines), with behavior unchanged.
+
+### Verification
+
+- Focused local-theme unit tests: **9 files, 68 passed**.
+- Full unit suite: standard parallel execution hit existing 5-second test timeouts;
+  deterministic single-worker execution passed: **79 files, 338 tests passed** using
+  `npm run test:unit -- --run --pool=threads --maxWorkers=1 --fileParallelism=false`.
+- Type-check: **PASS**.
+- Production build: **PASS**.
+- `git diff --check`: **PASS**.
+- Focused Compose Playwright: **INCOMPLETE/UNAVAILABLE**; all 4 tests received
+  `ERR_CONNECTION_REFUSED` from `http://127.0.0.1:4175`. No Compose pass is claimed.
+
+### Remaining concerns
+
+- Complete Compose/browser verification remains unavailable because the configured
+  gateway is not listening. FTB-020 preset isolation remains deferred as documented.

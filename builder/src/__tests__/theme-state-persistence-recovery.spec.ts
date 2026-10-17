@@ -6,6 +6,8 @@ import {
   resetThemeStateTest,
 } from './theme-state-test-helpers'
 import { themeStateKey } from '@/utils/local-theme-storage'
+import { useThemePersistence } from '@/composables/use-theme-persistence'
+import { createDefaultThemeState } from '@/utils/foundation-defaults'
 
 describe('theme state persistence and recovery', () => {
   resetThemeStateTest()
@@ -23,6 +25,22 @@ describe('theme state persistence and recovery', () => {
 
     setActivePinia(createPinia())
     expect(createThemeState().theme.colors.primary).toBe('#0f766e')
+  })
+
+  it('does not write normalized legacy bytes before local-theme migration', () => {
+    localStorage.clear()
+    const legacy = createDefaultThemeState() as Record<string, unknown>
+    const foundations = { ...(legacy.foundations as Record<string, unknown>) }
+    delete foundations.provenanceVersion
+    legacy.foundations = foundations
+    localStorage.setItem('ftb-theme', JSON.stringify(legacy))
+    const setItem = vi.spyOn(Storage.prototype, 'setItem')
+
+    useThemePersistence('ftb-theme', 'ftb-theme-legacy-recovery').restore()
+
+    expect(setItem.mock.calls.some(([key]) => key === 'ftb-theme')).toBe(false)
+    expect(localStorage.getItem('ftb-theme')).toBe(JSON.stringify(legacy))
+    setItem.mockRestore()
   })
 
   it('uses the default theme when persisted JSON is malformed or invalid', () => {

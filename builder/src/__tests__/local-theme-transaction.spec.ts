@@ -78,6 +78,7 @@ describe('local theme deletion publication order', () => {
 
   it('never leaves the pointer on an unindexed record when pointer and rollback writes fail', () => {
     const store = setup(); const oldId = store.activeThemeId; const next = store.createTheme(); store.openTheme(oldId)
+    store.setPrimaryColor('#dc2626'); vi.advanceTimersByTime(300)
     const original = Storage.prototype.setItem
     let pointerWrites = 0
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, key, value) {
@@ -93,7 +94,11 @@ describe('local theme deletion publication order', () => {
     expect(persistedIndex.map(({ id }) => id)).toContain(persistedActiveId)
     expect(persistedIndex.map(({ id }) => id)).toContain(oldId)
     expect(localStorage.getItem(`ftb-theme:${persistedActiveId}`)).not.toBeNull()
-    expect(reload().activeThemeId).toBe(persistedActiveId)
+    expect(store.activeThemeId).toBe(persistedActiveId)
+    expect(store.theme.colors.primary).toBe('#6366f1')
+    const reloaded = reload()
+    expect(reloaded.activeThemeId).toBe(persistedActiveId)
+    expect(reloaded.theme.colors.primary).toBe('#6366f1')
     expect(next.id).toBe(persistedActiveId)
   })
 })

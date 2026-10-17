@@ -82,9 +82,9 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
       const indexError = storageError.value ?? 'Theme index could not be published'
       themes.value = previous
       if (setActive(id)) { storageError.value = indexError; return failure(indexError) }
-      themes.value = previous
+      themes.value = remaining
       activeThemeId.value = next
-      return failure(`${indexError}; active pointer retained on indexed fallback`)
+      activeState.value = loaded.state; activeHistory.value = loaded.history; return failure(`${indexError}; active pointer retained on indexed fallback`)
     }
     activeState.value = loaded.state; activeHistory.value = loaded.history
     removeRecords(id); return { ok: true }
