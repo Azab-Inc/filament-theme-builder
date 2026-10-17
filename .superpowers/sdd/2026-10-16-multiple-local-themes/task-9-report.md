@@ -84,7 +84,7 @@ reporting, and the 100-line storage boundary.
 
 ### Verification
 
-- Focused local-theme unit tests: **9 files, 68 passed**.
+- Focused local-theme unit tests: **9 files, 66 passed**.
 - Full unit suite: standard parallel execution hit existing 5-second test timeouts;
   deterministic single-worker execution passed: **79 files, 338 tests passed** using
   `npm run test:unit -- --run --pool=threads --maxWorkers=1 --fileParallelism=false`.
