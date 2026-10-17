@@ -35,7 +35,7 @@ Use test-driven development for every feature and bug fix: write the test first,
 
 ### Demo-first implementation gate
 
-After FTB-003, remaining builder feature work stays blocked until all demo-complete requirements are met: FTB-009A/B/010, FTB-011, FTB-013, FTB-014, FTB-015, FTB-016, FTB-017, and FTB-018 are now evidenced complete. FTB-012 (tables) remains explicitly partial only for theme-density integration, which is not a blocker. Operational FTB-027/028 are parallel and outside the current plan; they retain separate status/prerequisites and are not substitutes for or relaxations of this gate. Preserve TDD and Playwright requirements above for all feature work.
+After FTB-003, remaining builder feature work stays blocked until all demo-complete requirements are met: FTB-009A, FTB-009B, FTB-010, FTB-011, FTB-013, FTB-014, FTB-015, FTB-016, FTB-017, and FTB-018 are now evidenced complete. FTB-012 (tables) remains explicitly partial only for theme-density integration, which is not a blocker. Operational FTB-027/028 are parallel and outside the current plan; they retain separate status/prerequisites and are not substitutes for or relaxations of this gate. Preserve TDD and Playwright requirements above for all feature work.
 
 ## More Specific Instructions
 
