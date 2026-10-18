@@ -18,8 +18,9 @@ final class StdioReadinessWaiter
         $read = [$stream];
         $write = null;
         $except = null;
+        [$seconds, $microseconds] = self::timeoutParts($remainingNanoseconds);
         try {
-            $ready = @stream_select($read, $write, $except, intdiv($remainingNanoseconds, 1_000_000_000), intdiv($remainingNanoseconds % 1_000_000_000, 1000));
+            $ready = @stream_select($read, $write, $except, $seconds, $microseconds);
         } catch (ValueError|TypeError) {
             throw new RuntimeException('stdio_stream_not_selectable');
         }
@@ -29,5 +30,18 @@ final class StdioReadinessWaiter
         if ($ready === 0) {
             throw new RuntimeException('stdio_read_timeout');
         }
+    }
+
+    /** @return array{int, int} */
+    public static function timeoutParts(int $remainingNanoseconds): array
+    {
+        $seconds = intdiv($remainingNanoseconds, 1_000_000_000);
+        $microseconds = intdiv($remainingNanoseconds % 1_000_000_000 + 999, 1000);
+        if ($microseconds === 1_000_000) {
+            $seconds++;
+            $microseconds = 0;
+        }
+
+        return [$seconds, $microseconds];
     }
 }

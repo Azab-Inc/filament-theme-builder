@@ -10,4 +10,6 @@ Hardening tests cover actual `MAX_LINE_BYTES + 1`, one-chunk overflow without fr
 
 Verification: focused MCP tests passed (17 tests, 40 assertions); full `php artisan test` passed (186 tests, 1,689 assertions); focused Pint check passed; `vendor/bin/phpstan analyse --no-progress` passed (0 errors). Compose invocation `docker compose -f compose.dev.yaml exec -T -e APP_ENV=local -e FTB_LOCAL_MCP_ENABLED=true demo-php php artisan ftb:mcp` returned valid initialize and empty tools/list responses; an initialized notification produced no response line.
 
+Deadline-rounding follow-up: `php artisan test tests/Unit/Mcp tests/Feature/Mcp` passed (28 tests, 88 assertions); focused Pint check passed; `vendor/bin/phpstan analyse --no-progress` passed (0 errors). Select timeouts now round any positive fractional microsecond upward, carrying at one second.
+
 No dependencies were added. Browser pairing, relay routes, and MCP tools remain out of scope.
