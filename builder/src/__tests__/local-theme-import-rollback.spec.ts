@@ -8,7 +8,9 @@ const importStateKey = `ftb-theme:import-${id}`
 const importHistoryKey = `ftb-theme-history:import-${id}`
 const markerKey = `ftb-theme-import:${id}`
 const oldState = createDefaultThemeState()
-const oldIndex = JSON.stringify([{ id: 'old-theme', name: 'Existing', updatedAt: 5 }])
+const oldRecord = { id: 'old-theme', name: 'Existing', updatedAt: 5 }
+const importedRecord = { id: `import-${id}`, name: 'Imported', updatedAt: 10 }
+const oldIndex = JSON.stringify([oldRecord])
 const oldHistory = JSON.stringify({ snapshots: [oldState], cursor: 0 })
 
 beforeEach(() => {
@@ -31,10 +33,10 @@ function failIndexReadback(): void {
 
 describe('local theme import rollback failures', () => {
   it.each([
-    ['ftb-theme:import-', 'removeItem'],
-    ['ftb-theme-history:import-', 'removeItem'],
-    ['ftb-themes', 'setItem'],
-  ])('reports failed restoration of %s and keeps the operation recoverable', (prefix, method) => {
+    ['ftb-theme:import-', 'removeItem', [oldRecord]],
+    ['ftb-theme-history:import-', 'removeItem', [oldRecord]],
+    ['ftb-themes', 'setItem', [oldRecord, importedRecord]],
+  ])('reports failed restoration of %s and keeps the operation recoverable', (prefix, method, expectedIndex) => {
     failIndexReadback()
     const original = Storage.prototype[method as 'removeItem' | 'setItem']
     let restores = 0
@@ -46,8 +48,8 @@ describe('local theme import rollback failures', () => {
         : (original as typeof Storage.prototype.removeItem).call(this, key)
     } as never)
     const result = importFreshLocalTheme(localStorage, operation(), () => 10)
-    expect(result).toMatchObject({ ok: false, error: expect.stringContaining('rollback incomplete') })
-    expect(result).toMatchObject({ ok: false, error: expect.stringContaining(prefix) })
+    expect(result).toMatchObject({ ok: false, error: expect.stringMatching(new RegExp(`rollback incomplete.*${prefix}`)) })
+    expect(JSON.parse(localStorage.getItem('ftb-themes')!)).toEqual(expectedIndex)
     expect(localStorage.getItem('ftb-theme:old-theme')).toBe(JSON.stringify(oldState))
     expect(localStorage.getItem('ftb-theme-history:old-theme')).toBe(oldHistory)
     expect(localStorage.getItem('ftb-theme-active')).toBe('old-theme')
