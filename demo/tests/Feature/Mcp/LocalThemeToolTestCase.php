@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 abstract class LocalThemeToolTestCase extends TestCase
 {
-    private string $relayPath;
+    protected string $relayPath;
 
     protected function setUp(): void
     {
