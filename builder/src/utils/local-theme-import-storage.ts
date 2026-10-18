@@ -15,11 +15,7 @@ const historyFor = (state: unknown) => ({ snapshots: [state], cursor: 0 })
 export function readImportValue(storage: Storage, key: string): unknown {
   const raw = storage.getItem(key)
   if (raw === null) return null
-  try {
-    return JSON.parse(raw) as unknown
-  } catch {
-    return INVALID_JSON
-  }
+  try { return JSON.parse(raw) as unknown } catch { return INVALID_JSON }
 }
 
 export function isImportMarker(value: unknown): value is ImportMarker {
@@ -48,6 +44,10 @@ export function readImportIndex(storage: Storage): LocalThemeRecord[] | null {
   return value === INVALID_JSON || value === null ? null : parseLocalThemeCollection(value)
 }
 
+export function hasImportRecordCollision(storage: Storage, marker: ImportMarker): boolean {
+  return storage.getItem(themeStateKey(marker.recordId)) !== null || storage.getItem(themeHistoryKey(marker.recordId)) !== null
+}
+
 export function readImportedState(storage: Storage, marker: ImportMarker): unknown {
   const state = validateLocalThemeState(readImportValue(storage, themeStateKey(marker.recordId)))
   const history = parseLocalThemeHistory(readImportValue(storage, themeHistoryKey(marker.recordId)), validateLocalThemeState)
@@ -59,35 +59,18 @@ export function findImportedRecord(storage: Storage, marker: ImportMarker): Loca
   return record?.name === marker.name ? record : null
 }
 
-export function verifyImportedReadback(storage: Storage, marker: ImportMarker): boolean {
+export function verifyImportedCoreReadback(storage: Storage, marker: ImportMarker): boolean {
   const state = readImportedState(storage, marker)
-  return !!state && fingerprintImportedState(state) === marker.stateFingerprint && !!findImportedRecord(storage, marker) && storage.getItem(IMPORT_ACTIVE) === marker.recordId
+  return !!state && fingerprintImportedState(state) === marker.stateFingerprint && !!findImportedRecord(storage, marker)
 }
 
-export function writeImportMarker(storage: Storage, key: string, marker: ImportMarker): boolean {
+export function verifyImportedReadback(storage: Storage, marker: ImportMarker): boolean {
+  return verifyImportedCoreReadback(storage, marker) && storage.getItem(IMPORT_ACTIVE) === marker.recordId
+}
+
+export function writeImportMarker(storage: Storage, key: string, marker: ImportMarker) {
   return writeVerified(storage, [[key, JSON.stringify(marker)]], () => {
     const result = readImportValue(storage, key)
     return isImportMarker(result) && JSON.stringify(result) === JSON.stringify(marker)
-  }).ok
-}
-
-export function publishImportedTheme(storage: Storage, key: string, marker: ImportMarker, state: unknown, now: () => number): LocalThemeRecord | null {
-  const records = readImportIndex(storage)
-  if (!records) return null
-  const existing = records.find(({ id }) => id === marker.recordId)
-  if (existing && existing.name !== marker.name) return null
-  const record = existing ?? { id: marker.recordId, name: marker.name, updatedAt: now() }
-  const nextRecords = existing ? records : [...records, record]
-  const completedMarker = { ...marker, status: 'complete' as const }
-  const result = writeVerified(storage, [
-    [themeStateKey(marker.recordId), JSON.stringify(state)],
-    [themeHistoryKey(marker.recordId), JSON.stringify(historyFor(state))],
-    [IMPORT_INDEX, JSON.stringify(nextRecords)],
-    [IMPORT_ACTIVE, marker.recordId],
-  ], () => verifyImportedReadback(storage, marker), [[key, JSON.stringify(completedMarker)]], () => {
-    const readback = readImportValue(storage, key)
-    return verifyImportedReadback(storage, marker) && isImportMarker(readback) &&
-      JSON.stringify(readback) === JSON.stringify(completedMarker)
   })
-  return result.ok ? record : null
 }

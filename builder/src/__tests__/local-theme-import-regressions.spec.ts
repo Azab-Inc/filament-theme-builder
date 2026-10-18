@@ -55,7 +55,7 @@ describe('local theme import integrity', () => {
 
   it.each([
     ['ftb-theme-import:', 1], ['ftb-theme:', 1], ['ftb-theme-history:', 1],
-    ['ftb-themes', 1], ['ftb-theme-active', 1], ['ftb-theme-import:', 2],
+    ['ftb-themes', 1],
   ])('rolls back all import writes when %s write %i fails', (prefix, occurrence) => {
     seedOldTheme()
     const original = Storage.prototype.setItem
@@ -79,7 +79,7 @@ describe('local theme import integrity', () => {
     expect(localStorage.getItem(`ftb-theme-import:${base().operationId}`)).toBeNull()
   })
 
-  it('rolls back publication when state read-back is corrupted', () => {
+  it('keeps old data usable and the import recoverable when active read-back fails', () => {
     seedOldTheme()
     const original = Storage.prototype.getItem
     let activeReads = 0
@@ -88,9 +88,13 @@ describe('local theme import integrity', () => {
       return original.call(this, key)
     })
     expect(importFreshLocalTheme(localStorage, base(), () => 10)).toMatchObject({ ok: false })
-    expect(localStorage.getItem('ftb-themes')).toBe(JSON.stringify([{ id: 'old-theme', name: 'Existing', updatedAt: 5 }]))
+    expect(JSON.parse(localStorage.getItem('ftb-themes')!).map(({ id }: { id: string }) => id)).toEqual([
+      'old-theme', `import-${base().operationId}`,
+    ])
     expect(localStorage.getItem('ftb-theme-active')).toBe('old-theme')
-    expect(localStorage.getItem(`ftb-theme:import-${base().operationId}`)).toBeNull()
-    expect(localStorage.getItem(`ftb-theme-import:${base().operationId}`)).toBeNull()
+    expect(localStorage.getItem(`ftb-theme:import-${base().operationId}`)).not.toBeNull()
+    expect(localStorage.getItem('ftb-theme:old-theme')).not.toBeNull()
+    expect(localStorage.getItem('ftb-theme-history:old-theme')).not.toBeNull()
+    expect(JSON.parse(localStorage.getItem(`ftb-theme-import:${base().operationId}`)!).status).toBe('prepared')
   })
 })

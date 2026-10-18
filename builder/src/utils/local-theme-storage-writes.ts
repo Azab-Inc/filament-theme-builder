@@ -18,8 +18,25 @@ export function writeVerified(
     if (finalWrites.length && !verifyFinal()) throw new Error('Final storage read-back verification failed')
     return { ok: true }
   } catch (error) {
-    for (const [key, value] of [...previous].reverse()) { try { value === null ? storage.removeItem(key) : storage.setItem(key, value) } catch { /* report partial failure */ } }
-    return { ok: false, error: storageErrorMessage(error) }
+    const unrestoredKeys: string[] = []
+    for (const [key, value] of [...previous].reverse()) {
+      try {
+        if (value === null) storage.removeItem(key)
+        else storage.setItem(key, value)
+        if (storage.getItem(key) !== value) unrestoredKeys.push(key)
+      } catch {
+        unrestoredKeys.push(key)
+      }
+    }
+    const operationError = storageErrorMessage(error)
+    if (!unrestoredKeys.length) return { ok: false, error: operationError }
+    const uniqueKeys = [...new Set(unrestoredKeys)]
+    return {
+      ok: false,
+      error: `${operationError}; rollback incomplete for: ${uniqueKeys.join(', ')}`,
+      rollbackFailed: true,
+      unrestoredKeys: uniqueKeys,
+    }
   }
 }
 

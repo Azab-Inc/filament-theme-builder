@@ -17,7 +17,12 @@ export type LocalThemeCollection = {
   activeId: string
 }
 
-export type StorageOperationResult = { ok: true } | { ok: false; error: string }
+export type StorageOperationResult = { ok: true } | {
+  ok: false
+  error: string
+  rollbackFailed?: boolean
+  unrestoredKeys?: string[]
+}
 
 export type LocalThemeLoadResult = {
   collection: LocalThemeCollection

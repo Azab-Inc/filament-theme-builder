@@ -3,20 +3,20 @@ export type { FreshThemeImport, ImportCommitResult } from '@/models/local-theme-
 import {
   findImportedRecord,
   fingerprintImportedState,
+  hasImportRecordCollision,
   IMPORT_PREFIX,
   INVALID_JSON,
   isImportMarker,
   markerKeyForOperation,
   prepareImport,
-  publishImportedTheme,
   readImportIndex,
   readImportValue,
   verifyImportedReadback,
   writeImportMarker,
 } from '@/utils/local-theme-import-storage'
 import { hasConflictingImportedData } from '@/utils/local-theme-import-integrity'
-import { themeHistoryKey, themeStateKey, validateLocalThemeState } from '@/utils/local-theme-storage'
-
+import { publishImportedTheme, removePreparedMarker } from '@/utils/local-theme-import-publication'
+import { themeStateKey, validateLocalThemeState } from '@/utils/local-theme-storage'
 export function isFreshThemeImportValid(input: FreshThemeImport): boolean {
   return prepareImport(input) !== null
 }
@@ -31,16 +31,17 @@ function resume(storage: Storage, key: string, marker: ImportMarker, state: unkn
   if (hasConflictingImportedData(storage, marker)) {
     return { ok: false, error: 'Import state does not match the prepared operation' }
   }
-  const published = publishImportedTheme(storage, key, marker, state, now)
-  if (!published) {
-    try {
-      storage.removeItem(key)
-    } catch {
-      // Preserve the original transaction error.
-    }
-    return { ok: false, error: 'Theme import transaction could not be verified' }
+  const published = publishImportedTheme(storage, marker, state, now)
+  if (published.ok) return { ok: true, record: published.record }
+  if (published.rollbackFailed) {
+    const keys = published.unrestoredKeys.join(', ')
+    return { ok: false, error: `Import rollback incomplete; recovery required for ${keys}; marker retained: ${key}; ${published.error}` }
   }
-  return { ok: true, record: published }
+  if (published.committed) {
+    return { ok: false, error: `Import publication pending recovery; marker retained: ${key}; ${published.error}` }
+  }
+  const cleanupError = removePreparedMarker(storage, key)
+  return { ok: false, error: cleanupError ? `${published.error}; ${cleanupError}` : published.error }
 }
 
 export function recoverLocalThemeImports(storage: Storage, now: () => number): void {
@@ -79,21 +80,21 @@ export function importFreshLocalTheme(storage: Storage, input: FreshThemeImport,
       if (current.status === 'complete') return { ok: false, error: 'Completed import read-back does not match its marker' }
       return resume(storage, key, current, state, now)
     }
-    if (recordsContainCollision(storage, marker)) {
+    if (hasImportRecordCollision(storage, marker)) {
       return { ok: false, error: 'Import record ID collision' }
     }
     const records = readImportIndex(storage)
     if (!records) return { ok: false, error: 'Theme index is missing or malformed' }
     if (records.some(({ id }) => id === marker.recordId)) return { ok: false, error: 'Import record ID collision' }
-    if (!writeImportMarker(storage, key, marker)) {
-      return { ok: false, error: 'Import marker could not be prepared' }
+    const prepared = writeImportMarker(storage, key, marker)
+    if (!prepared.ok) {
+      if (prepared.rollbackFailed) {
+        return { ok: false, error: `Import rollback incomplete; recovery required for ${prepared.unrestoredKeys?.join(', ')}; ${prepared.error}` }
+      }
+      return { ok: false, error: `Import marker could not be prepared: ${prepared.error}` }
     }
     return resume(storage, key, marker, state, now)
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : 'Theme import failed' }
   }
-}
-
-function recordsContainCollision(storage: Storage, marker: ImportMarker): boolean {
-  return storage.getItem(themeStateKey(marker.recordId)) !== null || storage.getItem(themeHistoryKey(marker.recordId)) !== null
 }

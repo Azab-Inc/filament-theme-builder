@@ -151,7 +151,12 @@ describe('local theme storage', () => {
       const value = Reflect.get(target, key, target)
       return typeof value === 'function' ? value.bind(target) : value
     } })
-    expect(writeAndVerifyLocalTheme(denied, id, state, history)).toMatchObject({ ok: false, error: 'set denied' })
+    expect(writeAndVerifyLocalTheme(denied, id, state, history)).toMatchObject({
+      ok: false,
+      rollbackFailed: true,
+      unrestoredKeys: [themeHistoryKey(id), themeStateKey(id)],
+      error: expect.stringContaining('rollback incomplete'),
+    })
     expect(initializeLocalThemeStorage(denied, state, () => state).error).toContain('Partial local theme storage')
   })
   it('retains valid migration bytes when legacy removal throws', () => {
