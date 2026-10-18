@@ -116,6 +116,24 @@ describe('local theme storage', () => {
     expect(result.state.schemaVersion).toBe(4)
     expect(result.state.colors.primary).toBe('#123456')
   })
+  it('recovers the original V3 baseline fixture at the outer storage boundary', () => {
+    const storage = window.localStorage
+    storage.clear()
+    const legacy = createDefaultThemeState() as Record<string, unknown>
+    const foundations = { ...(legacy.foundations as Record<string, unknown>) }
+    delete foundations.provenanceVersion
+    delete foundations.explicitPaths
+    foundations.borders = { default: { light: '#123456', dark: 'var(--gray-700)' }, strong: { light: 'var(--gray-300)', dark: 'var(--gray-600)' } }
+    legacy.schemaVersion = 3
+    legacy.foundations = foundations
+    delete legacy.rawOverrides
+    storage.setItem('ftb-theme', JSON.stringify(legacy))
+    const result = initializeLocalThemeStorage(storage, state, migrateToCurrent)
+    expect(result.error).toBeNull()
+    expect(result.state.schemaVersion).toBe(4)
+    expect(result.state.foundations.borders.default.light).toBe('var(--gray-200)')
+    expect(storage.getItem('ftb-theme')).toBeNull()
+  })
   it('returns a failure and preserves prior bytes when writes fail or read-back is ignored', () => {
     const base = window.localStorage
     base.clear()

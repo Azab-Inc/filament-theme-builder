@@ -22,6 +22,10 @@ export function migrateVersionedTheme(value: ThemeState, registry?: FilamentRegi
   }
 }
 
+export function recoverVersionedTheme(value: ThemeStateV3 | ThemeStateV4): ThemeStateV4 {
+  return value.schemaVersion === 4 ? structuredClone(value) : toV4(value)
+}
+
 function validateEdge(value: ThemeState, registry?: FilamentRegistry): MigrationFailure | { ok: true } {
   if (!registry) return { ok: true }
   if (value.schemaVersion === 1 || value.schemaVersion === 2) {
@@ -30,7 +34,7 @@ function validateEdge(value: ThemeState, registry?: FilamentRegistry): Migration
     return { ok: true }
   }
   const result = validateFoundationState(value)
-  if (!result.valid) return { ok: false, category: result.message.includes('Custom CSS') ? 'nonempty_custom_css_rejected' : 'invalid_theme_state', message: result.message }
+  if (!result.valid) return { ok: false, category: result.path === 'customCss' ? 'nonempty_custom_css_rejected' : 'invalid_theme_state', message: result.message }
   return { ok: true }
 }
 

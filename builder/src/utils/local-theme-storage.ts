@@ -9,11 +9,12 @@ import { failedLocalThemeLoad, hasNewFormatRemnants, isThemeValue, parseStorageJ
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { deserializeTheme } from '@/utils/theme-serialization'
 import { assertLocalThemeId, writeVerified } from '@/utils/local-theme-storage-writes'
+import { recoverLegacyState } from '@/utils/theme-store-recovery'
 const INDEX = 'ftb-themes'
 const ACTIVE = 'ftb-theme-active'; const LEGACY = 'ftb-theme'
 const validateState = (value: unknown): ThemeStateV4 | null => {
   if (!isThemeValue(value)) return null
-  try { const state = normalizeTheme(migrateToCurrent(value)); return validateFoundationState(state.foundations).valid ? state : null } catch { return null }
+  try { const state = normalizeTheme(migrateToCurrent(value)); return validateFoundationState(state.foundations).valid ? state : null } catch { return recoverLegacyState(value) }
 }
 export function themeStateKey(id: string): string { assertLocalThemeId(id); return `ftb-theme:${id}` }
 export function themeHistoryKey(id: string): string { assertLocalThemeId(id); return `ftb-theme-history:${id}` }
@@ -74,7 +75,11 @@ export function initializeLocalThemeStorage(storage: Storage, defaultState: Them
       else {
         const legacyValidation = parsed.schemaVersion <= 2 ? deserializeTheme(parsed, createThemeRegistry()) : { valid: true }
         if (!legacyValidation.valid) legacyError = 'Legacy theme is invalid'
-        try { if (!legacyError) state = migrateState(parsed) } catch { legacyError = 'Legacy theme migration failed' }
+        try { if (!legacyError) state = migrateState(parsed) } catch {
+          const recovered = recoverLegacyState(parsed)
+          if (recovered) state = recovered
+          else legacyError = 'Legacy theme migration failed'
+        }
         if (!legacyError && !validateState(state)) legacyError = 'Migrated theme is invalid'
         if (!legacyError) migratedLegacy = true
       }

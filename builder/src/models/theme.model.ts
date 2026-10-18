@@ -1,4 +1,5 @@
 import { migrateVersionedTheme } from '@/utils/theme-import-migrations'
+import { createThemeRegistry } from '@/registry/theme-registry'
 
 export type ThemeScope = 'global' | 'component' | 'variant' | 'state'
 
@@ -35,7 +36,7 @@ export type ThemeStateV4 = import('@/models/foundations.model').FoundationStateV
 export type ThemeState = ThemeStateV1 | ThemeStateV2 | ThemeStateV3 | ThemeStateV4
 
 export function migrateThemeState(state: ThemeState): ThemeStateV4 {
-  const result = migrateVersionedTheme(state)
+  const result = migrateVersionedTheme(state, createThemeRegistry())
   if (!result.ok) throw new Error(`${result.category}: ${result.message}`)
   return result.state
 }

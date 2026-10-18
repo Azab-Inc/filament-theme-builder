@@ -1,6 +1,6 @@
 import type { FilamentRegistry, RegistryEntry } from '@/models/theme-registry.model'
-import { migrateThemeState } from '@/models/theme.model'
 import type { ResolveRequest, ThemeOverride, ThemeScope, ThemeState, ThemeStateV2 } from '@/models/theme.model'
+import { migrateVersionedTheme } from '@/utils/theme-import-migrations'
 import { resolveThemeValue } from '@/utils/theme-resolver'
 
 export function materializeSupportedOverrides(
@@ -42,8 +42,11 @@ function supportedRequests(entry: RegistryEntry, targetId: string, componentId: 
   return requests
 }
 
-export function toVersionTwo(state: ThemeState): ThemeStateV2 {
-  const current = migrateThemeState(state)
+export function toVersionTwo(state: ThemeState, registry: FilamentRegistry): ThemeStateV2 {
+  // serializeTheme has already validated this state against the supplied registry.
+  const migrated = migrateVersionedTheme(state)
+  if (!migrated.ok) throw new Error(`${migrated.category}: ${migrated.message}`)
+  const current = migrated.state
   return {
     schemaVersion: 2,
     colors: { primary: current.colors.primary },

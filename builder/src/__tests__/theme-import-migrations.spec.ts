@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { createDefaultThemeState } from '@/utils/foundation-defaults'
+import { migrateThemeState } from '@/models/theme.model'
 import { migrateVersionedTheme } from '@/utils/theme-import-migrations'
 
 const registry = createThemeRegistry()
@@ -43,5 +44,9 @@ describe('versioned theme migration edges', () => {
   it('returns typed custom CSS and migration failures', () => {
     expect(migrateVersionedTheme({ ...createDefaultThemeState(), customCss: '.x{}' }, registry)).toMatchObject({ ok: false, category: 'nonempty_custom_css_rejected' })
     expect(migrateVersionedTheme({ schemaVersion: 2, colors: { primary: '#123456' }, overrides: [() => undefined] } as never, registry)).toMatchObject({ ok: false, category: 'migration_failed' })
+  })
+
+  it('rejects invalid model migration input with the default registry', () => {
+    expect(() => migrateThemeState({ schemaVersion: 1, colors: { primary: 'not-a-color' } })).toThrow(/invalid_theme_state/i)
   })
 })
