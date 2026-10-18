@@ -1,12 +1,11 @@
 import { getCurrentScope, onScopeDispose, readonly, ref } from 'vue'
-import type { LocalThemeHistory, LocalThemePendingSave, LocalThemePersistenceOptions as PersistenceOptions, LocalThemeRecord, StorageOperationResult } from '@/models/local-theme.model'
+import type { LocalThemeHistory, LocalThemeLoadResult, LocalThemePendingSave, LocalThemePersistenceOptions as PersistenceOptions, LocalThemeRecord, StorageOperationResult } from '@/models/local-theme.model'
 import type { ThemeStateV4 } from '@/models/theme.model'
 import { initializeLocalThemeStorage, loadLocalThemeById, themeHistoryKey, themeStateKey, writeAndVerifyLocalTheme } from '@/utils/local-theme-storage'
-import type { LocalThemeLoadResult } from '@/models/local-theme.model'
 import { migrateToCurrent } from '@/utils/theme-store-normalization'
 import { cloneTheme } from '@/utils/theme-store-helpers'
 import { cloneLocalThemeHistory, localThemeStorageMessage } from '@/utils/local-theme-persistence-helpers'
-import type { FreshThemeImport, ImportCommitResult } from '@/models/local-theme-import.model'; import { importFreshLocalTheme, recoverLocalThemeImports } from '@/utils/local-theme-import'
+import { type FreshThemeImport, type ImportCommitResult, importFreshLocalTheme, isFreshThemeImportValid, recoverLocalThemeImports } from '@/utils/local-theme-import'
 const INDEX = 'ftb-themes'; const ACTIVE = 'ftb-theme-active'; const DELAY = 300
 export function useLocalThemePersistence(options: PersistenceOptions) {
   const themes = ref<LocalThemeRecord[]>([]); const activeThemeId = ref('')
@@ -20,6 +19,7 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
     return loaded
   }
   function importFreshTheme(input: FreshThemeImport): ImportCommitResult {
+    if (!isFreshThemeImportValid(input)) return { ok: false, error: 'Invalid import identity or state' }
     const flushed = flush(activeThemeId.value); if (!flushed.ok) return { ok: false, error: flushed.error }
     const result = importFreshLocalTheme(options.storage, input, options.now); if (!result.ok) { storageError.value = result.error; return result }
     const loaded = loadLocalThemeById(options.storage, result.record.id); if (loaded.error) return { ok: false, error: loaded.error }

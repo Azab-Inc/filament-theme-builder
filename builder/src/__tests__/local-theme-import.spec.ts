@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
 import { useThemeStore } from '@/stores/theme'
@@ -10,6 +10,8 @@ const input = (operationId = 'a'.repeat(64), payloadDigest = 'b'.repeat(64)) => 
   operationId, payloadDigest, name: 'Imported', state: createDefaultThemeState(),
 })
 const setup = () => { localStorage.clear(); setActivePinia(createPinia()); return useThemeStore() }
+beforeEach(() => { localStorage.clear(); localStorage.setItem('ftb-themes', '[]') })
+afterEach(() => vi.restoreAllMocks())
 
 describe('fresh local theme import', () => {
   it('uses a deterministic record and retains one result on retry', () => {
@@ -39,6 +41,17 @@ describe('fresh local theme import', () => {
       return original.call(this, key, value)
     })
     expect(store.importFreshTheme(input()).ok).toBe(false)
+    expect(localStorage.getItem(`ftb-theme-import:${input().operationId}`)).toBeNull()
+  })
+
+  it('validates import identity and state before flushing pending active work', () => {
+    const store = setup()
+    const activeId = store.activeThemeId
+    const persisted = localStorage.getItem(themeStateKey(activeId))
+    store.setPrimaryColor('#0f766e')
+    const invalid = { ...input(), operationId: 'invalid', state: createDefaultThemeState() }
+    expect(store.importFreshTheme(invalid as never)).toMatchObject({ ok: false })
+    expect(localStorage.getItem(themeStateKey(activeId))).toBe(persisted)
     expect(localStorage.getItem(`ftb-theme-import:${input().operationId}`)).toBeNull()
   })
 

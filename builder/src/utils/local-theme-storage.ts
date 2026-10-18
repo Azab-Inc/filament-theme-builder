@@ -16,6 +16,9 @@ const validateState = (value: unknown): ThemeStateV4 | null => {
   if (!isThemeValue(value)) return null
   try { const state = normalizeTheme(migrateToCurrent(value)); return validateFoundationState(state.foundations).valid ? state : null } catch { return recoverLegacyState(value) }
 }
+export function validateLocalThemeState(value: unknown): ThemeStateV4 | null {
+  return validateState(value)
+}
 export function themeStateKey(id: string): string { assertLocalThemeId(id); return `ftb-theme:${id}` }
 export function themeHistoryKey(id: string): string { assertLocalThemeId(id); return `ftb-theme-history:${id}` }
 export function loadLocalThemeCollection(storage: Storage): LocalThemeLoadResult {
