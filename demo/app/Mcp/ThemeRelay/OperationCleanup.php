@@ -10,22 +10,25 @@ final class OperationCleanup
 
     public function expireUndelivered(): void
     {
-        foreach ($this->store->keys('operation-') as $key) {
-            $lock = $this->store->lock($key);
-            try {
-                $record = $this->store->readJson($key);
-                if (! $record || ($record['expiresAt'] ?? PHP_INT_MAX) > $this->clock->now()) {
-                    continue;
+        $indexLock = $this->store->lock('session-index');
+        try {
+            foreach ($this->store->keys('operation-') as $key) {
+                $lock = $this->store->lock($key);
+                try {
+                    $record = $this->store->readJson($key);
+                    if (! $record || ($record['expiresAt'] ?? PHP_INT_MAX) > $this->clock->now()) {
+                        continue;
+                    }
+                    $id = substr($key, 10);
+                    $this->store->delete('payload-'.$id);
+                    $this->store->delete('result-'.$id);
+                    $this->store->delete($key);
+                } finally {
+                    $lock->release();
                 }
-                $id = substr($key, 10);
-                $this->store->delete('payload-'.$id);
-                if (($record['status'] ?? null) === 'pending') {
-                    $record['status'] = 'expired';
-                    $this->store->atomicWrite($key, json_encode($record, JSON_THROW_ON_ERROR));
-                }
-            } finally {
-                $lock->release();
             }
+        } finally {
+            $indexLock->release();
         }
     }
 }

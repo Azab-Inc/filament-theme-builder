@@ -7,7 +7,6 @@ use App\Mcp\ThemeRelay\ImportGrantStore;
 use App\Mcp\ThemeRelay\OperationCleanup;
 use App\Mcp\ThemeRelay\OperationResultStore;
 use App\Mcp\ThemeRelay\OperationStore;
-use App\Mcp\ThemeRelay\RelayRecordReader;
 use Tests\TestCase;
 
 class RelayOperationTest extends TestCase
@@ -29,7 +28,7 @@ class RelayOperationTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_operation_result_is_scoped_single_use_and_expired_records_remain_terminal(): void
+    public function test_operation_result_is_scoped_single_use_and_expiry_removes_all_records(): void
     {
         $clock = new MutableRelayClock;
         $ops = new OperationStore($this->store, $clock);
@@ -46,7 +45,9 @@ class RelayOperationTest extends TestCase
         $expired = $ops->create('import', 'pair-a', 'process-a', hash('sha256', 'payload'));
         $clock->time += 300;
         (new OperationCleanup($this->store, $clock))->expireUndelivered();
-        self::assertSame('expired', (new RelayRecordReader($this->store))->read('operation-'.$expired)['status']);
+        self::assertNull($this->store->read('operation-'.$expired));
+        self::assertNull($this->store->read('result-'.$expired));
+        self::assertNull($this->store->read('payload-'.$expired));
     }
 
     public function test_receipt_deletes_payload_once_for_matching_digest(): void
@@ -60,6 +61,8 @@ class RelayOperationTest extends TestCase
         self::assertFalse($results->receipt($id, 'wrong'));
         self::assertTrue($results->receipt($id, $digest));
         self::assertNull($this->store->read('payload-'.$id));
+        self::assertNull($this->store->read('operation-'.$id));
+        self::assertNull($this->store->read('result-'.$id));
         self::assertFalse($results->receipt($id, $digest));
     }
 

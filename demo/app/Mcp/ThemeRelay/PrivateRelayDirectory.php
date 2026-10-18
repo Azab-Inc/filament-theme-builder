@@ -9,8 +9,10 @@ final class PrivateRelayDirectory
     public function __construct(public readonly string $path)
     {
         $tmp = realpath(sys_get_temp_dir());
+        $repository = realpath(base_path());
         if ($tmp === false || dirname($path) !== $tmp || (fileperms($tmp) & 01000) !== 01000
-            || str_starts_with($path, base_path().DIRECTORY_SEPARATOR)) {
+            || $repository === false || $path === $repository
+            || str_starts_with($path, $repository.DIRECTORY_SEPARATOR)) {
             throw new \InvalidArgumentException('Unsafe relay storage path.');
         }
         if (! is_dir($path) && ! mkdir($path, 0700) && ! is_dir($path)) {

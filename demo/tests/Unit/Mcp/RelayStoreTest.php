@@ -38,6 +38,12 @@ class RelayStoreTest extends TestCase
         new FileRelayStore(base_path('storage'));
     }
 
+    public function test_repository_root_itself_is_rejected_as_store_root(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        new FileRelayStore(base_path());
+    }
+
     public function test_json_record_reader_rejects_malformed_data(): void
     {
         $path = '/tmp/ftb-relay-test-'.bin2hex(random_bytes(8));

@@ -20,12 +20,17 @@ final class OperationStore
         if (! in_array($kind, ['list', 'export', 'import'], true) || ! preg_match('/\A[a-f0-9]{64}\z/', $digest)) {
             throw new \InvalidArgumentException('Invalid relay operation.');
         }
-        $id = bin2hex(random_bytes(32));
-        $this->write($id, ['operationId' => $id, 'kind' => $kind, 'pairingId' => $pairingId,
-            'processId' => $processId, 'digest' => $digest, 'status' => 'pending',
-            'expiresAt' => $this->clock->now() + (int) config('local-theme-relay.operation_seconds', 300), 'result' => null]);
+        $lock = $this->store->lock('session-index');
+        try {
+            $id = bin2hex(random_bytes(32));
+            $this->write($id, ['operationId' => $id, 'kind' => $kind, 'pairingId' => $pairingId,
+                'processId' => $processId, 'digest' => $digest, 'status' => 'pending',
+                'expiresAt' => $this->clock->now() + (int) config('local-theme-relay.operation_seconds', 300), 'result' => null]);
 
-        return $id;
+            return $id;
+        } finally {
+            $lock->release();
+        }
     }
 
     public function transition(string $id, string $pairingId, string $processId, string $status): bool
@@ -49,7 +54,7 @@ final class OperationStore
     private function mutate(string $id, callable $callback): bool
     {
         $key = 'operation-'.$id;
-        $lock = $this->store->lock($key);
+        $lock = RelayRecordLock::acquire($this->store, $key);
         try {
             $record = $this->reader->read($key);
             if (! $record) {

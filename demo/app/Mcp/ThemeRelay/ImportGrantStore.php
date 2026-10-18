@@ -18,11 +18,16 @@ final class ImportGrantStore
     public function issue(string $operationId, string $digest, string $name, int $revision, string $sessionId): string
     {
         $id = bin2hex(random_bytes(32));
-        $record = new ImportGrantRecord($id, $operationId, $digest, $name, $revision, $sessionId,
-            $this->clock->now() + 5);
-        $this->store->atomicWrite('grant-'.$id, json_encode($record, JSON_THROW_ON_ERROR));
+        $lock = RelayRecordLock::acquire($this->store, 'grant-'.$id);
+        try {
+            $record = new ImportGrantRecord($id, $operationId, $digest, $name, $revision, $sessionId,
+                $this->clock->now() + 5);
+            $this->store->atomicWrite('grant-'.$id, json_encode($record, JSON_THROW_ON_ERROR));
 
-        return $id;
+            return $id;
+        } finally {
+            $lock->release();
+        }
     }
 
     public function approve(string $id, string $operationId, string $digest, string $name, int $revision, string $sessionId): bool
@@ -60,7 +65,7 @@ final class ImportGrantStore
     private function update(string $id, callable $change): bool
     {
         $key = 'grant-'.$id;
-        $lock = $this->store->lock($key);
+        $lock = RelayRecordLock::acquire($this->store, $key);
         try {
             $record = $this->reader->read($key);
             $updated = $record ? $change($record) : null;

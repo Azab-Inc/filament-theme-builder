@@ -52,7 +52,7 @@ final class OperationResultStore
     public function receipt(string $id, string $digest): bool
     {
         $key = 'operation-'.$id;
-        $lock = $this->store->lock($key);
+        $lock = RelayRecordLock::acquire($this->store, $key);
         try {
             $r = $this->reader->read($key);
             if (! $r || ($r['digest'] ?? null) !== $digest || ($r['status'] ?? null) !== 'pending'
@@ -60,8 +60,8 @@ final class OperationResultStore
                 return false;
             }
             $this->store->delete('payload-'.$id);
-            $r['received'] = true;
-            $this->store->atomicWrite($key, json_encode($r, JSON_THROW_ON_ERROR));
+            $this->store->delete('result-'.$id);
+            $this->store->delete($key);
 
             return true;
         } catch (JsonException) {
@@ -74,7 +74,7 @@ final class OperationResultStore
     private function mutate(string $id, callable $callback): bool
     {
         $key = 'operation-'.$id;
-        $lock = $this->store->lock($key);
+        $lock = RelayRecordLock::acquire($this->store, $key);
         try {
             $r = $this->reader->read($key);
             $updated = $r ? $callback($r) : null;

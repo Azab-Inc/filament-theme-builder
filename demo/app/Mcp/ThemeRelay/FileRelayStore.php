@@ -6,7 +6,7 @@ namespace App\Mcp\ThemeRelay;
 
 use JsonException;
 
-final class FileRelayStore implements RelayStore
+class FileRelayStore implements RelayStore
 {
     private readonly string $directory;
 
