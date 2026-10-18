@@ -14,44 +14,31 @@ final class BoundedStdioTransport implements Transport
 
     public const MAX_RESPONSE_BYTES = 6_291_456 + 65_536;
 
+    public const READ_TIMEOUT_MILLISECONDS = 30_000;
+
     private ?Closure $handler = null;
 
-    private int $maxLineBytes;
-
-    public static function fromStreams(mixed $input, mixed $output, int $maxLineBytes = self::MAX_LINE_BYTES, int $readChunkBytes = 8192): self
+    public static function fromStreams(mixed $input, mixed $output, int $maxLineBytes = self::MAX_LINE_BYTES, int $readChunkBytes = 8192, int $readTimeoutMilliseconds = self::READ_TIMEOUT_MILLISECONDS): self
     {
-        return new self($maxLineBytes, $input, $output, $readChunkBytes);
+        return new self($maxLineBytes, $input, $output, $readChunkBytes, $readTimeoutMilliseconds);
     }
 
     private mixed $input;
 
     private mixed $output;
 
-    private int $readChunkBytes = 8192;
-
-    public function __construct(int $maxLineBytes = self::MAX_LINE_BYTES, mixed $input = null, mixed $output = null, int $readChunkBytes = 8192)
+    public function __construct(private int $maxLineBytes = self::MAX_LINE_BYTES, mixed $input = null, mixed $output = null, private int $readChunkBytes = 8192, private int $readTimeoutMilliseconds = self::READ_TIMEOUT_MILLISECONDS)
     {
-        $this->maxLineBytes = $maxLineBytes;
         $this->input = $input ?? STDIN;
         $this->output = $output ?? STDOUT;
-        $this->readChunkBytes = $readChunkBytes;
+        if (! is_resource($this->output) || ! stream_set_blocking($this->output, false)) {
+            throw new RuntimeException('stdio_output_not_nonblocking');
+        }
     }
 
     public function readLine(string $line): string
     {
-        if (strlen($line) > $this->maxLineBytes) {
-            throw new RuntimeException('stdio_message_too_large');
-        }
-        if ($line === '' || preg_match('//u', $line) !== 1) {
-            throw new RuntimeException('stdio_invalid_encoding');
-        }
-        try {
-            json_decode($line, false, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
-            throw new RuntimeException('stdio_malformed_json');
-        }
-
-        return $line;
+        return StdioJsonRpcFrame::validate($line, $this->maxLineBytes);
     }
 
     public function onReceive(Closure $handler): void
@@ -61,7 +48,7 @@ final class BoundedStdioTransport implements Transport
 
     public function run(): void
     {
-        $reader = new StdioFrameReader($this->input, $this->maxLineBytes, $this->readChunkBytes);
+        $reader = new StdioFrameReader($this->input, $this->maxLineBytes, $this->readChunkBytes, $this->readTimeoutMilliseconds);
         while (($line = $reader->next()) !== null) {
             ($this->handler ?? throw new RuntimeException('stdio_handler_missing'))($this->readLine($line));
         }
@@ -82,13 +69,26 @@ final class BoundedStdioTransport implements Transport
 
     private function writeAll(string $message): void
     {
-        while ($message !== '') {
-            $written = fwrite($this->output, $message);
-            if ($written === false || $written === 0) {
+        $offset = 0;
+        $length = strlen($message);
+        $deadline = hrtime(true) + $this->readTimeoutMilliseconds * 1_000_000;
+        while ($offset < $length) {
+            if (hrtime(true) >= $deadline) {
+                throw new RuntimeException('stdio_write_timeout');
+            }
+            $written = fwrite($this->output, substr($message, $offset, min(8192, $length - $offset)));
+            if ($written === false) {
                 throw new RuntimeException('stdio_write_failed');
             }
-            $message = substr($message, $written);
+            if ($written === 0) {
+                usleep(1000);
+
+                continue;
+            }
+            $offset += $written;
         }
-        fflush($this->output);
+        if (! fflush($this->output)) {
+            throw new RuntimeException('stdio_write_failed');
+        }
     }
 }

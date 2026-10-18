@@ -10,16 +10,16 @@ class BoundedStdioTransportTest extends TestCase
 {
     public function test_it_drains_multiple_newline_messages_and_stdout_contains_only_frames(): void
     {
-        [$transport, $output] = $this->transport("1\n2\n");
+        [$transport, $output] = $this->transport("{\"x\":1}\n{\"x\":2}\n");
         $received = [];
         $transport->onReceive(static function (string $message) use (&$received, $transport): void {
             $received[] = $message;
-            $transport->send('reply');
+            $transport->send('{"jsonrpc":"2.0","id":1}');
         });
         $transport->run();
         rewind($output);
-        self::assertSame(['1', '2'], $received);
-        self::assertSame("reply\nreply\n", stream_get_contents($output));
+        self::assertSame(['{"x":1}', '{"x":2}'], $received);
+        self::assertSame("{\"jsonrpc\":\"2.0\",\"id\":1}\n{\"jsonrpc\":\"2.0\",\"id\":1}\n", stream_get_contents($output));
     }
 
     public function test_it_accepts_partial_reads_and_utf8_split_across_chunks(): void
@@ -36,23 +36,23 @@ class BoundedStdioTransportTest extends TestCase
     public function test_it_rejects_oversized_and_malformed_frames(): void
     {
         $this->expectException(RuntimeException::class);
-        $transport = new BoundedStdioTransport(maxLineBytes: 3);
-        self::assertSame('1', $transport->readLine('1'));
-        $transport->readLine('1234');
+        $transport = new BoundedStdioTransport(maxLineBytes: 2);
+        self::assertSame('{}', $transport->readLine('{}'));
+        $transport->readLine('{"x":1}');
     }
 
     public function test_newline_at_the_exact_limit_is_accepted(): void
     {
         $in = fopen('php://memory', 'r+');
-        fwrite($in, "1\n");
+        fwrite($in, "{}\n");
         rewind($in);
-        $transport = BoundedStdioTransport::fromStreams($in, fopen('php://memory', 'w+'), 1);
+        $transport = BoundedStdioTransport::fromStreams($in, fopen('php://memory', 'w+'), 2);
         $lines = [];
         $transport->onReceive(static function (string $line) use (&$lines): void {
             $lines[] = $line;
         });
         $transport->run();
-        self::assertSame(['1'], $lines);
+        self::assertSame(['{}'], $lines);
     }
 
     public function test_message_above_the_configured_stream_limit_is_rejected(): void

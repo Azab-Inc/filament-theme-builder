@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Mcp\Transport;
 
-use InvalidArgumentException;
 use RuntimeException;
 
 final class StdioFrameReader
@@ -13,10 +12,10 @@ final class StdioFrameReader
 
     private int|float|null $deadline = null;
 
-    public function __construct(private mixed $input, private int $maxBytes, private int $chunkBytes = 8192)
+    public function __construct(private mixed $input, private int $maxBytes, private int $chunkBytes = 8192, private int $timeoutMilliseconds = 30_000)
     {
-        if (! is_resource($input) || $maxBytes < 1 || $chunkBytes < 1) {
-            throw new InvalidArgumentException('stdio_reader_configuration_invalid');
+        if (! is_resource($input) || $maxBytes < 1 || $chunkBytes < 1 || $timeoutMilliseconds < 1 || ! stream_set_blocking($input, false)) {
+            throw new RuntimeException('stdio_reader_configuration_invalid');
         }
     }
 
@@ -28,8 +27,9 @@ final class StdioFrameReader
 
                 return $this->takeLine($newline);
             }
-            $this->deadline ??= hrtime(true) + 30_000_000_000;
-            $chunk = $this->readChunk();
+            $this->deadline ??= hrtime(true) + $this->timeoutMilliseconds * 1_000_000;
+            $readBytes = min($this->chunkBytes, max(1, $this->maxBytes - strlen($this->buffer) + 1));
+            $chunk = $this->readChunk($readBytes);
             if ($chunk === null) {
                 if ($this->buffer !== '') {
                     throw new RuntimeException('stdio_truncated_message');
@@ -37,10 +37,24 @@ final class StdioFrameReader
 
                 return null;
             }
-            $this->buffer .= $chunk;
-            if (! str_contains($this->buffer, "\n") && strlen($this->buffer) > $this->maxBytes) {
+            if ($chunk === '') {
+                continue;
+            }
+            $newline = strpos($chunk, "\n");
+            if ($newline !== false) {
+                if (strlen($this->buffer) + $newline > $this->maxBytes) {
+                    throw new RuntimeException('stdio_message_too_large');
+                }
+                $line = $this->buffer.substr($chunk, 0, $newline);
+                $this->buffer = substr($chunk, $newline + 1);
+                $this->deadline = null;
+
+                return $line;
+            }
+            if (strlen($this->buffer) + strlen($chunk) > $this->maxBytes) {
                 throw new RuntimeException('stdio_message_too_large');
             }
+            $this->buffer .= $chunk;
         }
     }
 
@@ -51,40 +65,26 @@ final class StdioFrameReader
         }
         $line = substr($this->buffer, 0, $newline);
         $this->buffer = substr($this->buffer, $newline + 1);
-        if ($line === '' || preg_match('//u', $line) !== 1) {
-            throw new RuntimeException('stdio_invalid_encoding');
-        }
-        try {
-            json_decode($line, false, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
-            throw new RuntimeException('stdio_malformed_json');
-        }
+        $this->deadline = null;
 
         return $line;
     }
 
-    private function readChunk(): ?string
+    private function readChunk(int $readBytes): ?string
     {
-        $type = stream_get_meta_data($this->input)['stream_type'];
-        if (in_array($type, ['STDIO', 'pipe', 'tcp_socket', 'unix_socket'], true)) {
-            $read = [$this->input];
-            $write = null;
-            $except = null;
-            $remaining = (int) ($this->deadline - hrtime(true));
-            if ($remaining <= 0) {
-                throw new RuntimeException('stdio_read_timeout');
-            }
-            $changed = stream_select($read, $write, $except, intdiv($remaining, 1_000_000_000), intdiv($remaining % 1_000_000_000, 1000));
-            if ($changed === false) {
-                throw new RuntimeException('stdio_read_failed');
-            }
-            if ($changed === 0) {
-                throw new RuntimeException('stdio_read_timeout');
-            }
+        $remaining = (int) ($this->deadline - hrtime(true));
+        if ($remaining <= 0) {
+            throw new RuntimeException('stdio_read_timeout');
         }
-        $chunk = fread($this->input, max(1, $this->chunkBytes));
+        $chunk = fread($this->input, max(1, $readBytes));
         if ($chunk === false) {
             throw new RuntimeException('stdio_read_failed');
+        }
+        if (hrtime(true) >= $this->deadline) {
+            throw new RuntimeException('stdio_read_timeout');
+        }
+        if ($chunk === '' && ! feof($this->input)) {
+            usleep(min(1000, max(1, intdiv($remaining, 1000))));
         }
 
         return $chunk === '' && feof($this->input) ? null : $chunk;
