@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { createPinia } from 'pinia'
 
 import { mount } from '@vue/test-utils'
 import EditorToolbar from '../components/EditorToolbar.vue'
@@ -6,6 +7,7 @@ import EditorToolbar from '../components/EditorToolbar.vue'
 describe('App toolbar', () => {
   it('keeps the editor toolbar public hooks and forwards export and recovery actions', async () => {
     const wrapper = mount(EditorToolbar, {
+      global: { plugins: [createPinia()] },
       props: {
         primaryColor: '#6366f1',
         canUndo: false,

@@ -4,6 +4,7 @@ import type { ThemeState, ThemeStateV1, ThemeStateV2, ThemeStateV3, ThemeStateV4
 import { createDefaultThemeState } from '@/utils/foundation-defaults'
 import { validateFoundationState } from '@/utils/foundation-validation'
 import { validateThemeState } from '@/utils/theme-validation'
+import { rebuildPalette } from '@/utils/theme-store-palettes'
 
 export function migrateVersionedTheme(value: ThemeState, registry?: FilamentRegistry): MigrationResult {
   try {
@@ -45,6 +46,7 @@ function toV2(value: ThemeStateV1): ThemeStateV2 {
 function toV3(value: ThemeStateV2): ThemeStateV3 {
   const defaults = createDefaultThemeState()
   defaults.foundations.palettes.primary.base = value.colors.primary
+  rebuildPalette(defaults.foundations.palettes.primary)
   const { rawOverrides: _rawOverrides, ...foundationState } = defaults
   return { ...foundationState, schemaVersion: 3, colors: structuredClone(value.colors), overrides: structuredClone(value.overrides) }
 }

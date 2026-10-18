@@ -4,6 +4,7 @@ import { createThemeRegistry } from '@/registry/theme-registry'
 import { createDefaultThemeState } from '@/utils/foundation-defaults'
 import { migrateThemeState } from '@/models/theme.model'
 import { migrateVersionedTheme } from '@/utils/theme-import-migrations'
+import { validateLocalThemeState } from '@/utils/local-theme-storage'
 
 const registry = createThemeRegistry()
 
@@ -12,12 +13,18 @@ describe('versioned theme migration edges', () => {
     const result = migrateVersionedTheme({ schemaVersion: 1, colors: { primary: '#123456' } }, registry)
     expect(result).toMatchObject({ ok: true, sourceVersion: 1, migrationPath: [1, 2, 3, 4] })
     expect(result.ok && result.state.schemaVersion).toBe(4)
+    if (!result.ok) return
+    expect(validateLocalThemeState(result.state)).not.toBeNull()
+    expect(result.state.colors.primary).toBe('#123456')
+    expect(result.state.foundations.palettes.primary.base).toBe('#123456')
+    expect(result.state.foundations.palettes.primary.shades[500]).toBe('#123456')
   })
 
   it('migrates V2 through V3 and V4', () => {
     const result = migrateVersionedTheme({ schemaVersion: 2, colors: { primary: '#123456' }, overrides: [] }, registry)
     expect(result).toMatchObject({ ok: true, sourceVersion: 2, migrationPath: [2, 3, 4] })
     expect(result.ok && result.state.colors.primary).toBe('#123456')
+    expect(result.ok && result.state.foundations.palettes.primary.shades[500]).toBe('#123456')
   })
 
   it('migrates V3 to V4 while preserving canonical fields', () => {
