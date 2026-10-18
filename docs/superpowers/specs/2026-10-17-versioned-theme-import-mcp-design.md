@@ -10,7 +10,7 @@
 
 This design extends FTB-022 without changing the current canonical V4 export contract. It accepts raw JSON for schema versions 1, 2, 3, and 4, migrates supported input sequentially through `1 → 2 → 3 → 4`, validates the resulting state, and creates a new local theme rather than replacing the active theme. The imported theme is opened only after the user confirms the import preview.
 
-The same TypeScript domain services used by the browser UI are the authority for MCP import preview, validation, migration, and creation. Pinia remains the state, history, active-theme, and persistence authority. Laravel/MCP/Boost is a temporary request relay and transport boundary, not a second theme implementation or a server-side theme store.
+The same TypeScript domain services used by the browser UI are the authority for MCP import preview, validation, migration, and creation. Pinia remains the state, history, active-theme, and persistence authority. Laravel is a temporary request relay and transport boundary, not a second theme implementation or a server-side theme store. The local MCP process uses the application-owned `ftb:mcp` command and existing Laravel MCP server/transport contracts; the existing Boost server and `ToolExecutor` remain untouched and are not the execution path.
 
 This specification supersedes the FTB-021 statement that local-theme MCP is deferred to FTB-048 for this capability only. The FTB-048 phase-2 work remains a separate broader package/consumer effort; it is not a prerequisite for this local browser parity slice.
 
@@ -23,7 +23,7 @@ This specification supersedes the FTB-021 statement that local-theme MCP is defe
 - Preview the migrated result and its name before mutation.
 - Always create a fresh local theme with a fresh history; never overwrite, merge into, or delete an existing theme.
 - Default the filename-derived display name to the filename with its final `.json` suffix removed, while allowing editing before confirmation.
-- Pair a local stdio MCP client explicitly to one browser tab/client session. Pairing grants only list/export capabilities until each import is separately previewed and confirmed in the browser.
+- Pair a local stdio MCP client explicitly to one browser tab/client session. The browser creates a 256-bit tab secret with `crypto.getRandomValues`, keeps it in memory only, and submits only the public pairing ID to `local_theme_pair`; browser approval binds that ID to an internal per-stdio-process identity. Pairing grants only list/export capabilities until each import is separately previewed and confirmed in the browser. This is local pairing, not secret handoff or account authentication.
 - Ensure revocation, disconnect, expiry, stale sessions, replay, and cross-session attempts cannot apply an import.
 - Provide capability inventory coverage, unit tests, Laravel authorization tests, and a real stdio MCP-client journey driven through Playwright.
 
@@ -36,7 +36,7 @@ This specification supersedes the FTB-021 statement that local-theme MCP is defe
 - No acceptance of future schema versions, arbitrary unknown schema versions, or a missing `schemaVersion`.
 - No change to current canonical V4 export keys, omission rules, safety checks, or export filename behavior.
 - No interpretation of CSS, HTML, JavaScript, filesystem paths, font URLs, `@import`, or uploaded executable content.
-- No claim that a provider-specific identity API, browser extension API, MCP SDK API, or particular Laravel route/signature exists until verified in implementation preflight.
+- No provider-specific identity API, browser extension API, or MCP account-authentication claim.
 - No hosted remote-client support in this slice. Hosted clients, internet-facing pairing, multi-user authorization, and production-grade cross-origin deployment are explicit follow-on work.
 
 ## 4. Existing architecture and source of truth
@@ -72,9 +72,9 @@ The existing safety contract remains mandatory:
 
 The browser import boundary accepts a `File` or an already-received byte sequence only through a dedicated adapter. It must determine byte length before decoding or parsing. The hard maximum is **1,048,576 bytes (1 MiB)**. A file whose byte length exceeds the limit is rejected without reading its contents into a string and without calling `JSON.parse`.
 
-The MCP relay enforces this limit on the UTF-8 bytes of the theme JSON before forwarding or parsing that document. Parsing the outer MCP protocol envelope is a separate transport operation and needs its own bounded request handling. The browser enforces the document limit again because it is the final authority. Raw bytes may exist only in bounded temporary relay storage pending browser delivery; they are not a persistent theme library and must never appear in logs or error messages.
+The MCP relay enforces this limit on the UTF-8 bytes of the theme JSON before forwarding or parsing that document. The custom stdio transport enforces a maximum raw JSON-RPC line of **6,291,456 + 65,536 bytes** before allocation, using bounded stream chunks or `fgets(STDIN, MAX_LINE_BYTES + 2)` with newline/EOF oversize detection; it must not use an unbounded `fgets(STDIN)` or accumulate an unbounded line. This envelope bound covers worst-case sixfold JSON escaping for a 1 MiB document plus metadata. The decoded document is independently limited to 1,048,576 UTF-8 bytes before JSON parsing, and stdout responses are bounded before writing. Incomplete EOF lines, notifications, multibyte boundaries, and exact limits are explicit transport tests. The browser enforces the document limit again because it is the final authority. Raw bytes may exist only in bounded temporary relay storage pending browser delivery; they are not a persistent theme library and must never appear in logs or error messages.
 
-The input must be a JSON object with an own `schemaVersion` property whose value is the integer `1`, `2`, `3`, or `4`. A JSON envelope, protocol message, or object containing a nested theme is not silently unwrapped unless the existing canonical import contract explicitly defines that envelope during preflight.
+The input must be a JSON object with an own `schemaVersion` property whose value is the integer `1`, `2`, `3`, or `4`. A JSON envelope, protocol message, or object containing a nested theme is not silently unwrapped; only the explicit DTO envelopes defined in the relay contract may contain the raw theme document.
 
 ### 5.2 Sequential migration
 
@@ -122,6 +122,8 @@ The confirmed operation always:
 5. opens the new theme in Pinia;
 6. leaves every pre-existing theme state, history, and record untouched.
 
+The browser persists an idempotency marker at `ftb-theme-import:<operationId>` with `{digest, recordId, name, status}`. The operation ID is a random 256-bit value and the safe local-theme record ID is deterministically derived from it. The marker is prepared and verified before state/history writes, marked complete only after state/history/index/active publication is verified, and retained until the operation result is safely terminal. A retry after reload or crash verifies the marker digest, record state, history, and index membership before returning the existing record; it never allocates a second record. An altered digest is rejected. Tests cover crashes after marker preparation, state write, history write, index publication, active-pointer publication, and acknowledgement; a failed active flush stops import before marker preparation.
+
 If any write or verification fails, the operation fails closed. It must not publish an index entry pointing to missing state, must not remove the source bytes, and must not switch the active theme. Recovery follows the existing local-theme partial-write behavior.
 
 ## 6. UI flow
@@ -143,14 +145,14 @@ The new theme’s name can be edited until confirmation. After confirmation, the
 
 ### 7.1 Intended local flow
 
-The first supported caller is a local MCP client launched through stdio. It communicates with the installed Laravel MCP/Boost stack, which acts as a temporary request relay to the paired browser tab/client session. The relay does not own browser-local themes and cannot complete an import without the browser’s explicit confirmation.
+The first supported caller is a local MCP client launched through stdio. It invokes the application-owned `php artisan ftb:mcp` command, implemented by `App\Console\Commands\ServeLocalThemeMcp`, with an application-owned bounded transport implementing the installed Laravel MCP 1.0.1 `Laravel\Mcp\Server\Contracts\Transport` interface. The command creates one internal process scope, constructs the direct `LocalThemeServer` with `app()->makeWith(LocalThemeServer::class, ['transport' => $transport])`, calls `Server::start()`, then calls the bounded transport’s `run()`. It does not use `mcp:start`, `Registrar::local`, Laravel Boost’s `ToolExecutor`, or a transport selected by tool arguments. In development Compose, the supported invocation is `docker compose exec -T demo-php php artisan ftb:mcp` so the command shares the demo PHP filesystem and runtime with the web process. The relay is temporary, does not own browser-local themes, and cannot complete an import without browser confirmation.
 
 Pairing is explicit and user-mediated:
 
-1. the browser creates a short-lived pairing request for the current tab/client session;
-2. the user approves pairing in the browser;
-3. the local client presents the resulting opaque pairing credential through its secure local configuration/interaction path;
-4. the relay binds the credential to exactly one browser tab/client session and a server-side operation/session record;
+1. the browser creates a short-lived pairing request for the current tab/client session and generates a 256-bit tab secret held only in that tab’s memory;
+2. the MCP client submits the public pairing ID as the `local_theme_pair` tool argument and the browser displays that process's pending claim;
+3. the user approves that claim in the browser. The browser sends the 256-bit tab secret only in the dedicated `X-FTB-Tab-Key` header to the same-origin relay; the body, URL, MCP tool arguments, and responses never contain it;
+4. the relay hashes the header secret and binds the approved pairing ID to exactly one browser tab/client session and the internal identity of the long-lived `ftb:mcp` process. The process identity is server-created and never supplied in tool arguments;
 5. list/export operations become available for that pair;
 6. every import requires a browser preview and explicit browser confirmation.
 
@@ -160,8 +162,10 @@ Client-provided names are display labels only and are not verified identity. Aut
 
 - Pairing approval expires after 5 minutes and is single-use for establishing the pair.
 - A paired session expires after 30 minutes idle or 8 hours absolute, whichever comes first.
+- The browser sends a heartbeat every 15 seconds; the relay treats a missing heartbeat as a silent disconnect after a 45-second lease and invalidates pending operations at that point.
+- Heartbeats and automatic polling prove browser presence but do not extend the 30-minute user/tool inactivity deadline; only an authorized user/tool operation resets idle activity. `pagehide` sends best-effort disconnect, while the 45-second lease is the authoritative fallback for silent tab closure.
 - A pending import confirmation expires after 5 minutes.
-- Revoke, disconnect, tab closure, browser session loss, or any expiry immediately invalidates pending import confirmations for that pair.
+- Explicit revoke/disconnect invalidates pending confirmations immediately; silent tab closure, browser-session loss, or process loss is detected by the lease/EOF boundary and invalidates pending confirmations when detected.
 - An expired or revoked pair cannot be renewed by replaying an old pairing or confirmation credential.
 - New pairing is required after disconnect/expiry.
 
@@ -169,9 +173,9 @@ The server and browser must check these conditions at list/export, preview, conf
 
 ### 7.3 Secure credential handling
 
-Pairing and confirmation credentials are opaque, single-purpose, short-lived secrets. They must be transmitted only through the verified local pairing flow, stored only in the minimum secure client/browser session location needed for their lifetime, and never placed in URLs, query strings, browser history, ordinary logs, analytics, exception messages, tool descriptions, snapshots, or returned payloads after use. Responses expose identifiers, status, expiry metadata, and digests—not credentials or raw theme JSON unless the caller is authorized for that operation.
+The browser tab secret is exactly 32 random bytes (256 bits), represented only as an in-memory `Uint8Array`. It is permitted only in the `X-FTB-Tab-Key` request header to the dedicated same-origin relay, where it is immediately hashed server-side and never stored or echoed. It must not appear in request bodies, URLs, MCP arguments, headers other than that one dedicated header, browser history, logs, analytics, exceptions, tool descriptions, snapshots, responses, traces, or HAR files. The public pairing ID is an identifier, not a secret and not an account identity. Confirmation operations use server-side operation records and payload digests, not caller-generated confirmation tokens. Preview digest calculation is asynchronous SHA-256 through `crypto.subtle.digest`; pure parse/migrate functions remain synchronous and do not depend on Web Crypto.
 
-The design does not prescribe an OS keychain, browser API, or MCP SDK credential method until implementation preflight verifies what is available in the supported local stdio environment. If no secure credential handoff exists in the installed boundary, pairing must fail closed rather than falling back to a URL or log-based secret.
+There is no account-authentication claim and no secret handoff to the MCP client. If the browser cannot retain the tab secret in memory, send it only in the dedicated header, bind it to the exact tab/session, or satisfy the local web session/CSRF/origin checks, pairing fails closed.
 
 ## 8. MCP capability contract
 
@@ -181,6 +185,8 @@ All tools use the same TypeScript domain services as the UI through a browser-si
 
 Responsibility: begin or complete the browser-approved pairing handshake. It may return a non-secret pairing request ID, status, expiry, and safe browser action guidance. It must not accept a caller-selected owner/session identity and must not grant access before browser approval.
 
+The input is `{pairing_id:string}`. Repeating the same ID from the same internal `ftb:mcp` process is idempotent and returns the current safe status; a different process or unknown ID receives generic `pairing_required` without valid-pair metadata. The browser does not call this MCP tool; it uses the dedicated same-origin routes.
+
 ### 8.2 `local_theme_list`
 
 Responsibility: list the paired browser session’s local theme metadata only: stable local IDs as needed for user selection, display names, active marker, and safe update metadata. It must not expose another browser session’s themes, localStorage keys, credentials, or full state.
@@ -188,6 +194,8 @@ Responsibility: list the paired browser session’s local theme metadata only: s
 ### 8.3 `local_theme_export`
 
 Responsibility: export a selected paired local theme through the existing canonical V4 export serializer. It returns the same safe export result as the UI, including schemaVersion 4, and must apply the existing nonempty-`customCss` and future-schema safety rules. It is read-only but still requires a live pair and revalidates theme membership at execution time.
+
+The result is asynchronous: the tool returns an operation ID and `pending`; the browser uploads the validated canonical JSON through the result endpoint. The caller retrieves it through `local_theme_operation_status`; the cached canonical result is deleted atomically when that authorized tool call consumes it, or on expiry. A lost tool response may require a new read-only export operation.
 
 ### 8.4 `local_theme_import_preview`
 
@@ -199,7 +207,11 @@ The browser must show the preview and require the user’s explicit confirmation
 
 Responsibility: retrieve the minimal status of an operation owned by the paired session. Valid statuses are `pending`, `approved`, `rejected`, `expired`, and `disconnected`; a completed approved operation may additionally expose a safe result reference/new local-theme ID without exposing credentials or raw payload. Status is bound to the pair and operation owner.
 
-### 8.6 Browser confirmation/apply bridge
+### 8.6 `local_theme_operation_status`
+
+Responsibility: retrieve status for any owned asynchronous list, export, or import operation. It accepts only `{operation_id:string}` and returns `{operation_id, kind:'list'|'export'|'import', status:OperationStatus, record_id?:string, digest?:string, preview?:ImportPreviewDto, result?:ListResult|ExportResult}`. `ListResult` is `{themes:[{id,name,updatedAt,active}]}`; `ExportResult` is `{filename:'filament-theme.json', schemaVersion:4, json:string}`. Bounded results are consumed by the authorized MCP process, not by the producing browser. `local_theme_import_status` is an import-only alias with the same authorization.
+
+### 8.7 Browser confirmation/apply bridge
 
 The browser-side application service is the only component that can turn a pending preview into an approved import. On confirmation it revalidates:
 
@@ -213,13 +225,33 @@ The browser-side application service is the only component that can turn a pendi
 
 Only after all checks pass does Pinia invoke the existing new-local-theme persistence operation. The result is atomically represented as approved or as a safe failure; a second confirmation or altered payload is rejected as replay/stale confirmation.
 
-### 8.7 `local_theme_disconnect`
+### 8.8 `local_theme_disconnect`
 
 Responsibility: revoke only the caller's own paired session, invalidate its pending proposals, and return `disconnected`. The browser provides an equivalent revoke control. Disconnect is idempotent and cannot target another caller's session.
 
 ## 9. Relay request/response handling and retention
 
-The Laravel relay accepts only a narrow, typed request envelope containing operation name, pair/session reference, operation ID where applicable, bounded metadata, and the raw payload only for the preview request. It rejects unknown fields, caller-supplied owner IDs, arbitrary URLs, filesystem paths, and unbounded strings.
+The Laravel relay accepts only a narrow, typed request envelope containing operation name, pair/session reference, operation ID where applicable, bounded metadata, and the raw payload only for the preview request. The outer JSON envelope has an explicit byte/field bound large enough for JSON escaping but rejects unknown fields, caller-supplied owner IDs, arbitrary URLs, filesystem paths, unbounded strings, and protocol extensions not in the allowlist. The theme document itself is limited to 1,048,576 UTF-8 bytes before parsing.
+
+The exact same-origin routes are:
+
+| Route | Method | Request | Response |
+|---|---|---|---|
+| `/local-theme/relay/bootstrap` | GET | no body; same-origin session and configured host | `{version:1, origin:string, host:string, csrfToken:string, enabled:true}`; never pairing metadata or secrets |
+| `/local-theme/relay/pairings` | POST | `{version:1, pairingId:string}` | `{version:1, pairingId:string, status:'pending', expiresAt:number}` |
+| `/local-theme/relay/pairings/{id}` | GET | `X-FTB-Tab-Key` | `{version:1, pairingId:string, status:'pending'|'approved'|'expired'|'disconnected', claimId?:string, clientLabel?:string, expiresAt:number}` or generic `pairing_required` |
+| `/local-theme/relay/pairings/{id}/approve` | POST | `X-FTB-Tab-Key`, `{version:1, claimId:string}` | `{version:1, status:'approved', sessionId:string, sessionExpiresAt:number}` |
+| `/local-theme/relay/sessions/poll` | POST | `X-FTB-Tab-Key`, `{version:1, sessionId:string}` | `{version:1, operations:list<OperationNotice>}` |
+| `/local-theme/relay/sessions/heartbeat` | POST | `X-FTB-Tab-Key`, `{version:1, sessionId:string}` | `{version:1, status:'alive', leaseExpiresAt:number}` |
+| `/local-theme/relay/sessions/disconnect` | POST | `X-FTB-Tab-Key`, `{version:1, sessionId:string}` | `{version:1, status:'disconnected'}` |
+| `/local-theme/relay/operations/{id}/payload` | GET | `X-FTB-Tab-Key` | `{version:1, operationId:string, payload:string, filename:string, proposedName:string, digest:string, byteLength:number}`; deletes after browser acknowledgement |
+| `/local-theme/relay/operations/{id}/receipt` | POST | `X-FTB-Tab-Key`, `{version:1, digest:string, received:true}` | `{version:1, status:'received'}` |
+| `/local-theme/relay/operations/{id}/preview` | POST | `X-FTB-Tab-Key`, `{version:1, preview:ImportPreviewDto}` | `{version:1, status:'pending'|'rejected', digest:string}` |
+| `/local-theme/relay/operations/{id}/authorize-apply` | POST | `X-FTB-Tab-Key`, `{version:1, digest:string, revision:number, displayName:string}` | `{version:1, status:'pending', grantId:string, grantExpiresAt:number}` or structured rejection; this is not completed approval |
+| `/local-theme/relay/operations/{id}/result` | POST | `X-FTB-Tab-Key`, versioned list/export result, or import `{version:1, grantId:string, recordId:string, digest:string}`, or `{version:1, errorCategory:string}` | `{version:1, status:OperationStatus}`; approval is recorded only after successful browser execution |
+| `/local-theme/relay/operations/{id}/result` | GET | `X-FTB-Tab-Key` | `{version:1, status:OperationStatus, recordId?:string, errorCategory?:string}`; browser recovery status, never consumes MCP export result |
+
+`OperationNotice` is `{operationId:string, kind:'list'|'export'|'import', status:OperationStatus, themeId?:string}`; only export has a theme ID. `ImportPreviewDto` is `{sourceVersion:1|2|3|4, targetVersion:4, migrationPath:number[], displayName:string, summary:string[], payloadDigest:string, byteLength:number}` without canonical state. `OperationStatus` is exactly `pending|approved|rejected|expired|disconnected`; no unknown fields are accepted. List results POST `{version:1, themes:[{id,name,updatedAt,active}]}`; export results POST `{version:1, filename:'filament-theme.json', schemaVersion:4, json:string}` with the same 1 MiB canonical JSON bound. Apply grants last at most 5 seconds and bind operation, payload digest, edited display name, browser revision, and session. They remain pending until a successful local commit is acknowledged; expired/revoked grants cannot authorize new mutations. Retry after an ambiguous acknowledgement uses the persistent browser import marker, not a second creation. All routes require the browser session cookie; POST additionally requires CSRF and the configured exact Origin, or same-origin Fetch Metadata plus exact host when Origin is absent. Only bootstrap is exempt from tab-key authentication. Pairing creation requires the key header too. The header is hashed server-side, body secrets are rejected, and unknown credentials return generic errors.
 
 Relay behavior:
 
@@ -228,16 +260,16 @@ Relay behavior:
 - enforce byte and field limits before forwarding;
 - forward the minimum required data to the paired browser session;
 - return typed status/error data and safe digests, not credentials; authorized export is the explicit exception that returns canonical JSON;
-- retain only the minimum pending-operation metadata needed for expiry, replay protection, status, and disconnect cleanup;
+- retain only the minimum pending-operation metadata needed for expiry, replay protection, status, disconnect cleanup, and the idempotency marker `(operation_id, payload_digest)`;
 - delete raw payload bytes immediately after the browser acknowledges receipt or rejection, whichever comes first;
 - remove undelivered raw payloads on the 5-minute operation expiry or earlier rejection/revocation; keep only non-secret terminal status metadata until the paired session expires, then delete it;
 - emit logs with operation IDs, status categories, and non-secret digests only.
 
-Because the current Laravel/MCP/Boost setup is a temporary relay, the implementation must not introduce a second persistent theme repository or assume the server can directly inspect browser localStorage.
+Because the current Laravel relay is temporary, it must not introduce a second persistent theme repository or assume the server can directly inspect browser localStorage. Raw bytes, operation records, and a global session index use a private OS `/tmp` directory with sticky parent semantics and an application-owned `0700` child inside the same container root, plus per-record/global locks and atomic rename. The repository’s world-writable directories are never used. Configuration is active only when `FTB_LOCAL_MCP_ENABLED=true` and `APP_ENV` is `local` or `testing`; production remains disabled. The configured builder origin defaults to `http://127.0.0.1:4175` and the exact host allowlist is enforced. No theme DB, cache-backed theme library, or durable account record is permitted.
 
 ## 10. Origin, CSRF, and transport protections
 
-Browser-facing relay endpoints are separate from the read-only preview iframe protocol. They accept only the exact configured builder origin and enforce the paired browser session credential. They use a versioned message schema and reject unknown message shapes. If a window-message adapter is used, it additionally checks exact origin and `event.source`; the preview iframe is not granted theme-management access.
+Browser-facing relay endpoints are separate from the read-only preview iframe protocol. They are disabled unless an explicit local-only configuration flag is enabled, and production/public exposure is disabled by default. They accept only the exact configured builder origin and exact configured host, enforce the paired browser tab credential, use the normal web session/CSRF protections, and reject unknown message shapes. They use a versioned message schema. If a window-message adapter is used, it additionally checks exact origin and `event.source`; the preview iframe is not granted theme-management access.
 
 Relay HTTP requests, if the installed transport uses HTTP, require the application’s normal session/CSRF protections and an origin check appropriate to the actual route. The implementation must not disable CSRF, use wildcard credentialed CORS, or treat an `Origin` header alone as authentication. If the installed stdio transport does not involve browser cookies, its actual host authentication context must be preserved rather than replaced with a product-specific login claim.
 
@@ -286,6 +318,8 @@ Every rejected operation has a stable category, safe message, operation ID where
 
 All mutation errors fail closed. Existing themes and active state remain usable. Pending operations transition to `rejected`, `expired`, or `disconnected` as appropriate; they never remain ambiguously pending after a known terminal condition.
 
+Revoke/disconnect invalidates all future relay requests and pending operations immediately in the authoritative state. A request already accepted by a browser or already executing inside a synchronous local operation cannot be retroactively interrupted; its completion must still revalidate before mutation, and the verification report must state this in-flight limitation rather than claim distributed atomic cancellation.
+
 ## 13. Capability inventory and actual coverage
 
 The capability inventory must contain rows for:
@@ -306,7 +340,7 @@ The inventory must explicitly remove or revise the old FTB-021 row claiming “N
 
 Test-first coverage must include:
 
-- byte length checked before decode/parse, including multibyte UTF-8 and exactly-1-MiB boundaries;
+- byte length checked before decode/parse, including multibyte UTF-8 and exactly-1-MiB boundaries; raw stdio lines checked at `6,291,456 + 65,536` before allocation, with bounded stdout, incomplete EOF, notifications, and exact boundaries;
 - invalid encoding, malformed JSON, missing/future/unknown versions, non-object roots, and extra unsafe shapes;
 - each migration edge independently and the full V1→V4 chain;
 - deep-clone/no-mutation behavior and preservation of supported semantic/raw/icon/runtime state;
@@ -336,7 +370,7 @@ Feature tests must use the installed Laravel MCP/Boost boundary and verify, with
 
 ### 14.3 Real stdio MCP client plus Playwright
 
-The acceptance journey must launch a real local stdio MCP client against the installed Laravel/Boost server process, not call a PHP class or mock transport directly. Playwright must drive the browser pairing approval, display the import preview, edit the filename-derived theme name, confirm the import, and verify that:
+The acceptance journey must launch a real local stdio MCP client against the application-owned bounded server command in the installed Laravel/MCP runtime, not call a PHP class or Boost `ToolExecutor` subprocess directly. In development Compose it must use `docker compose exec -T demo-php php artisan ftb:mcp` and record the command, protocol version, `Transport` implementation, and direct `app()->makeWith(...['transport' => ...])` server construction path. Playwright must drive the browser pairing approval, display the import preview, edit the filename-derived theme name, confirm the import, and verify that:
 
 1. the new theme is created and opened;
 2. its history starts fresh;
@@ -349,7 +383,7 @@ The acceptance journey must launch a real local stdio MCP client against the ins
 
 The test must record the actual protocol/version and installed transport behavior. It must not claim support for a hosted client or undocumented MCP API.
 
-## 15. Dependencies, gates, and implementation preflight
+## 15. Dependencies and implementation contract
 
 ### 15.1 Constraints
 
@@ -358,19 +392,11 @@ The test must record the actual protocol/version and installed transport behavio
 - Preserve the repository demo-first gate and existing FTB-021 behavior.
 - Keep local-only browser ownership distinct from authenticated hosted-product authorization.
 
-### 15.2 Concrete preflight questions
+### 15.2 Implementation facts and evidence
 
-These are implementation gates, not placeholders for unspecified behavior. They must be answered with repository/runtime evidence before implementation chooses signatures:
+The installed MCP 1.0.1 server contract has four methods: `onReceive(Closure)`, `run()`, `send(string)`, and `stream(Closure)`. The application command owns construction and uses `app()->makeWith(LocalThemeServer::class, ['transport' => $transport])`, then `start()` and `run()`. The stock `mcp:start`/`Registrar::local` path is not used because it constructs the stock unbounded stdio transport. Boost’s existing server and `ToolExecutor` are untouched.
 
-1. Which exact installed Laravel MCP/Boost command and request lifecycle are available for a real stdio client, and how can a request be correlated to a browser tab without adding a server theme store?
-2. Does the installed stack expose a supported server-to-browser relay mechanism, or must the browser poll an existing request endpoint? If neither exists, what existing application boundary can be used without claiming an unverified API?
-3. What exact session/authentication context does the installed MCP host provide to `Request::user()` and tool handlers, and how is CSRF/origin protection applied for any browser-facing relay route?
-4. What secure local mechanism is available for handing the short-lived pairing secret from browser approval to the stdio client without URLs, logs, or payload echo? If none is available, the pairing flow must fail closed until one is approved.
-5. What browser-tab identity primitive is available in the supported runtime, and how can tab closure/disconnect be observed reliably enough to invalidate pending operations?
-6. Can the existing test harness launch the real stdio client and drive the same server process concurrently with Playwright? If not, the implementation must document the verified substitute transport and not label it a real stdio-client test.
-7. What is the existing canonical export entry point and exact current safety test set, so import tests can assert parity rather than duplicate or alter export behavior?
-
-Preflight answers must be recorded in the implementation plan or verification report with concrete observed APIs and versions. No invented route, class, method, MCP capability, browser primitive, or provider identity claim may be used to close these questions.
+The browser relay routes, DTO fields, header credential rule, CSRF/session/origin/host checks, temp directory, status names, and operation lifetimes are defined in this specification, not deferred to implementation discovery. The only implementation work is to test these exact contracts against the repository’s current Laravel middleware and Compose runtime. Any incompatibility is a failing implementation that must be corrected within this approved contract, not replaced by an invented route, account-authentication claim, or weaker transport.
 
 ## 16. Controller judgment and contradictions
 
@@ -378,6 +404,6 @@ The following existing documents conflict with the user-approved scope and requi
 
 - FTB-021 and its design mark local-theme MCP as deferred to FTB-048, while this design requires actual parity now. This document treats the user-approved requirement as the narrower, newer exception for local theme list/export/import and updates the inventory accordingly; it does not claim all FTB-048 work is complete.
 - FTB-022 describes sequential migration with an example ending at V3, while the current canonical state is V4. This design requires the chain to end at V4 and treats current V4 export as authoritative.
-- The installed MCP/Boost evidence demonstrates tool registration and stdio invocation, but does not yet verify a browser-tab relay, secure pairing handoff, or the exact host-authenticated request contract. Those are feasibility gates, not assumptions. If the existing stack cannot provide them without a new dependency or unapproved server mechanism, controller judgment is required before implementation scope changes.
+- The installed MCP/Boost evidence establishes the Laravel MCP server contracts and the reason to use the application-owned `ftb:mcp` command. The browser relay is an application-owned same-origin web boundary with the exact routes and DTOs in this specification; it is not an undocumented MCP or account-authentication feature.
 
 No implementation or commit is authorized by this document. The next artifact, if approved, is an implementation plan that resolves the preflight questions and maps each contract to existing files and tests.
