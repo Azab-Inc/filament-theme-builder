@@ -33,7 +33,7 @@ export function serializeTheme(
   const requestValidation = validateResolveRequest(scope, registry)
   if (!requestValidation.valid) return { valid: false, mode, error: requestValidation.error }
 
-  const currentState = toVersionTwo(state)
+  const currentState = toVersionTwo(state, registry)
   if (mode === 'minimal') return { valid: true, mode, state: currentState }
 
   const explicitOverrides = materializeSupportedOverrides(currentState, registry, scope)
