@@ -66,6 +66,15 @@ class RelayOperationTest extends TestCase
         self::assertFalse($results->receipt($id, $digest));
     }
 
+    public function test_export_operation_publishes_its_selected_theme_id_to_the_browser(): void
+    {
+        $clock = new MutableRelayClock;
+        $ops = new OperationStore($this->store, $clock);
+        $id = $ops->create('export', 'pair-a', 'process-a', hash('sha256', 'request'), 'theme-a');
+
+        self::assertSame('theme-a', $ops->read($id)['themeId']);
+    }
+
     public function test_import_grant_is_bound_to_session_and_consumable_only_once_within_five_seconds(): void
     {
         $clock = new MutableRelayClock;

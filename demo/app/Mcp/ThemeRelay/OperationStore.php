@@ -15,17 +15,22 @@ final class OperationStore
         $this->reader = new RelayRecordReader($store);
     }
 
-    public function create(string $kind, string $pairingId, string $processId, string $digest): string
+    public function create(string $kind, string $pairingId, string $processId, string $digest, ?string $themeId = null): string
     {
-        if (! in_array($kind, ['list', 'export', 'import'], true) || ! preg_match('/\A[a-f0-9]{64}\z/', $digest)) {
+        if (! in_array($kind, ['list', 'export', 'import'], true) || ! preg_match('/\A[a-f0-9]{64}\z/', $digest)
+            || ($themeId !== null && ($kind !== 'export' || ! preg_match('/\A[a-zA-Z0-9_-]{1,120}\z/', $themeId)))) {
             throw new \InvalidArgumentException('Invalid relay operation.');
         }
         $lock = $this->store->lock('session-index');
         try {
             $id = bin2hex(random_bytes(32));
-            $this->write($id, ['operationId' => $id, 'kind' => $kind, 'pairingId' => $pairingId,
+            $record = ['operationId' => $id, 'kind' => $kind, 'pairingId' => $pairingId,
                 'processId' => $processId, 'digest' => $digest, 'status' => 'pending',
-                'expiresAt' => $this->clock->now() + (int) config('local-theme-relay.operation_seconds', 300), 'result' => null]);
+                'expiresAt' => $this->clock->now() + (int) config('local-theme-relay.operation_seconds', 300), 'result' => null];
+            if ($themeId !== null) {
+                $record['themeId'] = $themeId;
+            }
+            $this->store->atomicWrite('operation-'.$id, json_encode($record, JSON_THROW_ON_ERROR));
 
             return $id;
         } finally {
@@ -86,11 +91,5 @@ final class OperationStore
         } finally {
             $lock->release();
         }
-    }
-
-    /** @param array<string, mixed> $record */
-    private function write(string $id, array $record): void
-    {
-        $this->store->atomicWrite('operation-'.$id, json_encode($record, JSON_THROW_ON_ERROR));
     }
 }
