@@ -33,7 +33,7 @@ function validateEdge(value: ThemeState, registry?: FilamentRegistry): Migration
     if (!result.valid) return { ok: false, category: 'invalid_theme_state', message: result.invalidOverrides[0]?.error ?? 'Invalid theme state' }
     return { ok: true }
   }
-  const result = validateFoundationState(value)
+  const result = validateFoundationState(value, registry)
   if (!result.valid) return { ok: false, category: result.path === 'customCss' ? 'nonempty_custom_css_rejected' : 'invalid_theme_state', message: result.message }
   return { ok: true }
 }

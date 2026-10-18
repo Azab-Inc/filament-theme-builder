@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { serializeTheme } from '@/utils/theme-serialization'
+import { toVersionTwo } from '@/utils/theme-serialization-helpers'
+import { validateThemeState } from '@/utils/theme-validation'
 import {
   equalChildOverride,
   expandedRegistry,
@@ -37,6 +39,12 @@ describe('theme export serialization', () => {
     expect(result.state.overrides).toContainEqual(expect.objectContaining({ controlId: 'label', scope: 'global', value: 'Configured button' }))
     expect(result.state.overrides).toContainEqual(expect.objectContaining({ controlId: 'label', scope: 'state', variantId: 'secondary', stateId: 'default', value: 'Configured button' }))
     expect(result.state.overrides).not.toContainEqual(expect.objectContaining({ value: undefined }))
+  })
+
+  it('validates migration edges against the caller registry', () => {
+    expect(validateThemeState(expandedTheme, expandedRegistry).valid).toBe(true)
+    expect(() => toVersionTwo(expandedTheme, registry)).toThrow(/unknown control.*label/i)
+    expect(toVersionTwo(expandedTheme, expandedRegistry).overrides).toHaveLength(3)
   })
 
   it('rejects invalid or unresolved export values instead of emitting them', () => {

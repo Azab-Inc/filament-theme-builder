@@ -43,8 +43,7 @@ function supportedRequests(entry: RegistryEntry, targetId: string, componentId: 
 }
 
 export function toVersionTwo(state: ThemeState, registry: FilamentRegistry): ThemeStateV2 {
-  // serializeTheme has already validated this state against the supplied registry.
-  const migrated = migrateVersionedTheme(state)
+  const migrated = migrateVersionedTheme(state, registry)
   if (!migrated.ok) throw new Error(`${migrated.category}: ${migrated.message}`)
   const current = migrated.state
   return {

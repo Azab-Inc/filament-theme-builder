@@ -1,10 +1,11 @@
 import type { ThemeOverride, ThemeScope, ThemeValue } from '@/models/theme.model'
-import { createThemeRegistry } from '@/registry/theme-registry'
+import type { FilamentRegistry } from '@/models/theme-registry.model'
 import { validateThemeOverride } from '@/utils/theme-validation'
+import { createThemeRegistry } from '@/registry/theme-registry'
 import { checkKeys, invalid, isFiniteNumber, isRecord } from '@/utils/foundation-validation-shared.util'
 import type { ValidationError } from '@/models/validation-error.model'
 
-export function validateOverride(value: unknown, path: string): { valid: true; override: ThemeOverride } | ValidationError {
+export function validateOverride(value: unknown, path: string, registry: FilamentRegistry = createThemeRegistry()): { valid: true; override: ThemeOverride } | ValidationError {
   if (!isRecord(value)) return invalid('invalid-value', path, 'Override must be an object')
   const keys = checkKeys(value, ['targetId', 'controlId', 'scope', 'componentId', 'variantId', 'stateId', 'value'], ['targetId', 'controlId', 'scope', 'value'], path)
   if (keys) return keys
@@ -21,7 +22,7 @@ export function validateOverride(value: unknown, path: string): { valid: true; o
   const override: ThemeOverride = { targetId: value.targetId, controlId: value.controlId, scope: value.scope, value: value.value,
     ...(componentId === undefined ? {} : { componentId }), ...(variantId === undefined ? {} : { variantId }), ...(stateId === undefined ? {} : { stateId }),
   }
-  const result = validateThemeOverride(override, createThemeRegistry())
+  const result = validateThemeOverride(override, registry)
   return result.valid ? { valid: true, override } : invalid('invalid-value', path, result.error)
 }
 

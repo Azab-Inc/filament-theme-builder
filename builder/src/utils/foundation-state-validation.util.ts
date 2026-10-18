@@ -1,4 +1,5 @@
 import type { FoundationValidationResult } from '@/models/foundations.model'
+import type { FilamentRegistry } from '@/models/theme-registry.model'
 import { checkKeys, invalid, isRecord, isHexColor } from '@/utils/foundation-validation-shared.util'
 import { validateFoundationRecord } from '@/utils/foundation-record-validation.util'
 import { validateIconConfiguration } from '@/registry/icon-registry'
@@ -6,12 +7,12 @@ import { validatePanelBrandingSettings } from '@/utils/panel-branding-validation
 import { validateRawOverrides } from '@/utils/raw-override-validation'
 import { overrideIdentity, validateOverride } from '@/utils/foundation-override-validation.util'
 
-export function validateFoundationState(value: unknown): FoundationValidationResult {
+export function validateFoundationState(value: unknown, registry?: FilamentRegistry): FoundationValidationResult {
   if (!isRecord(value)) return invalid('invalid-value', 'state', 'Foundation state must be an object')
-  return 'foundations' in value ? validateVersionedState(value) : validateFoundationRecord(value, '')
+  return 'foundations' in value ? validateVersionedState(value, registry) : validateFoundationRecord(value, '')
 }
 
-function validateVersionedState(value: Record<string, unknown>): FoundationValidationResult {
+function validateVersionedState(value: Record<string, unknown>, registry?: FilamentRegistry): FoundationValidationResult {
   const topLevel = checkKeys(value, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding'], ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss'], '')
   if (topLevel) return topLevel
   if (value.schemaVersion !== 3 && value.schemaVersion !== 4) return invalid('invalid-value', 'schemaVersion', 'Unsupported foundation schema version')
@@ -27,7 +28,7 @@ function validateVersionedState(value: Record<string, unknown>): FoundationValid
   const identities = new Set<string>()
   for (const [index, valueOverride] of value.overrides.entries()) {
     const path = `overrides[${index}]`
-    const result = validateOverride(valueOverride, path)
+    const result = validateOverride(valueOverride, path, registry)
     if (!result.valid) return result
     const identity = overrideIdentity(result.override)
     if (identities.has(identity)) return invalid('duplicate-override', path, 'Override identity is duplicated')
