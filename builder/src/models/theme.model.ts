@@ -1,4 +1,4 @@
-import { createDefaultThemeState } from '@/utils/foundation-defaults'
+import { migrateVersionedTheme } from '@/utils/theme-import-migrations'
 
 export type ThemeScope = 'global' | 'component' | 'variant' | 'state'
 
@@ -35,14 +35,9 @@ export type ThemeStateV4 = import('@/models/foundations.model').FoundationStateV
 export type ThemeState = ThemeStateV1 | ThemeStateV2 | ThemeStateV3 | ThemeStateV4
 
 export function migrateThemeState(state: ThemeState): ThemeStateV4 {
-  if (state.schemaVersion === 4) return structuredClone(state)
-  if (state.schemaVersion === 3) return { ...structuredClone(state), schemaVersion: 4, rawOverrides: [] }
-
-  const current = createDefaultThemeState()
-  current.colors.primary = state.colors.primary
-  current.foundations.palettes.primary.base = state.colors.primary
-  current.overrides = state.schemaVersion === 2 ? structuredClone(state.overrides) : []
-  return current
+  const result = migrateVersionedTheme(state)
+  if (!result.ok) throw new Error(`${result.category}: ${result.message}`)
+  return result.state
 }
 
 export type ResolveRequest = {

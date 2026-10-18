@@ -4,7 +4,7 @@ export function importDisplayName(filename: string, proposedName: string): strin
   const explicit = proposedName.trim()
   if (explicit) return explicit
   const filenameName = filename.split(/[\\/]/).pop()?.replace(/\.json$/i, '').trim()
-  return filenameName || 'Imported theme'
+  return filenameName || 'Untitled'
 }
 
 export function importSummary(sourceVersion: ImportVersion, migrationPath: number[], decisions: string[]): string[] {

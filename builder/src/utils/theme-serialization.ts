@@ -61,18 +61,16 @@ export function deserializeTheme(input: unknown, registry: FilamentRegistry): Th
   if (isCanonicalThemeStateShape(parsed)) {
     const validation = validateFoundationState(parsed)
     if (!validation.valid) return { valid: false, error: validation.message }
-    try { return { valid: true, state: migrateVersionedTheme(structuredClone(parsed) as ThemeState, registry).state } } catch (error) {
-      return { valid: false, error: error instanceof Error ? error.message : 'Invalid theme state' }
-    }
+    const migrated = migrateVersionedTheme(structuredClone(parsed) as ThemeState, registry)
+    return migrated.ok ? { valid: true, state: migrated.state } : { valid: false, error: migrated.message }
   }
 
   if (!isThemeStateShape(parsed)) return { valid: false, error: 'Invalid theme state' }
 
   const validation = validateThemeState(parsed, registry)
   if (!validation.valid) return { valid: false, error: validation.invalidOverrides[0]?.error ?? 'Invalid theme state' }
-  try { return { valid: true, state: migrateVersionedTheme(validation.state, registry).state } } catch (error) {
-    return { valid: false, error: error instanceof Error ? error.message : 'Invalid theme state' }
-  }
+  const migrated = migrateVersionedTheme(validation.state, registry)
+  return migrated.ok ? { valid: true, state: migrated.state } : { valid: false, error: migrated.message }
 }
 
 function isThemeStateShape(value: unknown): value is ThemeState {

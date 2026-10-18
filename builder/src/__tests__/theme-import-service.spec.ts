@@ -20,6 +20,11 @@ describe('versioned theme import service', () => {
     expect(result).toMatchObject({ valid: false, category: 'payload_too_large' })
   })
 
+  it('rejects oversized direct parses before decoding invalid UTF-8', () => {
+    const bytes = new Uint8Array(MAX_THEME_IMPORT_BYTES + 1).fill(0xff)
+    expect(parseAndMigrateTheme(bytes, 'large.json', 'Large', registry)).toMatchObject({ ok: false, category: 'payload_too_large' })
+  })
+
   it('classifies invalid encoding and malformed JSON', async () => {
     await expect(previewThemeImport(new Uint8Array([0xc3, 0x28]), 'bad.json', '', registry)).resolves.toMatchObject({ valid: false, category: 'invalid_encoding' })
     await expect(previewThemeImport(new TextEncoder().encode('{bad'), 'bad.json', '', registry)).resolves.toMatchObject({ valid: false, category: 'invalid_json' })
@@ -51,5 +56,10 @@ describe('versioned theme import service', () => {
     const result = await previewThemeImport(payload, 'customer-theme.json', '  ', registry)
     expect(result).toMatchObject({ valid: true, preview: { displayName: 'customer-theme', byteLength: payload.byteLength } })
     expect(result.valid && result.preview.payloadDigest).toBe(await digestBytes(payload))
+  })
+
+  it('uses Untitled when both name and filename are empty', async () => {
+    const result = await previewThemeImport(bytes(createDefaultThemeState()), '', '  ', registry)
+    expect(result).toMatchObject({ valid: true, preview: { displayName: 'Untitled' } })
   })
 })

@@ -1,5 +1,4 @@
-import { createDefaultFoundationState, createDefaultThemeState } from '@/utils/foundation-defaults'
-import { markExplicitPath } from '@/utils/foundation-provenance'
+import { createDefaultFoundationState } from '@/utils/foundation-defaults'
 import { validateRawOverrides } from '@/utils/raw-override-validation'
 import { createDefaultIconConfiguration } from '@/registry/icon-registry'
 import { createDefaultPanelBrandingSettings } from '@/utils/panel-branding-validation'
@@ -28,17 +27,9 @@ export function normalizePalettes(value: ThemeStateV4): void {
 }
 
 export function migrateToCurrent(state: ThemeState): ThemeStateV4 {
-  if (isVersionFour(state)) return normalizeTheme(state)
-  if (isLegacyVersionThree(state)) return migrateCurrentVersion(state)
-  const migrated = migrateVersionedTheme(state, createThemeRegistry()).state
-  const current = createDefaultThemeState()
-  current.colors.primary = migrated.colors.primary
-  current.foundations.palettes.primary.base = migrated.colors.primary
-  if (migrated.colors.primary !== createDefaultThemeState().colors.primary) markExplicitPath(current.foundations, 'palettes.primary.base')
-  current.overrides = structuredClone(migrated.overrides)
-  current.rawOverrides = []
-  normalizePalettes(current)
-  return current
+  const migrated = migrateVersionedTheme(state, createThemeRegistry())
+  if (!migrated.ok) throw new Error(`${migrated.category}: ${migrated.message}`)
+  return normalizeTheme(migrated.state)
 }
 
 export function isVersionFour(value: unknown): value is ThemeStateV4 {
@@ -47,10 +38,4 @@ export function isVersionFour(value: unknown): value is ThemeStateV4 {
 
 export function isLegacyVersionThree(value: unknown): value is ThemeStateV3 {
   return isRecord(value) && value.schemaVersion === 3
-}
-
-function migrateCurrentVersion(value: ThemeStateV3): ThemeStateV4 {
-  try { return migrateVersionedTheme(value, createThemeRegistry()).state } catch {
-    return { ...structuredClone(value), schemaVersion: 4, rawOverrides: [] }
-  }
 }
