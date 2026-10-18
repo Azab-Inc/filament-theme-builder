@@ -38,6 +38,12 @@ class RelayStoreTest extends TestCase
         new FileRelayStore(base_path('storage'));
     }
 
+    public function test_repository_descendant_is_explicitly_rejected_as_store_root(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        new FileRelayStore(base_path('storage/app'));
+    }
+
     public function test_repository_root_itself_is_rejected_as_store_root(): void
     {
         $this->expectException(\InvalidArgumentException::class);

@@ -21,7 +21,10 @@ final class RelayRecordLock implements LockHandle
 
     public function release(): void
     {
-        $this->recordLock->release();
-        $this->indexLock->release();
+        try {
+            $this->recordLock->release();
+        } finally {
+            $this->indexLock->release();
+        }
     }
 }

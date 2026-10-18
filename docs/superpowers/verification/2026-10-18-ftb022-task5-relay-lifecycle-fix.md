@@ -13,6 +13,15 @@
 - Focused relay tests: `php artisan test --filter='RelayStoreTest|RelayLifecycleTest|RelayOperationTest|RelayCleanupTest|RelayLifecycleLockTest|RelaySecurityTest|RelayGrantLockTest|RelayPairingRaceTest'` — **20 passed**.
 - Pint: `composer lint:check` — **passed**.
 - PHPStan: `composer types:check` — **passed, 0 errors**.
-- Full Laravel suite: `php artisan test` — **209 passed**.
+- Full Laravel suite: `php artisan test` — **211 passed**.
 - `git diff --check` — **passed**.
 - New relay and focused test PHP files remain at or below 100 lines.
+
+## Follow-up review closure
+
+- Added an explicit repository-descendant root rejection test.
+- Disclosure tests exercise representative tab-secret and raw-payload values across fixed errors, every captured log level, and serialized authorization/operation result metadata. No HTTP response surface exists in this storage-only task; no route/controller response was fabricated.
+- Lock verification uses two independent file handles with a non-blocking `flock` check, plus deterministic pre-lock interleavings that mutate pairing state before lifecycle locks are granted. These tests verify serialization and revalidation without claiming separate-process scheduling behavior.
+- `RelayRecordLock::release()` now releases the session-index lock in `finally` if releasing the record lock throws; a throwing-lock test verifies it.
+- Follow-up focused tests: **15 passed**.
+- Follow-up Pint, PHPStan, and `git diff --check`: **passed**; full Laravel suite: **211 passed**.

@@ -3,8 +3,10 @@
 namespace Tests\Unit\Mcp;
 
 use App\Mcp\ThemeRelay\FileRelayStore;
+use App\Mcp\ThemeRelay\OperationResultStore;
 use App\Mcp\ThemeRelay\OperationStore;
 use App\Mcp\ThemeRelay\RelayLifecycle;
+use App\Mcp\ThemeRelay\RelayRecordReader;
 use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
@@ -30,10 +32,35 @@ class RelaySecurityTest extends TestCase
             $payload = 'raw-theme-json-secret';
             $id = (new OperationStore($store, $clock))->create('import', 'pair-safe', 'process-safe', hash('sha256', $payload));
             $store->atomicWrite('payload-'.$id, $payload);
-            self::assertStringNotContainsString($secret, $store->read('operation-'.$id));
-            self::assertStringNotContainsString($payload, $store->read('operation-'.$id));
+            $metadata = $store->read('operation-'.$id);
+            $result = json_encode($life->authorize('pair-safe', 'wrong-process', $clock->time));
+            $serializedOperation = json_encode([
+                'operationId' => $id,
+                'record' => (new RelayRecordReader($store))->read('operation-'.$id),
+            ]);
+            self::assertStringNotContainsString($secret, $metadata);
+            self::assertStringNotContainsString($payload, $metadata);
+            self::assertStringNotContainsString($secret, $result);
+            self::assertStringNotContainsString($payload, $result);
+            self::assertStringNotContainsString($secret, $serializedOperation);
+            self::assertStringNotContainsString($payload, $serializedOperation);
+            self::assertFalse((new OperationResultStore($store, $clock))->publish(
+                $id, 'pair-safe', 'process-safe', hash('sha256', $payload), $payload));
+            try {
+                $store->atomicWrite('payload-oversized', $payload.str_repeat('x', 1_048_576));
+                self::fail('Oversized payload was accepted.');
+            } catch (\InvalidArgumentException $error) {
+                self::assertStringNotContainsString($payload, $error->getMessage());
+            }
+            self::assertNotNull((new RelayRecordReader($store))->read('operation-'.$id));
             Log::shouldNotHaveReceived('error');
             Log::shouldNotHaveReceived('warning');
+            Log::shouldNotHaveReceived('debug');
+            Log::shouldNotHaveReceived('info');
+            Log::shouldNotHaveReceived('notice');
+            Log::shouldNotHaveReceived('critical');
+            Log::shouldNotHaveReceived('alert');
+            Log::shouldNotHaveReceived('emergency');
         } finally {
             RelayTestDirectory::remove($path);
         }
