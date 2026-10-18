@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Filament\Auth\Responses\LogoutResponse;
+use App\Mcp\Commands\ServeLocalThemeMcp;
 use Carbon\CarbonImmutable;
 use Filament\Auth\Http\Responses\Contracts\LogoutResponse as LogoutResponseContract;
 use Illuminate\Support\Facades\Date;
@@ -26,6 +27,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        if (app()->runningInConsole() && config('local-theme-relay.enabled') && app()->environment(['local', 'testing'])) {
+            $this->commands([ServeLocalThemeMcp::class]);
+        }
+
     }
 
     /**
