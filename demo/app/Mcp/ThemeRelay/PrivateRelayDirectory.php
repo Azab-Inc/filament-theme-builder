@@ -1,0 +1,27 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Mcp\ThemeRelay;
+
+final class PrivateRelayDirectory
+{
+    public function __construct(public readonly string $path)
+    {
+        $tmp = realpath(sys_get_temp_dir());
+        if ($tmp === false || dirname($path) !== $tmp || (fileperms($tmp) & 01000) !== 01000
+            || str_starts_with($path, base_path().DIRECTORY_SEPARATOR)) {
+            throw new \InvalidArgumentException('Unsafe relay storage path.');
+        }
+        if (! is_dir($path) && ! mkdir($path, 0700) && ! is_dir($path)) {
+            throw new \RuntimeException('Relay storage unavailable.');
+        }
+        if (realpath($path) !== $path || fileowner($path) !== getmyuid()) {
+            throw new \InvalidArgumentException('Unsafe relay storage path.');
+        }
+        chmod($path, 0700);
+        if ((fileperms($path) & 0777) !== 0700) {
+            throw new \RuntimeException('Relay storage unavailable.');
+        }
+    }
+}
