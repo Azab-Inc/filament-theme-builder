@@ -13,6 +13,7 @@ import { useThemeHistory } from '@/composables/use-theme-history'
 import { useThemePersistence } from '@/composables/use-theme-persistence'
 import { useThemeRecovery } from '@/composables/use-theme-recovery'
 import { useLocalThemePersistence } from '@/composables/use-local-theme-persistence'
+import type { FreshThemeImport } from '@/models/local-theme-import.model'
 
 const storageKey = 'ftb-theme'
 const recoveryStorageKey = 'ftb-theme-legacy-recovery'
@@ -56,6 +57,11 @@ export const useThemeStore = defineStore('theme', () => {
       history.replaceHistory(localPersistence.activeHistory.value); history.applyTheme(localPersistence.activeState.value)
     } else if (result.ok && wasActive) openTheme(localPersistence.activeThemeId.value)
   }
+  const importFreshTheme = (input: FreshThemeImport) => {
+    const result = localPersistence.importFreshTheme(input)
+    if (result.ok) { history.replaceHistory(localPersistence.activeHistory.value); history.applyTheme(localPersistence.activeState.value) }
+    return result
+  }
 
   return {
     theme: readonly(theme),
@@ -79,5 +85,6 @@ export const useThemeStore = defineStore('theme', () => {
     renameTheme: localPersistence.renameTheme,
     duplicateTheme,
     deleteTheme,
+    importFreshTheme,
   }
 })
