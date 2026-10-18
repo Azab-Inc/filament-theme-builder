@@ -14,6 +14,8 @@ final class InstrumentedStdioStream
 
     public static int $emptyReads = 0;
 
+    public static int $readCalls = 0;
+
     public static int $delayMicroseconds = 0;
 
     private int $position = 0;
@@ -37,6 +39,7 @@ final class InstrumentedStdioStream
 
     public function stream_read(int $count): string
     {
+        self::$readCalls++;
         if (self::$emptyReads > 0) {
             self::$emptyReads--;
             usleep(self::$delayMicroseconds);

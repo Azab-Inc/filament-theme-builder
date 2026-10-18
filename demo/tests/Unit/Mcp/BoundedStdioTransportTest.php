@@ -43,7 +43,7 @@ class BoundedStdioTransportTest extends TestCase
 
     public function test_newline_at_the_exact_limit_is_accepted(): void
     {
-        $in = fopen('php://memory', 'r+');
+        $in = tmpfile();
         fwrite($in, "{}\n");
         rewind($in);
         $transport = BoundedStdioTransport::fromStreams($in, fopen('php://memory', 'w+'), 2);
@@ -57,7 +57,7 @@ class BoundedStdioTransportTest extends TestCase
 
     public function test_message_above_the_configured_stream_limit_is_rejected(): void
     {
-        $in = fopen('php://memory', 'r+');
+        $in = tmpfile();
         fwrite($in, "12\n");
         rewind($in);
         $transport = BoundedStdioTransport::fromStreams($in, fopen('php://memory', 'w+'), 1);
@@ -88,7 +88,7 @@ class BoundedStdioTransportTest extends TestCase
 
     private function transport(string $input, int $chunkSize = 8192): array
     {
-        $in = fopen('php://memory', 'r+');
+        $in = tmpfile();
         fwrite($in, $input);
         rewind($in);
         $out = fopen('php://memory', 'w+');

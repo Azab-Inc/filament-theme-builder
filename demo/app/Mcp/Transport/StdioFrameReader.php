@@ -73,7 +73,8 @@ final class StdioFrameReader
     private function readChunk(int $readBytes): ?string
     {
         $remaining = (int) ($this->deadline - hrtime(true));
-        if ($remaining <= 0) {
+        StdioReadinessWaiter::wait($this->input, $remaining);
+        if (hrtime(true) >= $this->deadline) {
             throw new RuntimeException('stdio_read_timeout');
         }
         $chunk = fread($this->input, max(1, $readBytes));
@@ -82,9 +83,6 @@ final class StdioFrameReader
         }
         if (hrtime(true) >= $this->deadline) {
             throw new RuntimeException('stdio_read_timeout');
-        }
-        if ($chunk === '' && ! feof($this->input)) {
-            usleep(min(1000, max(1, intdiv($remaining, 1000))));
         }
 
         return $chunk === '' && feof($this->input) ? null : $chunk;
