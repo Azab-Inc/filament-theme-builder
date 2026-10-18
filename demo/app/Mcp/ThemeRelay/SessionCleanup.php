@@ -59,6 +59,7 @@ final class SessionCleanup
             return;
         }
         $this->store->delete('pairing-'.$pairingId);
+        $this->store->delete('claim-'.$pairingId);
         foreach ($this->store->keys('operation-') as $key) {
             $lock = $this->store->lock($key);
             try {
@@ -79,6 +80,7 @@ final class SessionCleanup
             $pair = $this->reader->read($key);
             if (($pair['status'] ?? null) === 'pending' && ($pair['expiresAt'] ?? 0) <= $this->clock->now()) {
                 $this->store->delete($key);
+                $this->store->delete('claim-'.substr($key, 8));
             }
         }
     }

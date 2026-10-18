@@ -25,6 +25,11 @@ class RelayRecordLockTest extends TestCase
 
             public function delete(string $key): void {}
 
+            public function keys(string $prefix): array
+            {
+                return [];
+            }
+
             public function lock(string $key): LockHandle
             {
                 $handle = new class($key) implements LockHandle

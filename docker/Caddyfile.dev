@@ -18,6 +18,11 @@
 		reverse_proxy demo-php:80
 	}
 
+	@local_theme_relay path /local-theme/relay/*
+	handle @local_theme_relay {
+		reverse_proxy demo-php:80
+	}
+
 	@demo_assets path /build/* /storage/* /fonts/* /css/filament/* /js/filament/* /_debugbar/* /livewire* /demo-images/* /favicon.ico /robots.txt
 	handle @demo_assets {
 		reverse_proxy demo-php:80

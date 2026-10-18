@@ -18,6 +18,27 @@ final class RelayLifecycle implements RelayLifecycleContract
         (new PairingStore($this->store, $this->clock))->create($id, $session, $hash, $process);
     }
 
+    public function createPendingPairing(string $id, string $session, string $hash): void
+    {
+        (new PairingStore($this->store, $this->clock))->createPending($id, $session, $hash);
+    }
+
+    public function bindPairing(string $id, string $process, string $session): bool
+    {
+        return (new PairingBindingLifecycle($this->store, $this->clock))->bind($id, $process, $session);
+    }
+
+    /** @return array{claimId:string,expiresAt:int}|null */
+    public function issuePairingClaim(string $id, string $hash, string $session): ?array
+    {
+        return (new PairingClaimLifecycle($this->store, $this->clock))->issue($id, $hash, $session);
+    }
+
+    public function approveClaim(string $id, string $claimId, string $hash, string $session): ?string
+    {
+        return (new PairingClaimLifecycle($this->store, $this->clock))->approve($id, $claimId, $hash, $session);
+    }
+
     public function approve(string $id, string $hash, string $process): void
     {
         (new PairingStore($this->store, $this->clock))->approve($id, $hash, $process);

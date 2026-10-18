@@ -13,12 +13,25 @@ final class PairingStore
         $this->reader = new RelayRecordReader($store);
     }
 
-    public function create(string $pairingId, string $sessionId, string $tabKeyHash, string $processId): void
+    public function create(string $pairingId, string $sessionId, string $tabKeyHash, ?string $processId): void
     {
+        if (! preg_match('/\A[a-zA-Z0-9_-]{1,120}\z/', $pairingId)
+            || ! preg_match('/\A[a-zA-Z0-9_-]{1,112}\z/', $sessionId)) {
+            throw new \InvalidArgumentException('Invalid relay pairing.');
+        }
         $lock = $this->store->lock('session-index');
         try {
             if (! preg_match('/\A[a-f0-9]{64}\z/', $tabKeyHash)) {
                 throw new \InvalidArgumentException('Invalid tab credential hash.');
+            }
+            $existing = $this->reader->read('pairing-'.$pairingId);
+            if ($existing !== null) {
+                if (RelayRecordReader::isPairing($existing) && $existing['sessionId'] === $sessionId
+                    && $existing['tabKeyHash'] === $tabKeyHash && $existing['processId'] === $processId
+                    && $existing['expiresAt'] > $this->clock->now()) {
+                    return;
+                }
+                throw new \RuntimeException('Pairing unavailable.');
             }
             $record = new PairingRecord($pairingId, $tabKeyHash, $processId, $sessionId,
                 $this->clock->now() + (int) config('local-theme-relay.pairing_seconds', 300));
@@ -26,6 +39,11 @@ final class PairingStore
         } finally {
             $lock->release();
         }
+    }
+
+    public function createPending(string $pairingId, string $sessionId, string $tabKeyHash): void
+    {
+        $this->create($pairingId, $sessionId, $tabKeyHash, null);
     }
 
     public function approve(string $pairingId, string $tabKeyHash, string $processId): void

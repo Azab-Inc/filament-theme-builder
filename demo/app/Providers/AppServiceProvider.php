@@ -4,6 +4,10 @@ namespace App\Providers;
 
 use App\Filament\Auth\Responses\LogoutResponse;
 use App\Mcp\Commands\ServeLocalThemeMcp;
+use App\Mcp\ThemeRelay\FileRelayStore;
+use App\Mcp\ThemeRelay\RelayClock;
+use App\Mcp\ThemeRelay\RelayStore;
+use App\Mcp\ThemeRelay\SystemRelayClock;
 use Carbon\CarbonImmutable;
 use Filament\Auth\Http\Responses\Contracts\LogoutResponse as LogoutResponseContract;
 use Illuminate\Support\Facades\Date;
@@ -19,6 +23,8 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(LogoutResponseContract::class, LogoutResponse::class);
+        $this->app->singleton(RelayStore::class, fn () => new FileRelayStore((string) config('local-theme-relay.storage_path')));
+        $this->app->singleton(RelayClock::class, SystemRelayClock::class);
     }
 
     /**

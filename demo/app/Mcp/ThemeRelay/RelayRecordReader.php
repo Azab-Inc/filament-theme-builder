@@ -29,7 +29,8 @@ final class RelayRecordReader
     /** @param array<string, mixed>|null $pair */
     public static function isPairing(?array $pair): bool
     {
-        return $pair !== null && is_string($pair['tabKeyHash'] ?? null) && is_string($pair['processId'] ?? null)
+        return $pair !== null && is_string($pair['tabKeyHash'] ?? null)
+            && (is_string($pair['processId'] ?? null) || ($pair['processId'] ?? null) === null)
             && is_string($pair['sessionId'] ?? null) && is_int($pair['expiresAt'] ?? null)
             && is_string($pair['status'] ?? null);
     }

@@ -12,5 +12,8 @@ interface RelayStore
 
     public function delete(string $key): void;
 
+    /** @return list<string> */
+    public function keys(string $prefix): array;
+
     public function lock(string $key): LockHandle;
 }

@@ -29,6 +29,11 @@ final class ObservedRelayStore implements RelayStore
         $this->inner->delete($key);
     }
 
+    public function keys(string $prefix): array
+    {
+        return $this->inner->keys($prefix);
+    }
+
     public function lock(string $key): LockHandle
     {
         $this->lockedKeys[] = $key;

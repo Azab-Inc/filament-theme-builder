@@ -33,6 +33,20 @@ final class OperationStore
         }
     }
 
+    /** @return array<string, mixed>|null */
+    public function read(string $id): ?array
+    {
+        if (! preg_match('/\A[a-f0-9]{64}\z/', $id)) {
+            return null;
+        }
+        $lock = RelayRecordLock::acquire($this->store, 'operation-'.$id);
+        try {
+            return $this->reader->read('operation-'.$id);
+        } finally {
+            $lock->release();
+        }
+    }
+
     public function transition(string $id, string $pairingId, string $processId, string $status): bool
     {
         if (! in_array($status, ['rejected', 'expired', 'disconnected'], true)) {

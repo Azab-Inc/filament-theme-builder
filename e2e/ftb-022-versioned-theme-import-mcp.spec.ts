@@ -14,7 +14,7 @@ async function browserStorage(page: import('@playwright/test').Page): Promise<st
 test('browser import previews before creating a fresh local theme', async ({ page }) => {
   await page.goto(builderBaseUrl)
   await expect(page.getByRole('button', { name: 'Import theme' })).toBeVisible()
-  await expect(page.getByRole('button', { name: /Pair local client/i })).toBeDisabled()
+  await expect(page.getByRole('button', { name: /Pair local client/i })).toBeEnabled()
   const activeBefore = await page.locator('[data-active-theme-name]').textContent()
   const themesBeforeCancel = await localThemeCollection(page)
   const storageBeforeCancel = await browserStorage(page)
