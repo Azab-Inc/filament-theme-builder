@@ -3,10 +3,11 @@ import { markExplicitPath } from '@/utils/foundation-provenance'
 import { validateRawOverrides } from '@/utils/raw-override-validation'
 import { createDefaultIconConfiguration } from '@/registry/icon-registry'
 import { createDefaultPanelBrandingSettings } from '@/utils/panel-branding-validation'
-import { migrateThemeState } from '@/models/theme.model'
 import type { ThemeState, ThemeStateV3, ThemeStateV4 } from '@/models/theme.model'
 import { rebuildPalette } from '@/utils/theme-store-palettes'
 import { cloneTheme, isRecord } from '@/utils/theme-store-helpers'
+import { migrateVersionedTheme } from '@/utils/theme-import-migrations'
+import { createThemeRegistry } from '@/registry/theme-registry'
 
 export function normalizeTheme(value: ThemeStateV4): ThemeStateV4 {
   const normalized = cloneTheme(value)
@@ -29,12 +30,12 @@ export function normalizePalettes(value: ThemeStateV4): void {
 export function migrateToCurrent(state: ThemeState): ThemeStateV4 {
   if (isVersionFour(state)) return normalizeTheme(state)
   if (isLegacyVersionThree(state)) return migrateCurrentVersion(state)
-  const legacy = migrateThemeState(state)
+  const migrated = migrateVersionedTheme(state, createThemeRegistry()).state
   const current = createDefaultThemeState()
-  current.colors.primary = legacy.colors.primary
-  current.foundations.palettes.primary.base = legacy.colors.primary
-  if (legacy.colors.primary !== createDefaultThemeState().colors.primary) markExplicitPath(current.foundations, 'palettes.primary.base')
-  current.overrides = structuredClone(legacy.overrides)
+  current.colors.primary = migrated.colors.primary
+  current.foundations.palettes.primary.base = migrated.colors.primary
+  if (migrated.colors.primary !== createDefaultThemeState().colors.primary) markExplicitPath(current.foundations, 'palettes.primary.base')
+  current.overrides = structuredClone(migrated.overrides)
   current.rawOverrides = []
   normalizePalettes(current)
   return current
@@ -49,5 +50,7 @@ export function isLegacyVersionThree(value: unknown): value is ThemeStateV3 {
 }
 
 function migrateCurrentVersion(value: ThemeStateV3): ThemeStateV4 {
-  return { ...structuredClone(value), schemaVersion: 4, rawOverrides: [] }
+  try { return migrateVersionedTheme(value, createThemeRegistry()).state } catch {
+    return { ...structuredClone(value), schemaVersion: 4, rawOverrides: [] }
+  }
 }

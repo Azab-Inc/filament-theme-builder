@@ -2,11 +2,11 @@ import type { FilamentRegistry } from '@/models/theme-registry.model'
 import type { ThemeDeserializeResult } from '@/models/theme-deserialize-result.model'
 import type { ThemeSerializationMode } from '@/models/theme-serialization-mode.model'
 import type { ThemeSerializationResult } from '@/models/theme-serialization-result.model'
-import { migrateThemeState } from '@/models/theme.model'
 import type { ResolveRequest, ThemeState, ThemeStateV2, ThemeStateV4 } from '@/models/theme.model'
 import { materializeSupportedOverrides, toVersionTwo } from '@/utils/theme-serialization-helpers'
 import { validateResolveRequest, validateThemeState } from '@/utils/theme-validation'
 import { validateFoundationState } from '@/utils/foundation-validation'
+import { migrateVersionedTheme } from '@/utils/theme-import-migrations'
 
 export type { ThemeDeserializeResult } from '@/models/theme-deserialize-result.model'
 export type { ThemeSerializationMode } from '@/models/theme-serialization-mode.model'
@@ -61,14 +61,18 @@ export function deserializeTheme(input: unknown, registry: FilamentRegistry): Th
   if (isCanonicalThemeStateShape(parsed)) {
     const validation = validateFoundationState(parsed)
     if (!validation.valid) return { valid: false, error: validation.message }
-    return { valid: true, state: migrateThemeState(structuredClone(parsed) as ThemeState) }
+    try { return { valid: true, state: migrateVersionedTheme(structuredClone(parsed) as ThemeState, registry).state } } catch (error) {
+      return { valid: false, error: error instanceof Error ? error.message : 'Invalid theme state' }
+    }
   }
 
   if (!isThemeStateShape(parsed)) return { valid: false, error: 'Invalid theme state' }
 
   const validation = validateThemeState(parsed, registry)
   if (!validation.valid) return { valid: false, error: validation.invalidOverrides[0]?.error ?? 'Invalid theme state' }
-  return { valid: true, state: migrateThemeState(validation.state) }
+  try { return { valid: true, state: migrateVersionedTheme(validation.state, registry).state } } catch (error) {
+    return { valid: false, error: error instanceof Error ? error.message : 'Invalid theme state' }
+  }
 }
 
 function isThemeStateShape(value: unknown): value is ThemeState {
