@@ -22,3 +22,12 @@ export type PairingStatusDto = {
   sessionId?: string
   sessionExpiresAt?: number
 }
+
+export type OperationResultStatusDto = {
+  version: 1
+  operationId: string
+  kind: 'list' | 'export' | 'import'
+  status: 'pending' | 'approved' | 'rejected' | 'expired' | 'disconnected'
+  recordId?: string
+  errorCategory?: string
+}

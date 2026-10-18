@@ -10,7 +10,7 @@ final readonly class SessionRecord
         public string $sessionId,
         public string $pairingId,
         public string $tabKeyHash,
-        public string $processId,
+        public ?string $processId,
         public int $createdAt,
         public int $lastActivityAt,
         public int $leaseExpiresAt,

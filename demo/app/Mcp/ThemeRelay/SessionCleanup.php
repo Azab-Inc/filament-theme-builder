@@ -29,7 +29,7 @@ final class SessionCleanup
                 $sessionLock = $this->store->lock($key);
                 try {
                     $session = $this->reader->read($key);
-                    if (! RelaySessionPolicy::isLive($session, (string) ($session['processId'] ?? ''), $this->clock->now())) {
+                    if (! RelaySessionPolicy::isLive($session, $session['processId'] ?? null, $this->clock->now())) {
                         $this->remove($sessionId, $session);
                     }
                 } finally {

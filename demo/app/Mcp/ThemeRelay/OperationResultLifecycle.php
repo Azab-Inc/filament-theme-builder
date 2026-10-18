@@ -71,7 +71,7 @@ final class OperationResultLifecycle
         if (! in_array($status, ['pending', 'approved', 'rejected', 'expired', 'disconnected'], true)) {
             return null;
         }
-        $result = ['version' => 1, 'status' => $status];
+        $result = ['version' => 1, 'operationId' => $id, 'kind' => $record['kind'], 'status' => $status];
         foreach (['recordId', 'errorCategory'] as $field) {
             if (is_string($record[$field] ?? null)) {
                 $result[$field] = $record[$field];

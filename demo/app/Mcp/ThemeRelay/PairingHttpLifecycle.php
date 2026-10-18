@@ -34,7 +34,7 @@ final class PairingHttpLifecycle
         }
         $status = $pair['expiresAt'] <= $this->clock->now() && $pair['status'] === 'pending' ? 'expired' : $pair['status'];
         $result = ['version' => 1, 'pairingId' => $id, 'status' => $status, 'expiresAt' => $pair['expiresAt']];
-        if ($status === 'pending' && $pair['processId'] !== null) {
+        if ($status === 'pending') {
             $claim = $this->lifecycle->issuePairingClaim($id, $hash, $session);
             if ($claim !== null) {
                 $result['claimId'] = $claim['claimId'];

@@ -42,7 +42,7 @@ final class LocalThemeRelayResultRoutesTest extends TestCase
             'version' => 1, 'filename' => 'filament-theme.json', 'schemaVersion' => 4, 'json' => $json,
         ])->assertOk()->assertExactJson(['version' => 1, 'status' => 'approved']);
         $response = $this->relayGet('/local-theme/relay/operations/'.$exportId.'/result')->assertOk()
-            ->assertExactJson(['version' => 1, 'status' => 'approved']);
+            ->assertExactJson(['version' => 1, 'operationId' => $exportId, 'kind' => 'export', 'status' => 'approved']);
         self::assertStringNotContainsString($json, (string) $response->getContent());
         $wrongProcess = $this->app->make(OperationStore::class)->create('list', $pairingId, 'other-process', hash('sha256', 'other'));
         $this->relayGet('/local-theme/relay/operations/'.$wrongProcess.'/result')->assertNotFound()
@@ -64,7 +64,7 @@ final class LocalThemeRelayResultRoutesTest extends TestCase
         $record['expiresAt'] = time() - 1;
         $store->atomicWrite('operation-'.$id, json_encode($record));
         $this->relayGet('/local-theme/relay/operations/'.$id.'/result')->assertOk()
-            ->assertExactJson(['version' => 1, 'status' => 'expired']);
+            ->assertExactJson(['version' => 1, 'operationId' => $id, 'kind' => 'import', 'status' => 'expired']);
         self::assertNull($store->read('payload-'.$id));
         self::assertSame('expired', json_decode($store->read('operation-'.$id), true)['status']);
     }
@@ -74,9 +74,9 @@ final class LocalThemeRelayResultRoutesTest extends TestCase
         $pairingId = str_repeat('b', 64);
         $this->relayPost('/local-theme/relay/pairings', ['version' => 1, 'pairingId' => $pairingId])->assertOk();
         $pair = json_decode($this->app->make(RelayStore::class)->read('pairing-'.$pairingId), true);
-        $this->app->make(RelayLifecycle::class)->bindPairing($pairingId, 'mcp-process', $pair['sessionId']);
         $claim = $this->relayGet('/local-theme/relay/pairings/'.$pairingId)->json('claimId');
         $this->relayPost('/local-theme/relay/pairings/'.$pairingId.'/approve', ['version' => 1, 'claimId' => $claim])->assertOk();
+        self::assertTrue($this->app->make(RelayLifecycle::class)->bindPairing($pairingId, 'mcp-process', $pair['sessionId']));
 
         return $pairingId;
     }
