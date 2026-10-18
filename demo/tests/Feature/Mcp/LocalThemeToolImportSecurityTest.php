@@ -15,10 +15,12 @@ final class LocalThemeToolImportSecurityTest extends LocalThemeToolTestCase
     public function test_confirmation_argument_is_rejected_without_creating_an_operation(): void
     {
         $this->approved('pair-confirm', 'session-confirm');
-        LocalThemeServer::tool(LocalThemeImportPreview::class, ['pairing_id' => 'pair-confirm',
-            'raw_json' => '{"schemaVersion":4}', 'filename' => 'filament-theme.json',
-            'proposed_name' => 'Theme', 'confirmed' => true])
-            ->assertStructuredContent(['error' => 'pairing_required']);
+        foreach (['confirmed' => true, 'force' => true, 'apply' => true, 'skip_preview' => true,
+            'confirmation_token' => str_repeat('a', 64)] as $field => $value) {
+            LocalThemeServer::tool(LocalThemeImportPreview::class, ['pairing_id' => 'pair-confirm',
+                'raw_json' => '{"schemaVersion":4}', 'filename' => 'filament-theme.json',
+                'proposed_name' => 'Theme', $field => $value])->assertStructuredContent(['error' => 'pairing_required']);
+        }
 
         self::assertSame([], app(RelayStore::class)->keys('operation-'));
     }

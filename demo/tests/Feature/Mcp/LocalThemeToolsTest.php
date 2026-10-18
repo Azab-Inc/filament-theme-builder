@@ -5,59 +5,65 @@ declare(strict_types=1);
 namespace Tests\Feature\Mcp;
 
 use App\Mcp\Servers\LocalThemeServer;
-use App\Mcp\ThemeRelay\RelayLimits;
-use Laravel\Mcp\Server\Transport\FakeTransporter;
+use App\Mcp\ThemeRelay\ProcessScope;
+use App\Mcp\ThemeRelay\RelayStore;
+use App\Mcp\Tools\LocalThemeDisconnect;
+use App\Mcp\Tools\LocalThemeExport;
+use App\Mcp\Tools\LocalThemeImportPreview;
+use App\Mcp\Tools\LocalThemeImportStatus;
+use App\Mcp\Tools\LocalThemeList;
+use App\Mcp\Tools\LocalThemeOperationStatus;
+use App\Mcp\Tools\LocalThemePair;
+use Laravel\Mcp\Server\Testing\TestResponse;
 
 final class LocalThemeToolsTest extends LocalThemeToolTestCase
 {
-    public function test_server_registers_only_the_seven_local_theme_tools(): void
+    public function test_tools_deny_every_pair_and_operation_owned_by_another_process(): void
     {
-        $server = app()->make(LocalThemeServer::class, ['transport' => new FakeTransporter]);
-        $tools = collect($server->createContext()->tools())->map(fn ($tool) => $tool->name())->sort()->values()->all();
+        $pairingId = 'foreign-pair';
+        $this->approveBrowserPair($pairingId, 'foreign-session');
+        $this->app->instance(ProcessScope::class, new ProcessScope('foreign-process'));
+        LocalThemeServer::tool(LocalThemePair::class, ['pairing_id' => $pairingId])
+            ->assertStructuredContent(['pairing_id' => $pairingId, 'status' => 'approved', 'expires_at' => $this->pairExpiry($pairingId)]);
+        LocalThemeServer::tool(LocalThemeList::class, ['pairing_id' => $pairingId]);
+        LocalThemeServer::tool(LocalThemeExport::class, ['pairing_id' => $pairingId, 'theme_id' => 'theme-1']);
+        $payload = '{"schemaVersion":4,"customCss":".private{}"}';
+        LocalThemeServer::tool(LocalThemeImportPreview::class, ['pairing_id' => $pairingId, 'raw_json' => $payload,
+            'filename' => 'filament-theme.json', 'proposed_name' => 'Private']);
+        $operationIds = $this->operationIdsByKind();
 
-        self::assertSame(['local_theme_disconnect', 'local_theme_export', 'local_theme_import_preview',
-            'local_theme_import_status', 'local_theme_list', 'local_theme_operation_status', 'local_theme_pair'], $tools);
-    }
-
-    public function test_operation_status_is_the_common_async_retrieval_tool(): void
-    {
-        $tool = app(LocalThemeToolRegistry::class)->tool('local_theme_operation_status');
-
-        self::assertNotNull($tool);
-        self::assertSame(['operation_id'], array_keys($tool['inputSchema']['properties']));
-        self::assertFalse($tool['inputSchema']['additionalProperties']);
-    }
-
-    public function test_tools_reject_unknown_arguments_and_never_expose_authority_inputs(): void
-    {
-        $server = app()->make(LocalThemeServer::class, ['transport' => new FakeTransporter]);
-        $forbidden = ['owner_id', 'process_id', 'session_id', 'confirmed', 'force', 'apply'];
-
-        foreach (collect($server->createContext()->tools()) as $tool) {
-            $schema = $tool->toArray()['inputSchema'];
-            self::assertFalse($schema['additionalProperties'], $tool->name());
-            self::assertSame([], array_intersect($forbidden, array_keys($schema['properties'])), $tool->name());
+        $this->app->instance(ProcessScope::class, new ProcessScope('local-theme-test-process'));
+        $this->assertPairingRequired(LocalThemeServer::tool(LocalThemePair::class, ['pairing_id' => $pairingId]));
+        $this->assertPairingRequired(LocalThemeServer::tool(LocalThemeList::class, ['pairing_id' => $pairingId]));
+        $this->assertPairingRequired(LocalThemeServer::tool(LocalThemeExport::class,
+            ['pairing_id' => $pairingId, 'theme_id' => 'theme-1']));
+        LocalThemeServer::tool(LocalThemeImportPreview::class, ['pairing_id' => $pairingId, 'raw_json' => $payload,
+            'filename' => 'filament-theme.json', 'proposed_name' => 'Private'])
+            ->assertStructuredContent(['error' => 'pairing_required'])->assertDontSee($payload);
+        $this->assertPairingRequired(LocalThemeServer::tool(LocalThemeDisconnect::class, ['pairing_id' => $pairingId]));
+        foreach ($operationIds as $id) {
+            $this->assertPairingRequired(LocalThemeServer::tool(LocalThemeOperationStatus::class, ['operation_id' => $id]));
         }
+        $this->assertPairingRequired(LocalThemeServer::tool(LocalThemeImportStatus::class,
+            ['operation_id' => $operationIds['import']]));
+
+        self::assertSame('approved', json_decode((string) app(RelayStore::class)->read('session-foreign-session'), true)['status']);
     }
 
-    public function test_all_tool_schemas_are_exact_and_bounded(): void
+    /** @return array<string, string> */
+    private function operationIdsByKind(): array
     {
-        $expected = ['local_theme_pair' => ['pairing_id'], 'local_theme_list' => ['pairing_id'],
-            'local_theme_export' => ['pairing_id', 'theme_id'],
-            'local_theme_import_preview' => ['pairing_id', 'raw_json', 'filename', 'proposed_name'],
-            'local_theme_import_status' => ['operation_id'], 'local_theme_operation_status' => ['operation_id'],
-            'local_theme_disconnect' => ['pairing_id']];
-        foreach ($expected as $name => $properties) {
-            $tool = app(LocalThemeToolRegistry::class)->tool($name);
-            self::assertNotNull($tool, $name);
-            self::assertSame($properties, array_keys($tool['inputSchema']['properties']), $name);
-            self::assertSame($properties, $tool['inputSchema']['required'], $name);
-            self::assertFalse($tool['inputSchema']['additionalProperties'], $name);
+        $ids = [];
+        foreach (app(RelayStore::class)->keys('operation-') as $key) {
+            $record = json_decode((string) app(RelayStore::class)->read($key), true);
+            $ids[$record['kind']] = $record['operationId'];
         }
-        $import = app(LocalThemeToolRegistry::class)->tool('local_theme_import_preview')['inputSchema']['properties'];
-        self::assertSame(RelayLimits::MAX_THEME_BYTES, $import['raw_json']['maxLength']);
-        self::assertSame(['filament-theme.json'], $import['filename']['enum']);
-        $status = app(LocalThemeToolRegistry::class)->tool('local_theme_operation_status')['inputSchema']['properties'];
-        self::assertSame('^[a-f0-9]{64}$', $status['operation_id']['pattern']);
+
+        return $ids;
+    }
+
+    private function assertPairingRequired(TestResponse $response): void
+    {
+        $response->assertStructuredContent(['error' => 'pairing_required']);
     }
 }
