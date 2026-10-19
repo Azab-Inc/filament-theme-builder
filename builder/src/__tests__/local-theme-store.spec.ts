@@ -22,6 +22,27 @@ describe('local theme store collection', () => {
     expect(store.renameTheme(second.id, '   ')).toBe(false)
     store.openTheme('missing'); expect(store.storageError).toContain('does not exist')
   })
+  it('saves the active theme without creating another local record', () => {
+    const store = setup(); const activeId = store.activeThemeId
+    store.setPrimaryColor('#0f766e')
+
+    expect(store.saveTheme()).toMatchObject({ ok: true })
+    expect(store.activeThemeId).toBe(activeId)
+    expect(store.themes).toHaveLength(1)
+    expect(localStorage.getItem(`ftb-theme:${activeId}`)).toContain('#0f766e')
+  })
+  it('creates a fresh default theme and keeps the prior theme unchanged', () => {
+    const store = setup(); const originalId = store.activeThemeId
+    store.setPrimaryColor('#0f766e'); store.saveTheme()
+    const created = store.createTheme()
+
+    expect(store.activeThemeId).toBe(created.id)
+    expect(store.themes).toHaveLength(2)
+    expect(store.theme.colors.primary).toBe('#6366f1')
+    expect(store.canUndo).toBe(false)
+    store.openTheme(originalId)
+    expect(store.theme.colors.primary).toBe('#0f766e')
+  })
   it('opens themes after flushing edits and preserves each state', () => {
     const store = setup(); const firstId = store.activeThemeId
     store.setPrimaryColor('#0f766e'); vi.advanceTimersByTime(300)

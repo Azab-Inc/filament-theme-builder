@@ -32,6 +32,7 @@ const emit = defineEmits<{
   toggleInspector: []
   restoreLegacyRecovery: []
   downloadLegacyRecovery: []
+  save: []
   create: []
   open: [id: string]
   rename: [id: string, name: string]
@@ -76,7 +77,7 @@ const { dialog: importDialog, receive: receiveRelayImport } = useThemeRelayImpor
       <button type="button" aria-label="Undo" :disabled="!canUndo" @click="emit('undo')">Undo</button>
       <button type="button" aria-label="Redo" :disabled="!canRedo" @click="emit('redo')">Redo</button>
       <button type="button" aria-label="Inspector" :aria-pressed="inspectorEnabled" @click="emit('toggleInspector')">Inspector</button>
-      <LocalThemeManager :themes="themes" :active-theme-id="activeThemeId" :storage-error="storageError" @create="emit('create')" @open="emit('open', $event)" @rename="relayRename" @duplicate="emit('duplicate', $event)" @delete="emit('delete', $event)" @close="emit('close')" />
+      <LocalThemeManager :themes="themes" :active-theme-id="activeThemeId" :storage-error="storageError" @save="emit('save')" @create="emit('create')" @open="emit('open', $event)" @rename="relayRename" @duplicate="emit('duplicate', $event)" @delete="emit('delete', $event)" @close="emit('close')" />
       <ThemeImportDialog ref="importDialog" />
       <ThemePairingControl :on-import-payload="receiveRelayImport" />
     </div>

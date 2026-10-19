@@ -21,9 +21,19 @@ describe('LocalThemeManager', () => {
     expect(wrapper.get('[data-local-theme-row="one"]').text()).toContain('Active')
     expect(wrapper.find('[data-local-theme-storage-status]').exists()).toBe(false)
   })
+  it('emits separate accessible save and create actions', async () => {
+    const wrapper = mountManager()
+    await wrapper.get('[aria-label="Manage themes"]').trigger('click')
+    await wrapper.get('[aria-label="Save theme"]').trigger('click')
+    await wrapper.get('[aria-label="Create theme"]').trigger('click')
+
+    expect(wrapper.emitted('save')).toHaveLength(1)
+    expect(wrapper.emitted('create')).toHaveLength(1)
+  })
   it('emits create, open, rename, duplicate, and delete only after confirmation', async () => {
     const wrapper = mountManager()
     await wrapper.get('[aria-label="Manage themes"]').trigger('click')
+    await wrapper.get('[aria-label="Save theme"]').trigger('click')
     await wrapper.get('[aria-label="Create theme"]').trigger('click')
     await wrapper.get('[aria-label="Open Admin"]').trigger('click')
     await wrapper.get('[aria-label="Rename Marketing"]').trigger('click')
@@ -37,6 +47,7 @@ describe('LocalThemeManager', () => {
     await wrapper.get('[aria-label="Confirm delete Marketing"]').trigger('click')
 
     expect(wrapper.emitted('create')).toHaveLength(1)
+    expect(wrapper.emitted('save')).toHaveLength(1)
     expect(wrapper.emitted('open')).toEqual([['two']])
     expect(wrapper.emitted('rename')).toEqual([['one', 'Website']])
     expect(wrapper.emitted('duplicate')).toEqual([['one']])
@@ -79,6 +90,7 @@ describe('LocalThemeManager', () => {
     expect((wrapper.get('[aria-label="Confirm delete Marketing"]').element as HTMLButtonElement).disabled).toBe(false)
     expect((wrapper.get('[aria-label="Open Marketing"]').element as HTMLButtonElement).disabled).toBe(true)
     expect((wrapper.get('[aria-label="Create theme"]').element as HTMLButtonElement).disabled).toBe(true)
+    expect((wrapper.get('[aria-label="Save theme"]').element as HTMLButtonElement).disabled).toBe(true)
     expect(focus).toHaveBeenCalled()
   })
 

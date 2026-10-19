@@ -3,7 +3,7 @@ import { nextTick, ref } from 'vue'
 import type { LocalThemeRecord } from '@/models/local-theme.model'
 
 defineProps<{ themes: ReadonlyArray<LocalThemeRecord>; activeThemeId: string; storageError: string | null }>()
-const emit = defineEmits<{ create: []; open: [id: string]; rename: [id: string, name: string]; duplicate: [id: string]; delete: [id: string]; close: [] }>()
+const emit = defineEmits<{ save: []; create: []; open: [id: string]; rename: [id: string, name: string]; duplicate: [id: string]; delete: [id: string]; close: [] }>()
 const editingId = ref<string | null>(null)
 const editName = ref('')
 const renameError = ref('')
@@ -41,6 +41,7 @@ function requestClose(element: HTMLDialogElement): void {
   <dialog aria-labelledby="local-theme-dialog-title" @close="emit('close')" @keydown.esc.prevent="handleEscape">
     <h2 id="local-theme-dialog-title">Manage themes</h2>
     <p v-if="storageError" role="status" aria-live="polite" data-local-theme-storage-status>{{ storageError }}</p>
+    <button type="button" aria-label="Save theme" :disabled="Boolean(deleting)" @click="emit('save')">Save theme</button>
     <button type="button" aria-label="Create theme" :disabled="Boolean(deleting)" @click="emit('create')">Create theme</button>
     <ul aria-label="Local themes">
       <li v-for="theme in themes" :key="theme.id" :data-local-theme-row="theme.id" :aria-current="theme.id === activeThemeId ? 'true' : undefined">

@@ -37,6 +37,7 @@ const shell = reactive(model)
       @toggle-inspector="shell.inspector.toggleInspector"
       @restore-legacy-recovery="shell.restoreLegacyRecovery"
       @download-legacy-recovery="shell.downloadLegacyRecovery"
+      @save="shell.theme.saveTheme"
       @create="shell.theme.createTheme"
       @open="shell.theme.openTheme"
       @rename="shell.theme.renameTheme"

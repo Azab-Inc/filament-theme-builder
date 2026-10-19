@@ -4,7 +4,7 @@ import LocalThemeDialog from '@/components/LocalThemeDialog.vue'
 import type { LocalThemeRecord } from '@/models/local-theme.model'
 
 defineProps<{ themes: ReadonlyArray<LocalThemeRecord>; activeThemeId: string; storageError: string | null }>()
-const emit = defineEmits<{ create: []; open: [id: string]; rename: [id: string, name: string]; duplicate: [id: string]; delete: [id: string]; close: [] }>()
+const emit = defineEmits<{ save: []; create: []; open: [id: string]; rename: [id: string, name: string]; duplicate: [id: string]; delete: [id: string]; close: [] }>()
 const dialog = ref<{ $el: HTMLDialogElement } | null>(null)
 const opener = ref<HTMLButtonElement | null>(null)
 function relayRename(id: string, name: string): void { emit('rename', id, name) }
@@ -32,6 +32,6 @@ function restoreFocus(): void {
     <button ref="opener" type="button" aria-label="Manage themes" @click="openManager">Manage themes</button>
     <span aria-label="Active theme" data-active-theme-name>{{ activeThemeId ? themes.find(({ id }) => id === activeThemeId)?.name : '' }}</span>
     <p v-if="storageError" role="status" aria-live="polite" data-local-theme-storage-status>{{ storageError }}</p>
-    <LocalThemeDialog ref="dialog" :themes="themes" :active-theme-id="activeThemeId" :storage-error="storageError" @create="emit('create')" @open="emit('open', $event)" @rename="relayRename" @duplicate="emit('duplicate', $event)" @delete="emit('delete', $event)" @close="restoreFocus" />
+    <LocalThemeDialog ref="dialog" :themes="themes" :active-theme-id="activeThemeId" :storage-error="storageError" @save="emit('save')" @create="emit('create')" @open="emit('open', $event)" @rename="relayRename" @duplicate="emit('duplicate', $event)" @delete="emit('delete', $event)" @close="restoreFocus" />
   </div>
 </template>
