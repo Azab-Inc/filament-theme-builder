@@ -14,6 +14,8 @@ import { useThemePersistence } from '@/composables/use-theme-persistence'
 import { useThemeRecovery } from '@/composables/use-theme-recovery'
 import { useLocalThemePersistence } from '@/composables/use-local-theme-persistence'
 import type { FreshThemeImport } from '@/models/local-theme-import.model'
+import { themeStateRevision } from '@/utils/theme-state-revision'
+import { readLocalThemeForRelay } from '@/utils/local-theme-read'
 
 const storageKey = 'ftb-theme'
 const recoveryStorageKey = 'ftb-theme-legacy-recovery'
@@ -30,6 +32,7 @@ export const useThemeStore = defineStore('theme', () => {
   })
   localPersistence.initialize()
   const theme = localPersistence.activeState
+  const revision = computed(() => themeStateRevision({ collection: localPersistence.themes.value, activeId: localPersistence.activeThemeId.value, activeState: localPersistence.activeState.value }))
   const registry = createThemeRegistry()
   const history = useThemeHistory(theme, persistence.serialize, storageKey, localPersistence.activeHistory.value, (state, savedHistory) => {
     localPersistence.scheduleSave(localPersistence.activeThemeId.value, state, savedHistory)
@@ -62,6 +65,10 @@ export const useThemeStore = defineStore('theme', () => {
     if (result.ok) { history.replaceHistory(localPersistence.activeHistory.value); history.applyTheme(localPersistence.activeState.value) }
     return result
   }
+  const getThemeState = (id: string) => {
+    if (!localPersistence.themes.value.some((record) => record.id === id)) return null
+    return readLocalThemeForRelay(localStorage, id, localPersistence.activeThemeId.value === id ? localPersistence.activeState.value : undefined)
+  }
 
   return {
     theme: readonly(theme),
@@ -86,5 +93,7 @@ export const useThemeStore = defineStore('theme', () => {
     duplicateTheme,
     deleteTheme,
     importFreshTheme,
+    revision,
+    getThemeState,
   }
 })

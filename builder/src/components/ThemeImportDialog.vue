@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useThemeStore } from '@/stores/theme'
 import { useThemeImport } from '@/composables/use-theme-import'
 import ThemeImportSummary from '@/components/ThemeImportSummary.vue'
+import type { BrowserPayload, BrowserRelay } from '@/composables/use-theme-relay'
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const model = useThemeImport(useThemeStore())
@@ -11,6 +12,8 @@ async function selectFile(event: Event): Promise<void> {
   if (input.files?.[0]) await model.chooseFile(input.files[0])
   input.value = ''
 }
+function receiveRelayPayload(payload: BrowserPayload, relay: BrowserRelay): Promise<void> { return model.receiveRelayPayload(payload, relay) }
+defineExpose({ receiveRelayPayload })
 </script>
 
 <template>
@@ -25,8 +28,8 @@ async function selectFile(event: Event): Promise<void> {
       </label>
       <ThemeImportSummary :preview="model.state.preview" :filename="model.state.filename" />
       <p>Review this preview. Confirming creates a new theme and opens it; it does not replace an existing theme.</p>
-      <button type="button" aria-label="Confirm import" @click="model.confirm()">Confirm import</button>
+      <button type="button" aria-label="Confirm import" :disabled="model.state.applying" @click="model.confirm()">Confirm import</button>
     </template>
-    <button type="button" aria-label="Cancel import" @click="model.cancel()">Cancel import</button>
+    <button type="button" aria-label="Cancel import" :disabled="model.state.applying || !model.state.canCancel" @click="model.cancel()">Cancel import</button>
   </dialog>
 </template>

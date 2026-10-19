@@ -2,6 +2,7 @@
 import LocalThemeManager from '@/components/LocalThemeManager.vue'
 import ThemeImportDialog from '@/components/ThemeImportDialog.vue'
 import ThemePairingControl from '@/components/ThemePairingControl.vue'
+import { useThemeRelayImportHandoff } from '@/composables/use-theme-relay-import-handoff'
 import type { LocalThemeRecord } from '@/models/local-theme.model'
 withDefaults(defineProps<{
   primaryColor: string
@@ -40,6 +41,7 @@ const emit = defineEmits<{
 }>()
 
 function relayRename(id: string, name: string): void { emit('rename', id, name) }
+const { dialog: importDialog, receive: receiveRelayImport } = useThemeRelayImportHandoff()
 </script>
 
 <template>
@@ -75,8 +77,8 @@ function relayRename(id: string, name: string): void { emit('rename', id, name) 
       <button type="button" aria-label="Redo" :disabled="!canRedo" @click="emit('redo')">Redo</button>
       <button type="button" aria-label="Inspector" :aria-pressed="inspectorEnabled" @click="emit('toggleInspector')">Inspector</button>
       <LocalThemeManager :themes="themes" :active-theme-id="activeThemeId" :storage-error="storageError" @create="emit('create')" @open="emit('open', $event)" @rename="relayRename" @duplicate="emit('duplicate', $event)" @delete="emit('delete', $event)" @close="emit('close')" />
-      <ThemeImportDialog />
-      <ThemePairingControl />
+      <ThemeImportDialog ref="importDialog" />
+      <ThemePairingControl :on-import-payload="receiveRelayImport" />
     </div>
   </header>
   <p v-if="exportStatus" role="status" aria-label="Export status" aria-live="polite" data-export-status>{{ exportStatus }}</p>
