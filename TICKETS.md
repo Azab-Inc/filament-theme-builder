@@ -669,7 +669,7 @@ Latest final-HEAD verification: canonical `compose.dev` stack healthy. The combi
 
 ## FTB-022 — Add versioned JSON import/export and migrations
 
-**Status:** ready-for-agent  
+**Status:** done
 **Blocked by:** [FTB-021](#ftb-021)
 
 ### What to build
@@ -678,13 +678,16 @@ Let users download and import the editable canonical theme representation. Defin
 
 ### Acceptance criteria
 
-- [ ] Editable themes can be exported as JSON.
-- [ ] JSON includes schemaVersion.
-- [ ] Valid JSON themes can be imported as local editable themes.
-- [ ] Invalid or unsupported payloads produce a friendly error without damaging current work.
-- [ ] Sequential migration infrastructure exists, e.g. v1 → v2 → v3.
-- [ ] A migration test proves an older fixture opens as the current schema.
-- [ ] Imported themes preserve semantic, raw, icon, runtime, and custom-CSS state as applicable.
+- [x] Editable themes can be exported as canonical JSON.
+- [x] JSON includes schemaVersion; canonical V4 export parity is preserved.
+- [x] Valid V1–V4 JSON themes import as fresh browser-local themes after explicit confirmation.
+- [x] Invalid or unsupported payloads produce safe errors without damaging current work.
+- [x] Sequential migration infrastructure migrates V1 → V2 → V3 → V4.
+- [x] Migration tests prove older fixtures open as the current schema.
+- [x] Imported themes preserve supported semantic, raw, icon, and runtime state; nonempty custom CSS is explicitly rejected.
+- [x] Local MCP list/export/import-preview and browser-confirmed import parity are covered by the capability inventory.
+
+FTB-022 implementation and acceptance evidence: [`versioned theme import and MCP verification`](./docs/superpowers/verification/2026-10-18-versioned-theme-import-mcp.md). The evidence records bounded V1–V4 migration, crash-safe fresh import, the import UI, bounded `ftb:mcp` stdio, exact seven-tool registration, private relay lifecycle/routes, explicit browser confirmation, real Compose stdio/Playwright acceptance, and regression checks. Local-theme MCP supersedes FTB-021's FTB-048 deferral only for the listed capabilities; the relay remains disabled unless explicitly enabled in local/testing.
 
 ---
 

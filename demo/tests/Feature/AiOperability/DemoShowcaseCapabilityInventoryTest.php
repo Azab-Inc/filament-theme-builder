@@ -6,6 +6,29 @@ use PHPUnit\Framework\TestCase;
 
 class DemoShowcaseCapabilityInventoryTest extends TestCase
 {
+    public function test_ftb022_inventory_has_verified_local_theme_tools(): void
+    {
+        $root = dirname(__DIR__, 4);
+        $inventory = file_get_contents($root.'/docs/ai-operability/demo-showcase-capability-inventory.md');
+
+        $this->assertStringContainsString('local_theme_operation_status', $inventory);
+        $this->assertStringNotContainsString('builder.local-themes` |', $inventory);
+        foreach ([
+            'builder.local-themes.list' => 'local_theme_list',
+            'builder.local-themes.export' => 'local_theme_export',
+            'builder.local-themes.import-preview' => 'local_theme_import_preview',
+            'builder.local-themes.import-apply' => 'local_theme_operation_status',
+            'builder.local-themes.pairing' => 'local_theme_pair',
+        ] as $capability => $tool) {
+            $rows = array_values(array_filter(explode("\n", $inventory), fn (string $line): bool => str_starts_with($line, '| `'.$capability.'` |')));
+            $row = $rows[0] ?? null;
+            $this->assertNotNull($row, $capability.' must have an inventory row.');
+            $this->assertStringContainsString($tool, $row);
+            $this->assertStringContainsString('tested', strtolower($row));
+            $this->assertStringContainsString('paired browser-local session', strtolower($row));
+        }
+    }
+
     public function test_ticket_sequence_and_scope_are_explicit(): void
     {
         $tickets = file_get_contents(dirname(__DIR__, 4).'/TICKETS.md');
@@ -94,24 +117,29 @@ class DemoShowcaseCapabilityInventoryTest extends TestCase
             $this->assertNotSame('', $cells[4], 'Each capability names its authorization policy.');
             $this->assertNotSame('', $cells[5], 'Each capability names its confirmation policy.');
             $this->assertStringContainsString('MCP', $cells[6], 'Each capability names MCP tool status.');
-            match ($cells[3]) {
-                'read-only' => [
-                    $this->assertMatchesRegularExpression('/public|panel authorization|authenticated/i', $cells[4]),
-                    $this->assertSame('None', $cells[5]),
-                    $this->assertMatchesRegularExpression('/No MCP (read tool|tool)/i', $cells[6]),
-                ],
-                'presentation-only' => [
-                    $this->assertMatchesRegularExpression('/no domain|synthetic|in-memory/i', $cells[4]),
-                    $this->assertMatchesRegularExpression('/no confirmation|^none$/i', $cells[5]),
-                    $this->assertStringContainsString('No MCP mutation tool', $cells[6]),
-                ],
-                'mutation' => [
-                    $this->assertMatchesRegularExpression('/authorization|builder theme state|project-owner/i', $cells[4]),
-                    $this->assertMatchesRegularExpression('/explicit|user action/i', $cells[5]),
-                    $this->assertMatchesRegularExpression('/No MCP (mutation )?tool/i', $cells[6]),
-                ],
-            };
-            $this->assertStringContainsString('not available', strtolower($cells[6]));
+            if (str_starts_with($cells[1], '`builder.local-themes.')) {
+                $this->assertMatchesRegularExpression('/paired browser-local session/i', $cells[4]);
+                $this->assertStringContainsString('tested', strtolower($cells[6]));
+            } else {
+                match ($cells[3]) {
+                    'read-only' => [
+                        $this->assertMatchesRegularExpression('/public|panel authorization|authenticated/i', $cells[4]),
+                        $this->assertSame('None', $cells[5]),
+                        $this->assertMatchesRegularExpression('/No MCP (read tool|tool)/i', $cells[6]),
+                    ],
+                    'presentation-only' => [
+                        $this->assertMatchesRegularExpression('/no domain|synthetic|in-memory/i', $cells[4]),
+                        $this->assertMatchesRegularExpression('/no confirmation|^none$/i', $cells[5]),
+                        $this->assertStringContainsString('No MCP mutation tool', $cells[6]),
+                    ],
+                    'mutation' => [
+                        $this->assertMatchesRegularExpression('/authorization|builder theme state|project-owner/i', $cells[4]),
+                        $this->assertMatchesRegularExpression('/explicit|user action/i', $cells[5]),
+                        $this->assertMatchesRegularExpression('/No MCP (mutation )?tool/i', $cells[6]),
+                    ],
+                };
+                $this->assertStringContainsString('not available', strtolower($cells[6]));
+            }
         }
         $this->assertCount(count(array_unique($ids)), $ids, 'Capability IDs must be unique.');
     }

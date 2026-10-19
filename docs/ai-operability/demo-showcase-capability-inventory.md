@@ -1,9 +1,6 @@
 # Demo showcase capability inventory
 
-This inventory describes the implemented capability contract, not implemented MCP
-tools. A status of `not available` is intentional: do not imply current MCP
-support. Each row records capability, surface, operation class, authorization,
-confirmation, and MCP tool/status.
+This inventory describes the implemented capability contract. A status of `not available` is intentional: do not imply MCP support. Each row records capability, surface, operation class, authorization, confirmation, and MCP tool/status.
 
 The official demo is research inspiration only; the showcase has independent
 identity, branding, content, and presentation. Showcase/dashboard reads remain
@@ -43,7 +40,17 @@ there is no domain mutation to expose or authorize.
 | `panel.branding.asset-read` | `GET /api/branding-assets/{reference}` | read-only | Public preview asset read uses an opaque validated temporary reference; missing/unsafe references return 404 | None | No MCP read tool; not available |
 | `preview.inspector` | Builder Inspector over the read-only/UI-only Filament preview iframe | read-only | Public preview; builder validates the exact preview origin and iframe source; the bridge returns DOM evidence and owns temporary/persistent outlines only; theme changes remain on existing validated builder paths | None | No MCP read tool; not available |
 | `preview.raw-inspector` | Builder Advanced Inspector raw visual overrides and minimal vanilla CSS export | mutation | Local builder theme state only; raw selectors, properties, and values are validated by typed allowlists and the iframe bridge revalidates the same contract | Explicit user action in the builder; no server commit | No MCP mutation tool; not available |
-| `builder.local-themes` | `LocalThemeManager` and local theme store | mutation | Browser-local UI-only state; authorization is the local browser owner, no server identity | Explicit delete confirmation | No MCP tool; not available; deferred to FTB-048 |
+| `builder.local-themes.list` | Pinia/local-theme store and `LocalThemeManager` | read-only | Paired browser-local session; no server theme identity | None | MCP: `local_theme_list`; tested in FTB-022 Task 9 |
+| `builder.local-themes.export` | Canonical V4 export service and local-theme store | read-only | Paired browser-local session; theme membership revalidated | None | MCP: `local_theme_export`; one-shot result consumed by owning MCP process; tested in FTB-022 Task 9 |
+| `builder.local-themes.import-preview` | Bounded versioned import, migration, and preview service | read-only | Paired browser-local session; browser session binding | Browser preview required; preview alone never mutates | MCP: `local_theme_import_preview`; tested in FTB-022 Task 9 |
+| `builder.local-themes.import-apply` | Fresh-theme creation through Pinia/local persistence | mutation | Paired browser-local session plus apply-time authorization/revalidation | Explicit browser confirmation; no MCP apply/bypass tool | MCP: browser confirmation bridge, `local_theme_operation_status` (and import-only `local_theme_import_status`); tested in FTB-022 Task 9 |
+| `builder.local-themes.pairing` | Browser pairing UI and temporary relay session | mutation | Paired browser-local session; browser owner approves one local MCP process; client label is not identity | Explicit browser pairing approval; browser revoke/disconnect | MCP: `local_theme_pair`, `local_theme_disconnect`; tested in FTB-022 Task 9 |
+
+FTB-022 covers only local-theme list/export/import and pairing. It supersedes the
+FTB-021 deferral to FTB-048 for those capabilities only; broader FTB-048 work and
+all other local-theme operations remain out of scope. The local MCP relay is
+disabled by default and only enabled in local/testing environments by explicit
+configuration. It does not grant account identity or hosted-client access.
 
 ## Commerce operation boundary
 
