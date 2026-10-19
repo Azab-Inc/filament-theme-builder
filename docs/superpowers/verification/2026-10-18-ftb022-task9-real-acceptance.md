@@ -72,3 +72,33 @@ Result: **6 passed**, including a new persistent real-stdio + actual-browser/rel
 ## Scope and caveats
 
 The PHP production change is limited to failing closed when the effective-UID API is unavailable. Tests additionally cover default path preservation and a supported-runtime POSIX requirement. The E2E helper uses bounded JSON-RPC frames and bounded stderr, records no raw import payload or tab key, and the integration test uses the real browser UI plus server relay routes. No browser/MCP transport, route, or authorization interface was changed. Existing unrelated worktree edits were preserved.
+
+## 2026-10-19 repeat verification
+
+These are fresh reruns after the runtime-identity change. The exact combined filter that had been implicated in an earlier report passed:
+
+```sh
+docker compose -f compose.dev.yaml exec -T -e FTB_LOCAL_MCP_ENABLED=false -e APP_URL=http://localhost:8000 demo-php php artisan test --filter='LocalThemeMcpProcessScopeTest|ServeLocalThemeMcpTest'
+```
+
+Result: **5 passed, 61 assertions**. This covers the separate-process ownership boundary, command registration gating, stderr-only malformed-input diagnostics, and actual subprocess initialize/list/call.
+
+Focused Task 9 Laravel suite:
+
+```sh
+docker compose -f compose.dev.yaml exec -T -e FTB_LOCAL_MCP_ENABLED=false -e APP_URL=http://localhost:8000 demo-php php artisan test tests/Unit/Mcp tests/Feature/Mcp
+```
+
+Result: **96 passed, 584 assertions**.
+
+Other fresh results:
+
+- `npm run test:unit -- --run && npm run type-check && npm run build` from `builder/` — **98 files / 440 tests passed; type-check and production build passed**.
+- Compose Playwright command above — final rerun **6 passed**; the live MCP/browser relay journey passed.
+- `docker compose -f compose.dev.yaml exec -T demo-php composer lint:check` — **406 PHP files passed**.
+- `docker compose -f compose.dev.yaml exec -T demo-php php -d memory_limit=512M vendor/bin/phpstan analyse --no-progress` — **0 errors**.
+- Repeated direct newline JSON-RPC `initialize`, `notifications/initialized`, `tools/list`, and unknown `local_theme_pair` call — **exit 0**, three JSON stdout lines, empty stderr, protocol `2025-11-25`, seven strict schemas, unknown-pair denial `{ "error": "pairing_required" }`.
+
+One initial full Playwright rerun had a transient failure in the browser-relay confirmation test: the page snapshot contained only the Vue DevTools toggle, so the pairing button never appeared. The same test passed when rerun alone, and the complete six-test Compose Playwright command then passed. The cause of that one blank-app observation was not established; no source change was made for it.
+
+A prior run was also reported to have encountered a transient HTTP **403** during relay acceptance. No 403 appeared in the outputs of these reruns; the combined and focused Laravel suites are not a reproduction of every browser request. Its exact request/endpoint and root cause were not established, so this evidence does not claim the earlier 403 was fixed or that a 403 is impossible.
