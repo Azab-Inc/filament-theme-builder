@@ -32,7 +32,7 @@ class ServeLocalThemeMcpTest extends TestCase
     {
         $relayPath = sys_get_temp_dir().'/ftb-mcp-stdio-'.bin2hex(random_bytes(8));
         mkdir($relayPath, 0700);
-        chown($relayPath, fileowner(__FILE__));
+        chown($relayPath, posix_geteuid());
         chmod($relayPath, 0700);
         $input = implode("\n", [
             '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1"}}}',

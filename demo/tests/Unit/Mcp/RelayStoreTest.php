@@ -32,6 +32,25 @@ class RelayStoreTest extends TestCase
         }
     }
 
+    public function test_private_store_accepts_directory_owned_by_effective_runtime_user(): void
+    {
+        $path = '/tmp/ftb-relay-test-'.bin2hex(random_bytes(8));
+
+        try {
+            mkdir($path, 0700);
+
+            if (function_exists('posix_geteuid') && posix_geteuid() !== getmyuid()) {
+                self::assertNotSame(getmyuid(), fileowner($path));
+            }
+
+            new FileRelayStore($path);
+
+            self::assertSame(0700, fileperms($path) & 0777);
+        } finally {
+            RelayTestDirectory::remove($path);
+        }
+    }
+
     public function test_repository_path_is_rejected_as_store_root(): void
     {
         $this->expectException(\InvalidArgumentException::class);

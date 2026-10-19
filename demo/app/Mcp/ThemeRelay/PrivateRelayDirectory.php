@@ -18,7 +18,8 @@ final class PrivateRelayDirectory
         if (! is_dir($path) && ! mkdir($path, 0700) && ! is_dir($path)) {
             throw new \RuntimeException('Relay storage unavailable.');
         }
-        if (realpath($path) !== $path || fileowner($path) !== getmyuid()) {
+        $runtimeUser = function_exists('posix_geteuid') ? posix_geteuid() : getmyuid();
+        if (realpath($path) !== $path || fileowner($path) !== $runtimeUser) {
             throw new \InvalidArgumentException('Unsafe relay storage path.');
         }
         chmod($path, 0700);

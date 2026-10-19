@@ -13,7 +13,7 @@ final class LocalThemeMcpProcessScopeTest extends LocalThemeRelayBrowserTestCase
     {
         $pairingId = 'subprocess-pair';
         $this->approveBrowserPairForProcess($pairingId);
-        chown($this->relayPath, fileowner(__FILE__));
+        chown($this->relayPath, posix_geteuid());
         chmod($this->relayPath, 0700);
         $ownerResponses = $this->runMcp($this->requests([
             ['tools/call', ['name' => 'local_theme_pair', 'arguments' => ['pairing_id' => $pairingId]]],
