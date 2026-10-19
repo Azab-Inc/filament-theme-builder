@@ -4,7 +4,7 @@ import type { ThemeStateV4 } from '@/models/theme.model'
 import { initializeLocalThemeStorage, loadLocalThemeById, themeHistoryKey, themeStateKey, writeAndVerifyLocalTheme } from '@/utils/local-theme-storage'
 import { migrateToCurrent } from '@/utils/theme-store-normalization'
 import { cloneTheme } from '@/utils/theme-store-helpers'
-import { cloneLocalThemeHistory, localThemeStorageMessage } from '@/utils/local-theme-persistence-helpers'
+import { cloneLocalThemeHistory, createDefaultLocalTheme, localThemeStorageMessage } from '@/utils/local-theme-persistence-helpers'
 import { type FreshThemeImport, type ImportCommitResult, importFreshLocalTheme, isFreshThemeImportValid, recoverLocalThemeImports } from '@/utils/local-theme-import'
 const INDEX = 'ftb-themes'; const ACTIVE = 'ftb-theme-active'; const DELAY = 300
 export function useLocalThemePersistence(options: PersistenceOptions) {
@@ -39,7 +39,7 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
     if (loaded.error) return failure(loaded.error); if (!setActive(id)) return failure(storageError.value ?? 'Theme could not be opened')
     activeState.value = loaded.state; activeHistory.value = loaded.history; return { ok: true }
   }
-  function createTheme(): LocalThemeRecord { const record = { id: nextId(), name: 'Untitled', updatedAt: options.now() }; const state = cloneTheme(options.initialState); persistNewTheme(record, state, { snapshots: [state], cursor: 0 }); return record }
+  function createTheme(): LocalThemeRecord { const record = { id: nextId(), name: 'Untitled', updatedAt: options.now() }; const { state, history } = createDefaultLocalTheme(); persistNewTheme(record, state, history); return record }
   function renameTheme(id: string, name: string): boolean {
     const theme = themes.value.find((entry) => entry.id === id); if (!theme || !name.trim()) return false
     const previous = { ...theme }; theme.name = name.trim(); theme.updatedAt = options.now(); if (writeIndex()) return true; Object.assign(theme, previous); return false
@@ -63,8 +63,8 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
     themes.value.push(record); if (writeIndex()) { storageError.value = null; return true }; themes.value = themes.value.filter((theme) => theme.id !== record.id); removeRecords(record.id); return false
   }
   function recreateAfterDelete(id: string): StorageOperationResult {
-    const state = cloneTheme(options.initialState); const record = { id: nextId(), name: 'Untitled', updatedAt: options.now() }
-    const previous = themes.value; const replacementHistory = { snapshots: [cloneTheme(state)], cursor: 0 }
+    const { state, history: replacementHistory } = createDefaultLocalTheme(); const record = { id: nextId(), name: 'Untitled', updatedAt: options.now() }
+    const previous = themes.value
     const saved = writeAndVerifyLocalTheme(options.storage, record.id, state, replacementHistory)
     if (!saved.ok) { storageError.value = saved.error; return saved }
     themes.value = [...previous, record]
