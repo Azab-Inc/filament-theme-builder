@@ -4,6 +4,7 @@ namespace Tests\Unit\Mcp;
 
 use App\Mcp\ThemeRelay\FileRelayStore;
 use App\Mcp\ThemeRelay\RelayRecordReader;
+use Symfony\Component\Process\Process;
 use Tests\TestCase;
 
 class RelayStoreTest extends TestCase
@@ -15,6 +16,16 @@ class RelayStoreTest extends TestCase
         self::assertSame(28800, config('local-theme-relay.session_seconds'));
         self::assertSame(15, config('local-theme-relay.heartbeat_seconds'));
         self::assertSame(45, config('local-theme-relay.lease_seconds'));
+    }
+
+    public function test_default_relay_directory_path_is_preserved(): void
+    {
+        self::assertSame(sys_get_temp_dir().'/ftb-local-theme-relay', config('local-theme-relay.storage_path'));
+    }
+
+    public function test_supported_php_runtime_exposes_effective_uid(): void
+    {
+        self::assertTrue(function_exists('posix_geteuid'));
     }
 
     public function test_private_store_atomically_round_trips_safe_records(): void
@@ -49,6 +60,32 @@ class RelayStoreTest extends TestCase
         } finally {
             RelayTestDirectory::remove($path);
         }
+    }
+
+    public function test_private_directory_fails_closed_when_posix_effective_uid_is_unavailable(): void
+    {
+        $code = <<<'PHP'
+function base_path(string $path = ''): string { return '/var/www/html'.($path === '' ? '' : '/'.$path); }
+require $argv[1];
+if (function_exists('posix_geteuid')) { exit(3); }
+$path = sys_get_temp_dir().'/ftb-no-posix-'.bin2hex(random_bytes(8));
+mkdir($path, 0700);
+try {
+    new App\Mcp\ThemeRelay\PrivateRelayDirectory($path);
+    echo 'accepted';
+    exit(1);
+} catch (InvalidArgumentException) {
+    echo 'rejected';
+} finally {
+    rmdir($path);
+}
+PHP;
+        $process = new Process([PHP_BINARY, '-d', 'disable_functions=posix_geteuid', '-r', $code,
+            base_path('app/Mcp/ThemeRelay/PrivateRelayDirectory.php')], base_path());
+        $process->run();
+
+        self::assertSame(0, $process->getExitCode(), $process->getErrorOutput());
+        self::assertSame('rejected', $process->getOutput());
     }
 
     public function test_repository_path_is_rejected_as_store_root(): void
