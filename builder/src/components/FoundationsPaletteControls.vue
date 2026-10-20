@@ -39,7 +39,7 @@ function setPaletteShade(name: PaletteName, shade: PaletteShade, event: Event): 
       <div v-if="openPalette === name" :id="`${name}-palette-panel`" class="palette-accordion__panel" :data-palette-panel="name" role="region" :aria-labelledby="`${name}-palette-header`">
         <div class="palette-accordion__base-editor">
           <label :for="`${name}-palette-base`">{{ name }} palette base</label>
-          <input :id="`${name}-palette-base-picker`" type="color" :value="palettes[name].base" :aria-label="`${name} palette base color picker`" @input="setPaletteBase(name, $event)" />
+          <input :id="`${name}-palette-base-picker`" type="color" :value="palettes[name].base" :aria-label="`${name} palette base color picker`" :aria-describedby="`${name}-base-status`" @input="setPaletteBase(name, $event)" />
           <input :id="`${name}-palette-base`" type="text" :value="palettes[name].base" :aria-label="`${name} palette base text`" :aria-describedby="`${name}-base-status`" @input="setPaletteBase(name, $event)" />
           <span :id="`${name}-base-status`" :data-palette-status="`${name}-base`" role="status">{{ statusFor(`palettes.${name}.base`) }}</span>
           <button type="button" :aria-label="`Reset ${name} palette base`" @click="emit('reset-palette-base', name)">Reset base</button>

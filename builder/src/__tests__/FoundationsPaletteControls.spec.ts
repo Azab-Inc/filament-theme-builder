@@ -105,11 +105,13 @@ describe('FoundationsPaletteControls', () => {
     await wrapper.get('[data-palette-header="primary"]').trigger('click')
 
     const base = wrapper.get('#primary-palette-base[type="text"]')
+    const basePicker = wrapper.get('#primary-palette-base-picker[type="color"]')
     const baseStatus = wrapper.get('[data-palette-status="primary-base"]')
     const shade = wrapper.get('#primary-shade-50')
     const shadeStatus = wrapper.get('[data-palette-status="primary-shade-50"]')
 
     expect(base.attributes('aria-describedby')).toBe(baseStatus.attributes('id'))
+    expect(basePicker.attributes('aria-describedby')).toBe(baseStatus.attributes('id'))
     expect(baseStatus.text()).toBe('explicit')
     expect(shade.attributes('aria-describedby')).toBe(shadeStatus.attributes('id'))
     expect(shadeStatus.text()).toBe('generated')
