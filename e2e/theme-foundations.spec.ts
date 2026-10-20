@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const composeBaseUrl = process.env.COMPOSE_BASE_URL ?? "http://127.0.0.1:4175";
@@ -25,6 +25,18 @@ const validFoundations = {
   radius: "md",
   borderWidth: 1,
   shadow: "sm",
+};
+
+const readActiveTheme = (page: Page) => page.evaluate(() => {
+  const id = localStorage.getItem("ftb-theme-active");
+  const raw = id ? localStorage.getItem(`ftb-theme:${id}`) : null;
+  return raw ? JSON.parse(raw) : null;
+});
+
+const openPalette = async (page: Page, name: string) => {
+  const header = page.locator(`[data-palette-header="${name}"]`);
+  if (await header.getAttribute("aria-expanded") !== "true") await header.click();
+  await expect(header).toHaveAttribute("aria-expanded", "true");
 };
 
 test.describe("foundation preview integration", () => {
@@ -93,19 +105,13 @@ test.describe("foundation preview integration", () => {
 
     const sidebarSurface = page.locator("#sidebar-surface")
     await sidebarSurface.fill("var(--gray-200)")
-    await expect.poll(() => page.evaluate(() => {
-      const raw = localStorage.getItem("ftb-theme")
-      return raw ? JSON.parse(raw).foundations.surfaces.sidebar.light : null
-    })).toBe("var(--gray-200)")
+    await expect.poll(async () => (await readActiveTheme(page))?.foundations.surfaces.sidebar.light).toBe("var(--gray-200)")
     await expect.poll(() => frame!.evaluate(() => (window as Window & { __sidebarAccepted?: number }).__sidebarAccepted)).toBe(1)
 
     await sidebarSurface.fill("var(--red-200)")
 
     await expect.poll(() => frame!.evaluate(() => (window as Window & { __sidebarAccepted?: number }).__sidebarAccepted)).toBe(2)
-    await expect.poll(() => page.evaluate(() => {
-      const raw = localStorage.getItem("ftb-theme")
-      return raw ? JSON.parse(raw).foundations.surfaces.sidebar.light : null
-    })).toBe("var(--red-200)")
+    await expect.poll(async () => (await readActiveTheme(page))?.foundations.surfaces.sidebar.light).toBe("var(--red-200)")
     await expect.poll(() => computedColorPixel(frame!, ".fi-sidebar")).toEqual(await colorPixel(frame!, "oklch(88.5% 0.062 18.334)"))
 
     await sidebarSurface.fill("var(--color-red-200)")
@@ -113,7 +119,7 @@ test.describe("foundation preview integration", () => {
 
     await sidebarSurface.fill("var(--sky-950)")
     await expect.poll(() => computedColorPixel(frame!, ".fi-sidebar")).toEqual(await colorPixel(frame!, "oklch(29.3% 0.066 243.157)"))
-    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("ftb-theme")!).foundations.surfaces.sidebar.light)).toBe("var(--sky-950)")
+    await expect.poll(async () => (await readActiveTheme(page)).foundations.surfaces.sidebar.light).toBe("var(--sky-950)")
     const downloadPromise = page.waitForEvent("download")
     await page.getByRole("button", { name: "Export theme JSON" }).click()
     const download = await downloadPromise
@@ -128,12 +134,12 @@ test.describe("foundation preview integration", () => {
   test("rejects an unknown color reference visibly without changing persistence", async ({ page }) => {
     await page.goto(composeBaseUrl)
     const sidebarSurface = page.locator("#sidebar-surface")
-    const before = await page.evaluate(() => localStorage.getItem("ftb-theme"))
+    const before = await readActiveTheme(page)
 
     await sidebarSurface.fill("var(--not-a-tailwind-color)")
 
     await expect(page.locator('[data-foundation-error="surfaces.sidebar.light"]')).toContainText("Unsupported color reference")
-    await expect.poll(() => page.evaluate(() => localStorage.getItem("ftb-theme"))).toBe(before)
+    await expect.poll(() => readActiveTheme(page)).toEqual(before)
   })
 
   test("preserves native palette defaults until a family is explicitly edited", async ({ page }) => {
@@ -158,9 +164,11 @@ test.describe("foundation preview integration", () => {
     await expect.poll(() => primaryElement.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(initialPrimary);
 
     const initialGrayBackground = await preview.locator("body").evaluate((element) => getComputedStyle(element).backgroundColor);
+    await openPalette(page, "gray");
     await page.locator("#gray-palette-base").fill("#123456");
     await expect.poll(() => preview.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--gray-50").trim())).not.toBe("");
     await expect.poll(() => preview.locator("body").evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(initialGrayBackground);
+    await expect.poll(async () => (await readActiveTheme(page)).foundations.palettes.gray.base).toBe("#123456");
     await nativePage.close();
   });
 
@@ -175,11 +183,9 @@ test.describe("foundation preview integration", () => {
     const preview = await routeNavigation;
     const primaryButton = preview.locator(".fi-badge.fi-color-primary").first();
 
+    await openPalette(page, "primary");
     await page.locator("#primary-palette-base").fill("#ff000080");
-    await expect.poll(() => page.evaluate(() => {
-      const theme = localStorage.getItem("ftb-theme");
-      return theme ? JSON.parse(theme).foundations.palettes.primary.base : null;
-    }))
+    await expect.poll(async () => (await readActiveTheme(page)).foundations.palettes.primary.base)
       .toBe("#ff000080");
     await expect.poll(() => primaryButton.evaluate((element) => getComputedStyle(element).backgroundColor))
       .toMatch(/^rgba?\(/);
@@ -187,10 +193,7 @@ test.describe("foundation preview integration", () => {
     expect(baseColor).toContain("0.5");
 
     await page.getByLabel("Primary shade 700 override").fill("#0000ff80");
-    await expect.poll(() => page.evaluate(() => {
-      const theme = localStorage.getItem("ftb-theme");
-      return theme ? JSON.parse(theme).foundations.palettes.primary.overrides[700] : null;
-    }))
+    await expect.poll(async () => (await readActiveTheme(page)).foundations.palettes.primary.overrides[700])
       .toBe("#0000ff80");
     await expect.poll(() => primaryButton.evaluate((element) => getComputedStyle(element).color))
       .toBe("rgba(0, 0, 255, 0.5)");
@@ -495,6 +498,7 @@ test.describe("foundation preview integration", () => {
     const readFoundationToken = (id: string) => previewFrame!.evaluate((token) => getComputedStyle(document.documentElement).getPropertyValue(`--ftb-foundation-${token}`).trim(), id.replaceAll(".", "-"));
     const paletteNames = ["primary", "success", "warning", "danger", "info", "gray"];
     for (const name of paletteNames) {
+      await openPalette(page, name);
       const input = page.locator(`#${name}-palette-base`);
       await input.fill(name === "primary" ? "#0f766e" : "#123456");
       await expect.poll(() => previewFrame!.evaluate((palette) => getComputedStyle(document.documentElement).getPropertyValue(`--ftb-${palette}`).trim(), name)).toBe(name === "primary" ? "#0f766e" : "#123456");
@@ -505,6 +509,7 @@ test.describe("foundation preview integration", () => {
     const primaryElement = previewFrame!.locator(".fi-badge.fi-color-primary").first();
     await expect(primaryElement).toBeVisible();
     const primaryTextBefore = await primaryElement.evaluate((element) => getComputedStyle(element).color);
+    await openPalette(page, "primary");
     await page.getByLabel("Primary shade 700 override").fill("#ff0000");
     await expect.poll(() => primaryElement.evaluate((element) => getComputedStyle(element).color)).not.toBe(primaryTextBefore);
     await expect.poll(() => primaryElement.evaluate((element) => getComputedStyle(element).getPropertyValue("--ftb-palette-primary-shades-500").trim())).toBe("#654321");
@@ -613,6 +618,9 @@ test.describe("foundation preview integration", () => {
       const element = frame.locator(target).first();
       const before = await read(element);
       await frame.evaluate(() => { (window as Window & { __matrixAccepted?: boolean }).__matrixAccepted = false; });
+      const paletteName = control.match(/#(primary|success|warning|danger|info|gray)-palette-base/)?.[1]
+        ?? control.match(/aria-label="(primary|success|warning|danger|info|gray) shade \d+ override"/)?.[1];
+      if (paletteName) await openPalette(page, paletteName);
       const input = page.locator(control);
       if (await input.evaluate((node) => node instanceof HTMLSelectElement)) await input.selectOption(value);
       else await input.fill(value);
@@ -642,6 +650,7 @@ test.describe("foundation preview integration", () => {
     // Each shade is asserted through the native Filament palette variable on a
     // real colored action, while base edits above assert the visible element.
     for (const palette of ["primary", "success", "warning", "danger", "info", "gray"]) {
+      await openPalette(page, palette);
       for (const shade of [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]) {
         const target = `.foundation-palette-${palette}`;
         const shadeValue = readStyle(`--${palette}-${shade}`);
@@ -749,6 +758,7 @@ test.describe("foundation preview integration", () => {
     await expect(page.locator(".foundation-row").first()).toHaveCSS("display", "grid");
     await expect(page.locator(".foundation-row").first()).toHaveCSS("grid-template-columns", /.+/);
 
+    await openPalette(page, "primary");
     await expect(page.locator("#primary-palette-base")).toBeVisible();
     await expect(page.getByLabel("Primary shade 500 override")).toBeVisible();
     await expect(page.locator("#spacing-1")).toBeVisible();
@@ -839,10 +849,9 @@ test.describe("foundation preview integration", () => {
     expect(navigationRequests).toEqual([]);
     expect(mutationRequests).toEqual([]);
 
-    await expect
-      .poll(() => page.evaluate(() => localStorage.getItem("ftb-theme")))
-      .toContain('"radius":"lg"');
+    await expect.poll(async () => (await readActiveTheme(page)).foundations.radius).toBe("lg");
     await page.reload();
+    await openPalette(page, "primary");
     await expect(page.locator("#primary-palette-base")).toHaveValue("#0f766e");
     await expect(page.locator("#density")).toHaveValue("spacious");
     await expect(page.locator("#radius")).toHaveValue("lg");
@@ -875,11 +884,6 @@ test.describe("foundation preview integration", () => {
     expect(previewFrame).toBeTruthy();
     const paletteNames = ["primary", "success", "warning", "danger", "info", "gray"];
     const shades = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
-    const readActiveTheme = () => page.evaluate(() => {
-      const id = localStorage.getItem("ftb-theme-active");
-      const raw = id ? localStorage.getItem(`ftb-theme:${id}`) : null;
-      return raw ? JSON.parse(raw) : null;
-    });
     const primaryHeader = page.getByRole("button", { name: "Primary", exact: true });
 
     for (const palette of paletteNames) {
@@ -895,24 +899,35 @@ test.describe("foundation preview integration", () => {
     }
     for (const shade of shades) await expect(page.getByLabel(`Primary shade ${shade} override`)).toBeVisible();
 
-    const initial = await readActiveTheme();
+    const initial = await readActiveTheme(page);
     expect(initial).toBeTruthy();
     const initialPalette = initial.foundations.palettes.primary;
+    const initialProjectedBase = await previewFrame!.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--ftb-primary").trim());
     const initialProjectedShade = await previewFrame!.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--primary-500").trim());
     navigationRequests.length = 0;
     mutationRequests.length = 0;
     await page.locator("#primary-palette-base").fill("#0f766e");
-    await expect.poll(async () => (await readActiveTheme()).foundations.palettes.primary.base).toBe("#0f766e");
+    await expect.poll(async () => (await readActiveTheme(page)).foundations.palettes.primary.base).toBe("#0f766e");
     await expect.poll(() => previewFrame!.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--ftb-primary").trim())).toBe("#0f766e");
     await page.getByLabel("Primary shade 500 override").fill("#123456");
-    await expect.poll(async () => (await readActiveTheme()).foundations.palettes.primary.overrides[500]).toBe("#123456");
+    await expect.poll(async () => (await readActiveTheme(page)).foundations.palettes.primary.overrides[500]).toBe("#123456");
     await expect.poll(() => previewFrame!.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--primary-500").trim())).toBe("#123456");
     await page.getByRole("button", { name: "Reset primary palette base" }).click();
-    await expect.poll(async () => (await readActiveTheme()).foundations.palettes.primary.base).toBe(initialPalette.base);
+    await expect.poll(async () => (await readActiveTheme(page)).foundations.palettes.primary.base).toBe(initialPalette.base);
     await expect.poll(() => previewFrame!.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--ftb-primary").trim())).toBe(initialPalette.base);
     await page.getByRole("button", { name: "Reset primary shade 500" }).click();
-    await expect.poll(async () => (await readActiveTheme()).foundations.palettes.primary.overrides[500] ?? null).toBe(null);
+    await expect.poll(async () => (await readActiveTheme(page)).foundations.palettes.primary.overrides[500] ?? null).toBe(null);
     await expect.poll(() => previewFrame!.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--primary-500").trim())).toBe(initialProjectedShade);
+    await page.reload();
+    await expect.poll(async () => (await readActiveTheme(page)).foundations.palettes.primary.base).toBe(initialPalette.base);
+    await expect.poll(async () => (await readActiveTheme(page)).foundations.palettes.primary.overrides[500] ?? null).toBe(null);
+    const restoredPreviewFrame = page.frame({ url: /\/demo\/admin/ });
+    expect(restoredPreviewFrame).toBeTruthy();
+    await expect.poll(() => restoredPreviewFrame!.locator("#ftb-managed-theme").count()).toBe(1);
+    await expect.poll(() => restoredPreviewFrame!.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--ftb-primary").trim())).toBe(initialProjectedBase);
+    await expect.poll(() => restoredPreviewFrame!.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--primary-500").trim())).toBe(initialProjectedShade);
+    navigationRequests.length = 0;
+    mutationRequests.length = 0;
     expect(navigationRequests).toEqual([]);
     expect(mutationRequests).toEqual([]);
 
@@ -957,9 +972,10 @@ test.describe("foundation preview integration", () => {
 
   test("exports the complete canonical foundation state with generated palette parity", async ({ page }) => {
     await page.goto(composeBaseUrl);
+    await openPalette(page, "primary");
     await page.locator("#primary-palette-base").fill("#0f766e");
     await page.getByLabel("Primary shade 500 override").fill("#123456");
-    await expect.poll(() => page.evaluate(() => localStorage.getItem("ftb-theme"))).toContain("#123456");
+    await expect.poll(async () => (await readActiveTheme(page)).foundations.palettes.primary.overrides[500]).toBe("#123456");
 
     const downloadPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Export theme JSON" }).click();
