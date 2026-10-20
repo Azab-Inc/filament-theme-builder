@@ -1,12 +1,12 @@
 # Color Picker and Tailwind Palette Selection
 
 **Date:** 2026-10-12
-**Status:** Proposed contract; implementation blocked
+**Status:** Approved for implementation; popover A selected on 2026-10-20
 **Scope slug:** `color-picker-tailwind-palette-selection`
 **Ticket:** [FTB-051](../../../TICKETS.md#ftb-051) · [GitHub issue #51](https://github.com/Azab-Inc/filament-theme-builder/issues/51)
-**Review fixed point:** `f4b8228923af1d08447588b38b8d447b1c6705b7`
+**Review fixed point:** `0cce04d0e8f7c2cfb0fd5afed88c2ca32b846b46`
 
-This specification adds a named-color selection path to the existing color editors. It does not authorize implementation or alter the demo-first gate, current foundation/control projection stabilization work, or existing editor contracts.
+This specification adds a named-color selection path to the existing color editors. The user approved prototype A (popover) for production on 2026-10-20. Existing editor contracts and completed-gate evidence remain authoritative.
 
 ## 1. User-visible behavior and field coverage
 
@@ -73,11 +73,11 @@ The approved data snapshot must record its upstream source URL/name, exact packa
 
 ## 9. Sequencing and blockers
 
-FTB-051 remains **blocked** by the current Phase 1/demo-first feature gate and completion requirements in `TICKETS.md`, the remaining FTB-016/017/018 requirements, FTB-003 stabilization, and stabilization of the existing foundation/control projection path, including work currently in progress. FTB-012 remains partial solely for theme-density integration and is not itself a demo-first blocker. Recheck the ticket graph before work begins; this specification does not relax any existing gate. The palette source/version decision is resolved as Tailwind 4.3.3; implementation must still record its license/attribution metadata and verify the accepted hex/alpha contract against the current validator.
+The 2026-10-20 readiness check reconciles the stale blocked prose with the completed demo-first and FTB-003/foundation-stabilization evidence in TICKETS.md (including FTB-016/017/018 and FTB-053). FTB-012's density-only partial status is unchanged. No gate is waived. Exact accepted input profiles were inspected: toolbar/semantic fields accept six-digit hex; palettes accept six/eight-digit hex; foundation mode fields also accept trusted references; raw color properties retain their existing broader safety validator. The palette source is Tailwind 4.3.3; its licensed, deterministic snapshot is part of implementation acceptance.
 
 ## 10. Out of scope
 
-- Implementing the controls or changing builder/demo source in this planning task.
+- Promoting the prototype's shell or static preview instead of using existing production editor/preview boundaries.
 - Changing labels, field IDs, canonical state shape, mode handling, validation policy, reset, undo/redo, persistence, migration, or projection semantics.
 - Adding theme tokens, CSS selectors, variables, CSS rules, or palette generation algorithms.
 - Generating Tailwind utility classes from selected or arbitrary colors.
@@ -87,4 +87,12 @@ FTB-051 remains **blocked** by the current Phase 1/demo-first feature gate and c
 
 ## Publication and handoff
 
-Local ticket: [FTB-051 in TICKETS.md](../../../TICKETS.md#ftb-051). Tracker issue: [GitHub #51](https://github.com/Azab-Inc/filament-theme-builder/issues/51). Both point back to this document and its relevant anchors. This planning publication is not implementation approval or readiness.
+Local ticket: [FTB-051 in TICKETS.md](../../../TICKETS.md#ftb-051). Tracker issue: [GitHub #51](https://github.com/Azab-Inc/filament-theme-builder/issues/51). Continue this existing scope; do not create a duplicate issue. Prototype reference: `/?color-prototype=1&variant=A` (temporary, memory-only); its code is a visual reference, not production implementation.
+
+## 2026-10-20 production decisions
+
+- Promote the field-level popover interaction, not the prototype's replacement shell or static reference preview. Existing controls and real iframe remain in place.
+- Reuse one ColorField/ColorPopover boundary for the repeated native-picker/text/palette affordances; adapters retain existing IDs, labels, input events, reset/status and validators. Raw Inspector gets the chooser only for its three existing color properties.
+- Commit 26 families × 11 opaque six-digit sRGB hex entries, with original Tailwind 4.3.3 OKLCH values/source metadata. Conversion is deterministic: OKLCH → OKLab → linear sRGB → sRGB transfer, clamp each channel to [0,1], round to the nearest 8-bit channel. No browser canvas or runtime upstream import is used in production.
+- Tailwind selection writes the fixed literal hex, not a new reference or schema field. Existing `var(...)` values survive opening/dismissal unchanged. Show a matching token name when a literal matches the local snapshot; never pretend a fixed literal is a live semantic reference.
+- Native picker uses representable six-digit literals only. For a reference/alpha/function value, communicate the limitation and keep it intact; an explicit valid custom value or Tailwind selection may replace it. Custom draft Apply and named selection produce one existing input event/edit; invalid drafts do not cross the canonical/projection boundary.

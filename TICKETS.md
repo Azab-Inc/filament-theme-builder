@@ -1491,19 +1491,21 @@ Reachability follow-up (2026-10-15): the dedicated FTB-050 200% zoom test passed
 
 **Priority:** high
 
-**Status:** blocked
+**Status:** in progress — popover A approved for implementation on 2026-10-20
 
-**Blocked by:** FTB-003 functionality stabilization; current Phase 1/demo-first gate ([FTB-009A](#ftb-009), [FTB-009B](#ftb-009b), [FTB-010](#ftb-010), [FTB-011](#ftb-011), [FTB-013](#ftb-013), [FTB-014](#ftb-014), [FTB-015](#ftb-015)); remaining Phase 1 requirements [FTB-016](#ftb-016), [FTB-017](#ftb-017), and [FTB-018](#ftb-018); existing foundation/control projection stabilization work; and verification/closure of the existing accepted hex/alpha behavior as noted in spec §9. The approved palette source is Tailwind CSS **4.3.3**, already declared in `demo/package.json` and resolved in `demo/package-lock.json`; implementation must record its license/attribution metadata. FTB-012 remains partial only for density integration and is not a gate blocker.
+**Blocked by:** None after the 2026-10-20 readiness reconciliation against the completed demo-first/FTB-003/FTB-016/017/018 and foundation-stabilization evidence above. Existing validator profiles were inspected and 39 focused validation/palette/raw tests passed; no input syntax is expanded. Tailwind **4.3.3** snapshot provenance/license and complete field/browser verification remain implementation acceptance work. FTB-012's density-only partial status is unchanged.
 
 **Spec:** [Color Picker and Tailwind Palette Selection](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md), especially [field coverage](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#1-user-visible-behavior-and-field-coverage), [palette source/version decision](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#2-palette-contract-and-explicit-provenance-decision), [editing/validation semantics](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#3-editing-validation-and-preservation-semantics), [accessibility](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#4-accessibility-and-interaction-contract), [state and preview projection](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#5-state-preview-bridge-and-projection-boundary), [responsive/performance](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#6-responsive-behavior-and-performance), [unit and Playwright verification](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#7-observable-test-seams-and-acceptance-verification), [failure/compatibility](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#8-compatibility-failure-and-operational-behavior), [blockers](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#9-sequencing-and-blockers), and [out of scope](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md#10-out-of-scope).
 
 **GitHub issue:** [#51](https://github.com/Azab-Inc/filament-theme-builder/issues/51)
 
-**Review fixed point:** `f4b8228923af1d08447588b38b8d447b1c6705b7` (planning baseline only; refresh before implementation review).
+**Review fixed point:** `0cce04d0e8f7c2cfb0fd5afed88c2ca32b846b46`.
+
+**Plan:** [Approved popover A implementation](./docs/superpowers/plans/2026-10-20-color-picker-tailwind-palette-selection.md). Prototype at `/?color-prototype=1&variant=A` is a temporary visual reference, not production code.
 
 ### What to build
 
-Add a native browser color picker and a searchable named Tailwind color palette button to every existing editable color field. A named choice immediately sets only that field, while preserving its current label, ID, mode, validation, reset/undo/redo, persistence, and projection behavior. Keep CSS variable/token references intact unless the user explicitly replaces them. The local palette dataset must be deterministic and dependency-free. The feature remains blocked until all listed delivery gates and the palette provenance/version decision are resolved.
+Add a native browser color picker and a searchable named Tailwind color palette button to every existing editable color field. A named choice immediately sets only that field, while preserving its current label, ID, mode, validation, reset/undo/redo, persistence, and projection behavior. Keep CSS variable/token references intact unless the user explicitly replaces them. The local palette dataset must be deterministic and dependency-free. Promote the approved field-level popover only; the broader Studio shell remains separate.
 
 ### Acceptance criteria
 
