@@ -6,10 +6,12 @@ export function usePopoverPosition(open: Ref<boolean>, trigger: Ref<HTMLElement 
     const anchor = trigger.value?.getBoundingClientRect()
     const popup = panel.value
     if (!anchor || !popup) return
-    const width = Math.min(390, window.innerWidth - 16)
+    const measuredWidth = popup.getBoundingClientRect().width || 390
+    const width = Math.max(0, Math.min(390, window.innerWidth - 16, measuredWidth))
     const left = Math.max(8, Math.min(anchor.left, window.innerWidth - width - 8))
     const below = anchor.bottom + 8
-    const top = below + popup.offsetHeight <= window.innerHeight - 8 ? below : Math.max(8, anchor.top - popup.offsetHeight - 8)
+    const height = popup.getBoundingClientRect().height || popup.offsetHeight
+    const top = below + height <= window.innerHeight - 8 ? below : Math.max(8, anchor.top - height - 8)
     position.value = { top, left }
   }
   const listen = () => { update(); window.addEventListener('resize', update); window.addEventListener('scroll', update, true); active = true }
@@ -19,6 +21,6 @@ export function usePopoverPosition(open: Ref<boolean>, trigger: Ref<HTMLElement 
     await nextTick()
     if (!open.value) return
     if (!active) listen()
-  }, { flush: 'post' })
+  }, { flush: 'post', immediate: true })
   onUnmounted(unlisten)
 }

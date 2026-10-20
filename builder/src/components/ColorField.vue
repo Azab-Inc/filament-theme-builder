@@ -2,7 +2,7 @@
 import { computed, shallowRef, toRef, watch } from 'vue'
 import ColorPopover from '@/components/ColorPopover.vue'
 import { useColorField } from '@/composables/use-color-field'
-import type { ColorFieldProfile } from '@/utils/color-field-validation'
+import type { ColorFieldProfile } from '@/models/color-field.model'
 import type { RawVisualProperty } from '@/models/raw-overrides.model'
 import { isColorFieldValueValid } from '@/utils/color-field-validation'
 

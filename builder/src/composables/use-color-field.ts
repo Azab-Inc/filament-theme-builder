@@ -1,5 +1,5 @@
 import { shallowRef, watch, type Ref } from 'vue'
-import type { ColorFieldProfile } from '@/utils/color-field-validation'
+import type { ColorFieldProfile } from '@/models/color-field.model'
 
 export function useColorField(value: Ref<string>, profile: Ref<ColorFieldProfile>, contextKey: Ref<string>, resetKey: Ref<string | number | undefined>) {
   const draft = shallowRef(value.value)

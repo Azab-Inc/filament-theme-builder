@@ -3,7 +3,7 @@ import { computed, nextTick, onUnmounted, shallowRef, watch } from 'vue'
 import CustomColorPanel from '@/components/CustomColorPanel.vue'
 import TailwindColorPanel from '@/components/TailwindColorPanel.vue'
 import { usePopoverPosition } from '@/composables/use-popover-position'
-import type { ColorFieldProfile } from '@/utils/color-field-validation'
+import type { ColorFieldProfile } from '@/models/color-field.model'
 import type { TailwindColor } from '@/models/tailwind-palette.model'
 import type { RawVisualProperty } from '@/models/raw-overrides.model'
 import { findTailwindColor } from '@/utils/tailwind-palette'
@@ -24,12 +24,13 @@ function outside(event: PointerEvent): void {
 }
 watch(() => props.open, async (open) => {
   if (!open) { document.removeEventListener('keydown', keydown); document.removeEventListener('pointerdown', outside, true); return }
+  tab.value = 'Tailwind'
   await nextTick()
   if (!props.open) return
   document.addEventListener('keydown', keydown)
   document.addEventListener('pointerdown', outside, true)
   panel.value?.querySelector<HTMLInputElement>('[type="search"]')?.focus()
-}, { flush: 'post' })
+}, { flush: 'post', immediate: true })
 onUnmounted(() => { document.removeEventListener('keydown', keydown); document.removeEventListener('pointerdown', outside, true) })
 function choose(color: TailwindColor): void { emit('select', color); close(true) }
 function apply(value: string): void { emit('apply', value); close(true) }
@@ -44,7 +45,7 @@ function apply(value: string): void { emit('apply', value); close(true) }
         <button :id="`${id}-tailwind-tab`" type="button" role="tab" :aria-controls="`${id}-tailwind-panel`" :aria-selected="tab === 'Tailwind'" @click="tab = 'Tailwind'">Tailwind</button>
       </div>
       <div v-if="tab === 'Custom'" :id="`${id}-custom-panel`" role="tabpanel" :aria-labelledby="`${id}-custom-tab`">
-        <CustomColorPanel :value="value" :profile="profile" :label="label" :property="property" @apply="apply" />
+        <CustomColorPanel :id="id" :value="value" :profile="profile" :label="label" :property="property" @apply="apply" />
       </div>
       <TailwindColorPanel v-else :id="id" :selected-value="value" @select="choose" />
       <p v-if="selected" class="color-popover__selected" role="status">Selected: {{ selected.name }} {{ selected.value }}</p>
