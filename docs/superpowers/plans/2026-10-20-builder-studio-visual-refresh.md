@@ -56,7 +56,7 @@
 - [x] For each supplied palette name, render native header button with `aria-expanded`, stable `aria-controls` panel ID, swatch/base text, 11 generated shade swatches and generated/edited count based on existing override data; panel exists only when open.
 - [x] In the open panel, retain editable base text and picker, all shade editors, `statusFor` paths, and existing reset event shapes; give each input and reset control explicit palette/shade-specific accessible names.
 - [x] Add restrained neutral borders, compact spacing, visible `:focus-visible`, non-color-only edited/status text, and responsive wrapping; maintain >=36px interactive targets and prevent page-level overflow.
-- [x] Run the focused unit test; expected PASS. Then run `cd builder && npm run type-check && npm run test:unit -- --run && npm run build`; expected all pass.
+- [x] Run the focused unit test; it passed. Type-check and build passed; focused/related unit tests passed. The full unit suite has one known unrelated `dirty-App` type-boundaries failure documented in final verification.
 
 ### Task 4: Verify production behavior in real preview and responsive browser
 
