@@ -86,7 +86,7 @@ describe('FoundationsPaletteControls', () => {
       .toEqual(PALETTE_SHADES.map((shade) => `primary shade ${shade} override`))
   })
 
-  it('opens Success by keyboard, closes Primary, and retains focus on Success', async () => {
+  it('opens Success once on native Enter activation, closes Primary, and retains focus', async () => {
     const wrapper = mountControls()
     const primary = wrapper.get('[data-palette-header="primary"]')
     const success = wrapper.get('[data-palette-header="success"]')
@@ -94,6 +94,7 @@ describe('FoundationsPaletteControls', () => {
     await primary.trigger('click')
     ;(success.element as HTMLButtonElement).focus()
     await success.trigger('keydown.enter')
+    await success.trigger('click')
 
     expect(primary.attributes('aria-expanded')).toBe('false')
     expect(success.attributes('aria-expanded')).toBe('true')

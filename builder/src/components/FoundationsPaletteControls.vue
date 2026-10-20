@@ -26,7 +26,7 @@ function setPaletteShade(name: PaletteName, shade: PaletteShade, event: Event): 
       <h3 class="palette-accordion__heading">
         <button :id="`${name}-palette-header`" type="button" class="palette-accordion__header" :aria-label="`${name[0]?.toUpperCase()}${name.slice(1)}`"
           :data-palette-header="name" :aria-expanded="openPalette === name"
-          :aria-controls="`${name}-palette-panel`" @click="togglePalette(name)" @keydown.enter.prevent="togglePalette(name)">
+          :aria-controls="`${name}-palette-panel`" @click="togglePalette(name)">
           <span class="palette-accordion__marker" :style="{ backgroundColor: palettes[name].base }" aria-hidden="true"></span>
           <span class="palette-accordion__name">{{ name }}</span>
           <span class="palette-accordion__base">{{ palettes[name].base }}</span>
