@@ -875,8 +875,17 @@ test.describe("foundation preview integration", () => {
     expect(previewFrame).toBeTruthy();
     const paletteNames = ["primary", "success", "warning", "danger", "info", "gray"];
     const shades = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
+    const readActiveTheme = () => page.evaluate(() => {
+      const id = localStorage.getItem("ftb-theme-active");
+      const raw = id ? localStorage.getItem(`ftb-theme:${id}`) : null;
+      return raw ? JSON.parse(raw) : null;
+    });
     const primaryHeader = page.getByRole("button", { name: "Primary", exact: true });
 
+    for (const palette of paletteNames) {
+      await expect(page.locator(`[data-palette-header="${palette}"]`)).toBeVisible();
+    }
+    expect(await primaryHeader.evaluate((element) => element.tagName)).toBe("BUTTON");
     await primaryHeader.focus();
     await page.keyboard.press("Enter");
     await expect(primaryHeader).toHaveAttribute("aria-expanded", "true");
@@ -886,36 +895,57 @@ test.describe("foundation preview integration", () => {
     }
     for (const shade of shades) await expect(page.getByLabel(`Primary shade ${shade} override`)).toBeVisible();
 
-    const initial = await page.evaluate(() => JSON.parse(localStorage.getItem("ftb-theme")!).foundations.palettes.primary);
+    const initial = await readActiveTheme();
+    expect(initial).toBeTruthy();
+    const initialPalette = initial.foundations.palettes.primary;
+    const initialProjectedShade = await previewFrame!.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--primary-500").trim());
     navigationRequests.length = 0;
     mutationRequests.length = 0;
-    await page.getByLabel("Primary palette base").fill("#0f766e");
-    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("ftb-theme")!).foundations.palettes.primary.base)).toBe("#0f766e");
+    await page.locator("#primary-palette-base").fill("#0f766e");
+    await expect.poll(async () => (await readActiveTheme()).foundations.palettes.primary.base).toBe("#0f766e");
     await expect.poll(() => previewFrame!.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--ftb-primary").trim())).toBe("#0f766e");
     await page.getByLabel("Primary shade 500 override").fill("#123456");
-    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("ftb-theme")!).foundations.palettes.primary.overrides[500])).toBe("#123456");
+    await expect.poll(async () => (await readActiveTheme()).foundations.palettes.primary.overrides[500]).toBe("#123456");
     await expect.poll(() => previewFrame!.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--primary-500").trim())).toBe("#123456");
-    await page.getByRole("button", { name: "Reset primary shade 500" }).click();
-    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("ftb-theme")!).foundations.palettes.primary.overrides[500] ?? null)).toBe(null);
     await page.getByRole("button", { name: "Reset primary palette base" }).click();
-    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("ftb-theme")!).foundations.palettes.primary.base)).toBe(initial.base);
+    await expect.poll(async () => (await readActiveTheme()).foundations.palettes.primary.base).toBe(initialPalette.base);
+    await expect.poll(() => previewFrame!.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--ftb-primary").trim())).toBe(initialPalette.base);
+    await page.getByRole("button", { name: "Reset primary shade 500" }).click();
+    await expect.poll(async () => (await readActiveTheme()).foundations.palettes.primary.overrides[500] ?? null).toBe(null);
+    await expect.poll(() => previewFrame!.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--primary-500").trim())).toBe(initialProjectedShade);
     expect(navigationRequests).toEqual([]);
     expect(mutationRequests).toEqual([]);
 
     for (const palette of paletteNames.slice(1)) {
-      await page.getByRole("button", { name: new RegExp(palette, "i") }).click();
-      await expect(page.getByRole("button", { name: new RegExp(palette, "i") })).toHaveAttribute("aria-expanded", "true");
+      const header = page.locator(`[data-palette-header="${palette}"]`);
+      await header.click();
+      await expect(header).toHaveAttribute("aria-expanded", "true");
       for (const shade of shades) await expect(page.getByLabel(`${palette} shade ${shade} override`)).toBeVisible();
       await expect(primaryHeader).toHaveAttribute("aria-expanded", "false");
     }
 
+    const desktopWidth = await page.evaluate(() => document.documentElement.clientWidth);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(desktopWidth);
     await page.setViewportSize({ width: 390, height: 844 });
+    const viewportWidth = await page.evaluate(() => document.documentElement.clientWidth);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewportWidth);
+    const mobileHeader = page.locator('[data-palette-header="gray"]');
+    await mobileHeader.scrollIntoViewIfNeeded();
+    await mobileHeader.click();
+    await mobileHeader.focus();
+    await page.keyboard.press("Enter");
+    await expect(mobileHeader).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByLabel("Gray shade 950 override")).toBeVisible();
+    await expect(primaryHeader).toHaveAttribute("aria-expanded", "false");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewportWidth);
+    expect(navigationRequests).toEqual([]);
+    expect(mutationRequests).toEqual([]);
     await primaryHeader.focus();
     await page.keyboard.press("Enter");
     await expect(primaryHeader).toHaveAttribute("aria-expanded", "true");
     for (const shade of shades) await expect(page.getByLabel(`Primary shade ${shade} override`)).toBeVisible();
     for (const palette of paletteNames.slice(1)) {
-      const header = page.getByRole("button", { name: new RegExp(palette, "i") });
+      const header = page.locator(`[data-palette-header="${palette}"]`);
       await header.scrollIntoViewIfNeeded();
       await header.focus();
       await page.keyboard.press("Enter");
