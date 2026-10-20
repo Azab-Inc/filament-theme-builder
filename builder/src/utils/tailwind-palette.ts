@@ -1,18 +1,18 @@
 import type { TailwindColor, TailwindPaletteMetadata } from '@/models/tailwind-palette.model'
-import { TAILWIND_COLOR_FAMILIES, TAILWIND_COLOR_SHADES, resolveTrustedColorReference } from '@/registry/tailwind-color-catalog'
+import { resolveTrustedColorReference } from '@/registry/tailwind-color-catalog'
+import { TAILWIND_PALETTE_FAMILIES, TAILWIND_PALETTE_HEX, TAILWIND_PALETTE_SHADES } from '@/registry/tailwind-palette-snapshot'
 import { isValidTailwindSnapshot } from '@/utils/tailwind-palette-validation'
 
-const shadeSequence = [...TAILWIND_COLOR_SHADES]
-const families = [...TAILWIND_COLOR_FAMILIES]
-const sourceSnapshot = families.flatMap((family) => shadeSequence.map((shade) => {
+const families = [...TAILWIND_PALETTE_FAMILIES]
+const colors = families.flatMap((family) => TAILWIND_PALETTE_SHADES.map((shade, index) => {
   const sourceValue = resolveTrustedColorReference(`var(--color-${family}-${shade})`)
-  return { family, shade, name: `${family}-${shade}`, sourceValue }
+  return {
+    family, shade, name: `${family}-${shade}`, sourceValue: sourceValue ?? '',
+    value: TAILWIND_PALETTE_HEX[family]?.[index] ?? '',
+  }
 }))
-const convertedSnapshot = sourceSnapshot.map(({ family, shade, name, sourceValue }) => ({
-  family, shade, name, sourceValue: sourceValue ?? '', value: sourceValue ? convertOklchToHex(sourceValue) : '',
-}))
-const valid = isValidTailwindSnapshot(convertedSnapshot, families)
-const snapshot: readonly TailwindColor[] = Object.freeze(valid ? convertedSnapshot.map((color) => Object.freeze(color)) : [])
+const valid = isValidTailwindSnapshot(colors, families)
+const snapshot: readonly TailwindColor[] = Object.freeze(valid ? colors.map((color) => Object.freeze(color)) : [])
 
 export const tailwindPaletteMetadata: TailwindPaletteMetadata = Object.freeze({
   sourceUrl: 'https://github.com/tailwindlabs/tailwindcss/blob/v4.3.3/packages/tailwindcss/theme.css',
@@ -32,14 +32,3 @@ export function findTailwindColor(value: string): TailwindColor | undefined {
 }
 
 const EMPTY: readonly TailwindColor[] = Object.freeze([])
-
-function convertOklchToHex(input: string): string {
-  const match = /^oklch\(([\d.]+)%\s+([\d.]+)\s+([\d.]+|none)\)$/.exec(input)
-  if (!match) return ''
-  const l = Number(match[1]) / 100, c = Number(match[2]), h = match[3] === 'none' ? 0 : Number(match[3])
-  const a = c * Math.cos(h * Math.PI / 180), b = c * Math.sin(h * Math.PI / 180)
-  const l1 = l + 0.3963377774 * a + 0.2158037573 * b, m1 = l - 0.1055613458 * a - 0.0638541728 * b, s1 = l - 0.0894841775 * a - 1.291485548 * b
-  const L = l1 ** 3, M = m1 ** 3, S = s1 ** 3
-  const linear = [4.0767416621 * L - 3.3077115913 * M + 0.2309699292 * S, -1.2684380046 * L + 2.6097574011 * M - 0.3413193965 * S, -0.0041960863 * L - 0.7034186147 * M + 1.707614701 * S]
-  return `#${linear.map((channel) => Math.round(Math.max(0, Math.min(1, channel <= 0.0031308 ? 12.92 * channel : 1.055 * channel ** (1 / 2.4) - 0.055)) * 255).toString(16).padStart(2, '0')).join('')}`
-}
