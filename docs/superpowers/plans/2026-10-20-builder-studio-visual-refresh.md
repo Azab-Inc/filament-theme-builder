@@ -35,44 +35,46 @@
 
 **Files:** Test `e2e/theme-foundations.spec.ts`.
 
-- [ ] Add a focused Playwright journey that opens Primary by keyboard, checks one-open accordion behavior and 11 shades, edits base and a shade, resets both, and verifies canonical storage plus the real iframe token.
-- [ ] In that journey, check no navigation/non-GET builder requests and repeat the open/reachability check at 390px; use existing `COMPOSE_E2E` skip/base-URL conventions.
-- [ ] Run `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/theme-foundations.spec.ts -g "palette accordion production journey"`; expected FAIL on absent accordion behavior before any production implementation.
+- [x] Add a focused Playwright journey that opens Primary by keyboard, checks one-open accordion behavior and 11 shades, edits base and a shade, resets both, and verifies canonical storage plus the real iframe token.
+- [x] In that journey, check no navigation/non-GET builder requests and repeat the open/reachability check at 390px; use existing `COMPOSE_E2E` skip/base-URL conventions.
+- [x] Run `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/theme-foundations.spec.ts -g "palette accordion production journey"`; expected FAIL on absent accordion behavior before any production implementation.
 
 ### Task 2: Specify accessible palette accordion behavior in component tests
 
 **Files:** Test `builder/src/__tests__/FoundationsPaletteControls.spec.ts`.
 
-- [ ] Add assertions for six named headers, collapsed initial state, `aria-expanded=false`, and shade editors hidden until expansion.
-- [ ] Assert opening Primary exposes its controlled panel, all 11 labels and base picker/text fields; keyboard opening Success closes Primary and retains focus.
-- [ ] Assert status association and the existing base/shade edit and reset emit payloads remain unchanged.
-- [ ] Run `cd builder && npm run test:unit -- --run src/__tests__/FoundationsPaletteControls.spec.ts`; expected FAIL only for the new accordion assertions.
+- [x] Add assertions for six named headers, collapsed initial state, `aria-expanded=false`, and shade editors hidden until expansion.
+- [x] Assert opening Primary exposes its controlled panel, all 11 labels and base picker/text fields; keyboard opening Success closes Primary and retains focus.
+- [x] Assert status association and the existing base/shade edit and reset emit payloads remain unchanged.
+- [x] Run `cd builder && npm run test:unit -- --run src/__tests__/FoundationsPaletteControls.spec.ts`; expected FAIL only for the new accordion assertions.
 
 ### Task 3: Implement compact accessible accordion palette rows
 
 **Files:** Modify `builder/src/components/FoundationsPaletteControls.vue`; modify `builder/src/styles/editor-navigation.css` or add one focused imported stylesheet under `builder/src/styles/` only if existing boundaries require it; update the component test from Task 1 only as needed for actual names.
 
-- [ ] Keep the provided palette props and four existing emits; add `ref<PaletteName | null>(null)` for single-open UI state and a typed toggle function.
-- [ ] For each supplied palette name, render native header button with `aria-expanded`, stable `aria-controls` panel ID, swatch/base text, 11 generated shade swatches and generated/edited count based on existing override data; panel exists only when open.
-- [ ] In the open panel, retain editable base text and picker, all shade editors, `statusFor` paths, and existing reset event shapes; give each input and reset control explicit palette/shade-specific accessible names.
-- [ ] Add restrained neutral borders, compact spacing, visible `:focus-visible`, non-color-only edited/status text, and responsive wrapping; maintain >=36px interactive targets and prevent page-level overflow.
-- [ ] Run the focused unit test; expected PASS. Then run `cd builder && npm run type-check && npm run test:unit -- --run && npm run build`; expected all pass.
+- [x] Keep the provided palette props and four existing emits; add `ref<PaletteName | null>(null)` for single-open UI state and a typed toggle function.
+- [x] For each supplied palette name, render native header button with `aria-expanded`, stable `aria-controls` panel ID, swatch/base text, 11 generated shade swatches and generated/edited count based on existing override data; panel exists only when open.
+- [x] In the open panel, retain editable base text and picker, all shade editors, `statusFor` paths, and existing reset event shapes; give each input and reset control explicit palette/shade-specific accessible names.
+- [x] Add restrained neutral borders, compact spacing, visible `:focus-visible`, non-color-only edited/status text, and responsive wrapping; maintain >=36px interactive targets and prevent page-level overflow.
+- [x] Run the focused unit test; expected PASS. Then run `cd builder && npm run type-check && npm run test:unit -- --run && npm run build`; expected all pass.
 
 ### Task 4: Verify production behavior in real preview and responsive browser
 
 **Files:** Test `e2e/theme-foundations.spec.ts`.
 
-- [ ] Extend the Task 1 journey to assert all six palette headers and all 11 shades are reachable via UI; verify base/shade resets restore generated values in canonical storage and the real iframe.
-- [ ] Assert no builder navigation/non-GET request; at desktop and 390px assert accordion remains usable and document horizontal scroll width does not exceed viewport width.
-- [ ] Run `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/theme-foundations.spec.ts`; expected existing and new foundations journeys pass on the canonical Compose stack.
+- [x] Extend the Task 1 journey to assert all six palette headers and all 11 shades are reachable via UI; verify base/shade resets restore generated values in canonical storage and the real iframe.
+- [x] Assert no builder navigation/non-GET request; at desktop and 390px assert accordion remains usable and document horizontal scroll width does not exceed viewport width.
+- [x] Run `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/theme-foundations.spec.ts`; expected existing and new foundations journeys pass on the canonical Compose stack.
 
 ### Task 5: Final scope and prototype-gate review
 
 **Files:** Inspect `builder/src/App.vue`, all `VisualPrototype*.vue`, `builder/src/composables/use-visual-prototype.ts`, `builder/src/models/visual-prototype.model.ts`, and `builder/src/styles/visual-prototype.css`; no production shell edits in this plan.
 
-- [ ] Confirm palette production UI does not import or depend on prototype state/styles and its route still works with and without `?visual-prototype=1&variant=A`.
-- [ ] Run all Task 2 checks and Task 3 Playwright test after final edits; record actual pass/failure outputs in the handoff, not as speculative ticket evidence.
-- [ ] Keep the Studio shell follow-ups in the approved design spec; create a separate implementation plan before changing navigation, toolbar, preview composition, or removing prototype routing/artifacts.
+- [x] Confirm palette production UI does not import or depend on prototype state/styles and its route still works with and without `?visual-prototype=1&variant=A`.
+- [x] Review the completed changes through `9302c31`, including final fixes and documentation, and verify the production palette scope remains separate from prototype state/styles.
+- [x] Keep the Studio shell follow-ups in the approved design spec; create a separate implementation plan before changing navigation, toolbar, preview composition, or removing prototype routing/artifacts.
+
+**Verification evidence (final review through `9302c31`):** Focused palette unit tests: 14/14 pass. Full foundations Compose Playwright: 14/14 pass. Type-check and production build pass. Full unit suite: 449 pass; one known unrelated `dirty-App` type-boundaries failure remains.
 
 ## Self-review
 
