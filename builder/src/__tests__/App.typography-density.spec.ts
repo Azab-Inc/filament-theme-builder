@@ -20,14 +20,12 @@ describe('App typography and density', () => {
   it('renders every exposed foundation control with an individual reset', async () => {
     const wrapper = mount(App, { global: { plugins: [createPinia()] } })
     await wrapper.get('button[aria-label="Light mode"]').trigger('click')
+    for (const palette of ['primary', 'success', 'warning', 'danger', 'info', 'gray']) {
+      await wrapper.get(`[data-palette-header="${palette}"]`).trigger('click')
+      expect(wrapper.find(`[aria-label="Reset ${palette} palette base"]`).exists(), palette).toBe(true)
+    }
 
     for (const control of [
-      'primary palette base',
-      'success palette base',
-      'warning palette base',
-      'danger palette base',
-      'info palette base',
-      'gray palette base',
       'density',
       'spacing 1',
       'border default light',

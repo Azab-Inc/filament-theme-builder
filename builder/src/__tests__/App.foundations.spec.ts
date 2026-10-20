@@ -16,8 +16,9 @@ describe('App foundations', () => {
     expect(wrapper.get('button[aria-label="Undo"]').attributes('disabled')).toBeUndefined()
   })
 
-  it('exposes accessible foundation sections without replacing the preview controls', () => {
+  it('exposes accessible foundation sections without replacing the preview controls', async () => {
     const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+    await wrapper.get('[data-palette-header="primary"]').trigger('click')
 
     expect(wrapper.get('section.foundations h2').text()).toBe('Foundations')
     expect(wrapper.get('input[aria-label="primary shade 500 override"]')).toBeTruthy()
@@ -57,6 +58,7 @@ describe('App foundations', () => {
 
   it('reports explicit status when a user writes the current default value', async () => {
     const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+    await wrapper.get('[data-palette-header="primary"]').trigger('click')
     const input = wrapper.get('#primary-palette-base')
 
     await input.setValue('#6366f1')

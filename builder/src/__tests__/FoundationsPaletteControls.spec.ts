@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { mount } from '@vue/test-utils'
 
@@ -7,8 +7,10 @@ import { PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
 import { createDefaultFoundationState } from '@/utils/foundation-defaults'
 
 describe('FoundationsPaletteControls', () => {
+  afterEach(() => { document.body.innerHTML = '' })
   const mountControls = () =>
     mount(FoundationsPaletteControls, {
+      attachTo: document.body,
       props: {
         palettes: createDefaultFoundationState().palettes,
         paletteNames: PALETTE_NAMES,
@@ -29,6 +31,7 @@ describe('FoundationsPaletteControls', () => {
       'p-4',
     ])
     expect(fieldset.get('legend').text()).toBe('Color palettes')
+    await wrapper.get('[data-palette-header="primary"]').trigger('click')
     expect(wrapper.get('#primary-palette-base').attributes('value')).toBe('#6366f1')
     expect(wrapper.get('#primary-shade-50').attributes('aria-label')).toBe(
       'primary shade 50 override',
@@ -54,7 +57,7 @@ describe('FoundationsPaletteControls', () => {
     const wrapper = mountControls()
     const headers = wrapper.findAll('[data-palette-header]')
 
-    expect(headers.map((header) => header.text())).toEqual([...PALETTE_NAMES])
+    expect(headers.map((header) => header.get('.palette-accordion__name').text())).toEqual([...PALETTE_NAMES])
     expect(headers).toHaveLength(6)
     headers.forEach((header) => expect(header.attributes('aria-expanded')).toBe('false'))
     expect(wrapper.findAll('[data-palette-panel]:not([hidden])')).toHaveLength(0)
@@ -77,7 +80,7 @@ describe('FoundationsPaletteControls', () => {
     expect(panel.attributes('aria-labelledby')).toBe(headerId)
     expect(header.attributes('aria-controls')).toBe(panel.attributes('id'))
     expect(panel.attributes('data-palette-panel')).toBe('primary')
-    expect(panel.find('#primary-palette-base[type="color"]').exists()).toBe(true)
+    expect(panel.find('#primary-palette-base-picker[type="color"]').exists()).toBe(true)
     expect(panel.find('#primary-palette-base[type="text"]').exists()).toBe(true)
     expect(panel.findAll('input[aria-label$="override"]').map((input) => input.attributes('aria-label')))
       .toEqual(PALETTE_SHADES.map((shade) => `primary shade ${shade} override`))
@@ -89,6 +92,7 @@ describe('FoundationsPaletteControls', () => {
     const success = wrapper.get('[data-palette-header="success"]')
 
     await primary.trigger('click')
+    ;(success.element as HTMLButtonElement).focus()
     await success.trigger('keydown.enter')
 
     expect(primary.attributes('aria-expanded')).toBe('false')

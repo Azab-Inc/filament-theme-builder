@@ -14,8 +14,8 @@ const cssBlocks = [
   },
   {
     path: 'src/styles/editor-navigation.css',
-    lines: 45,
-    sha256: '9f5a20b3d9b3269c5d18bc92df29329154e78557bcbe2667bd6567fd905197a3',
+    lines: 98,
+    sha256: 'a7f6bf768217314d1003f1e2ef9469c3205b4fdc9993917bda5591c221676754',
   },
   {
     path: 'src/styles/editor-responsive.css',
