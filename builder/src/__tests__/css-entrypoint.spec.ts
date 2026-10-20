@@ -64,6 +64,7 @@ describe('builder CSS entrypoint', () => {
       '@import "./styles/editor-mobile.css";',
       '@import "./styles/inspect-prototype.css";',
       '@import "./styles/theme-prototype.css";',
+      '@import "./styles/color-field.css";',
     ])
     expect(cssSource.match(/@import\s+["']tailwindcss\/[^"']+["']/g)).toEqual([
       '@import "tailwindcss/theme.css"',
