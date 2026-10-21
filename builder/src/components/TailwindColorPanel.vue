@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
 import { getTailwindColors, searchTailwindColors } from '@/utils/tailwind-palette'
-import type { TailwindColor } from '@/models/tailwind-palette.model'
+import type { TailwindColorPanelProps, TailwindColorPanelEmits } from '@/models/color-popover.model'
 
-const emit = defineEmits<{ select: [color: TailwindColor] }>()
-const props = defineProps<{ id: string; selectedValue: string }>()
+const emit = defineEmits<TailwindColorPanelEmits>()
+const props = defineProps<TailwindColorPanelProps>()
 const search = shallowRef('')
 const colors = computed(() => searchTailwindColors(search.value))
 const families = computed(() => [...new Set((search.value ? colors.value : getTailwindColors()).map((color) => color.family))])

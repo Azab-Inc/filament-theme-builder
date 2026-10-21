@@ -2,12 +2,11 @@
 import { computed, shallowRef, toRef, watch } from 'vue'
 import ColorPopover from '@/components/ColorPopover.vue'
 import { useColorField } from '@/composables/use-color-field'
-import type { ColorFieldProfile } from '@/models/color-field.model'
-import type { RawVisualProperty } from '@/models/raw-overrides.model'
+import type { ColorFieldProps, ColorFieldEmits } from '@/models/color-field.model'
 import { isColorFieldValueValid } from '@/utils/color-field-validation'
 
-const props = withDefaults(defineProps<{ id: string; label: string; value: string; effectiveValue: string; profile: ColorFieldProfile; contextKey: string; textLabel?: string; visibleLabel?: string; nativeLabel?: string; nativeId?: string; statusId?: string; errorId?: string; error?: string; externalError?: boolean; resetKey?: string | number; nativePrimary?: boolean; property?: RawVisualProperty }>(), { textLabel: undefined, visibleLabel: undefined, nativeLabel: undefined, nativeId: undefined, statusId: undefined, errorId: undefined, error: undefined, externalError: false, resetKey: undefined, nativePrimary: false, property: undefined })
-const emit = defineEmits<{ input: [event: Event] }>()
+const props = withDefaults(defineProps<ColorFieldProps>(), { textLabel: undefined, visibleLabel: undefined, nativeLabel: undefined, nativeId: undefined, statusId: undefined, errorId: undefined, error: undefined, externalError: false, resetKey: undefined, nativePrimary: false, property: undefined })
+const emit = defineEmits<ColorFieldEmits>()
 const nativeInput = shallowRef<HTMLInputElement | null>(null)
 const textInput = shallowRef<HTMLInputElement | null>(null)
 const trigger = shallowRef<HTMLButtonElement | null>(null)
@@ -19,24 +18,25 @@ const { draft, open } = useColorField(value, profile, contextKey, resetKey)
 const nativeSupported = computed(() => /^#[\da-f]{6}$/i.test(props.value) || (!props.value && /^#[\da-f]{6}$/i.test(props.effectiveValue)))
 const nativeValue = computed(() => nativeSupported.value ? (props.value || props.effectiveValue) : '#000000')
 const describedBy = computed(() => [props.statusId, props.error ? props.errorId : undefined].filter(Boolean).join(' ') || undefined)
+const nativeDescribedBy = computed(() => [`${props.id}-label`, describedBy.value].filter(Boolean).join(' '))
 watch(() => props.value, (next) => { if (next === '' || isColorFieldValueValid(next, props.profile, props.property)) draft.value = next })
 function forwardValue(next: string): void {
   if (!textInput.value) return
   textInput.value.value = next
   textInput.value.dispatchEvent(new Event('input', { bubbles: true }))
 }
-function onText(event: Event): void { draft.value = (event.target as HTMLInputElement).value; emit('input', event) }
-function onNative(event: Event): void { draft.value = (event.target as HTMLInputElement).value; emit('input', event) }
+function onInput(event: Event): void { draft.value = (event.target as HTMLInputElement).value; emit('input', event) }
 function select(value: string): void { open.value = false; forwardValue(value) }
 function toggle(): void { open.value = !open.value }
 </script>
 
 <template>
   <div class="color-field" :data-color-field="id">
-    <label class="color-field__text-label" :for="id">{{ visibleLabel || textLabel || label }}</label>
+    <label :id="`${id}-label`" class="color-field__text-label" :for="id">{{ visibleLabel || textLabel || label }}</label>
     <div class="color-field__controls">
-      <input :id="nativeId || `${id}-native`" ref="nativeInput" class="color-field__native" :class="{ 'color-field__native--primary': nativePrimary }" type="color" :value="nativeValue" :disabled="!nativeSupported" :aria-label="nativeLabel || `${label} native color picker`" :aria-describedby="describedBy" @input="onNative" />
-      <input :id="id" ref="textInput" v-model="draft" class="color-field__text" type="text" :aria-label="textLabel || label" :aria-describedby="describedBy" :aria-invalid="error ? 'true' : undefined" @input="onText" />
+      <label class="sr-only" :for="nativeId || `${id}-native`">{{ nativeLabel || `${label} native color picker` }}</label>
+      <input :id="nativeId || `${id}-native`" ref="nativeInput" class="color-field__native" :class="{ 'color-field__native--primary': nativePrimary }" type="color" :value="nativeValue" :disabled="!nativeSupported" :aria-label="nativeLabel || `${label} native color picker`" :aria-describedby="nativeDescribedBy" @input="onInput" />
+      <input :id="id" ref="textInput" v-model="draft" class="color-field__text" type="text" :aria-label="textLabel || label" :aria-describedby="describedBy" :aria-invalid="error ? 'true' : undefined" @input="onInput" />
       <button :id="`${id}-palette-trigger`" ref="trigger" class="color-field__trigger" type="button" :aria-label="`Choose ${label} from Tailwind palette`" :aria-expanded="open" :aria-controls="`${id}-color-popover`" @click="toggle">Choose color</button>
     </div>
     <span v-if="!nativeSupported" class="color-field__native-help" role="status">Native color picker unavailable for this value.</span>

@@ -33,6 +33,12 @@ An initial simultaneous full-unit/browser run overloaded the runner and timed ou
 
 The old source-text guard required an unused editor-type import in App.vue although editor state is owned by use-builder-state. It now asserts the real consumer imports the dedicated model and neither that consumer nor App redeclares those types. This corrects the previously documented baseline failure rather than adding dead production imports.
 
+## Final review corrections
+
+Two-axis review found missing explicit native label linkage and insufficient active-control border contrast. Red tests reproduced both (native label missing, rendered border contrast 2.56:1). Native controls now have explicit HTML labels plus a description link to the visible field label/status while preserving existing accessible names. Active input/button boundaries use darker borders. Component prop/emits types were extracted to models and identical input handlers merged. Verification: **35 focused unit tests** and **6 boundary/contrast Playwright cases** passed after the fixes.
+
+The standards review also raised the broader lack of direct MCP field tools. This remains a pre-existing domain-capability gap, not a new operation introduced by this input-method ticket. The approved spec explicitly forbids new MCP tools here. Existing tool permissions and canonical import/export are unchanged; no complete direct-field AI parity is claimed.
+
 ## Limits
 
 This is field-input enhancement only, not the full Studio shell refresh. Direct MCP field editing is not claimed; existing canonical import/export authorization and confirmation remain unchanged. The 30-test acceptance set and additional regression subset are not a claim that every repository browser test was rerun.

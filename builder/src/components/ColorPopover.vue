@@ -3,13 +3,12 @@ import { computed, nextTick, onUnmounted, shallowRef, watch } from 'vue'
 import CustomColorPanel from '@/components/CustomColorPanel.vue'
 import TailwindColorPanel from '@/components/TailwindColorPanel.vue'
 import { usePopoverPosition } from '@/composables/use-popover-position'
-import type { ColorFieldProfile } from '@/models/color-field.model'
+import type { ColorPopoverProps, ColorPopoverEmits } from '@/models/color-popover.model'
 import type { TailwindColor } from '@/models/tailwind-palette.model'
-import type { RawVisualProperty } from '@/models/raw-overrides.model'
 import { findTailwindColor } from '@/utils/tailwind-palette'
 
-const props = defineProps<{ id: string; label: string; open: boolean; value: string; profile: ColorFieldProfile; triggerElement: HTMLElement | null; property?: RawVisualProperty }>()
-const emit = defineEmits<{ close: []; select: [color: TailwindColor]; apply: [value: string] }>()
+const props = defineProps<ColorPopoverProps>()
+const emit = defineEmits<ColorPopoverEmits>()
 const panel = shallowRef<HTMLElement | null>(null)
 const tab = shallowRef<'Custom' | 'Tailwind'>('Tailwind')
 const position = shallowRef({ top: 8, left: 8 })

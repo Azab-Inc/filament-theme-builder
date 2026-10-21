@@ -1,11 +1,11 @@
 .color-field { display: grid; gap: .35rem; min-width: 0; }
 .color-field__text-label { font-size: .875rem; font-weight: 500; }
 .color-field__controls { display: flex; align-items: center; gap: .5rem; min-width: 0; }
-.color-field__native { width: 2.5rem; height: 2.25rem; flex: 0 0 auto; padding: .15rem; border: 1px solid #a1a1aa; border-radius: .375rem; background: white; cursor: pointer; }
+.color-field__native { width: 2.5rem; height: 2.25rem; flex: 0 0 auto; padding: .15rem; border: 1px solid #71717a; border-radius: .375rem; background: white; cursor: pointer; }
 .color-field__native--primary { width: 2.75rem; height: 2.5rem; }
 .color-field__native:disabled { cursor: not-allowed; opacity: .55; }
-.color-field__text { min-width: 0; width: 100%; padding: .45rem .6rem; border: 1px solid #a1a1aa; border-radius: .375rem; color: #18181b; background: white; }
-.color-field__trigger, .color-popover button { border: 1px solid #a1a1aa; border-radius: .375rem; background: #fff; color: #18181b; cursor: pointer; }
+.color-field__text { min-width: 0; width: 100%; padding: .45rem .6rem; border: 1px solid #71717a; border-radius: .375rem; color: #18181b; background: white; }
+.color-field__trigger, .color-popover button { border: 1px solid #71717a; border-radius: .375rem; background: #fff; color: #18181b; cursor: pointer; }
 .color-field__trigger { flex: 0 0 auto; padding: .45rem .6rem; font-size: .8125rem; }
 .color-field__native:focus-visible, .color-field__text:focus-visible, .color-field__trigger:focus-visible, .color-popover button:focus-visible, .color-popover input:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
 .color-field__native-help, .color-field__error { font-size: .75rem; color: #52525b; }
@@ -17,7 +17,7 @@
 .color-popover__palette { display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding: .6rem; }
 .color-popover__families { min-height: 0; overflow: auto; }
 .color-popover__search-label, .color-popover__custom label { display: block; margin-bottom: .3rem; font-size: .8rem; font-weight: 600; }
-.color-popover__palette input, .color-popover__custom input { width: 100%; padding: .45rem .6rem; border: 1px solid #a1a1aa; border-radius: .375rem; background: #fff; color: #18181b; }
+.color-popover__palette input, .color-popover__custom input { width: 100%; padding: .45rem .6rem; border: 1px solid #71717a; border-radius: .375rem; background: #fff; color: #18181b; }
 .color-popover__result-count, .color-popover__empty, .color-popover__selected { margin: .45rem 0; font-size: .75rem; color: #52525b; }
 .color-popover__family { margin-top: .65rem; }
 .color-popover__family h3 { margin: 0 0 .25rem; font-size: .8rem; font-weight: 600; text-transform: capitalize; }

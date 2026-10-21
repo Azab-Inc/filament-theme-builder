@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue'
-import type { ColorFieldProfile } from '@/models/color-field.model'
-import type { RawVisualProperty } from '@/models/raw-overrides.model'
+import type { CustomColorPanelProps, CustomColorPanelEmits } from '@/models/color-popover.model'
 import { isColorFieldValueValid } from '@/utils/color-field-validation'
 
-const props = defineProps<{ id: string; value: string; profile: ColorFieldProfile; label: string; property?: RawVisualProperty }>()
-const emit = defineEmits<{ apply: [value: string] }>()
+const props = defineProps<CustomColorPanelProps>()
+const emit = defineEmits<CustomColorPanelEmits>()
 const draft = shallowRef(props.value)
 const nativeSupported = computed(() => /^#[\da-f]{6}$/i.test(draft.value))
 watch(() => props.value, (value) => { draft.value = value })
