@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useColorFieldResets } from '@/composables/use-color-field-resets'
+import ColorField from '@/components/ColorField.vue'
+import type { RawVisualProperty } from '@/models/raw-overrides.model'
 import type {
   RawPropertyChange,
   RawPropertyReset,
@@ -6,7 +9,7 @@ import type {
 } from './advanced-raw-inspector.dto'
 import type { AdvancedRawInspectorProps } from './advanced-raw-inspector.model'
 
-defineProps<AdvancedRawInspectorProps>()
+const props = defineProps<AdvancedRawInspectorProps>()
 
 const emit = defineEmits<{
   'set-selector': [change: RawSelectorChange]
@@ -14,6 +17,10 @@ const emit = defineEmits<{
   'reset-property': [change: RawPropertyReset]
   'reset-override': []
 }>()
+const { resetKeys, resetField } = useColorFieldResets()
+const colorProperties = new Set<RawVisualProperty>(['color', 'background-color', 'border-color'])
+function resetProperty(property: RawVisualProperty): void { resetField(property); emit('reset-property', { property }) }
+function resetOverride(): void { props.properties.forEach(resetField); emit('reset-override') }
 </script>
 
 <template>
@@ -60,22 +67,17 @@ const emit = defineEmits<{
         :key="property"
         class="raw-property-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto]"
       >
-        <label :for="`raw-${property}`">{{ property }}</label>
-        <input
-          :id="`raw-${property}`"
-          :aria-label="`Raw ${property}`"
-          :value="propertyValue(property)"
-          @input="emit('set-property', { property, event: $event })"
-        />
+        <ColorField v-if="colorProperties.has(property)" :id="`raw-${property}`" :label="`Raw ${property}`" :visible-label="property" :text-label="`Raw ${property}`" :value="propertyValue(property)" :effective-value="propertyValue(property)" profile="raw" :context-key="`${activeThemeId ?? ''}:${selector}:${property}`" :property="property" :reset-key="resetKeys[property]" @input="emit('set-property', { property, event: $event })" />
+        <template v-else><label :for="`raw-${property}`">{{ property }}</label><input :id="`raw-${property}`" :aria-label="`Raw ${property}`" :value="propertyValue(property)" @input="emit('set-property', { property, event: $event })" /></template>
         <button
           type="button"
           :aria-label="`Reset raw ${property}`"
-          @click="emit('reset-property', { property })"
+          @click="resetProperty(property)"
         >
           Reset
         </button>
       </div>
-      <button type="button" aria-label="Reset raw element override" @click="emit('reset-override')">
+      <button type="button" aria-label="Reset raw element override" @click="resetOverride">
         Reset raw override
       </button>
     </fieldset>

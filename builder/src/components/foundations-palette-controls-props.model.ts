@@ -5,4 +5,5 @@ export type FoundationsPaletteControlsProps = {
   paletteNames: readonly PaletteName[]
   paletteShades: readonly PaletteShade[]
   statusFor: (path: string) => string
+  contextKey?: string
 }

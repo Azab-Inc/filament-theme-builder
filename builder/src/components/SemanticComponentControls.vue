@@ -7,6 +7,8 @@ import type {
   SemanticComponentControlsProps,
   SemanticComponentRow,
 } from './semantic-component-controls.model'
+import ColorField from '@/components/ColorField.vue'
+import { useColorFieldResets } from '@/composables/use-color-field-resets'
 
 defineProps<SemanticComponentControlsProps>()
 
@@ -14,12 +16,14 @@ const emit = defineEmits<{
   'set-value': [change: SemanticComponentValueChange]
   reset: [change: SemanticComponentReset]
 }>()
+const { resetKeys, resetField } = useColorFieldResets()
 
 function setValue(row: SemanticComponentRow, event: Event): void {
   emit('set-value', { row, event })
 }
 
 function resetValue(row: SemanticComponentRow): void {
+  resetField(row.scope)
   emit('reset', { row })
 }
 </script>
@@ -43,17 +47,8 @@ function resetValue(row: SemanticComponentRow): void {
         :key="row.scope"
         class="component-control-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]"
       >
-        <label :for="`product-name-${row.scope}-background`"
-          >Product name {{ row.label }} background</label
-        >
-        <input
-          :id="`product-name-${row.scope}-background`"
-          type="text"
-          :aria-label="`Product name ${row.scope} background`"
-          :value="row.value"
-          @input="setValue(row, $event)"
-        />
-        <span role="status" :data-theme-source="row.source">{{
+        <ColorField :id="`product-name-${row.scope}-background`" :label="`Product name ${row.label} background`" :visible-label="`Product name ${row.label} background`" :text-label="`Product name ${row.scope} background`" :value="row.value" :effective-value="row.value" profile="hex6" :context-key="`${activeThemeId ?? ''}:${row.scope}:${row.request.targetId}`" :status-id="`product-name-${row.scope}-status`" :reset-key="resetKeys[row.scope]" @input="setValue(row, $event)" />
+        <span :id="`product-name-${row.scope}-status`" role="status" :data-theme-source="row.source">{{
           row.explicit ? `Explicit (${row.source})` : `Inherited from ${row.source}`
         }}</span>
         <button

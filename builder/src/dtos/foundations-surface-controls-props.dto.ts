@@ -16,4 +16,5 @@ export type FoundationsSurfaceControlsProps = {
   textNames: readonly FoundationTextName[]
   statusFor: (path: string) => string
   foundationError: (path: string) => string | undefined
+  contextKey?: string
 }

@@ -7,6 +7,16 @@ function buttonByName(name: string): HTMLButtonElement | undefined {
   return [...document.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.getAttribute('aria-label') === name || button.textContent?.trim() === name)
 }
 describe('ColorField', () => {
+  it('renders both color affordances for every mounted color field', async () => {
+    const wrapper = mount(ColorField, { props: {
+      id: 'inventory-surface', label: 'Inventory surface', value: '#ffffff', effectiveValue: '#ffffff',
+      profile: 'hex6', contextKey: 'inventory',
+    } })
+
+    expect(wrapper.get('input[type="color"]').attributes('aria-label')).toBe('Inventory surface native color picker')
+    expect(wrapper.find('button[aria-label="Choose Inventory surface from Tailwind palette"]').exists()).toBe(true)
+  })
+
   it('preserves existing labels and IDs while showing empty shade overrides with their effective swatch', () => {
     const wrapper = mount(ColorField, { props: {
       id: 'primary-shade-500', label: 'Primary 500', value: '', effectiveValue: '#fb2c36',

@@ -63,7 +63,7 @@ describe('App foundations', () => {
 
     await input.setValue('#6366f1')
 
-    expect(input.element.nextElementSibling?.textContent).toBe('explicit')
+    expect(wrapper.get('[data-palette-status="primary-base"]').text()).toBe('explicit')
   })
 
   it('shows a per-control error and does not persist an unsupported color reference', async () => {

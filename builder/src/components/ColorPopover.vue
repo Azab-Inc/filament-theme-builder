@@ -40,6 +40,7 @@ function apply(value: string): void { emit('apply', value); close(true) }
   <Teleport to="body">
     <div v-if="open" :id="`${id}-color-popover`" ref="panel" class="color-popover" role="dialog" :aria-label="`${label} color choices`"
       :style="{ top: `${position.top}px`, left: `${position.left}px` }">
+      <header class="color-popover__header"><strong>{{ label }}</strong><button type="button" :aria-label="`Close ${label} color choices`" @click="close(true)">×</button><code>{{ value || 'Generated / inherited' }}</code></header>
       <div class="color-popover__tabs" role="tablist" :aria-label="`${label} color source`">
         <button :id="`${id}-custom-tab`" type="button" role="tab" :aria-controls="`${id}-custom-panel`" :aria-selected="tab === 'Custom'" @click="tab = 'Custom'">Custom</button>
         <button :id="`${id}-tailwind-tab`" type="button" role="tab" :aria-controls="`${id}-tailwind-panel`" :aria-selected="tab === 'Tailwind'" @click="tab = 'Tailwind'">Tailwind</button>

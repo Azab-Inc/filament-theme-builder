@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { shallowRef, watch } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import type { ColorFieldProfile } from '@/models/color-field.model'
 import type { RawVisualProperty } from '@/models/raw-overrides.model'
 import { isColorFieldValueValid } from '@/utils/color-field-validation'
@@ -7,12 +7,17 @@ import { isColorFieldValueValid } from '@/utils/color-field-validation'
 const props = defineProps<{ id: string; value: string; profile: ColorFieldProfile; label: string; property?: RawVisualProperty }>()
 const emit = defineEmits<{ apply: [value: string] }>()
 const draft = shallowRef(props.value)
+const nativeSupported = computed(() => /^#[\da-f]{6}$/i.test(draft.value))
 watch(() => props.value, (value) => { draft.value = value })
 function apply(): void { if (isColorFieldValueValid(draft.value, props.profile, props.property)) emit('apply', draft.value) }
+function draftNative(event: Event): void { draft.value = (event.target as HTMLInputElement).value }
 </script>
 
 <template>
   <div class="color-popover__custom">
+    <label :for="`${id}-custom-native`">Native color picker</label>
+    <input :id="`${id}-custom-native`" type="color" :value="nativeSupported ? draft : '#000000'" :disabled="!nativeSupported" :aria-label="`${label} custom color picker`" @input="draftNative" @change="apply" />
+    <small v-if="!nativeSupported">This value is preserved. Enter a custom hex or choose a Tailwind shade to replace it.</small>
     <label :for="`${id}-custom-color`">Custom color</label>
     <input :id="`${id}-custom-color`" v-model="draft" type="text" :aria-label="`${label} custom color`" />
     <p v-if="draft && !isColorFieldValueValid(draft, profile, property)" role="alert">Enter a valid color value.</p>

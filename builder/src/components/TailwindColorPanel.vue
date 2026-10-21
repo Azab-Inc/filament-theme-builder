@@ -23,6 +23,7 @@ const families = computed(() => [...new Set((search.value ? colors.value : getTa
           <button v-for="color in colors.filter((item) => item.family === family)" :key="color.name" type="button"
             :aria-label="`${color.family} ${color.shade} ${color.value}`" :aria-pressed="color.value.toLowerCase() === props.selectedValue.toLowerCase()" :title="color.name" @click="emit('select', color)">
             <span :style="{ backgroundColor: color.value }" aria-hidden="true"></span>
+            <small aria-hidden="true">{{ color.shade }}</small>
           </button>
         </div>
       </section>

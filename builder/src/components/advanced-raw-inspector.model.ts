@@ -7,4 +7,5 @@ export type AdvancedRawInspectorProps = {
   properties: ReadonlyArray<RawVisualProperty>
   propertyValue: (property: RawVisualProperty) => string
   visible: boolean
+  activeThemeId?: string
 }

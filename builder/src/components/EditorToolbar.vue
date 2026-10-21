@@ -2,6 +2,7 @@
 import LocalThemeManager from '@/components/LocalThemeManager.vue'
 import ThemeImportDialog from '@/components/ThemeImportDialog.vue'
 import ThemePairingControl from '@/components/ThemePairingControl.vue'
+import ColorField from '@/components/ColorField.vue'
 import { useThemeRelayImportHandoff } from '@/composables/use-theme-relay-import-handoff'
 import type { LocalThemeRecord } from '@/models/local-theme.model'
 withDefaults(defineProps<{
@@ -43,6 +44,9 @@ const emit = defineEmits<{
 
 function relayRename(id: string, name: string): void { emit('rename', id, name) }
 const { dialog: importDialog, receive: receiveRelayImport } = useThemeRelayImportHandoff()
+function updatePrimaryColor(event: Event): void {
+  emit('update:primaryColor', (event.target as HTMLInputElement).value)
+}
 </script>
 
 <template>
@@ -52,10 +56,7 @@ const { dialog: importDialog, receive: receiveRelayImport } = useThemeRelayImpor
       <p data-demo-notice>Preview demo data is temporary.</p>
     </div>
     <div class="preview-shell__header-controls" data-editor-header-controls>
-      <label
-        >Primary color
-        <input :value="primaryColor" type="color" aria-label="Primary color" @input="emit('update:primaryColor', ($event.target as HTMLInputElement).value)" />
-      </label>
+      <ColorField id="toolbar-primary-color" label="Primary color" visible-label="Primary color" text-label="Primary color text" :value="primaryColor" :effective-value="primaryColor" profile="hex6" :context-key="activeThemeId" native-label="Primary color" :native-primary="true" @input="updatePrimaryColor" />
       <button type="button" aria-label="Export theme JSON" @click="emit('exportCanonicalJson')">
         Export JSON
       </button>

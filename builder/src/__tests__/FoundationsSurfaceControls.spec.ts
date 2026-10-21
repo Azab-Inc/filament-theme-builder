@@ -38,7 +38,7 @@ describe('FoundationsSurfaceControls', () => {
 
     expect(wrapper.element.tagName).toBe('FIELDSET')
     expect(wrapper.get('legend').text()).toBe('Surfaces, borders, text, and modes')
-    expect(wrapper.findAll('label').map((label) => label.text())).toEqual([
+    expect(wrapper.findAll('.color-field__text-label').map((label) => label.text())).toEqual([
       'page surface light', 'sidebar surface light', 'topbar surface light',
       'card surface light', 'elevated surface light', 'input surface light',
       'border default light', 'border strong light',
@@ -46,7 +46,7 @@ describe('FoundationsSurfaceControls', () => {
     ])
     expect(wrapper.get('#page-surface').attributes('aria-invalid')).toBe('true')
     expect(wrapper.get('[data-foundation-error="surfaces.page.light"]').text()).toBe('Invalid color')
-    expect(wrapper.get('[role="status"]').text()).toBe('explicit')
+    expect(wrapper.get('#surface-page-status').text()).toBe('explicit')
     expect(wrapper.find('[aria-label="Reset page surface"]').exists()).toBe(true)
 
     await wrapper.get('[aria-label="Dark mode"]').trigger('click')
