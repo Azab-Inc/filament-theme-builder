@@ -453,7 +453,7 @@ test.describe('forms and schemas showcase', () => {
       })
       window.addEventListener('ftb:preview-message-accepted', () => { capture.__ftbAccepted! += 1 })
     })
-    await page.getByLabel('Primary color').fill('#0f766e')
+    await page.locator('#toolbar-primary-color').fill('#0f766e')
     await expect.poll(() => frame!.locator('#ftb-managed-theme').textContent()).toContain('#0f766e')
     await expect.poll(() => frame!.evaluate(() => (window as Window & { __ftbAccepted: number }).__ftbAccepted)).toBeGreaterThan(0)
 

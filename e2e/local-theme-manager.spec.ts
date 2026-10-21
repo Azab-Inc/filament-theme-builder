@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 test.describe('FTB-021 local theme manager', () => {
   test('saves the active theme and creates a selected theme with default Filament styles', async ({ page }) => {
     await page.goto('/')
-    await page.getByLabel('Primary color').fill('#0f766e')
+    await page.locator('#toolbar-primary-color').fill('#0f766e')
 
     await page.getByRole('button', { name: 'Manage themes' }).click()
     const dialog = page.getByRole('dialog', { name: 'Manage themes' })
@@ -15,11 +15,11 @@ test.describe('FTB-021 local theme manager', () => {
     await page.getByRole('button', { name: 'Create theme' }).click()
     await expect(themes).toHaveCount(2)
     await expect(themes.nth(1)).toHaveAttribute('aria-current', 'true')
-    await expect(page.getByLabel('Primary color')).toHaveValue('#6366f1')
+    await expect(page.locator('#toolbar-primary-color')).toHaveValue('#6366f1')
 
     await themes.nth(0).getByRole('button', { name: 'Open Untitled' }).click()
     await expect(page.getByLabel('Active theme')).toHaveText('Untitled')
-    await expect(page.getByLabel('Primary color')).toHaveValue('#0f766e')
+    await expect(page.locator('#toolbar-primary-color')).toHaveValue('#0f766e')
   })
 
   test('opens accessibly, restores focus on Escape, and renames a theme', async ({ page }) => {

@@ -160,7 +160,7 @@ test.describe("foundation preview integration", () => {
     const primaryElement = preview.locator(".fi-badge.fi-color-primary").first();
     const initialPrimary = await primaryElement.evaluate((element) => getComputedStyle(element).backgroundColor);
     expect(initialPrimary).toBe(nativePrimary);
-    await page.getByLabel("Primary color").fill("#0f766e");
+    await page.locator("#toolbar-primary-color").fill("#0f766e");
     await expect.poll(() => primaryElement.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(initialPrimary);
 
     const initialGrayBackground = await preview.locator("body").evaluate((element) => getComputedStyle(element).backgroundColor);
@@ -192,7 +192,7 @@ test.describe("foundation preview integration", () => {
     const baseColor = await primaryButton.evaluate((element) => getComputedStyle(element).backgroundColor);
     expect(baseColor).toContain("0.5");
 
-    await page.getByLabel("Primary shade 700 override").fill("#0000ff80");
+    await page.locator("#primary-shade-700").fill("#0000ff80");
     await expect.poll(async () => (await readActiveTheme(page)).foundations.palettes.primary.overrides[700])
       .toBe("#0000ff80");
     await expect.poll(() => primaryButton.evaluate((element) => getComputedStyle(element).color))
@@ -214,8 +214,8 @@ test.describe("foundation preview integration", () => {
     await expect(
       page.getByRole("heading", { name: "Filament Theme Builder" }),
     ).toBeVisible();
-    await expect(page.getByLabel("Primary color")).toBeVisible();
-    await expect(page.getByLabel("Text primary light").locator("xpath=..").getByRole("status")).toHaveText("inherited");
+    await expect(page.locator("#toolbar-primary-color")).toBeVisible();
+    await expect(page.locator("#text-primary-status")).toHaveText("inherited");
     await expect(
       preview.getByRole("heading", { name: /dashboard/i }),
     ).toBeVisible();
@@ -251,7 +251,7 @@ test.describe("foundation preview integration", () => {
 
     navigationRequests.length = 0;
     mutationRequests.length = 0;
-    await page.getByLabel("Primary color").fill("#0f766e");
+    await page.locator("#toolbar-primary-color").fill("#0f766e");
 
     await expect
       .poll(() =>
@@ -308,7 +308,7 @@ test.describe("foundation preview integration", () => {
     const lightText = await frame.locator(".fi-in-text").first().evaluate((element) => getComputedStyle(element).color);
     const lightSection = await section.evaluate((element) => getComputedStyle(element).backgroundColor);
 
-    await page.getByLabel("Primary color").fill("#0f766e");
+    await page.locator("#toolbar-primary-color").fill("#0f766e");
     await expect.poll(() => statusBadge.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe("");
     await expect.poll(() => statusBadge.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(lightSection);
 
@@ -439,7 +439,7 @@ test.describe("foundation preview integration", () => {
       });
       window.addEventListener("ftb:preview-message-accepted", () => { capture.__ftbAccepted! += 1; });
     });
-    await page.getByLabel("Primary color").fill("#0f766e");
+    await page.locator("#toolbar-primary-color").fill("#0f766e");
     await page.locator("#border-width").fill("1");
     await expect.poll(() => frame!.evaluate(() => Boolean((window as Window & { __ftbMessage?: unknown }).__ftbMessage))).toBe(true);
     const valid = await frame!.evaluate(() => (window as Window & { __ftbMessage: Record<string, any> }).__ftbMessage);
@@ -502,7 +502,7 @@ test.describe("foundation preview integration", () => {
       const input = page.locator(`#${name}-palette-base`);
       await input.fill(name === "primary" ? "#0f766e" : "#123456");
       await expect.poll(() => previewFrame!.evaluate((palette) => getComputedStyle(document.documentElement).getPropertyValue(`--ftb-${palette}`).trim(), name)).toBe(name === "primary" ? "#0f766e" : "#123456");
-      await page.getByLabel(`${name} shade 500 override`).fill("#654321");
+      await page.locator(`#${name}-shade-500`).fill("#654321");
       await expect.poll(() => previewFrame!.evaluate((palette) => getComputedStyle(document.documentElement).getPropertyValue(`--${palette}-500`).trim(), name)).toBe("#654321");
     }
 
@@ -510,7 +510,7 @@ test.describe("foundation preview integration", () => {
     await expect(primaryElement).toBeVisible();
     const primaryTextBefore = await primaryElement.evaluate((element) => getComputedStyle(element).color);
     await openPalette(page, "primary");
-    await page.getByLabel("Primary shade 700 override").fill("#ff0000");
+    await page.locator("#primary-shade-700").fill("#ff0000");
     await expect.poll(() => primaryElement.evaluate((element) => getComputedStyle(element).color)).not.toBe(primaryTextBefore);
     await expect.poll(() => primaryElement.evaluate((element) => getComputedStyle(element).getPropertyValue("--ftb-palette-primary-shades-500").trim())).toBe("#654321");
 
@@ -760,7 +760,7 @@ test.describe("foundation preview integration", () => {
 
     await openPalette(page, "primary");
     await expect(page.locator("#primary-palette-base")).toBeVisible();
-    await expect(page.getByLabel("Primary shade 500 override")).toBeVisible();
+    await expect(page.locator("#primary-shade-500")).toBeVisible();
     await expect(page.locator("#spacing-1")).toBeVisible();
     await expect(page.locator("#border-default-light")).toBeVisible();
     await expect(page.locator("#border-strong-light")).toBeVisible();
@@ -779,12 +779,12 @@ test.describe("foundation preview integration", () => {
     mutationRequests.length = 0;
 
     await page.locator("#primary-palette-base").fill("#0f766e");
-    await page.getByLabel("Primary shade 500 override").fill("#123456");
+    await page.locator("#primary-shade-500").fill("#123456");
     await expect(
       page.getByText("explicit", { exact: true }).first(),
     ).toBeVisible();
     await page.getByRole("button", { name: "Reset primary shade 500" }).click();
-    await expect(page.getByLabel("Primary shade 500 override")).toHaveValue("");
+    await expect(page.locator("#primary-shade-500")).toHaveValue("");
 
     await page.getByRole("button", { name: "Dark mode" }).click();
     await expect(
@@ -893,11 +893,11 @@ test.describe("foundation preview integration", () => {
     await primaryHeader.focus();
     await page.keyboard.press("Enter");
     await expect(primaryHeader).toHaveAttribute("aria-expanded", "true");
-    await expect(page.getByLabel("Primary shade 50 override")).toBeVisible();
+    await expect(page.locator("#primary-shade-50")).toBeVisible();
     for (const palette of paletteNames.slice(1)) {
       await expect(page.getByRole("button", { name: new RegExp(palette, "i") })).toHaveAttribute("aria-expanded", "false");
     }
-    for (const shade of shades) await expect(page.getByLabel(`Primary shade ${shade} override`)).toBeVisible();
+    for (const shade of shades) await expect(page.locator(`#primary-shade-${shade}`)).toBeVisible();
 
     const initial = await readActiveTheme(page);
     expect(initial).toBeTruthy();
@@ -909,7 +909,7 @@ test.describe("foundation preview integration", () => {
     await page.locator("#primary-palette-base").fill("#0f766e");
     await expect.poll(async () => (await readActiveTheme(page)).foundations.palettes.primary.base).toBe("#0f766e");
     await expect.poll(() => previewFrame!.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--ftb-primary").trim())).toBe("#0f766e");
-    await page.getByLabel("Primary shade 500 override").fill("#123456");
+    await page.locator("#primary-shade-500").fill("#123456");
     await expect.poll(async () => (await readActiveTheme(page)).foundations.palettes.primary.overrides[500]).toBe("#123456");
     await expect.poll(() => previewFrame!.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--primary-500").trim())).toBe("#123456");
     await page.getByRole("button", { name: "Reset primary palette base" }).click();
@@ -935,7 +935,7 @@ test.describe("foundation preview integration", () => {
       const header = page.locator(`[data-palette-header="${palette}"]`);
       await header.click();
       await expect(header).toHaveAttribute("aria-expanded", "true");
-      for (const shade of shades) await expect(page.getByLabel(`${palette} shade ${shade} override`)).toBeVisible();
+      for (const shade of shades) await expect(page.locator(`#${palette}-shade-${shade}`)).toBeVisible();
       await expect(primaryHeader).toHaveAttribute("aria-expanded", "false");
     }
 
@@ -950,7 +950,7 @@ test.describe("foundation preview integration", () => {
     await mobileHeader.focus();
     await page.keyboard.press("Enter");
     await expect(mobileHeader).toHaveAttribute("aria-expanded", "true");
-    await expect(page.getByLabel("Gray shade 950 override")).toBeVisible();
+    await expect(page.locator("#gray-shade-950")).toBeVisible();
     await expect(primaryHeader).toHaveAttribute("aria-expanded", "false");
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewportWidth);
     expect(navigationRequests).toEqual([]);
@@ -958,14 +958,14 @@ test.describe("foundation preview integration", () => {
     await primaryHeader.focus();
     await page.keyboard.press("Enter");
     await expect(primaryHeader).toHaveAttribute("aria-expanded", "true");
-    for (const shade of shades) await expect(page.getByLabel(`Primary shade ${shade} override`)).toBeVisible();
+    for (const shade of shades) await expect(page.locator(`#primary-shade-${shade}`)).toBeVisible();
     for (const palette of paletteNames.slice(1)) {
       const header = page.locator(`[data-palette-header="${palette}"]`);
       await header.scrollIntoViewIfNeeded();
       await header.focus();
       await page.keyboard.press("Enter");
       await expect(header).toHaveAttribute("aria-expanded", "true");
-      for (const shade of shades) await expect(page.getByLabel(`${palette} shade ${shade} override`)).toBeVisible();
+      for (const shade of shades) await expect(page.locator(`#${palette}-shade-${shade}`)).toBeVisible();
       await expect(primaryHeader).toHaveAttribute("aria-expanded", "false");
     }
   });
@@ -974,7 +974,7 @@ test.describe("foundation preview integration", () => {
     await page.goto(composeBaseUrl);
     await openPalette(page, "primary");
     await page.locator("#primary-palette-base").fill("#0f766e");
-    await page.getByLabel("Primary shade 500 override").fill("#123456");
+    await page.locator("#primary-shade-500").fill("#123456");
     await expect.poll(async () => (await readActiveTheme(page)).foundations.palettes.primary.overrides[500]).toBe("#123456");
 
     const downloadPromise = page.waitForEvent("download");

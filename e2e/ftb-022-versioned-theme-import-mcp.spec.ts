@@ -107,7 +107,7 @@ test('real ftb:mcp import previews, cancels, rejects stale state, confirms once,
       pairing_id: pairingId, raw_json: rawJson, filename: 'filament-theme.json', proposed_name: 'Stale live import',
     }))
     await expect(preview).toBeVisible({ timeout: 20_000 })
-    await page.getByLabel('Primary color').fill('#0f766e')
+    await page.locator('#toolbar-primary-color').fill('#0f766e')
     await page.getByRole('button', { name: 'Confirm import' }).click()
     await expect(page.getByRole('alert')).toContainText(/stale/i)
     await expect.poll(async () => status(await client.call('local_theme_operation_status', { operation_id: stale.operation_id })))

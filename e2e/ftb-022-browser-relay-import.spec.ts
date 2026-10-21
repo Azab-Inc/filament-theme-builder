@@ -43,7 +43,7 @@ test('browser relay import requires confirmation and creates one fresh theme', a
 test('browser relay import rejects a stale local revision before apply and mutation', async ({ page }) => {
   const relay = await openImportPreview(page)
   const countBefore = await page.locator('[data-local-theme-row]').count()
-  await page.getByLabel('Primary color').fill('#0f766e')
+  await page.locator('#toolbar-primary-color').fill('#0f766e')
   await page.getByRole('button', { name: 'Confirm import' }).click()
   await expect(page.getByRole('alert')).toContainText(/stale/i)
   expect(relay.authorizations).toBe(0)

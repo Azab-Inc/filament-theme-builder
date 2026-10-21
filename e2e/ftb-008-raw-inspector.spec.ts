@@ -90,7 +90,7 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
 
   test('applies exported CSS to a clean Filament fixture with the same visual effects', async ({ page, context }) => {
     const frame = page.frameLocator('iframe[title="Filament preview"]')
-    await page.locator('input[aria-label="Primary color"]').fill('#0f766e')
+    await page.locator('#toolbar-primary-color').fill('#0f766e')
     await page.getByRole('button', { name: 'Inspector' }).click()
     await frame.locator('.fi-section:visible').first().click()
     await page.locator('#raw-background-color').fill('#fef3c7')
@@ -125,8 +125,8 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
       const frameWindow = iframe.contentWindow!
       let captured: any
       frameWindow.addEventListener('message', (event) => { captured = event.data }, { once: false })
-      document.querySelector<HTMLInputElement>('input[aria-label="Primary color"]')!.value = '#0f766e'
-      document.querySelector<HTMLInputElement>('input[aria-label="Primary color"]')!.dispatchEvent(new Event('input', { bubbles: true }))
+      document.querySelector<HTMLInputElement>('#toolbar-primary-color')!.value = '#0f766e'
+      document.querySelector<HTMLInputElement>('#toolbar-primary-color')!.dispatchEvent(new Event('input', { bubbles: true }))
       for (let attempt = 0; attempt < 20 && !captured; attempt++) await new Promise((resolve) => setTimeout(resolve, 25))
       return captured
     })

@@ -33,7 +33,7 @@ test.describe('FTB-050 promoted editor navigation', () => {
       await expect(page.locator('[data-editor-nav-rail]')).toHaveCount(0)
       await expect(page.locator('[data-editor-header-controls]')).toBeVisible()
 
-      await page.getByLabel('Primary color').fill('#0f766e')
+      await page.locator('#toolbar-primary-color').fill('#0f766e')
       await expect.poll(() => page.frameLocator('iframe[title="Filament preview"]')
         .locator('html').evaluate((element) => getComputedStyle(element).getPropertyValue('--ftb-primary').trim()))
         .toBe('#0f766e')
@@ -189,7 +189,7 @@ test.describe('FTB-050 promoted editor navigation', () => {
     await page.setViewportSize({ width: 640, height: 900 })
     await page.goto(builderBaseUrl)
     await page.evaluate(() => { document.documentElement.style.zoom = '2' })
-    await page.getByLabel('Primary color').fill('#0f766e')
+    await page.locator('#toolbar-primary-color').fill('#0f766e')
 
     const expectNoPageHorizontalOverflow = async () => {
       const dimensions = await page.evaluate(() => ({

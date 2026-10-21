@@ -15,7 +15,7 @@ test('builder embeds the Filament preview', async ({ page }) => {
 
   const frame = page.frameLocator('iframe[title="Filament preview"]')
   const iframeUrl = await page.getByTitle('Filament preview').getAttribute('src')
-  await page.getByLabel('Primary color').fill('#0f766e')
+  await page.locator('#toolbar-primary-color').fill('#0f766e')
   await expect.poll(() => frame.locator('#ftb-managed-theme').count()).toBe(1)
   await expect.poll(() => frame.locator('html').evaluate((element) =>
     getComputedStyle(element).getPropertyValue('--ftb-primary').trim(),
@@ -43,7 +43,7 @@ test('builder embeds the Filament preview', async ({ page }) => {
   await expect.poll(() => page.evaluate(() => localStorage.getItem('ftb-theme')))
     .toContain('"primary":"#0f766e"')
   await page.reload()
-  await expect(page.getByLabel('Primary color')).toHaveValue('#0f766e')
+  await expect(page.locator('#toolbar-primary-color')).toHaveValue('#0f766e')
   await expect.poll(() => page.frameLocator('iframe[title="Filament preview"]')
     .locator('html').evaluate((element) => getComputedStyle(element).getPropertyValue('--ftb-primary').trim(),
     )).toBe('#0f766e')
@@ -64,7 +64,7 @@ test('builder primary color updates a native Filament control in the iframe', as
     getComputedStyle(document.documentElement).getPropertyValue('--primary-400').trim(),
   )
 
-  await page.getByLabel('Primary color').fill('#0f766e')
+  await page.locator('#toolbar-primary-color').fill('#0f766e')
 
   await expect.poll(() => previewFrame!.evaluate(() => {
     const value = getComputedStyle(document.documentElement).getPropertyValue('--primary-400').trim()

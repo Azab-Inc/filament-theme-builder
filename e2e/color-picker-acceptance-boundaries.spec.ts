@@ -1,0 +1,56 @@
+import { expect, test } from '@playwright/test'
+import { baseUrl, chooseToken, expectNoOverflow, openChooser, readCanonical } from './color-picker-acceptance.helpers'
+
+test.describe('color picker boundaries and recovery', () => {
+  test.skip(process.env.COMPOSE_E2E !== '1', 'requires the canonical Compose stack')
+
+  test('supports custom alpha, invalid draft recovery, and native compatibility', async ({ page }) => {
+    await page.goto(baseUrl)
+    const input = page.locator('#primary-palette-base')
+    await page.getByRole('button', { name: 'Primary', exact: true }).click()
+    await input.fill('#ff000080')
+    await expect.poll(async () => (await readCanonical(page)).foundations.palettes.primary.base).toBe('#ff000080')
+    const before = await readCanonical(page)
+    await input.fill('#12345')
+    await expect(input).toHaveValue('#12345')
+    await expect.poll(() => readCanonical(page)).toEqual(before)
+    await openChooser(page, 'primary palette base'); await chooseToken(page)
+    await expect(input).toHaveValue('#101828')
+  })
+
+  test('preserves references through dismissals and recovers empty searches', async ({ page }) => {
+    await page.goto(baseUrl)
+    const input = page.locator('#sidebar-surface')
+    await input.fill('var(--gray-200)')
+    await expect.poll(async () => (await readCanonical(page)).foundations.surfaces.sidebar.light).toBe('var(--gray-200)')
+    const before = await readCanonical(page)
+    await openChooser(page, 'sidebar surface light')
+    const search = page.getByRole('searchbox', { name: /search.*color/i })
+    await search.fill('not-a-token')
+    await expect(page.getByText('No colors found. Clear search to see all colors.')).toBeVisible()
+    await search.fill('gray-900'); await expect(page.getByRole('button', { name: /gray 900 #101828/i })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(input).toHaveValue('var(--gray-200)')
+    await expect.poll(() => readCanonical(page)).toEqual(before)
+  })
+
+  test('keeps token focus and closes on outside click without a write', async ({ page }) => {
+    await page.goto(baseUrl)
+    const trigger = page.getByRole('button', { name: 'Choose page surface light from Tailwind palette' })
+    await trigger.click(); await page.keyboard.press('Escape')
+    await expect(trigger).toBeFocused()
+    await trigger.click(); await page.locator('h1').click()
+    await expect(page.getByRole('dialog', { name: 'page surface light color choices' })).toBeHidden()
+  })
+
+  test('keeps the chooser bounded on mobile and keyboard-selectable', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 }); await page.goto(baseUrl)
+    await openChooser(page, 'Primary color')
+    await expectNoOverflow(page)
+    const dialog = page.getByRole('dialog', { name: 'Primary color color choices' })
+    const box = await dialog.boundingBox(); expect(box).not.toBeNull(); expect(box!.x + box!.width).toBeLessThanOrEqual(390)
+    await page.getByRole('searchbox', { name: /search.*color/i }).fill('gray-900')
+    await page.getByRole('button', { name: /gray 900 #101828/i }).press('Enter')
+    await expect(page.locator('#toolbar-primary-color')).toHaveValue('#101828')
+  })
+})

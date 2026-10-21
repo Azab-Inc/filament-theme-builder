@@ -14,7 +14,7 @@ test('Create replaces a customized theme with canonical defaults and preserves i
   const primaryButton = preview.locator('.fi-btn.fi-color-primary').first()
   await expect(primaryButton).toBeVisible()
   const defaultButtonBackground = await primaryButton.evaluate((element) => getComputedStyle(element).backgroundColor)
-  await page.getByLabel('Primary color').fill('#123456')
+  await page.locator('#toolbar-primary-color').fill('#123456')
   await expect.poll(() => page.evaluate((id) => JSON.parse(localStorage.getItem(`ftb-theme:${id}`)!).colors.primary, originalId)).toBe('#123456')
   const customized = await page.evaluate((id) => {
     const state = JSON.parse(localStorage.getItem(`ftb-theme:${id}`)!)
@@ -26,13 +26,13 @@ test('Create replaces a customized theme with canonical defaults and preserves i
   await expect.poll(previewPrimary).toBe('#123456')
   await page.reload()
   await openPreviewActions()
-  await expect(page.getByLabel('Primary color')).toHaveValue('#123456')
+  await expect(page.locator('#toolbar-primary-color')).toHaveValue('#123456')
   await expect.poll(() => primaryButton.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe('rgb(225, 29, 72)')
   await expect.poll(previewPrimary).toBe('#123456')
 
   await page.getByRole('button', { name: 'Manage themes' }).click()
   await page.getByRole('button', { name: 'Create theme' }).click()
-  await expect(page.getByLabel('Primary color')).toHaveValue(defaults.colors.primary)
+  await expect(page.locator('#toolbar-primary-color')).toHaveValue(defaults.colors.primary)
   await expect.poll(previewPrimary).toBe(defaultPreviewPrimary)
   await expect.poll(() => primaryButton.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(defaultButtonBackground)
   const created = await page.evaluate(() => {
@@ -46,10 +46,10 @@ test('Create replaces a customized theme with canonical defaults and preserves i
 
   await page.reload()
   await openPreviewActions()
-  await expect(page.getByLabel('Primary color')).toHaveValue(defaults.colors.primary)
+  await expect(page.locator('#toolbar-primary-color')).toHaveValue(defaults.colors.primary)
   await page.getByRole('button', { name: 'Manage themes' }).click()
   await page.getByRole('listitem').first().getByRole('button', { name: 'Open Untitled' }).click()
-  await expect(page.getByLabel('Primary color')).toHaveValue('#123456')
+  await expect(page.locator('#toolbar-primary-color')).toHaveValue('#123456')
   await expect.poll(previewPrimary).toBe('#123456')
   await expect.poll(() => primaryButton.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe('rgb(225, 29, 72)')
 })
