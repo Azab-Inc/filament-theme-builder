@@ -1,0 +1,89 @@
+.ccp-field {
+  position: relative;
+  min-width: 0;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f2f1;
+}
+.ccp-field:last-child {
+  border-bottom: 0;
+}
+.ccp-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+  font-size: 10px;
+  font-weight: 650;
+}
+.ccp-label small {
+  color: var(--ccp-muted);
+  font-size: 8px;
+  font-weight: 400;
+}
+.ccp-token-badge {
+  border: 1px solid #c7e3da;
+  border-radius: 999px;
+  padding: 1px 6px;
+  background: #edf7f2;
+  color: #176e5e;
+  font:
+    8px ui-monospace,
+    monospace;
+}
+.ccp-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.ccp-swatch-button {
+  flex: none;
+  width: 30px;
+  height: 29px;
+  padding: 3px;
+  border: 1px solid #d9e0dc;
+  border-radius: 5px;
+  background: white;
+}
+.ccp-swatch-button i,
+.ccp-current i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 1px solid #17221d20;
+  border-radius: 3px;
+}
+.ccp-value {
+  min-width: 40px;
+  width: 100%;
+  padding: 6px 7px;
+  border: 1px solid #dce3df;
+  border-radius: 5px;
+  background: #fbfcfb;
+  color: #46554f;
+  font:
+    10px ui-monospace,
+    monospace !important;
+}
+.ccp-invalid-input {
+  border-color: #c44545;
+  background: #fff8f7;
+}
+.ccp-open,
+.ccp-reset {
+  flex: none;
+  border: 1px solid #dce3df;
+  border-radius: 5px;
+  padding: 6px 8px;
+  background: white;
+  color: #5d6964;
+  font-size: 9px;
+}
+.ccp-open:hover {
+  border-color: #9ac8bb;
+  color: var(--ccp-accent);
+}
+.ccp-reset {
+  color: #7d8782;
+}

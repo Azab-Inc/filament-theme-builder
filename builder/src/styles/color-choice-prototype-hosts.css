@@ -1,0 +1,22 @@
+.ccp-host-a .ccp-chooser {
+  position: fixed;
+  left: var(--ccp-x, 12px);
+  top: var(--ccp-y, 80px);
+}
+.ccp-host-b .ccp-chooser {
+  position: static;
+  width: 100%;
+  max-height: 440px;
+  margin: 7px 0;
+  box-shadow: none;
+}
+.ccp-host-c .ccp-chooser {
+  position: fixed;
+  top: 64px;
+  right: 0;
+  bottom: 68px;
+  width: min(390px, 38vw);
+  max-height: none;
+  border-radius: 10px 0 0 10px;
+  box-shadow: -14px 0 44px #10211b20;
+}

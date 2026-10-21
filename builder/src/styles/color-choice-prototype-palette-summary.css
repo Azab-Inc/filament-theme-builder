@@ -1,0 +1,47 @@
+.ccp-palette-item {
+  border-bottom: 1px solid #edf0ee;
+}
+.ccp-palette-item summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  cursor: pointer;
+  list-style: none;
+}
+.ccp-palette-item summary::-webkit-details-marker {
+  display: none;
+}
+.ccp-palette-item summary b {
+  width: 60px;
+  text-transform: capitalize;
+  font-size: 11px;
+}
+.ccp-palette-item summary code {
+  width: 68px;
+  color: #64716b;
+  font:
+    9px ui-monospace,
+    monospace;
+}
+.ccp-ramp-summary {
+  display: flex;
+  flex: 1;
+  min-width: 90px;
+  overflow: hidden;
+  border-radius: 4px;
+}
+.ccp-ramp-summary i {
+  flex: 1;
+  height: 15px;
+  border-right: 1px solid #ffffff48;
+}
+.ccp-palette-item summary small {
+  width: 74px;
+  color: var(--ccp-muted);
+  text-align: right;
+  font-size: 8px;
+}
+.ccp-palette-item[open] .ccp-ramp-summary {
+  display: none;
+}

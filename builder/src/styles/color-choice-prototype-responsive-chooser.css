@@ -1,0 +1,37 @@
+@media (max-width: 600px) {
+  .ccp-palette-item summary {
+    gap: 5px;
+  }
+  .ccp-palette-item summary b {
+    width: 46px;
+    font-size: 9px;
+  }
+  .ccp-palette-item summary code {
+    width: 55px;
+    font-size: 8px;
+  }
+  .ccp-palette-item summary small {
+    width: 54px;
+    font-size: 7px;
+  }
+  .ccp-ramp-summary i {
+    height: 12px;
+  }
+  .ccp-host-a .ccp-chooser,
+  .ccp-host-c .ccp-chooser {
+    top: auto;
+    right: 8px;
+    bottom: 64px;
+    left: 8px;
+    width: auto;
+    max-height: 68vh;
+    border-radius: 9px;
+  }
+  .ccp-host-b .ccp-chooser {
+    width: 100%;
+    max-height: 58vh;
+  }
+  .ccp-ramp {
+    grid-template-columns: 50px repeat(6, minmax(20px, 1fr));
+  }
+}
