@@ -2,6 +2,14 @@ import { expect, type Page } from '@playwright/test'
 
 export const baseUrl = process.env.COMPOSE_BASE_URL ?? 'http://127.0.0.1:4175'
 
+export async function authenticate(page: Page): Promise<void> {
+  await page.goto(`${baseUrl}/demo/admin/login`)
+  if (await page.locator('#form\\.email').count() === 0) return
+  await page.locator('#form\\.email').fill('user'); await page.locator('#form\\.password').fill('password')
+  await page.locator('#form').evaluate((form) => (form as HTMLFormElement).requestSubmit())
+  await expect(page).toHaveURL(`${baseUrl}/demo/admin`)
+}
+
 export const readCanonical = (page: Page) => page.evaluate(() => {
   const id = localStorage.getItem('ftb-theme-active')
   const raw = id ? localStorage.getItem(`ftb-theme:${id}`) : null
