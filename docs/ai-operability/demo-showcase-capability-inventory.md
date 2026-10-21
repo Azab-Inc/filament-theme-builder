@@ -40,6 +40,7 @@ there is no domain mutation to expose or authorize.
 | `panel.branding.asset-read` | `GET /api/branding-assets/{reference}` | read-only | Public preview asset read uses an opaque validated temporary reference; missing/unsafe references return 404 | None | No MCP read tool; not available |
 | `preview.inspector` | Builder Inspector over the read-only/UI-only Filament preview iframe | read-only | Public preview; builder validates the exact preview origin and iframe source; the bridge returns DOM evidence and owns temporary/persistent outlines only; theme changes remain on existing validated builder paths | None | No MCP read tool; not available |
 | `preview.raw-inspector` | Builder Advanced Inspector raw visual overrides and minimal vanilla CSS export | mutation | Local builder theme state only; raw selectors, properties, and values are validated by typed allowlists and the iframe bridge revalidates the same contract | Explicit user action in the builder; no server commit | No MCP mutation tool; not available |
+| `builder.color-input-methods` | `ColorField`, Custom picker and local Tailwind 4.3.3 palette popover (FTB-051) | presentation-only | No domain operation added; existing builder theme state, field validators and preview authorization remain authoritative | None | No MCP mutation tool added; direct field-edit tool not available; canonical import/export contracts unchanged |
 | `builder.local-themes.list` | Pinia/local-theme store and `LocalThemeManager` | read-only | Paired browser-local session; no server theme identity | None | MCP: `local_theme_list`; tested in FTB-022 Task 9 |
 | `builder.local-themes.export` | Canonical V4 export service and local-theme store | read-only | Paired browser-local session; theme membership revalidated | None | MCP: `local_theme_export`; one-shot result consumed by owning MCP process; tested in FTB-022 Task 9 |
 | `builder.local-themes.import-preview` | Bounded versioned import, migration, and preview service | read-only | Paired browser-local session; browser session binding | Browser preview required; preview alone never mutates | MCP: `local_theme_import_preview`; tested in FTB-022 Task 9 |
@@ -51,6 +52,12 @@ FTB-021 deferral to FTB-048 for those capabilities only; broader FTB-048 work an
 all other local-theme operations remain out of scope. The local MCP relay is
 disabled by default and only enabled in local/testing environments by explicit
 configuration. It does not grant account identity or hosted-client access.
+
+FTB-051 adds alternate UI input methods, not a new mutation or AI permission.
+Opening, searching, changing tabs and dismissing never edit the theme. An explicit
+color choice goes through the existing target field's validation, history and
+projection path. No MCP tool is introduced or bypassed; this row does not claim
+that direct field editing is MCP-capable.
 
 ## Commerce operation boundary
 

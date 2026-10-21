@@ -9,14 +9,16 @@ describe('shared editor type boundaries', () => {
   it('keeps editor navigation and section types in a dedicated model', () => {
     const model = readFileSync(`${sourceRoot}/models/editor.model.ts`, 'utf8')
     const app = readFileSync(`${sourceRoot}/App.vue`, 'utf8')
+    const state = readFileSync(`${sourceRoot}/composables/use-builder-state.ts`, 'utf8')
     const inspectorOptions = readFileSync(`${sourceRoot}/models/inspector-composable-options.model.ts`, 'utf8')
 
     expect(model).toContain("export type EditorNavigationMode = 'sidebar' | 'top'")
     expect(model).toContain("export type EditorSection = 'foundations' | 'components' | 'branding' | 'icons' | 'inspector'")
-    expect(app).toContain("from '@/models/editor.model'")
+    expect(state).toContain("import type { EditorNavigationMode, EditorSection } from '@/models/editor.model'")
     expect(inspectorOptions).toContain("import type { EditorSection } from '@/models/editor.model'")
     expect(app).not.toMatch(/type\s+EditorNavigationMode\s*=/)
     expect(app).not.toMatch(/type\s+EditorSection\s*=/)
+    expect(state).not.toMatch(/type\s+Editor(?:NavigationMode|Section)\s*=/)
     expect(inspectorOptions).not.toMatch(/type\s+EditorSection\s*=/)
   })
 

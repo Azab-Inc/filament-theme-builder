@@ -428,7 +428,7 @@ test.describe("foundation preview integration", () => {
 
   test("rejects forged projections and out-of-scope overrides in the real iframe", async ({ page }) => {
     await page.goto(composeBaseUrl);
-    await expect(page.getByLabel("Primary color")).toBeVisible();
+    await expect(page.getByLabel("Primary color", { exact: true })).toBeVisible();
     const frame = page.frame({ url: /\/demo\/admin/ });
     expect(frame).toBeTruthy();
     await frame!.evaluate(() => {
