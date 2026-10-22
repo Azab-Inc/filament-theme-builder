@@ -9,9 +9,10 @@ export function validateRegistry(entries: readonly RegistryEntry[]): FilamentReg
     throw new Error('Registry must contain entries')
   }
   const ids = new Set<string>()
+  const paddingIds = new Set<string>()
   const validatedEntries = entries
     .map((entry) => {
-      validateEntry(entry, ids, compatibilityPattern)
+      validateEntry(entry, ids, compatibilityPattern, paddingIds)
       ids.add(entry.id)
       return freezeEntry(entry)
     })

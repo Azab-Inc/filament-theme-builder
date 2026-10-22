@@ -1,10 +1,12 @@
 import type { RegistryEntry } from '@/models/theme-registry.model'
 import { validateControl, validateUniqueKeys } from '@/registry/theme-registry-validation-controls'
+import { validatePaddingTarget } from '@/registry/padding-registry-validation'
 
 export function validateEntry(
   entry: RegistryEntry,
   ids: Set<string>,
   compatibilityPattern: RegExp,
+  paddingIds: Set<string>,
 ): void {
   if (!entry || typeof entry !== 'object') throw new Error('Registry entry must be an object')
   if (!nonEmptyString(entry.id)) throw new Error('Registry entry ID must be non-empty')
@@ -28,6 +30,7 @@ export function validateEntry(
     entry.id,
   )
   entry.controls.forEach((control) => validateControl(control, entry.id))
+  entry.paddingTargets?.forEach((target) => validatePaddingTarget(target, paddingIds))
 }
 
 function isSelector(value: unknown): value is string {

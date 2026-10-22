@@ -1,4 +1,5 @@
 import type { ThemeValue } from '@/models/theme.model'
+import type { RegistryPaddingTarget } from '@/models/padding-registry.model'
 
 export type RegistryValueType = 'color' | 'string' | 'number' | 'boolean'
 
@@ -27,6 +28,7 @@ export type RegistryEntry = {
   variants: readonly string[]
   states: readonly string[]
   filamentCompatibility: string
+  paddingTargets?: readonly RegistryPaddingTarget[]
 }
 
 export type FilamentRegistry = {

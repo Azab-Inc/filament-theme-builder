@@ -18,7 +18,7 @@ describe('theme registry catalog', () => {
       'infolist.entry.color', 'infolist.entry.icon', 'infolist.entry.image', 'infolist.entry.key-value', 'infolist.entry.repeatable',
       'infolist.entry.text', 'infolist.layout.flex', 'modal.content', 'modal.footer', 'modal.heading', 'modal.window', 'navigation.global-search',
       'navigation.login', 'navigation.profile-menu', 'navigation.sidebar', 'navigation.sidebar-badge', 'navigation.tenant-switcher',
-      'navigation.topbar', 'notification.container', 'notification.item',
+       'navigation.topbar', 'notification.container', 'notification.item', 'table.cell.image', 'table.cell.text', 'table.container', 'table.header', 'table.header-cell',
     ])
     expect(registry.entries.find((entry) => entry.id === 'button.primary')?.selectors).toEqual(['.fi-btn.fi-color-primary'])
     expect(registry.entries.find((entry) => entry.id === 'button.secondary')?.selectors).toEqual(['.fi-btn.fi-outlined'])
@@ -41,5 +41,17 @@ describe('theme registry catalog', () => {
   it('allows selector-only surfaces without inventing controls or state metadata', () => {
     const entries = createThemeRegistry().entries.filter((entry) => entry.family === 'form' && entry.id !== 'form.product-name')
     expect(entries.every((entry) => entry.controls.length === 0 && entry.variants.length === 0 && entry.states.length === 0)).toBe(true)
+  })
+
+  it('registers padding metadata without changing the existing core color entries', () => {
+    const registry = createThemeRegistry()
+    expect(registry.entries.find((entry) => entry.id === 'button.primary')).toMatchObject({
+      id: 'button.primary',
+      variants: ['primary', 'secondary'],
+    })
+    expect(registry.entries.flatMap((entry) => entry.paddingTargets ?? []).map(({ id }) => id)).toEqual(expect.arrayContaining([
+      'forms.input', 'forms.textarea', 'forms.select', 'forms.section', 'forms.section.header', 'forms.section.content',
+      'tables.container', 'tables.header', 'tables.header-cell', 'tables.cell.text', 'tables.cell.image', 'buttons.default',
+    ]))
   })
 })

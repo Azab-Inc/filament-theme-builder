@@ -25,6 +25,7 @@ COPY demo/composer.json demo/composer.lock ./
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-progress --no-scripts
 
 COPY demo/ ./
+COPY builder/src/registry/filament-padding-targets.json resources/theme-registry/filament-padding-targets.json
 RUN rm -f bootstrap/cache/*.php \
     && composer dump-autoload --no-dev --optimize --no-interaction \
     && rm -f /usr/bin/composer

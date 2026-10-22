@@ -52,6 +52,7 @@ services:
       - TEMP_UPLOAD_MAX_BYTES=${TEMP_UPLOAD_MAX_BYTES:-5242880}
     volumes:
       - ./demo:/var/www/html
+      - ./builder/src/registry/filament-padding-targets.json:/var/www/html/resources/theme-registry/filament-padding-targets.json:ro
       - ./TICKETS.md:/var/www/TICKETS.md:ro
       - ./COVERAGE.md:/var/www/COVERAGE.md:ro
       - ./docs:/var/www/docs:ro
