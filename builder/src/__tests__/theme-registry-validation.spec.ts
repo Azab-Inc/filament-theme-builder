@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { validateRegistry } from '@/registry/theme-registry'
-import type { RegistryPaddingTarget } from '@/models/padding-registry.model'
+import { PADDING_UNITS, type RegistryPaddingTarget } from '@/models/padding-registry.model'
 import { backgroundControl, buttonEntry } from './theme-registry.fixtures'
 
 describe('theme registry validation', () => {
@@ -24,9 +24,9 @@ describe('theme registry validation', () => {
   })
 
   it('rejects duplicate padding identities and active mappings without evidence', () => {
-    const invalidTarget: RegistryPaddingTarget = { id: 'x', entryId: 'button.primary', selectors: ['.fi-btn-primary'], targetKind: 'leaf', status: 'supported', units: ['px'], variants: [], states: [], evidence: [] }
+    const invalidTarget: RegistryPaddingTarget = { id: 'x', entryId: 'button.primary', sectionId: 'buttons', nestedPolicy: 'leaf-defaults', order: 99, selectors: ['.fi-btn-primary'], targetKind: 'leaf', status: 'supported', units: PADDING_UNITS, variants: [], states: [], variantSelectors: {}, stateSelectors: {}, evidence: [] }
     expect(() => validateRegistry([{ ...buttonEntry, paddingTargets: [invalidTarget] }])).toThrow(/evidence/i)
-    const validTarget: RegistryPaddingTarget = { ...invalidTarget, evidence: [{ selector: '.fi-btn-primary', source: 'test', sampleCount: 1, verified: true }] }
+    const validTarget: RegistryPaddingTarget = { ...invalidTarget, evidence: [{ selector: '.fi-btn-primary', source: 'test', sampleCount: 1, verified: true, values: { top: '0', right: '0', bottom: '0', left: '0' } }] }
     const validEntry = { ...buttonEntry, paddingTargets: [validTarget] }
     expect(() => validateRegistry([validEntry, { ...validEntry, id: 'button.secondary' }])).toThrow(/duplicate/i)
   })

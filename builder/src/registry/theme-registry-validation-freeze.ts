@@ -30,6 +30,8 @@ export function freezeEntry(entry: RegistryEntry): RegistryEntry {
           units: Object.freeze([...target.units]),
           variants: Object.freeze([...target.variants]),
           states: Object.freeze([...target.states]),
+          variantSelectors: Object.freeze(Object.fromEntries(Object.entries(target.variantSelectors).map(([id, selectors]) => [id, Object.freeze([...selectors])]))),
+          stateSelectors: Object.freeze(Object.fromEntries(Object.entries(target.stateSelectors).map(([id, selectors]) => [id, Object.freeze([...selectors])]))),
           evidence: Object.freeze(target.evidence.map((evidence) => Object.freeze({
             ...evidence,
             values: evidence.values ? Object.freeze({ ...evidence.values }) : undefined,
