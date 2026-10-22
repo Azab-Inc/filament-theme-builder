@@ -1568,7 +1568,7 @@ Decompose the oversized `App.vue` into cohesive visual components and focused `u
 
 **Priority:** high (urgent)
 
-**Status:** ready-for-agent — implementation authorized and schema/default/integration decisions approved on 2026-10-22
+**Status:** in progress — implementation authorized and schema/default/integration decisions approved on 2026-10-22; verified target registry first
 
 **Blocked by:** None after readiness reconciliation against the existing FTB-003/006/022/053 completion evidence and root demo-first gate record. The registry padding extension and V5 migration are implementation deliverables, not missing predecessor tickets. Existing FTB-004 vanilla CSS and canonical JSON parity remain acceptance requirements. FTB-012 remains partial only for density integration; FTB-052 remains future coordination only. Preserve unrelated App/Studio prototype and test/guidance edits.
 

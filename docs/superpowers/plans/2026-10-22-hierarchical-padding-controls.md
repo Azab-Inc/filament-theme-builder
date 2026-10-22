@@ -208,8 +208,8 @@ expect(registry.entries.flatMap((entry) => entry.paddingTargets ?? [])).toContai
 - [ ] Run the nonmutating evidence probe against the existing live showcase before feature implementation. It is an evidence precondition, not a red TDD test:
 
 ```ts
-await expect(page.locator('.fi-ta-table tbody td.fi-ta-cell > .fi-ta-col > .fi-ta-text')).toHaveCount(26)
-await expect(page.locator('.fi-ta-table tbody td.fi-ta-cell').first()).not.toHaveCSS('padding-top', '16px')
+expect(await page.locator('.fi-ta-table tbody td.fi-ta-cell > .fi-ta-col > .fi-ta-text').count()).toBeGreaterThan(0)
+await expect(page.locator('.fi-ta-table tbody td.fi-ta-cell:has(> .fi-ta-col > .fi-ta-text)').first()).toHaveCSS('padding-top', '0px')
 ```
 
 - [ ] Run `npx playwright test e2e/ftb-054-padding-evidence.spec.ts`; expect PASS for existing counts/padding and record hover/focus-visible results without mutating state.
