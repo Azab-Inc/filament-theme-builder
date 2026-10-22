@@ -18,7 +18,7 @@
 **Deferred builder component/composable refactor:** [Refactor builder into components, composables, and utilities](./docs/superpowers/specs/2026-10-14-builder-component-composable-refactor.md) ([FTB-053](./TICKETS.md#ftb-053), [GitHub #53](https://github.com/Azab-Inc/filament-theme-builder/issues/53)). This is a behavior-preserving structural refactor only; it does not lift the existing demo-first gate or implement FTB-050/051/052.
 
 <a id="deferred-hierarchical-padding-controls"></a>
-**Urgent hierarchical padding design:** [Hierarchical Padding Controls](./docs/superpowers/specs/2026-10-14-hierarchical-padding-controls.md) ([FTB-054](./TICKETS.md#ftb-054), [GitHub #54](https://github.com/Azab-Inc/filament-theme-builder/issues/54)). This is an approved planning contract only; it remains blocked by the genuine registry, canonical migration/export, demo-first, and shared-core coordination prerequisites recorded in the design and ticket.
+**Urgent hierarchical padding design:** [Hierarchical Padding Controls](./docs/superpowers/specs/2026-10-14-hierarchical-padding-controls.md) ([FTB-054](./TICKETS.md#ftb-054), [GitHub #54](https://github.com/Azab-Inc/filament-theme-builder/issues/54)). Readiness reconciled on 2026-10-22; schema V5, leaf-only defaults, and shared resolver/MCP integration are approved. See the [implementation plan](./docs/superpowers/plans/2026-10-22-hierarchical-padding-controls.md); completion still requires the full acceptance evidence.
 
 <a id="deferred-filament-topbar-visibility"></a>
 **Deferred Filament topbar visibility:** [FTB-055](./TICKETS.md#ftb-055) / [GitHub #55](https://github.com/Azab-Inc/filament-theme-builder/issues/55), specified at [#filament-topbar-visibility](#filament-topbar-visibility). This is a concise planning contract for a Phase 1 Filament runtime control, not the builder toolbar or a Phase 2 feature; readiness remains subject to prerequisite evidence and existing repository gates.
@@ -27,7 +27,7 @@
 
 This is the implementation contract. PRD.md defines the product problem and outcomes. TICKETS.md contains the executable vertical slices. Each section below links to the ticket or tickets that implement it.
 
-Remaining builder feature work follows the demo-complete gate recorded in TICKETS.md and remains blocked: FTB-009A/B/010 are done, while FTB-011/013/014/015 are in progress because their implemented showcase slices do not satisfy all acceptance criteria (including registry/inheritance, coverage, and forced-state work). FTB-012 remains partial only for theme-density integration and is not a blocker. FTB-016/017/018 requirements must also be resolved before builder work resumes. Operational FTB-027 and FTB-028 are done; FTB-028's focused acceptance evidence is complete, while the full PHP suite retains pre-existing documentation-mount failures documented in the implementation report.
+Remaining builder feature work follows the demo-complete gate recorded in root AGENTS.md and TICKETS.md. Those authoritative records already evidence completion of FTB-009A/B/010/011/013/014/015/016/017/018; the earlier blocked summary here was stale. FTB-012 remains partial only for theme-density integration and is not a blocker. This reconciliation does not complete or relax any prerequisite on behalf of padding work. Operational FTB-027 and FTB-028 retain their separate status and evidence; they are not substitutes for the demo gate.
 
 ## 1. Repository and application boundary
 

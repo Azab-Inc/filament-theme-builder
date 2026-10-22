@@ -1568,9 +1568,9 @@ Decompose the oversized `App.vue` into cohesive visual components and focused `u
 
 **Priority:** high (urgent)
 
-**Status:** blocked (approved planning only)
+**Status:** ready-for-agent — implementation authorized and schema/default/integration decisions approved on 2026-10-22
 
-**Blocked by:** FTB-003 functionality stabilization and the unchanged demo-first gate; genuine FTB-006 registry/inheritance extension; FTB-022 versioned canonical JSON migration; and active FTB-053 work only when it touches the same core seams. FTB-053 is a coordination constraint, not a new dependency cycle. Existing FTB-004 vanilla CSS and canonical JSON parity are acceptance requirements, not a new blocker. FTB-012 remains partial only for density integration and is not silently closed. FTB-052 is future coordination only unless its implementation is present.
+**Blocked by:** None after readiness reconciliation against the existing FTB-003/006/022/053 completion evidence and root demo-first gate record. The registry padding extension and V5 migration are implementation deliverables, not missing predecessor tickets. Existing FTB-004 vanilla CSS and canonical JSON parity remain acceptance requirements. FTB-012 remains partial only for density integration; FTB-052 remains future coordination only. Preserve unrelated App/Studio prototype and test/guidance edits.
 
 **Coordination, not blockers:** FTB-024 Fully Explicit vanilla export and FTB-025 Tailwind `@apply` export integrate conditionally if those future modes exist; neither is required or implemented by this urgent ticket.
 
@@ -1578,7 +1578,9 @@ Decompose the oversized `App.vue` into cohesive visual components and focused `u
 
 **GitHub:** [#54](https://github.com/Azab-Inc/filament-theme-builder/issues/54)
 
-**Review fixed point:** `880e2ff6c536a44429b6f2fefbd7b8d99ee4996e` (2026-10-15 planning baseline; refresh the actual full `dev` HEAD before implementation review).
+**Review fixed point:** `94e1bd7bbb2796458ad267525bc45dd4de698bcf` (`dev`, refreshed 2026-10-22).
+
+**Plan:** [Hierarchical padding controls implementation](./docs/superpowers/plans/2026-10-22-hierarchical-padding-controls.md). Approved decisions: schema V5, leaf-only global/section defaults, and one canonical resolver/projection with existing paired revision-bound MCP confirmation. See spec §13.
 
 ### What to build
 

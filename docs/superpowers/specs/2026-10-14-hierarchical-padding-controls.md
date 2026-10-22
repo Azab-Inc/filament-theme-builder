@@ -1,6 +1,6 @@
 # Hierarchical Padding Controls
 
-**Status:** Approved urgent design; implementation blocked
+**Status:** Ready for implementation — readiness reconciled and implementation decisions approved on 2026-10-22
 
 **Scope slug:** `hierarchical-padding-controls`
 
@@ -8,11 +8,11 @@
 
 **GitHub issue:** [#54](https://github.com/Azab-Inc/filament-theme-builder/issues/54)
 
-**Planning fixed point:** `880e2ff6c536a44429b6f2fefbd7b8d99ee4996e` (2026-10-15; refresh the full `dev` HEAD before implementation review)
+**Implementation review fixed point:** `94e1bd7bbb2796458ad267525bc45dd4de698bcf` (`dev`, refreshed 2026-10-22). Original planning baseline: `880e2ff6c536a44429b6f2fefbd7b8d99ee4996e`.
 
 **Priority:** urgent; use the existing `priority: high` label. Do not create a new priority field or label.
 
-This document defines the approved contract for semantic, hierarchical padding editing. It is documentation-only and does not approve source, application, prototype, or test changes. The exclusive planning lock is [`.scratch/spec-locks/hierarchical-padding-controls.lock`](../../../.scratch/spec-locks/hierarchical-padding-controls.lock), which must never be overwritten. Existing dirty worktree changes remain unrelated and must be preserved.
+This document defines the approved contract for semantic, hierarchical padding editing. The original planning task was documentation-only; the user authorized proceeding with implementation and approved the decisions in §13 on 2026-10-22. The original exclusive planning lock is [`.scratch/spec-locks/hierarchical-padding-controls.lock`](../../../.scratch/spec-locks/hierarchical-padding-controls.lock), which must never be overwritten. Existing dirty worktree changes remain unrelated and must be preserved.
 
 ## 1. Purpose and boundaries
 
@@ -206,4 +206,20 @@ Out of scope: density changes, spacing-scale redesign, arbitrary CSS injection, 
 - Existing registry/inheritance design: [FTB-006 design](2026-10-11-theme-registry-inheritance-design.md)
 - Existing padlock design: [FTB-052 design](2026-10-13-builder-value-padlocks-design.md)
 
-This design is planning-only. Before implementation, repeat duplicate/ownership checks, refresh the fixed point, verify the current gate from evidence rather than stale tracker status, and preserve unrelated worktree changes.
+Readiness was rechecked on 2026-10-22 against the current root guidance, prerequisite completion evidence, live Compose runtime, and worktree. Continue using the implementation plan and the fixed point above; preserve unrelated worktree changes.
+
+## 13. Approved implementation decisions — 2026-10-22
+
+The user approved these decisions after code and runtime investigation; they supersede conflicting historical planning-only language and clarify §§2–7:
+
+- **Canonical schema V5:** add sparse `padding` records through the existing V1→V4 migration chain, extending it to V5. Older themes receive an empty collection. Preserve all unrelated state. Records distinguish global, section, component, variant, and state contexts; omitted edges and explicit numeric/string zero remain distinct.
+- **Deterministic precedence:** per edge, state → variant → component → section → global → native. Derive the target's section from validated registry metadata, not caller input.
+- **Leaf-only defaults:** global/section defaults apply to verified input, textarea, native-select, button, and cell visual boxes. Containers—including form sections/header/content and table container/header—remain explicitly editable but skip global/section defaults. No blanket global selector or fake target is introduced. This policy avoids applying the same default to nested containers and their leaves.
+- **One shared domain path:** editor, preview, CSS export, resolved reads, and purpose-built MCP operations share the canonical resolver, validation, projection, and store mutation services. The iframe validates bounded projection data against the same packaged target catalog rather than implementing a second resolver.
+- **Existing confirmation boundary:** padding MCP tools reuse paired-session authorization and browser-owned revision-bound preview/confirmation, with apply-time revalidation. They must not self-confirm mutations or bypass history/validation.
+- **Actual table visual boxes:** live markup shows ordinary data TDs have zero padding while their `.fi-ta-text`/`.fi-ta-image` children own `16px 12px`. Map those verified visual boxes, not an additional TD padding layer. Selection, action, and icon internals remain excluded. Native multiselect and other unverified mappings remain visible as unsupported metadata until verified.
+- **No new dependencies/services:** package one neutral target catalog for both existing application parts and both Compose runtimes. No padlocks or future exporters are implemented here.
+
+Readiness evidence: FTB-003, FTB-006, FTB-022, and FTB-053 are already marked done with evidence in TICKETS.md; root AGENTS.md records the demo-first gate as already satisfied. This feature does not complete or relax that gate, close parent tickets, or change FTB-012's density-only partial status. The dirty App/Studio prototype and unrelated test/guidance edits remain out of scope.
+
+Implementation and test seams: [2026-10-22 implementation plan](../plans/2026-10-22-hierarchical-padding-controls.md). Acceptance remains store/resolver and migration behavior, exact registry/projection boundaries, real-iframe Playwright, and an actual paired MCP client journey—not source-text or mock-only evidence.
