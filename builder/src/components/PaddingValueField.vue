@@ -2,8 +2,8 @@
 import { ref, watch } from 'vue'
 import { PADDING_UNITS } from '@/models/padding-registry.model'
 
-const props = withDefaults(defineProps<{ value: string | null; id: string; ariaLabel: string; commitOnChange?: boolean }>(), { commitOnChange: true })
-const emit = defineEmits<{ 'update:value': [value: string]; commit: [value: string] }>()
+const props = defineProps<{ value: string | null; id: string; ariaLabel: string }>()
+const emit = defineEmits<{ 'update:value': [value: string] }>()
 const number = ref('')
 const unit = ref('px')
 let lastEmitted = ''
@@ -21,8 +21,8 @@ watch(() => props.value, (next) => { if (next !== lastEmitted) readValue(next) }
 
 <template>
   <span class="inline-flex gap-1">
-    <input :id="id" :aria-label="ariaLabel" :value="number" inputmode="decimal" @input="number = ($event.target as HTMLInputElement).value; emitValue()" @change="props.commitOnChange && emit('commit', emitValue())" />
-    <select :aria-label="`${ariaLabel} unit`" :value="unit" @change="unit = ($event.target as HTMLSelectElement).value; props.commitOnChange ? emit('commit', emitValue()) : emitValue()">
+    <input :id="id" :aria-label="ariaLabel" :value="number" inputmode="decimal" @input="number = ($event.target as HTMLInputElement).value; emitValue()" />
+    <select :aria-label="`${ariaLabel} unit`" :value="unit" @change="unit = ($event.target as HTMLSelectElement).value; emitValue()">
       <option v-for="option in PADDING_UNITS" :key="option" :value="option">{{ option }}</option>
     </select>
   </span>

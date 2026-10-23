@@ -20,6 +20,14 @@ describe('padding store actions', () => {
     expect(store.theme.padding[0]?.edges).toEqual({ top: '1px', right: '2px', bottom: '3px', left: '4px' })
   })
 
+  it('groups rapid linked typing into one undoable padding edit', () => {
+    const store = useThemeStore()
+    store.setPadding({ operation: 'set', context: { scope: 'component', targetId: 'forms.input' }, edges: { top: '1px' } })
+    store.setPadding({ operation: 'set', context: { scope: 'component', targetId: 'forms.input' }, edges: { top: '12px' } })
+    store.undo()
+    expect(store.theme.padding).toEqual([])
+  })
+
   it('preserves separate records and resets only selected edges regardless of key order', () => {
     const store = useThemeStore()
     store.setPadding({ operation: 'set', context: { scope: 'section', sectionId: 'forms' }, edges: { top: '1px', right: '2px' } })
