@@ -21,7 +21,7 @@ watch(() => props.value, (next) => { if (next !== lastEmitted) readValue(next) }
 
 <template>
   <span class="inline-flex gap-1">
-    <input :id="id" :aria-label="ariaLabel" :value="number" inputmode="decimal" @input="number = ($event.target as HTMLInputElement).value; emitValue()" />
+    <input :id="id" :aria-label="ariaLabel" type="number" min="0" step="any" :value="number" inputmode="decimal" @input="number = ($event.target as HTMLInputElement).value; emitValue()" />
     <select :aria-label="`${ariaLabel} unit`" :value="unit" @change="unit = ($event.target as HTMLSelectElement).value; emitValue()">
       <option v-for="option in PADDING_UNITS" :key="option" :value="option">{{ option }}</option>
     </select>

@@ -17,6 +17,7 @@ describe('padding editor UI', () => {
 
   it('emits one atomic linked mutation and preserves separate editing', async () => {
     const wrapper = mount(PaddingEdgeEditor, { props: { linked: true, contextKey: 'test', contextLabel: 'Test', edges: { top: '6px', right: '12px', bottom: '6px', left: '12px' } } })
+    expect(wrapper.get('input[aria-label="Test linked padding"]').attributes('type')).toBe('number')
     await wrapper.get('input[aria-label="Test linked padding"]').setValue('8')
     expect(wrapper.emitted('set')?.[0]).toEqual([{ top: '8px', right: '8px', bottom: '8px', left: '8px' }])
   })
