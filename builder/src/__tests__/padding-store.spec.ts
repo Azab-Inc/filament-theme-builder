@@ -28,6 +28,14 @@ describe('padding store actions', () => {
     expect(store.theme.padding).toEqual([])
   })
 
+  it('does not group rapid edits to different padding contexts', () => {
+    const store = useThemeStore()
+    store.setPadding({ operation: 'set', context: { scope: 'section', sectionId: 'forms' }, edges: { top: '1px' } })
+    store.setPadding({ operation: 'set', context: { scope: 'component', targetId: 'forms.input' }, edges: { top: '2px' } })
+    store.undo()
+    expect(store.theme.padding).toEqual([{ scope: 'section', sectionId: 'forms', edges: { top: '1px' } }])
+  })
+
   it('preserves separate records and resets only selected edges regardless of key order', () => {
     const store = useThemeStore()
     store.setPadding({ operation: 'set', context: { scope: 'section', sectionId: 'forms' }, edges: { top: '1px', right: '2px' } })

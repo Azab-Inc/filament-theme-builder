@@ -12,15 +12,24 @@ export function useThemeHistory(theme: Ref<ThemeStateV5>, serialize: (value: The
   const canRedo = computed(() => { historyRevision.value; return historyIndex.value < history.length - 1 })
   let applyingHistory = false
   let lastChangeAt = 0
-  let lastChangeWasPaddingOnly = false
+  let lastPaddingEditSignature: string | null = null
   let saveTimer: ReturnType<typeof setTimeout> | undefined
 
-  function isPaddingOnlyChange(previous: ThemeStateV5, next: ThemeStateV5): boolean {
-    return JSON.stringify({ ...previous, padding: [] }) === JSON.stringify({ ...next, padding: [] })
+  function paddingEditSignature(previous: ThemeStateV5, next: ThemeStateV5): string | null {
+    if (JSON.stringify({ ...previous, padding: [] }) !== JSON.stringify({ ...next, padding: [] })) return null
+    const before = new Map(previous.padding.map(({ edges, ...context }) => [JSON.stringify(context), edges]))
+    const after = new Map(next.padding.map(({ edges, ...context }) => [JSON.stringify(context), edges]))
+    const changes = [...new Set([...before.keys(), ...after.keys()])].flatMap((context) => {
+      const previousEdges = before.get(context) ?? {}
+      const nextEdges = after.get(context) ?? {}
+      const edges = [...new Set([...Object.keys(previousEdges), ...Object.keys(nextEdges)])].filter((edge) => previousEdges[edge as keyof typeof previousEdges] !== nextEdges[edge as keyof typeof nextEdges])
+      return edges.length ? [`${context}:${edges.sort().join(',')}`] : []
+    })
+    return changes.length ? changes.sort().join('|') : null
   }
 
   function isPaddingValueReplacement(previous: ThemeStateV5, next: ThemeStateV5): boolean {
-    if (!isPaddingOnlyChange(previous, next)) return false
+    if (JSON.stringify({ ...previous, padding: [] }) !== JSON.stringify({ ...next, padding: [] })) return false
     const shape = (value: ThemeStateV5) => value.padding.map(({ edges, ...context }) => ({ context, edges: Object.keys(edges).sort() }))
     return JSON.stringify(shape(previous)) === JSON.stringify(shape(next))
   }
@@ -28,13 +37,15 @@ export function useThemeHistory(theme: Ref<ThemeStateV5>, serialize: (value: The
   watch(theme, (value) => {
     if (!applyingHistory && !sameTheme(history[historyIndex.value]!, value)) {
       const now = Date.now()
-      const groupPaddingChange = lastChangeWasPaddingOnly && now - lastChangeAt < 500 && isPaddingValueReplacement(history[historyIndex.value]!, value)
+      const previous = history[historyIndex.value]!
+      const signature = paddingEditSignature(previous, value)
+      const groupPaddingChange = lastPaddingEditSignature === signature && signature !== null && now - lastChangeAt < 500 && isPaddingValueReplacement(previous, value)
       history.splice(historyIndex.value + 1)
       if (groupPaddingChange) history[historyIndex.value] = snapshot(value)
       else history.push(snapshot(value))
       historyIndex.value = history.length - 1
       lastChangeAt = now
-      lastChangeWasPaddingOnly = isPaddingOnlyChange(history[historyIndex.value - 1] ?? history[historyIndex.value]!, value)
+      lastPaddingEditSignature = signature
     }
     save?.(value, { snapshots: history.map(snapshot), cursor: historyIndex.value })
     if (save) return
@@ -55,7 +66,7 @@ export function useThemeHistory(theme: Ref<ThemeStateV5>, serialize: (value: The
     history.splice(0, history.length, ...value.snapshots.map(snapshot))
     historyIndex.value = value.cursor
     historyRevision.value += 1
-    lastChangeWasPaddingOnly = false
+    lastPaddingEditSignature = null
   }
 
   onScopeDispose(() => { if (saveTimer) clearTimeout(saveTimer) })
@@ -65,7 +76,7 @@ export function useThemeHistory(theme: Ref<ThemeStateV5>, serialize: (value: The
     canRedo,
     applyTheme,
     replaceHistory,
-    undo: (): void => { if (canUndo.value) { historyIndex.value -= 1; lastChangeWasPaddingOnly = false; applyTheme(history[historyIndex.value]!) } },
-    redo: (): void => { if (canRedo.value) { historyIndex.value += 1; lastChangeWasPaddingOnly = false; applyTheme(history[historyIndex.value]!) } },
+    undo: (): void => { if (canUndo.value) { historyIndex.value -= 1; lastPaddingEditSignature = null; applyTheme(history[historyIndex.value]!) } },
+    redo: (): void => { if (canRedo.value) { historyIndex.value += 1; lastPaddingEditSignature = null; applyTheme(history[historyIndex.value]!) } },
   }
 }
