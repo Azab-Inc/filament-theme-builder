@@ -22,6 +22,17 @@ describe('padding editor UI', () => {
     expect(wrapper.emitted('set')?.[0]).toEqual([{ top: '8px', right: '8px', bottom: '8px', left: '8px' }])
   })
 
+  it('explains that nonzero padding needs a CSS unit instead of silently ignoring it', async () => {
+    const wrapper = mount(PaddingEdgeEditor, { props: { linked: true, contextKey: 'test', contextLabel: 'Test', edges: { top: null, right: null, bottom: null, left: null } } })
+    await wrapper.get('input[aria-label="Test linked padding"]').setValue('54')
+    await wrapper.get('button[aria-label="Test apply linked padding"]').trigger('click')
+    expect(wrapper.emitted('set')).toBeUndefined()
+    expect(wrapper.get('[role="alert"]').text()).toContain('54px')
+    await wrapper.get('input[aria-label="Test linked padding"]').setValue('54px')
+    await wrapper.get('button[aria-label="Test apply linked padding"]').trigger('click')
+    expect(wrapper.emitted('set')).toHaveLength(1)
+  })
+
   it('renders registry rows and delegates mutations to the store', async () => {
     const store = useThemeStore()
     const wrapper = mount(PaddingHierarchyPanel, { props: { targets: [{ id: 'forms.input', sectionId: 'forms', targetKind: 'leaf', status: 'supported', units: ['px'], variants: [], states: [] }], read: store.readPadding, set: store.setPadding, reset: store.resetPadding } })

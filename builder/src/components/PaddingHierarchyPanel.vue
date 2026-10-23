@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { PaddingReadResult, PaddingMutation, PaddingContext } from '@/models/padding.model'
+import type { PaddingReadResult, PaddingMutation, PaddingContext, PaddingReadRequest } from '@/models/padding.model'
 import type { RegistryPaddingTarget } from '@/models/padding-registry.model'
 import PaddingTargetRow from './PaddingTargetRow.vue'
 
 type PaddingUiTarget = Pick<RegistryPaddingTarget, 'id' | 'sectionId' | 'status' | 'targetKind'> & { order?: number; units?: readonly string[]; variants?: readonly string[]; states?: readonly string[] }
-const props = defineProps<{ targets: readonly PaddingUiTarget[]; read: (request: { targetId: string; selectedContext: PaddingContext }) => PaddingReadResult; set: (mutation: PaddingMutation & { operation: 'set' }) => void; reset: (mutation: PaddingMutation & { operation: 'reset' }) => void }>()
+const props = defineProps<{ targets: readonly PaddingUiTarget[]; read: (request: PaddingReadRequest) => PaddingReadResult; set: (mutation: PaddingMutation & { operation: 'set' }) => void; reset: (mutation: PaddingMutation & { operation: 'reset' }) => void }>()
 const supported = computed(() => props.targets.filter((target) => target.status === 'supported').sort((a, b) => (a.order ?? 0) - (b.order ?? 0)))
 type ContextRow = { key: string; label: string; context: PaddingContext }
 function contexts(target: PaddingUiTarget): ContextRow[] {
