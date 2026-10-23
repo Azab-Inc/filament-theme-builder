@@ -30,6 +30,12 @@ describe('padding editor UI', () => {
     expect(wrapper.emitted('set')?.[0]).toEqual([{ top: '54rem', right: '54rem', bottom: '54rem', left: '54rem' }])
   })
 
+  it('commits a changed unit for separate edge editing', async () => {
+    const wrapper = mount(PaddingEdgeEditor, { props: { linked: false, contextKey: 'test', contextLabel: 'Test', edges: { top: '6px', right: '6px', bottom: '6px', left: '6px' } } })
+    await wrapper.get('select[aria-label="Test top padding unit"]').setValue('rem')
+    expect(wrapper.emitted('set')?.[0]).toEqual([{ top: '6rem' }])
+  })
+
   it('renders registry rows and delegates mutations to the store', async () => {
     const store = useThemeStore()
     const wrapper = mount(PaddingHierarchyPanel, { props: { targets: [{ id: 'forms.input', sectionId: 'forms', targetKind: 'leaf', status: 'supported', units: ['px'], variants: [], states: [] }], read: store.readPadding, set: store.setPadding, reset: store.resetPadding } })
