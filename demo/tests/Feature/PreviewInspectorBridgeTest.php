@@ -104,4 +104,15 @@ class PreviewInspectorBridgeTest extends TestCase
             ->assertSee('sourceContext', false)
             ->assertSee('hasExplicitPaddingEdge', false);
     }
+
+    public function test_preview_bridge_rejects_forged_sources_and_duplicate_padding_contexts(): void
+    {
+        $this->get('/demo/admin/login')
+            ->assertOk()
+            ->assertSee('isPaddingContextApplicable', false)
+            ->assertSee('target.targetKind === \'leaf\'', false)
+            ->assertSee('context.targetId === rule.targetId', false)
+            ->assertSee('new Set(message.theme.padding.map(paddingIdentity)).size === message.theme.padding.length', false)
+            ->assertSee('isSafePaddingRecord', false);
+    }
 }
