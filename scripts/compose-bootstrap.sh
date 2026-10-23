@@ -68,6 +68,13 @@ fi
 php artisan migrate --force
 php artisan db:seed --force
 
+# The dev E2E runner may execute Artisan on the host while the bootstrap
+# container runs as root. Keep the disposable SQLite database writable by the
+# host user; production never changes database permissions this way.
+if [ "$BOOTSTRAP_PRODUCTION" != "1" ] && [ -f database/database.sqlite ]; then
+  chmod 666 database/database.sqlite
+fi
+
 if [ "$BOOTSTRAP_PRODUCTION" = "1" ]; then
   php artisan optimize
 fi
