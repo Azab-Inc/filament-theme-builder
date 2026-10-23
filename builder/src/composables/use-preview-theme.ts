@@ -1,6 +1,10 @@
 import { onMounted, ref, toRaw, watch } from 'vue'
 
 import type { UsePreviewThemeOptions } from '@/models/use-preview-theme-options.model'
+import { createThemeRegistry } from '@/registry/theme-registry'
+import { toLegacyPreviewTheme } from '@/utils/preview-theme-adapter'
+
+const registry = createThemeRegistry()
 
 export function usePreviewTheme({
   theme,
@@ -21,7 +25,7 @@ export function usePreviewTheme({
         type: 'ftb:theme:update',
         schemaVersion: 1,
         activeMode: activeMode.value,
-        theme: structuredClone(JSON.parse(JSON.stringify(toRaw(theme.theme)))),
+        theme: toLegacyPreviewTheme(structuredClone(JSON.parse(JSON.stringify(toRaw(theme.theme)))), registry),
         projection: theme.previewFoundation(activeMode.value),
       },
       targetOrigin,

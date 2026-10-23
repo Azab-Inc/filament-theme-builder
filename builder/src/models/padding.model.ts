@@ -10,7 +10,7 @@ export type PaddingContext =
   | { scope: 'variant'; targetId: string; variantId: string }
   | { scope: 'state'; targetId: string; variantId?: string; stateId: string }
 export type PaddingRecord = PaddingContext & { edges: PaddingEdges }
-export type ResolvedPaddingEdge = { edge: PaddingEdge; value: string | null; source: PaddingScope | 'native'; sourceTargetId?: string; explicit: boolean; native: boolean }
+export type ResolvedPaddingEdge = { edge: PaddingEdge; value: string | null; source: PaddingScope | 'native'; sourceTargetId?: string; sourceContext?: PaddingContext; explicit: boolean; native: boolean }
 export type ResolvedPadding = { targetId: string; edges: Record<PaddingEdge, ResolvedPaddingEdge> }
 export type PaddingResolutionRequest = { targetId: string; variantId?: string; stateId?: string }
 export type PaddingReadRequest = PaddingResolutionRequest & { selectedContext: PaddingContext }

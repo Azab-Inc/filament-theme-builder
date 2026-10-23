@@ -56,4 +56,18 @@ describe('preview theme state effects', () => {
 
     wrapper.unmount()
   })
+
+  it('uses the validated V4 adapter for the legacy iframe bridge without persisting a downgrade', async () => {
+    const postMessage = vi.fn()
+    const iframeElement = document.createElement('iframe')
+    Object.defineProperty(iframeElement, 'contentWindow', { configurable: true, value: { postMessage } })
+    const iframe = ref<HTMLIFrameElement | undefined>(iframeElement)
+    let store: ReturnType<typeof useThemeStore> | undefined
+    const wrapper = mount({ setup() { store = useThemeStore(); usePreviewTheme({ theme: store, activeMode: ref('light'), previewUrl: '/demo/admin', iframe }); return {} }, template: '<div />' }, { global: { plugins: [createPinia()] } })
+    const message = postMessage.mock.lastCall?.[0]
+    expect(message.theme.schemaVersion).toBe(4)
+    expect(message.theme.padding).toBeUndefined()
+    expect(store?.theme.schemaVersion).toBe(5)
+    wrapper.unmount()
+  })
 })

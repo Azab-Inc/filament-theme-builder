@@ -1,7 +1,9 @@
 import type { FilamentRegistry } from '@/models/theme-registry.model'
-import type { PaddingContext, PaddingEdges, PaddingMutation, PaddingRecord, PaddingValidationResult } from '@/models/padding.model'
+import type { PaddingEdges, PaddingRecord, PaddingValidationResult } from '@/models/padding.model'
 import type { PaddingEdge } from '@/models/padding-registry.model'
 import { PADDING_UNITS } from '@/models/padding-registry.model'
+import { paddingContextIdentity, paddingRecordContext } from '@/utils/padding-identity'
+import { isSafePropertyValue } from '@/utils/raw-override-property-validation'
 
 const EDGES: readonly PaddingEdge[] = ['top', 'right', 'bottom', 'left']
 const unsafeKey = (key: string) => key === '__proto__' || key === 'constructor' || key === 'prototype'
@@ -12,7 +14,7 @@ export function validatePaddingState(value: unknown, registry: FilamentRegistry)
   for (const [index, record] of value.entries()) {
     const result = validatePaddingRecord(record, registry, `padding[${index}]`)
     if (!result.valid) return result
-    const identity = JSON.stringify(contextOf(result.record!))
+    const identity = paddingContextIdentity(paddingRecordContext(result.record!))
     if (identities.has(identity)) return failure(`padding[${index}]`, 'Padding context is duplicated', 'duplicate-identity')
     identities.add(identity)
   }
@@ -26,7 +28,7 @@ export function validatePaddingRecord(value: unknown, registry: FilamentRegistry
   const keys = Object.keys(value)
   if (keys.some(unsafeKey) || keys.some((key) => key !== 'scope' && key !== 'sectionId' && key !== 'targetId' && key !== 'variantId' && key !== 'stateId' && key !== 'edges')) return failure(path, 'Padding record has unknown keys', 'unknown-key')
   const edgeKeys = Object.keys(value.edges)
-  if (edgeKeys.some(unsafeKey) || edgeKeys.some((edge) => !EDGES.includes(edge as PaddingEdge))) return failure(`${path}.edges`, 'Padding edge is unknown', 'unknown-key')
+  if (edgeKeys.some(unsafeKey) || edgeKeys.some((edge) => !isPaddingEdge(edge))) return failure(`${path}.edges`, 'Padding edge is unknown', 'unknown-key')
   for (const edge of edgeKeys) {
     const result = validatePaddingValue(value.edges[edge], registryTarget(value, registry)?.units ?? PADDING_UNITS, `${path}.edges.${edge}`)
     if (!result.valid) return result
@@ -35,29 +37,31 @@ export function validatePaddingRecord(value: unknown, registry: FilamentRegistry
   return { valid: true, record: value as PaddingRecord }
 }
 
-export function validatePaddingContext(context: PaddingContext, registry: FilamentRegistry, path = 'context'): PaddingValidationResult {
+export function validatePaddingContext(context: unknown, registry: FilamentRegistry, path = 'context'): PaddingValidationResult {
+  if (!isRecord(context)) return failure(path, 'Padding context must be an object')
+  if (Object.prototype.hasOwnProperty.call(context, 'edges')) return failure(path, 'Padding context must not contain edges', 'scope-mismatch')
   return validateContext({ ...context, edges: { top: 0 } }, registry, path)
 }
 
-export function validatePaddingMutation(input: PaddingMutation, state: { padding: PaddingRecord[] }, registry: FilamentRegistry): PaddingValidationResult {
+export function validatePaddingMutation(input: unknown, state: { padding: PaddingRecord[] }, registry: FilamentRegistry): PaddingValidationResult {
+  if (!isRecord(input) || !isRecord(input.context) || typeof input.operation !== 'string') return failure('mutation', 'Padding mutation must be an object')
   const context = validatePaddingContext(input.context, registry)
   if (!context.valid) return context
   if (input.operation === 'set') {
-    if (!input.edges || !Object.keys(input.edges).length) return failure('edges', 'Padding set requires at least one edge')
+    if (!allowedKeys(input, ['operation', 'context', 'edges']) || !isRecord(input.edges) || !Object.keys(input.edges).length) return failure('mutation', 'Set mutations require only edges')
     return validatePaddingRecord({ ...input.context, edges: input.edges }, registry)
   }
-  if (!input.resetEdges?.length || input.resetEdges.some((edge) => !EDGES.includes(edge))) return failure('resetEdges', 'Padding reset requires valid edges')
-  if (!state.padding.some((record) => JSON.stringify(record) === JSON.stringify(input.context))) return { valid: true }
+  if (input.operation !== 'reset' || !allowedKeys(input, ['operation', 'context', 'resetEdges']) || !Array.isArray(input.resetEdges) || !input.resetEdges.length || input.resetEdges.some((edge) => !isPaddingEdge(edge)) || new Set(input.resetEdges).size !== input.resetEdges.length) return failure('mutation', 'Reset mutations require unique resetEdges only')
   return { valid: true }
 }
 
 export function validatePaddingValue(value: unknown, units: readonly string[], path: string): PaddingValidationResult {
-  if (value === 0) return { valid: true }
-  if (typeof value !== 'string' || value.length === 0 || value.startsWith('-') || !Number.isFinite(Number.parseFloat(value))) return failure(path, 'Padding must be numeric zero or a finite positive value with a unit')
-  const unit = units.find((candidate) => value.endsWith(candidate))
-  if (!unit || !PADDING_UNITS.includes(unit as never)) return failure(path, 'Padding unit is not approved')
-  const number = value.slice(0, -unit.length)
-  if (!number || !Number.isFinite(Number(number)) || Number(number) <= 0) return failure(path, 'Padding value must be positive')
+  if (value === 0 || value === '0') return { valid: true }
+  if (typeof value !== 'string') return failure(path, 'Padding must be numeric zero or a finite positive value with a unit')
+  if (!isSafePropertyValue('padding', value)) return failure(path, 'Padding is not an approved raw property value')
+  const unitPattern = units.filter((unit) => PADDING_UNITS.some((allowed) => allowed === unit)).sort((left, right) => right.length - left.length).join('|')
+  const match = new RegExp(`^(0|(?:0|[1-9]\\d*)(?:\\.\\d+)?)(?:${unitPattern})$`).exec(value)
+  if (!match || !Number.isFinite(Number(match[1]))) return failure(path, 'Padding must use an approved unit and CSS number')
   return { valid: true }
 }
 
@@ -73,9 +77,9 @@ function validateContext(value: Record<string, unknown>, registry: FilamentRegis
   const target = registryTarget(value, registry)
   if (!target || target.status !== 'supported') return failure(`${path}.targetId`, 'Padding target is unsupported', 'unsupported-target')
   if (value.scope === 'component') return contextKeys(value, ['scope', 'targetId', 'edges'], path)
-  if (value.scope === 'variant' && (!target.variants.includes(value.variantId as never) || typeof value.variantId !== 'string')) return failure(`${path}.variantId`, 'Padding variant is unsupported')
-  if (value.scope === 'state' && (typeof value.stateId !== 'string' || !target.states.includes(value.stateId))) return failure(`${path}.stateId`, 'Padding state is unsupported')
-  if (value.scope === 'state' && value.variantId !== undefined && (!target.variants.includes(value.variantId as never) || typeof value.variantId !== 'string')) return failure(`${path}.variantId`, 'Padding variant is unsupported')
+  if (value.scope === 'variant' && (typeof value.variantId !== 'string' || !target.variants.some((variant) => variant === value.variantId))) return failure(`${path}.variantId`, 'Padding variant is unsupported')
+  if (value.scope === 'state' && (typeof value.stateId !== 'string' || !target.states.some((state) => state === value.stateId))) return failure(`${path}.stateId`, 'Padding state is unsupported')
+  if (value.scope === 'state' && value.variantId !== undefined && (typeof value.variantId !== 'string' || !target.variants.some((variant) => variant === value.variantId))) return failure(`${path}.variantId`, 'Padding variant is unsupported')
   return contextKeys(value, value.scope === 'variant' ? ['scope', 'targetId', 'variantId', 'edges'] : ['scope', 'targetId', 'variantId', 'stateId', 'edges'], path)
 }
 
@@ -83,7 +87,6 @@ function registryTarget(value: Record<string, unknown>, registry: FilamentRegist
 function contextKeys(value: Record<string, unknown>, allowed: string[], path: string): PaddingValidationResult { return Object.keys(value).some((key) => unsafeKey(key) || !allowed.includes(key)) ? failure(path, 'Padding context keys do not match scope', 'scope-mismatch') : { valid: true } }
 function failure(path: string, message: string, code = 'invalid-value'): PaddingValidationResult { return { valid: false, code, path, message } }
 function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value) }
-function contextOf(record: PaddingRecord): PaddingContext { const { edges: _edges, ...context } = record; return context }
-
+function isPaddingEdge(value: unknown): value is PaddingEdge { return typeof value === 'string' && EDGES.some((edge) => edge === value) }
+function allowedKeys(value: Record<string, unknown>, keys: string[]): boolean { return Object.keys(value).every((key) => keys.includes(key)) }
 export function paddingEdges(value: PaddingEdges): PaddingEdge[] { return EDGES.filter((edge) => Object.prototype.hasOwnProperty.call(value, edge)) }
-export type { PaddingContext }
