@@ -77,4 +77,13 @@ describe('vanilla CSS semantic overrides', () => {
     expect(exportVanillaCss(theme).css).toContain('.fi-btn.fi-color-primary { background-color: #111111 !important; }')
     expect(exportVanillaCss(theme).errors).toEqual([])
   })
+
+  it('exports padding from the shared projection and omits native edges', () => {
+    const theme = { ...createDefaultThemeState(), schemaVersion: 5 as const, padding: [{ scope: 'global' as const, edges: { top: '8px', right: '0' as const } }] }
+
+    const { css } = exportVanillaCss(theme)
+
+    expect(css).toContain('.fi-fo-text-input .fi-input { padding-top: 8px !important; padding-right: 0 !important; }')
+    expect(css).not.toContain('.fi-ta-cell {')
+  })
 })

@@ -2,6 +2,8 @@
     (() => {
         const configuredOrigins = @json(config('preview.allowed_origins'));
         const allowedOrigins = configuredOrigins.length > 0 ? configuredOrigins : [window.location.origin];
+        const paddingCatalog = @json(json_decode(file_get_contents(resource_path('theme-registry/filament-padding-targets.json')), true));
+        const paddingTargets = new Map(paddingCatalog.targets.map((target) => [target.id, target]));
         const paletteShades = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
         const paletteNames = ['primary', 'success', 'warning', 'danger', 'info', 'gray'];
         // Mirrored from builder/src/registry/tailwind-color-catalog.ts; parity is tested in the builder.
@@ -215,10 +217,21 @@
             && typeof override.selector === 'string' && rawSelectorPattern.test(override.selector)
             && isRecord(override.properties) && Object.keys(override.properties).length > 0
             && Object.keys(override.properties).every((property) => rawVisualProperties.includes(property) && isSafeRawPropertyValue(property, override.properties[property]));
+        const isSafePaddingValue = (value) => value === '0' || (typeof value === 'string' && /^(?:0|[1-9]\d{0,3})(?:\.\d+)?(?:px|rem|em|ex|ch|lh|rlh|vw|vh|vmin|vmax|%)$/.test(value));
+        const isAcceptedPaddingProjection = (projection) => {
+            if (!isRecord(projection) || projection.schemaVersion !== 1 || !Array.isArray(projection.rules)) return false;
+            return projection.rules.every((rule) => {
+                const target = paddingTargets.get(rule?.targetId);
+                if (!target || target.status !== 'supported' || !isRecord(rule) || typeof rule.selector !== 'string' || rule.selector.includes('.fi-ta-cell')) return false;
+                const selectors = rule.stateId ? (target.stateSelectors[rule.stateId] ?? []) : rule.variantId ? (target.variantSelectors[rule.variantId] ?? []) : target.selectors;
+                if (!selectors.includes(rule.selector) || Object.keys(rule).some((key) => !['targetId', 'selector', 'declarations', 'variantId', 'stateId'].includes(key)) || !isRecord(rule.declarations) || Object.keys(rule.declarations).length === 0) return false;
+                return Object.entries(rule.declarations).every(([edge, value]) => ['top', 'right', 'bottom', 'left'].includes(edge) && isSafePaddingValue(value));
+            });
+        };
         const isAcceptedTheme = (message) => {
-            if (!isRecord(message) || message.type !== 'ftb:theme:update' || message.schemaVersion !== 1 || !['light', 'dark'].includes(message.activeMode) || !isRecord(message.projection) || message.activeMode !== message.projection.mode || !isRecord(message.theme) || !(message.theme.schemaVersion === 4)) return false;
-             const hasSupportedKeys = exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'branding']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding']);
-              return hasSupportedKeys && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && isFoundationRecord(message.theme.foundations) && Array.isArray(message.theme.overrides) && message.theme.overrides.every(isSafeOverride) && message.theme.overrides.every((override) => semanticOverrideMappings.has(`${override.targetId}\u0000${override.controlId}`)) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && Array.isArray(message.theme.rawOverrides) && message.theme.rawOverrides.every(isSafeRawOverride) && new Set(message.theme.rawOverrides.map((override) => override.selector)).size === message.theme.rawOverrides.length && message.theme.customCss === '' && (message.theme.branding === undefined || isSafeBranding(message.theme.branding)) && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && isAcceptedProjection(message.projection, message.theme.foundations);
+            if (!isRecord(message) || message.type !== 'ftb:theme:update' || message.schemaVersion !== 1 || !['light', 'dark'].includes(message.activeMode) || !isRecord(message.projection) || message.activeMode !== message.projection.mode || !isRecord(message.theme) || !(message.theme.schemaVersion === 5) || !isAcceptedPaddingProjection(message.paddingProjection)) return false;
+             const hasSupportedKeys = exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'padding']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'padding']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'branding', 'padding']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding', 'padding']);
+             return hasSupportedKeys && Array.isArray(message.theme.padding) && message.theme.padding.every((record) => isRecord(record) && isRecord(record.edges)) && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && isFoundationRecord(message.theme.foundations) && Array.isArray(message.theme.overrides) && message.theme.overrides.every(isSafeOverride) && message.theme.overrides.every((override) => semanticOverrideMappings.has(`${override.targetId}\u0000${override.controlId}`)) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && Array.isArray(message.theme.rawOverrides) && message.theme.rawOverrides.every(isSafeRawOverride) && new Set(message.theme.rawOverrides.map((override) => override.selector)).size === message.theme.rawOverrides.length && message.theme.customCss === '' && (message.theme.branding === undefined || isSafeBranding(message.theme.branding)) && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && isAcceptedProjection(message.projection, message.theme.foundations);
         };
         const projectionMatchesCanonicalFoundation = (projection, foundations) => {
             const expectedMappings = [...canonicalFoundationMappings.values()].filter((entry) => {
@@ -272,7 +285,8 @@
                  document.documentElement.style.setProperty('--ftb-brand-font-family', `"${branding.brandTypography.family.replaceAll('"', '')}"`);
                  document.body.style.fontFamily = `var(--ftb-brand-font-family)`;
              }
-            const rules = [`:root { color-scheme: ${message.projection.mode}; }`];
+             const rules = [`:root { color-scheme: ${message.projection.mode}; }`];
+             for (const rule of message.paddingProjection.rules) rules.push(`${rule.selector} { ${Object.entries(rule.declarations).map(([edge, value]) => `padding-${edge}: ${value} !important;`).join(' ')} }`);
             for (const candidate of message.projection.mappings) {
                 const selectors = candidate.selectors.join(',');
                 const runtimeValue = candidate.property === 'color' ? (resolveColorReference(candidate.value) ?? candidate.value) : candidate.value;

@@ -2,7 +2,7 @@ import { onMounted, ref, toRaw, watch } from 'vue'
 
 import type { UsePreviewThemeOptions } from '@/models/use-preview-theme-options.model'
 import { createThemeRegistry } from '@/registry/theme-registry'
-import { toLegacyPreviewTheme } from '@/utils/preview-theme-adapter'
+import { projectPadding } from '@/utils/padding-projection'
 
 const registry = createThemeRegistry()
 
@@ -25,8 +25,9 @@ export function usePreviewTheme({
         type: 'ftb:theme:update',
         schemaVersion: 1,
         activeMode: activeMode.value,
-        theme: toLegacyPreviewTheme(structuredClone(JSON.parse(JSON.stringify(toRaw(theme.theme)))), registry),
-        projection: theme.previewFoundation(activeMode.value),
+         theme: structuredClone(JSON.parse(JSON.stringify(toRaw(theme.theme)))),
+         projection: theme.previewFoundation(activeMode.value),
+         paddingProjection: projectPadding(theme.theme as unknown as import('@/models/theme.model').ThemeStateV5, registry),
       },
       targetOrigin,
     )

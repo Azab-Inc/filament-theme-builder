@@ -71,4 +71,25 @@ class PreviewInspectorBridgeTest extends TestCase
             ->assertSee('supportedPseudoStates.includes(override.stateId)', false)
             ->assertDontSee("override.stateId === 'hover' ? 'hover' : 'focus'", false);
     }
+
+    public function test_preview_bridge_validates_and_applies_catalog_owned_padding_projection(): void
+    {
+        $this->get('/demo/admin/login')
+            ->assertOk()
+            ->assertSee('paddingProjection', false)
+            ->assertSee('isAcceptedPaddingProjection', false)
+            ->assertSee("rule.selector.includes('.fi-ta-cell')", false)
+            ->assertSee('paddingTargets', false)
+            ->assertSee('isSafePaddingValue', false)
+            ->assertSee('padding-${edge}', false);
+    }
+
+    public function test_preview_bridge_requires_v5_padding_messages(): void
+    {
+        $this->get('/demo/admin/login')
+            ->assertOk()
+            ->assertSee('message.theme.schemaVersion === 5', false)
+            ->assertSee('message.theme.padding', false)
+            ->assertSee('paddingCatalog', false);
+    }
 }

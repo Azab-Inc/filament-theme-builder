@@ -57,7 +57,7 @@ describe('preview theme state effects', () => {
     wrapper.unmount()
   })
 
-  it('uses the validated V4 adapter for the legacy iframe bridge without persisting a downgrade', async () => {
+  it('posts V5 state and shared padding projection without persisting derived data', async () => {
     const postMessage = vi.fn()
     const iframeElement = document.createElement('iframe')
     Object.defineProperty(iframeElement, 'contentWindow', { configurable: true, value: { postMessage } })
@@ -65,8 +65,9 @@ describe('preview theme state effects', () => {
     let store: ReturnType<typeof useThemeStore> | undefined
     const wrapper = mount({ setup() { store = useThemeStore(); usePreviewTheme({ theme: store, activeMode: ref('light'), previewUrl: '/demo/admin', iframe }); return {} }, template: '<div />' }, { global: { plugins: [createPinia()] } })
     const message = postMessage.mock.lastCall?.[0]
-    expect(message.theme.schemaVersion).toBe(4)
-    expect(message.theme.padding).toBeUndefined()
+    expect(message.theme.schemaVersion).toBe(5)
+    expect(message.theme.padding).toEqual([])
+    expect(message.paddingProjection).toEqual({ schemaVersion: 1, rules: [] })
     expect(store?.theme.schemaVersion).toBe(5)
     wrapper.unmount()
   })

@@ -2,6 +2,7 @@ import type { ThemeStateInput } from '@/models/theme.model'
 import type { SemanticMapping } from '@/models/vanilla-css-export-semantic-mapping.model'
 import { SUPPORTED_PSEUDO_STATES } from '@/models/theme-registry.model'
 import { createThemeRegistry } from '@/registry/theme-registry'
+import { projectPadding } from '@/utils/padding-projection'
 
 const semanticMappings = new Map<string, SemanticMapping>([
   ['button.primary\u0000background', { selector: '.fi-btn.fi-color-primary', globalSelector: '.fi-btn', componentSelector: '.fi-btn', property: 'background-color' }],
@@ -11,14 +12,27 @@ const semanticMappings = new Map<string, SemanticMapping>([
 ])
 
 export function renderSemanticOverrides(theme: ThemeStateInput, errors: string[]): string {
-  return theme.overrides.slice().sort((left, right) => semanticOverrideKey(left).localeCompare(semanticOverrideKey(right)))
+  const semantic = theme.overrides.slice().sort((left, right) => semanticOverrideKey(left).localeCompare(semanticOverrideKey(right)))
     .flatMap((override) => {
       const mapping = semanticMappings.get(`${override.targetId}\u0000${override.controlId}`)
       if (!mapping) { errors.push(`Unsupported semantic override: ${override.targetId}.${override.controlId}`); return [] }
       if (typeof override.value !== 'string') { errors.push(`Unsupported semantic override value: ${override.targetId}.${override.controlId}`); return [] }
       try { return [`${semanticSelector(override, mapping)} { ${mapping.property}: ${override.value} !important; }`] }
       catch (error) { errors.push(error instanceof Error ? error.message : 'Unsupported semantic override'); return [] }
-    }).filter(Boolean).join('\n')
+     }).filter(Boolean).join('\n')
+  const padding = theme.schemaVersion === 5 ? renderPadding(theme, errors) : ''
+  return [semantic, padding].filter(Boolean).join('\n')
+}
+
+function renderPadding(theme: import('@/models/theme.model').ThemeStateV5, errors: string[]): string {
+  try {
+    return projectPadding(theme, createThemeRegistry()).rules
+      .map((rule) => `${rule.selector} { ${Object.entries(rule.declarations).map(([edge, value]) => `padding-${edge}: ${value} !important;`).join(' ')} }`)
+      .join('\n')
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : 'Padding export failed')
+    return ''
+  }
 }
 
 function semanticSelector(override: ThemeStateInput['overrides'][number], mapping: SemanticMapping): string {
