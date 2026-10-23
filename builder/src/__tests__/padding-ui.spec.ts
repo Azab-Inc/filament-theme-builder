@@ -17,20 +17,17 @@ describe('padding editor UI', () => {
 
   it('emits one atomic linked mutation and preserves separate editing', async () => {
     const wrapper = mount(PaddingEdgeEditor, { props: { linked: true, contextKey: 'test', contextLabel: 'Test', edges: { top: '6px', right: '12px', bottom: '6px', left: '12px' } } })
-    await wrapper.get('input[aria-label="Test linked padding"]').setValue('8px')
+    await wrapper.get('input[aria-label="Test linked padding"]').setValue('8')
     await wrapper.get('button[aria-label="Test apply linked padding"]').trigger('click')
     expect(wrapper.emitted('set')?.[0]).toEqual([{ top: '8px', right: '8px', bottom: '8px', left: '8px' }])
   })
 
-  it('explains that nonzero padding needs a CSS unit instead of silently ignoring it', async () => {
+  it('combines the numeric value with the selected CSS unit', async () => {
     const wrapper = mount(PaddingEdgeEditor, { props: { linked: true, contextKey: 'test', contextLabel: 'Test', edges: { top: null, right: null, bottom: null, left: null } } })
     await wrapper.get('input[aria-label="Test linked padding"]').setValue('54')
+    await wrapper.get('select[aria-label="Test linked padding unit"]').setValue('rem')
     await wrapper.get('button[aria-label="Test apply linked padding"]').trigger('click')
-    expect(wrapper.emitted('set')).toBeUndefined()
-    expect(wrapper.get('[role="alert"]').text()).toContain('54px')
-    await wrapper.get('input[aria-label="Test linked padding"]').setValue('54px')
-    await wrapper.get('button[aria-label="Test apply linked padding"]').trigger('click')
-    expect(wrapper.emitted('set')).toHaveLength(1)
+    expect(wrapper.emitted('set')?.[0]).toEqual([{ top: '54rem', right: '54rem', bottom: '54rem', left: '54rem' }])
   })
 
   it('renders registry rows and delegates mutations to the store', async () => {
@@ -48,7 +45,7 @@ describe('padding editor UI', () => {
     expect(wrapper.findAll('[data-padding-context="forms.input-global"]')).toHaveLength(1)
     expect(wrapper.findAll('[data-padding-context="forms.input-section"]')).toHaveLength(1)
     expect(wrapper.findAll('[data-padding-context="forms.input-component"]')).toHaveLength(1)
-    await wrapper.find('[data-padding-context="forms.input-section"] input[aria-label="forms.input · Section · forms linked padding"]').setValue('10px')
+    await wrapper.find('[data-padding-context="forms.input-section"] input[aria-label="forms.input · Section · forms linked padding"]').setValue('10')
     await wrapper.find('[data-padding-context="forms.input-section"] button[aria-label="forms.input · Section · forms apply linked padding"]').trigger('click')
     expect(store.theme.padding).toContainEqual(expect.objectContaining({ scope: 'section', sectionId: 'forms' }))
   })
@@ -64,7 +61,7 @@ describe('padding editor UI', () => {
     const target = { id: 'buttons.default', sectionId: 'buttons', targetKind: 'leaf' as const, status: 'supported' as const, units: ['px'], variants: ['primary'], states: ['disabled'] }
     const wrapper = mount(PaddingHierarchyPanel, { props: { targets: [target], read: store.readPadding, set: store.setPadding, reset: store.resetPadding } })
     const variant = wrapper.find('[data-padding-context="buttons.default-variant-primary"]')
-    await variant.get('input[aria-label="buttons.default · Variant · primary linked padding"]').setValue('9px')
+    await variant.get('input[aria-label="buttons.default · Variant · primary linked padding"]').setValue('9')
     await variant.get('button[aria-label="buttons.default · Variant · primary apply linked padding"]').trigger('click')
     expect(store.theme.padding).toContainEqual(expect.objectContaining({ scope: 'variant', variantId: 'primary' }))
     expect(variant.get('button[aria-label*="Variant"]')).toBeTruthy()

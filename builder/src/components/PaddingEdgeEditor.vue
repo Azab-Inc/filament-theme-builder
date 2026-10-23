@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import type { PaddingEdges, PaddingEdge } from '@/models/padding.model'
 import { PADDING_UNITS } from '@/models/padding-registry.model'
 import { validatePaddingValue } from '@/utils/padding-validation'
+import PaddingValueField from './PaddingValueField.vue'
 
 const props = defineProps<{ linked: boolean; contextKey: string; contextLabel: string; edges: Record<PaddingEdge, string | null> }>()
 const emit = defineEmits<{ set: [edges: PaddingEdges]; reset: [] }>()
@@ -24,11 +25,11 @@ function link(): void { return }
     <button v-if="!props.linked" type="button" aria-label="Link all edges" @click="link">Link all edges</button>
     <div v-if="props.linked" class="grid gap-1">
       <label :for="`padding-${props.contextKey}-linked`">{{ props.contextLabel }} · all edges</label>
-       <input :id="`padding-${props.contextKey}-linked`" :aria-label="`${props.contextLabel} linked padding`" :placeholder="isMixed ? 'Mixed' : undefined" :value="displayValue" @input="error = null; linkedValue = ($event.target as HTMLInputElement).value" @keydown.enter="applyLinked" />
+       <PaddingValueField :id="`padding-${props.contextKey}-linked`" :ariaLabel="`${props.contextLabel} linked padding`" :value="displayValue" :commit-on-change="false" @update:value="error = null; linkedValue = $event" @commit="applyLinked" />
       <button type="button" :aria-label="`${props.contextLabel} apply linked padding`" @click="applyLinked">Apply linked padding</button>
     </div>
     <div v-else class="grid grid-cols-2 gap-1">
-      <label v-for="edge in edgeNames" :key="edge" :for="`padding-${props.contextKey}-${edge}`">{{ props.contextLabel }} · {{ edge }} <input :id="`padding-${props.contextKey}-${edge}`" :aria-label="`${props.contextLabel} ${edge} padding`" :value="props.edges[edge] ?? ''" @change="setEdge(edge, ($event.target as HTMLInputElement).value)" /></label>
+       <label v-for="edge in edgeNames" :key="edge" :for="`padding-${props.contextKey}-${edge}`">{{ props.contextLabel }} · {{ edge }} <PaddingValueField :id="`padding-${props.contextKey}-${edge}`" :ariaLabel="`${props.contextLabel} ${edge} padding`" :value="props.edges[edge]" @commit="setEdge(edge, $event)" /></label>
     </div>
     <button type="button" :aria-label="`${props.contextLabel} reset padding`" @click="emit('reset')">Reset to inherit</button>
   </div>
