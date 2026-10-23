@@ -19,7 +19,7 @@ const sourceText = (edge: PaddingEdge): string => sources.value[edge] === 'nativ
     <h4>{{ target.id }} · {{ label }}</h4>
     <div class="grid grid-cols-2 gap-2 text-sm"><span v-for="edge in ['top', 'right', 'bottom', 'left']" :key="edge"><strong>{{ edge }}</strong>: {{ edges[edge as PaddingEdge] ?? 'Native' }} · {{ sourceText(edge as PaddingEdge) }}</span></div>
     <button type="button" :aria-label="`${linked ? 'Edit separate' : 'Link'} ${label} ${target.id} padding edges`" @click="linked = !linked">{{ linked ? 'Edit separate edges' : 'Link all edges' }}</button>
-    <PaddingEdgeEditor :linked="linked" :context-key="contextKey" :context-label="`${target.id} · ${label}`" :edges="edges" @set="editor.setEdges" @reset="editor.resetEdges" />
-    <button type="button" :aria-label="`Reset ${label} ${target.id} padding`" @click="editor.resetEdges()">Reset to inherit</button>
+    <PaddingEdgeEditor :linked="linked" :context-key="contextKey" :context-label="`${target.id} · ${label}`" :edges="edges" @set="editor.setEdges" />
+    <button type="button" :aria-label="`Reset ${label} ${target.id} padding`" @click="editor.resetEdges()">Reset to default</button>
   </article>
 </template>

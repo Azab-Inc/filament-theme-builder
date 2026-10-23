@@ -6,7 +6,7 @@ import { validatePaddingValue } from '@/utils/padding-validation'
 import PaddingValueField from './PaddingValueField.vue'
 
 const props = defineProps<{ linked: boolean; contextKey: string; contextLabel: string; edges: Record<PaddingEdge, string | null> }>()
-const emit = defineEmits<{ set: [edges: PaddingEdges]; reset: [] }>()
+const emit = defineEmits<{ set: [edges: PaddingEdges] }>()
 const linkedValue = ref('')
 const error = ref<string | null>(null)
 const edgeNames: readonly PaddingEdge[] = ['top', 'right', 'bottom', 'left']
@@ -30,6 +30,5 @@ function link(): void { return }
     <div v-else class="grid grid-cols-2 gap-1">
         <label v-for="edge in edgeNames" :key="edge" :for="`padding-${props.contextKey}-${edge}`">{{ props.contextLabel }} · {{ edge }} <PaddingValueField :id="`padding-${props.contextKey}-${edge}`" :ariaLabel="`${props.contextLabel} ${edge} padding`" :value="props.edges[edge]" @update:value="setEdge(edge, $event)" /></label>
     </div>
-    <button type="button" :aria-label="`${props.contextLabel} reset padding`" @click="emit('reset')">Reset to inherit</button>
   </div>
 </template>

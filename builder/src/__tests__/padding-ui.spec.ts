@@ -38,7 +38,10 @@ describe('padding editor UI', () => {
     const store = useThemeStore()
     const wrapper = mount(PaddingHierarchyPanel, { props: { targets: [{ id: 'forms.input', sectionId: 'forms', targetKind: 'leaf', status: 'supported', units: ['px'], variants: [], states: [] }], read: store.readPadding, set: store.setPadding, reset: store.resetPadding } })
     expect(wrapper.text()).toContain('forms.input')
-    await wrapper.get('[data-padding-context="forms.input-component"] button[aria-label="Reset Component forms.input padding"]').trigger('click')
+    const resetButtons = wrapper.findAll('[data-padding-context="forms.input-component"] button[aria-label="Reset Component forms.input padding"]')
+    expect(resetButtons).toHaveLength(1)
+    expect(resetButtons[0]!.text()).toBe('Reset to default')
+    await resetButtons[0]!.trigger('click')
     expect(store.theme.padding).toEqual([])
   })
 
