@@ -16,6 +16,16 @@ describe('padding projection', () => {
     expect(projection.rules.some((rule) => rule.targetId === 'forms.section')).toBe(false)
     expect(projection.rules.map(({ selector }) => selector)).not.toContain('.fi-ta-cell')
     expect(projection.rules.find((rule) => rule.targetId === 'tables.cell.text')?.declarations).toEqual({ top: '8px', right: '0', bottom: '8px', left: '8px' })
+    expect(projection.rules.find((rule) => rule.targetId === 'forms.input')?.sourceContext.top).toEqual({ scope: 'global' })
+  })
+
+  it('does not emit duplicate target, selector, and context identities', () => {
+    const state = createDefaultCurrentThemeState()
+    state.padding = [{ scope: 'global', edges: { top: '8px' } }]
+    const rules = projectPadding(state, createThemeRegistry()).rules
+    const identities = rules.map((rule) => [rule.targetId, rule.selector, rule.variantId ?? '', rule.stateId ?? ''].join('\u0000'))
+
+    expect(new Set(identities).size).toBe(identities.length)
   })
 
   it('uses explicit container values and removes native edges from output', () => {

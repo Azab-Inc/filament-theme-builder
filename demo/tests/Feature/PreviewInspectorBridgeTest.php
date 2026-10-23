@@ -78,7 +78,8 @@ class PreviewInspectorBridgeTest extends TestCase
             ->assertOk()
             ->assertSee('paddingProjection', false)
             ->assertSee('isAcceptedPaddingProjection', false)
-            ->assertSee("rule.selector.includes('.fi-ta-cell')", false)
+            ->assertSee("rule.targetId === 'tables.cell.generic'", false)
+            ->assertDontSee("rule.selector.includes('.fi-ta-cell')", false)
             ->assertSee('paddingTargets', false)
             ->assertSee('isSafePaddingValue', false)
             ->assertSee('padding-${edge}', false);
@@ -91,5 +92,16 @@ class PreviewInspectorBridgeTest extends TestCase
             ->assertSee('message.theme.schemaVersion === 5', false)
             ->assertSee('message.theme.padding', false)
             ->assertSee('paddingCatalog', false);
+    }
+
+    public function test_preview_bridge_validates_padding_context_ownership_and_explicit_sources(): void
+    {
+        $this->get('/demo/admin/login')
+            ->assertOk()
+            ->assertSee('target.variants.includes(rule.variantId)', false)
+            ->assertSee('target.states.includes(rule.stateId)', false)
+            ->assertSee('isValidPaddingContext', false)
+            ->assertSee('sourceContext', false)
+            ->assertSee('hasExplicitPaddingEdge', false);
     }
 }

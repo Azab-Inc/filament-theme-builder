@@ -222,11 +222,21 @@
             if (!isRecord(projection) || projection.schemaVersion !== 1 || !Array.isArray(projection.rules)) return false;
             return projection.rules.every((rule) => {
                 const target = paddingTargets.get(rule?.targetId);
-                if (!target || target.status !== 'supported' || !isRecord(rule) || typeof rule.selector !== 'string' || rule.selector.includes('.fi-ta-cell')) return false;
+                if (!target || target.status !== 'supported' || !isRecord(rule) || typeof rule.selector !== 'string' || rule.targetId === 'tables.cell.generic' || rule.selector === '.fi-ta-cell' || !isValidPaddingContext(target, rule)) return false;
                 const selectors = rule.stateId ? (target.stateSelectors[rule.stateId] ?? []) : rule.variantId ? (target.variantSelectors[rule.variantId] ?? []) : target.selectors;
-                if (!selectors.includes(rule.selector) || Object.keys(rule).some((key) => !['targetId', 'selector', 'declarations', 'variantId', 'stateId'].includes(key)) || !isRecord(rule.declarations) || Object.keys(rule.declarations).length === 0) return false;
-                return Object.entries(rule.declarations).every(([edge, value]) => ['top', 'right', 'bottom', 'left'].includes(edge) && isSafePaddingValue(value));
+                if (!selectors.includes(rule.selector) || Object.keys(rule).some((key) => !['targetId', 'selector', 'declarations', 'sourceContext', 'variantId', 'stateId'].includes(key)) || !isRecord(rule.declarations) || !isRecord(rule.sourceContext) || Object.keys(rule.declarations).length === 0) return false;
+                return Object.entries(rule.declarations).every(([edge, value]) => ['top', 'right', 'bottom', 'left'].includes(edge) && isSafePaddingValue(value) && hasExplicitPaddingEdge(message.theme, rule, edge));
             });
+        };
+        const isValidPaddingContext = (target, rule) => {
+            if (rule.variantId !== undefined && (!target.variants.includes(rule.variantId) || !(target.variantSelectors[rule.variantId] ?? []).length)) return false;
+            if (rule.stateId !== undefined && (!target.states.includes(rule.stateId) || !(target.stateSelectors[rule.stateId] ?? []).length)) return false;
+            return rule.stateId === undefined || rule.variantId === undefined || (target.variants.includes(rule.variantId) && target.states.includes(rule.stateId));
+        };
+        const samePaddingContext = (left, right) => left.scope === right.scope && left.sectionId === right.sectionId && left.targetId === right.targetId && left.variantId === right.variantId && left.stateId === right.stateId;
+        const hasExplicitPaddingEdge = (theme, rule, edge) => {
+            const context = rule.sourceContext[edge];
+            return isRecord(context) && theme.padding.some((record) => isRecord(record) && samePaddingContext(record, context) && isRecord(record.edges) && Object.prototype.hasOwnProperty.call(record.edges, edge));
         };
         const isAcceptedTheme = (message) => {
             if (!isRecord(message) || message.type !== 'ftb:theme:update' || message.schemaVersion !== 1 || !['light', 'dark'].includes(message.activeMode) || !isRecord(message.projection) || message.activeMode !== message.projection.mode || !isRecord(message.theme) || !(message.theme.schemaVersion === 5) || !isAcceptedPaddingProjection(message.paddingProjection)) return false;

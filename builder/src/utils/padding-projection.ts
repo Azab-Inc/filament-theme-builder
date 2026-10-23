@@ -24,6 +24,11 @@ function addRules(rules: PaddingCssRule[], state: ThemeStateV5, registry: Filame
   if (!selectors.length) return
   const resolved = resolvePadding(state, registry, { targetId, ...context })
   const declarations = Object.fromEntries(EDGES.flatMap((edge) => resolved.edges[edge].native ? [] : [[edge, resolved.edges[edge].value!]]))
+  const sourceContext = Object.fromEntries(EDGES.flatMap((edge) => resolved.edges[edge].native ? [] : [[edge, resolved.edges[edge].sourceContext!]]))
   if (!Object.keys(declarations).length) return
-  for (const selector of selectors) rules.push({ targetId, selector, declarations, ...context })
+  for (const selector of selectors) {
+    const identity = [targetId, selector, context.variantId ?? '', context.stateId ?? ''].join('\u0000')
+    if (rules.some((rule) => [rule.targetId, rule.selector, rule.variantId ?? '', rule.stateId ?? ''].join('\u0000') === identity)) continue
+    rules.push({ targetId, selector, declarations, sourceContext, ...context })
+  }
 }
