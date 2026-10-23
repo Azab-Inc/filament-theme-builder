@@ -9,8 +9,11 @@ import type {
 } from './semantic-component-controls.model'
 import ColorField from '@/components/ColorField.vue'
 import { useColorFieldResets } from '@/composables/use-color-field-resets'
+import PaddingHierarchyPanel from './PaddingHierarchyPanel.vue'
+import type { PaddingMutation, PaddingReadResult, PaddingContext } from '@/models/padding.model'
+import type { RegistryPaddingTarget } from '@/models/padding-registry.model'
 
-defineProps<SemanticComponentControlsProps>()
+defineProps<SemanticComponentControlsProps & { paddingTargets?: readonly RegistryPaddingTarget[]; paddingRead?: (request: { targetId: string; selectedContext: PaddingContext }) => PaddingReadResult; paddingSet?: (mutation: PaddingMutation & { operation: 'set' }) => void; paddingReset?: (mutation: PaddingMutation & { operation: 'reset' }) => void }>()
 
 const emit = defineEmits<{
   'set-value': [change: SemanticComponentValueChange]
@@ -60,5 +63,6 @@ function resetValue(row: SemanticComponentRow): void {
         </button>
       </div>
     </fieldset>
+    <PaddingHierarchyPanel v-if="paddingTargets && paddingRead && paddingSet && paddingReset" :targets="paddingTargets" :read="paddingRead" :set="paddingSet" :reset="paddingReset" />
   </section>
 </template>

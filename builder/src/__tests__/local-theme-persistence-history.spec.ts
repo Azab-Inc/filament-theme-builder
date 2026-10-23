@@ -6,6 +6,8 @@ import { useThemeHistory } from '@/composables/use-theme-history'
 import { createDefaultThemeState } from '@/utils/foundation-defaults'
 import { themeHistoryKey } from '@/utils/local-theme-storage'
 import { cloneTheme } from '@/utils/theme-store-helpers'
+import { useThemeStore } from '@/stores/theme'
+import { createPinia, setActivePinia } from 'pinia'
 
 describe('local theme history persistence', () => {
   it('persists a new edit from an earlier cursor and removes the redo branch', () => {
@@ -35,5 +37,15 @@ describe('local theme history persistence', () => {
     const saved = JSON.parse(localStorage.getItem(themeHistoryKey(id))!) as { snapshots: { colors: { primary: string } }[]; cursor: number }
     expect(saved.cursor).toBe(2)
     expect(saved.snapshots.map((snapshot) => snapshot.colors.primary)).toEqual(['#6366f1', '#111111', '#333333'])
+  })
+
+  it('restores sparse padding history without adding unrelated records', () => {
+    localStorage.clear(); setActivePinia(createPinia())
+    const store = useThemeStore()
+    store.setPadding({ operation: 'set', context: { scope: 'component', targetId: 'forms.input' }, edges: { top: '8px' } })
+    store.undo()
+    expect(store.theme.padding).toEqual([])
+    store.redo()
+    expect(store.theme.padding).toEqual([{ scope: 'component', targetId: 'forms.input', edges: { top: '8px' } }])
   })
 })
