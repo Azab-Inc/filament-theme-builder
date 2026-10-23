@@ -233,8 +233,13 @@
             if (rule.stateId !== undefined && (!target.states.includes(rule.stateId) || !(target.stateSelectors[rule.stateId] ?? []).length)) return false;
             return rule.stateId === undefined || rule.variantId === undefined || (target.variants.includes(rule.variantId) && target.states.includes(rule.stateId));
         };
-        const isPaddingContextApplicable = (target, context) => {
+        const isExactPaddingContext = (context) => {
             if (!isRecord(context) || !['global', 'section', 'component', 'variant', 'state'].includes(context.scope)) return false;
+            const keys = context.scope === 'global' ? ['scope'] : context.scope === 'section' ? ['scope', 'sectionId'] : context.scope === 'component' ? ['scope', 'targetId'] : context.scope === 'variant' ? ['scope', 'targetId', 'variantId'] : ['scope', 'targetId', ...(context.variantId === undefined ? [] : ['variantId']), 'stateId'];
+            return Object.keys(context).length === keys.length && keys.every((key) => Object.prototype.hasOwnProperty.call(context, key)) && keys.filter((key) => key !== 'scope').every((key) => typeof context[key] === 'string' && context[key].length > 0);
+        };
+        const isPaddingContextApplicable = (target, context) => {
+            if (!isExactPaddingContext(context)) return false;
             if (context.scope === 'global') return target.targetKind === 'leaf';
             if (context.scope === 'section') return target.targetKind === 'leaf' && context.sectionId === target.sectionId;
             if (context.targetId !== target.id) return false;
@@ -245,7 +250,7 @@
         const samePaddingContext = (left, right) => left.scope === right.scope && left.sectionId === right.sectionId && left.targetId === right.targetId && left.variantId === right.variantId && left.stateId === right.stateId;
         const hasExplicitPaddingEdge = (theme, target, rule, edge) => {
             const context = rule.sourceContext[edge];
-            return isPaddingContextApplicable(target, context) && context.targetId === rule.targetId && theme.padding.some((record) => isRecord(record) && samePaddingContext(record, context) && isRecord(record.edges) && Object.prototype.hasOwnProperty.call(record.edges, edge));
+            return isPaddingContextApplicable(target, context) && theme.padding.some((record) => isRecord(record) && samePaddingContext(record, context) && isRecord(record.edges) && Object.prototype.hasOwnProperty.call(record.edges, edge));
         };
         const paddingIdentity = (record) => [record.scope, record.sectionId ?? '', record.targetId ?? '', record.variantId ?? '', record.stateId ?? ''].join('\u0000');
         const isSafePaddingRecord = (record) => {
