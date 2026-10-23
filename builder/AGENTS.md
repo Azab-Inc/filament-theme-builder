@@ -9,6 +9,7 @@ These instructions apply to the Vue application in `builder/`.
 - Do not install or add a third-party package without first asking for and receiving explicit user consent.
 - Prefer the existing dependencies, project utilities, and platform APIs before proposing a new package.
 - Use the `@/*` alias for imports from `src/`.
+- Don't let any file be over 100 lines, if it is over a 100 lines that means you need to split it up into either seperate components, composables or something else.
 
 ## Source Structure
 
@@ -23,6 +24,14 @@ These instructions apply to the Vue application in `builder/`.
 
 Keep responsibilities in their designated layer. Do not duplicate a domain model as a DTO unless the transfer shape genuinely differs from the model. The approved refactor migrates existing `src/services/` modules to these boundaries; new code belongs in the target folders.
 
+## TypeScript Best Practices
+
+- Use strict type checking
+- Prefer type inference when the type is obvious
+- Avoid the `any` type; use `unknown` when type is uncertain
+- Use `type` instead of `interface` where possible
+- Make sure all `types` and `interfaces` are in their own files.
+
 ## Vue Components
 
 - Give each cohesive visual section or reusable control its own `.vue` component in `src/components/`; group related native HTML elements within that component.
@@ -34,12 +43,11 @@ Every Vue single-file component must keep its sections in this order:
 
 1. `<script setup lang="ts">`
 2. `<template>`
-3. `<style>`
-
-Use `<style>` only when component-scoped CSS is necessary. Use Tailwind for styling throughout the application and avoid introducing separate CSS systems or ad hoc styling conventions.
+3. NEVER use `<style>` use tailwind classes or for something specific add it to `app.css`
 
 ## Functionality
 
+- Visual control changes should provide instantaneous feedback as the user types or changes a selector; do not require an Apply button unless the action is asynchronous, destructive, or explicitly transactional.
 - Name composable files and exports `useX`, and give each one a focused responsibility. Composables coordinate Vue reactivity, lifecycle, and browser/network/storage effects through explicit, testable inputs.
 - Reusable pure functions belong in `src/utils/`, even when composables and stores consume them. Preserve their plain-function APIs rather than adding artificial refs, watchers, or component-instance requirements.
 - Keep shared canonical application state in Pinia stores; composables expose or coordinate that state rather than create competing copies.

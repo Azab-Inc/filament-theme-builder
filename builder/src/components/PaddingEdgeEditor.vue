@@ -13,7 +13,7 @@ const edgeNames: readonly PaddingEdge[] = ['top', 'right', 'bottom', 'left']
 const isMixed = computed(() => new Set(Object.values(props.edges)).size > 1)
 const displayValue = computed(() => linkedValue.value || (isMixed.value ? '' : props.edges.top ?? ''))
 function validate(value: string): boolean { const result = validatePaddingValue(value, PADDING_UNITS, 'padding'); error.value = result.valid ? null : result.message; return result.valid }
-function applyLinked(): void { const value = linkedValue.value || props.edges.top || '0'; if (validate(value)) emit('set', Object.fromEntries(edgeNames.map((edge) => [edge, value])) as PaddingEdges) }
+function updateLinked(value: string): void { linkedValue.value = value; if (validate(value)) emit('set', Object.fromEntries(edgeNames.map((edge) => [edge, value])) as PaddingEdges) }
 function setEdge(edge: PaddingEdge, value: string): void { if (validate(value)) emit('set', { [edge]: value }) }
 function link(): void { return }
 </script>
@@ -25,11 +25,10 @@ function link(): void { return }
     <button v-if="!props.linked" type="button" aria-label="Link all edges" @click="link">Link all edges</button>
     <div v-if="props.linked" class="grid gap-1">
       <label :for="`padding-${props.contextKey}-linked`">{{ props.contextLabel }} · all edges</label>
-       <PaddingValueField :id="`padding-${props.contextKey}-linked`" :ariaLabel="`${props.contextLabel} linked padding`" :value="displayValue" :commit-on-change="false" @update:value="error = null; linkedValue = $event" @commit="applyLinked" />
-      <button type="button" :aria-label="`${props.contextLabel} apply linked padding`" @click="applyLinked">Apply linked padding</button>
+       <PaddingValueField :id="`padding-${props.contextKey}-linked`" :ariaLabel="`${props.contextLabel} linked padding`" :value="displayValue" :commit-on-change="false" @update:value="error = null; updateLinked($event)" />
     </div>
     <div v-else class="grid grid-cols-2 gap-1">
-       <label v-for="edge in edgeNames" :key="edge" :for="`padding-${props.contextKey}-${edge}`">{{ props.contextLabel }} · {{ edge }} <PaddingValueField :id="`padding-${props.contextKey}-${edge}`" :ariaLabel="`${props.contextLabel} ${edge} padding`" :value="props.edges[edge]" @commit="setEdge(edge, $event)" /></label>
+       <label v-for="edge in edgeNames" :key="edge" :for="`padding-${props.contextKey}-${edge}`">{{ props.contextLabel }} · {{ edge }} <PaddingValueField :id="`padding-${props.contextKey}-${edge}`" :ariaLabel="`${props.contextLabel} ${edge} padding`" :value="props.edges[edge]" :commit-on-change="false" @update:value="setEdge(edge, $event)" /></label>
     </div>
     <button type="button" :aria-label="`${props.contextLabel} reset padding`" @click="emit('reset')">Reset to inherit</button>
   </div>
