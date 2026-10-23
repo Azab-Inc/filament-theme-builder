@@ -7,8 +7,7 @@ type Target = { id: string }
 type SetMutator = (mutation: PaddingMutation & { operation: 'set' }) => void
 type ResetMutator = (mutation: PaddingMutation & { operation: 'reset' }) => void
 
-export function usePaddingEditor(target: Ref<Target>, read: Reader, set: SetMutator, reset: ResetMutator) {
-  const context = computed<PaddingContext>(() => ({ scope: 'component', targetId: target.value.id }))
+export function usePaddingEditor(target: Ref<Target>, context: Ref<PaddingContext>, read: Reader, set: SetMutator, reset: ResetMutator) {
   const result = computed(() => read({ targetId: target.value.id, selectedContext: context.value }))
   const edges = computed(() => Object.fromEntries(Object.entries(result.value.resolved.edges).map(([edge, value]) => [edge, value.value])) as Record<PaddingEdge, string | null>)
   const sources = computed(() => Object.fromEntries(Object.entries(result.value.resolved.edges).map(([edge, value]) => [edge, value.source])) as Record<PaddingEdge, string>)
