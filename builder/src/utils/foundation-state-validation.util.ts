@@ -6,6 +6,8 @@ import { validateIconConfiguration } from '@/registry/icon-registry'
 import { validatePanelBrandingSettings } from '@/utils/panel-branding-validation'
 import { validateRawOverrides } from '@/utils/raw-override-validation'
 import { overrideIdentity, validateOverride } from '@/utils/foundation-override-validation.util'
+import { validatePaddingState } from '@/utils/padding-validation'
+import { createThemeRegistry } from '@/registry/theme-registry'
 
 export function validateFoundationState(value: unknown, registry?: FilamentRegistry): FoundationValidationResult {
   if (!isRecord(value)) return invalid('invalid-value', 'state', 'Foundation state must be an object')
@@ -13,12 +15,19 @@ export function validateFoundationState(value: unknown, registry?: FilamentRegis
 }
 
 function validateVersionedState(value: Record<string, unknown>, registry?: FilamentRegistry): FoundationValidationResult {
-  const topLevel = checkKeys(value, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding'], ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss'], '')
+  const topLevel = checkKeys(value, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding', 'padding'], ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss'], '')
   if (topLevel) return topLevel
-  if (value.schemaVersion !== 3 && value.schemaVersion !== 4) return invalid('invalid-value', 'schemaVersion', 'Unsupported foundation schema version')
+  if (value.schemaVersion !== 3 && value.schemaVersion !== 4 && value.schemaVersion !== 5) return invalid('invalid-value', 'schemaVersion', 'Unsupported foundation schema version')
+  if (value.schemaVersion === 5 && !('padding' in value)) return invalid('invalid-value', 'padding', 'Padding is required in schema version 5')
+  if (value.schemaVersion !== 5 && 'padding' in value) return invalid('invalid-value', 'padding', 'Padding is unsupported before schema version 5')
   if (value.schemaVersion === 4) {
     const rawResult = validateRawOverrides(value.rawOverrides)
     if (!rawResult.valid) return invalid('invalid-value', 'rawOverrides', rawResult.error)
+  }
+  if (value.schemaVersion === 5) {
+    if (!Array.isArray(value.padding)) return invalid('invalid-value', 'padding', 'Padding must be an array')
+    const padding = validatePaddingState(value.padding, registry ?? createThemeRegistry())
+    if (!padding.valid) return invalid('invalid-value', padding.path, padding.message)
   }
   if (!isRecord(value.colors)) return invalid('invalid-value', 'colors', 'Colors must be an object')
   const colorKeys = checkKeys(value.colors, ['primary'], ['primary'], 'colors')

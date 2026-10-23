@@ -1,11 +1,11 @@
 import { computed, readonly } from 'vue'
 import { defineStore } from 'pinia'
-
 import type { ThemeStoreContext } from '@/models/theme-store.model'
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { useThemeFoundationActions } from '@/composables/use-theme-foundation-actions'
 import { useThemePaletteActions } from '@/composables/use-theme-palette-actions'
 import { useThemeOverrideActions } from '@/composables/use-theme-override-actions'
+import { useThemePaddingActions } from '@/composables/use-theme-padding-actions'
 import { useThemeRawActions } from '@/composables/use-theme-raw-actions'
 import { useThemeIconBrandingActions } from '@/composables/use-theme-icon-branding-actions'
 import { useThemeProjection } from '@/composables/use-theme-projection'
@@ -70,7 +70,6 @@ export const useThemeStore = defineStore('theme', () => {
     if (!localPersistence.themes.value.some((record) => record.id === id)) return null
     return readLocalThemeForRelay(localStorage, id, localPersistence.activeThemeId.value === id ? localPersistence.activeState.value : undefined)
   }
-
   return {
     theme: readonly(theme),
     themes: readonly(localPersistence.themes),
@@ -82,6 +81,7 @@ export const useThemeStore = defineStore('theme', () => {
     ...useThemeFoundationActions(context),
     ...useThemePaletteActions(context),
     ...useThemeOverrideActions(context),
+    ...useThemePaddingActions(context),
     ...useThemeRawActions(context),
     ...useThemeIconBrandingActions(context),
     ...useThemeProjection(context),

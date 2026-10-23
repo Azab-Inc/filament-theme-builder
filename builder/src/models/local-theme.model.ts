@@ -1,4 +1,4 @@
-import type { ThemeStateV4 } from '@/models/theme.model'
+import type { ThemeStateInput, ThemeStateV5 } from '@/models/theme.model'
 import type { Ref } from 'vue'
 
 export type LocalThemeRecord = {
@@ -8,9 +8,10 @@ export type LocalThemeRecord = {
 }
 
 export type LocalThemeHistory = {
-  snapshots: ThemeStateV4[]
+  snapshots: ThemeStateV5[]
   cursor: number
 }
+export type LocalThemeHistoryInput = { snapshots: ThemeStateInput[]; cursor: number }
 
 export type LocalThemeCollection = {
   themes: LocalThemeRecord[]
@@ -26,28 +27,28 @@ export type StorageOperationResult = { ok: true } | {
 
 export type LocalThemeLoadResult = {
   collection: LocalThemeCollection
-  state: ThemeStateV4
+  state: ThemeStateV5
   history: LocalThemeHistory
   error: string | null
 }
 
 
 export type LocalThemePendingSave = {
-  state: ThemeStateV4
+  state: ThemeStateV5
   history: LocalThemeHistory
   timer: ReturnType<typeof setTimeout>
 }
 
 export type LocalThemeRecoveredRecords = {
   records: LocalThemeRecord[]
-  values: Map<string, { state: ThemeStateV4; history: LocalThemeHistory }>
+  values: Map<string, { state: ThemeStateV5; history: LocalThemeHistory }>
   repaired: boolean
   repairError: string | null
 }
 
 export type LocalThemePersistenceOptions = {
   storage: Storage
-  initialState: ThemeStateV4
+  initialState: ThemeStateInput
   now: () => number
   schedule: (callback: () => void, delay: number) => ReturnType<typeof setTimeout>
   cancel: (handle: ReturnType<typeof setTimeout>) => void
@@ -56,7 +57,7 @@ export type LocalThemePersistenceOptions = {
 export type LocalThemePersistence = {
   themes: Ref<LocalThemeRecord[]>
   activeThemeId: Ref<string>
-  activeState: Ref<ThemeStateV4>
+  activeState: Ref<ThemeStateV5>
   activeHistory: Ref<LocalThemeHistory>
   storageError: Readonly<Ref<string | null>>
 }

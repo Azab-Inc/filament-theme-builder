@@ -16,7 +16,7 @@ import * as vanillaCssExport from '@/utils/vanilla-css-export'
 import { describe, expect, it } from 'vitest'
 
 const migratedRuntimeExports = {
-  foundationDefaults: ['createDefaultFoundationState', 'createDefaultThemeState', 'densityPreset'],
+  foundationDefaults: ['createDefaultCurrentThemeState', 'createDefaultFoundationState', 'createDefaultThemeState', 'densityPreset'],
   foundationRecovery: ['legacyRecoveryError', 'restoreLegacyTheme'],
   foundationProjection: ['projectFoundations'],
   foundationProvenance: ['markExplicitPath', 'clearExplicitPath', 'isExplicitPath', 'isPaletteExplicit', 'paletteOverridePath'],
@@ -27,7 +27,7 @@ const migratedRuntimeExports = {
   panelBrandingExport: ['exportPanelBrandingJson', 'exportPanelProviderBrandingPhp'],
   panelBrandingValidation: ['createDefaultPanelBrandingSettings', 'validatePanelBrandingSettings', 'classifyPanelBrandingSetting'],
   rawOverrideValidation: ['ALL_RAW_VISUAL_PROPERTIES', 'validateRawSelector', 'classifyRawSelector', 'proposeRawSelector', 'validateRawElementOverride', 'validateRawOverrides'],
-  themeResolver: ['resolveThemeValue'],
+  themeResolver: ['readPadding', 'resolvePadding', 'resolveThemeValue'],
   themeSerialization: ['serializeCanonicalTheme', 'serializeTheme', 'deserializeTheme'],
   themeValidation: ['validateThemeOverride', 'validateThemeState', 'validateResolveRequest'],
   vanillaCssExport: ['exportVanillaCss'],

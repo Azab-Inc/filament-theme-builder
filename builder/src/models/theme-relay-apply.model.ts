@@ -1,5 +1,5 @@
 import type { ImportVersion } from '@/models/theme-import.model'
-import type { ThemeStateV4 } from '@/models/theme.model'
+import type { ThemeStateV5 } from '@/models/theme.model'
 import type { ImportCommitResult } from '@/models/local-theme-import.model'
 import type { ApplyGrantDto } from '@/dtos/theme-relay.dto'
 
@@ -13,12 +13,12 @@ export type ApprovedImport = {
   sourceProposedName: string
   proposedName: string
   sourceVersion: ImportVersion
-  state: ThemeStateV4
+  state: ThemeStateV5
   expectedRevision: number
   grant: VerifiedApplyGrant
   operationExpiresAt: number
 }
 export type ThemeStoreImportBoundary = {
   revision: number
-  importFreshTheme(input: { operationId: string; payloadDigest: string; state: ThemeStateV4; name: string }): ImportCommitResult
+  importFreshTheme(input: { operationId: string; payloadDigest: string; state: ThemeStateV5; name: string }): ImportCommitResult
 }

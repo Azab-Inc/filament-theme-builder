@@ -2,11 +2,12 @@ import type { FilamentRegistry } from '@/models/theme-registry.model'
 import type { ThemeDeserializeResult } from '@/models/theme-deserialize-result.model'
 import type { ThemeSerializationMode } from '@/models/theme-serialization-mode.model'
 import type { ThemeSerializationResult } from '@/models/theme-serialization-result.model'
-import type { ResolveRequest, ThemeState, ThemeStateV2, ThemeStateV4 } from '@/models/theme.model'
+import type { ResolveRequest, ThemeState, ThemeStateV2, ThemeStateV5 } from '@/models/theme.model'
 import { materializeSupportedOverrides, toVersionTwo } from '@/utils/theme-serialization-helpers'
 import { validateResolveRequest, validateThemeState } from '@/utils/theme-validation'
 import { validateFoundationState } from '@/utils/foundation-validation'
 import { migrateVersionedTheme } from '@/utils/theme-import-migrations'
+import { createThemeRegistry } from '@/registry/theme-registry'
 
 export type { ThemeDeserializeResult } from '@/models/theme-deserialize-result.model'
 export type { ThemeSerializationMode } from '@/models/theme-serialization-mode.model'
@@ -18,8 +19,11 @@ export type { ThemeSerializationResult } from '@/models/theme-serialization-resu
  * Unlike local persistence, public export retains generated palette shades so
  * the exported document exactly describes the rendered foundation state.
  */
-export function serializeCanonicalTheme(state: unknown): ThemeStateV4 {
-  return structuredClone(JSON.parse(JSON.stringify(state)) as ThemeStateV4)
+export function serializeCanonicalTheme(state: unknown): ThemeStateV5 {
+  const parsed = structuredClone(JSON.parse(JSON.stringify(state)) as ThemeState)
+  const migrated = migrateVersionedTheme(parsed, createThemeRegistry())
+  if (!migrated.ok) throw new Error(migrated.message)
+  return migrated.state
 }
 
 export function serializeTheme(
@@ -80,7 +84,7 @@ function isThemeStateShape(value: unknown): value is ThemeState {
 }
 
 function isCanonicalThemeStateShape(value: unknown): value is ThemeState {
-  return isRecord(value) && (value.schemaVersion === 3 || value.schemaVersion === 4) && isRecord(value.colors) && typeof value.colors.primary === 'string' && isRecord(value.foundations)
+  return isRecord(value) && (value.schemaVersion === 3 || value.schemaVersion === 4 || value.schemaVersion === 5) && isRecord(value.colors) && typeof value.colors.primary === 'string' && isRecord(value.foundations)
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

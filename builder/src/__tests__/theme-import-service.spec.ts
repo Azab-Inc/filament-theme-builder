@@ -40,7 +40,7 @@ describe('versioned theme import service', () => {
     const source = { schemaVersion: 1 as const, colors: { primary: '#123456' } }
     const before = structuredClone(source)
     const result = parseAndMigrateTheme(bytes(source), 'x.json', '', registry)
-    expect(result).toMatchObject({ ok: true, sourceVersion: 1, migrationPath: [1, 2, 3, 4] })
+    expect(result).toMatchObject({ ok: true, sourceVersion: 1, migrationPath: [1, 2, 3, 4, 5] })
     expect(source).toEqual(before)
     expect((parseAndMigrateTheme(bytes({ schemaVersion: 2, colors: { primary: '#123456' }, overrides: [] }), 'x.json', '', registry)).ok).toBe(true)
     expect((parseAndMigrateTheme(bytes(createDefaultThemeState()), 'x.json', '', registry)).ok).toBe(true)

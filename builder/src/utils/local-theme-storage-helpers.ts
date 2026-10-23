@@ -1,5 +1,5 @@
 import type { LocalThemeLoadResult } from '@/models/local-theme.model'
-import type { ThemeState, ThemeStateV4 } from '@/models/theme.model'
+import type { ThemeState, ThemeStateV5 } from '@/models/theme.model'
 
 export function parseStorageJson(value: string | null): unknown {
   try { return value === null ? null : JSON.parse(value) as unknown } catch { return null }
@@ -13,7 +13,7 @@ export function storageErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Local theme storage failed'
 }
 
-export function failedLocalThemeLoad(state: ThemeStateV4, error: string): LocalThemeLoadResult {
+export function failedLocalThemeLoad(state: ThemeStateV5, error: string): LocalThemeLoadResult {
   return { collection: { themes: [], activeId: '' }, state, history: { snapshots: [state], cursor: 0 }, error }
 }
 

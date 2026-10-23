@@ -5,6 +5,7 @@ import { initializeLocalThemeStorage, loadLocalThemeCollection, themeHistoryKey,
 
 const state = createDefaultThemeState()
 const history = { snapshots: [state], cursor: 0 }
+const currentState = migrateToCurrent(state)
 const id = 'theme_1'
 
 describe('local theme storage', () => {
@@ -17,8 +18,8 @@ describe('local theme storage', () => {
     const storage = window.localStorage
     storage.clear()
     expect(writeAndVerifyLocalTheme(storage, id, state, history)).toEqual({ ok: true })
-    expect(JSON.parse(storage.getItem(themeStateKey(id))!)).toEqual(state)
-    expect(JSON.parse(storage.getItem(themeHistoryKey(id))!)).toEqual(history)
+    expect(JSON.parse(storage.getItem(themeStateKey(id))!)).toEqual(currentState)
+    expect(JSON.parse(storage.getItem(themeHistoryKey(id))!)).toEqual({ snapshots: [currentState], cursor: 0 })
   })
   it('initializes empty storage and migrates legacy state idempotently', () => {
     const storage = window.localStorage
@@ -29,7 +30,7 @@ describe('local theme storage', () => {
     expect(first.collection.themes).toHaveLength(1)
     expect(second.collection).toEqual(first.collection)
     expect(storage.getItem('ftb-theme')).toBeNull()
-    expect(second.state).toEqual(state)
+    expect(second.state).toEqual(currentState)
   })
   it('does not discard malformed legacy bytes or overwrite existing format', () => {
     const storage = window.localStorage
@@ -45,7 +46,7 @@ describe('local theme storage', () => {
     storage.setItem('ftb-theme-active', id)
     storage.setItem(themeStateKey(id), JSON.stringify(state))
     storage.setItem(themeHistoryKey(id), JSON.stringify(history))
-    expect(loadLocalThemeCollection(storage).state).toEqual(state)
+    expect(loadLocalThemeCollection(storage).state).toEqual(currentState)
     storage.setItem('ftb-themes', '{bad')
     expect(loadLocalThemeCollection(storage).error).toBeTruthy()
   })
@@ -113,7 +114,7 @@ describe('local theme storage', () => {
     storage.setItem('ftb-theme', JSON.stringify(old))
     const result = initializeLocalThemeStorage(storage, state, (legacy) => migrateToCurrent(legacy))
     expect(result.error).toBeNull()
-    expect(result.state.schemaVersion).toBe(4)
+    expect(result.state.schemaVersion).toBe(5)
     expect(result.state.colors.primary).toBe('#123456')
   })
   it('recovers the original V3 baseline fixture at the outer storage boundary', () => {
@@ -130,7 +131,7 @@ describe('local theme storage', () => {
     storage.setItem('ftb-theme', JSON.stringify(legacy))
     const result = initializeLocalThemeStorage(storage, state, migrateToCurrent)
     expect(result.error).toBeNull()
-    expect(result.state.schemaVersion).toBe(4)
+    expect(result.state.schemaVersion).toBe(5)
     expect(result.state.foundations.borders.default.light).toBe('var(--gray-200)')
     expect(storage.getItem('ftb-theme')).toBeNull()
   })

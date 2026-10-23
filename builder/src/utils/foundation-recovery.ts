@@ -1,11 +1,10 @@
-import type { FoundationStateV4 } from '@/models/foundations.model'
+import type { ThemeStateV5, ThemeOverride } from '@/models/theme.model'
 import { isRecord, mergeLegacyFoundations } from '@/utils/foundation-recovery-paths'
-import type { ThemeOverride } from '@/models/theme.model'
-import { createDefaultThemeState } from '@/utils/foundation-defaults'
+import { createDefaultCurrentThemeState } from '@/utils/foundation-defaults'
 import { validateFoundationState } from '@/utils/foundation-validation'
 import { validateRawOverrides } from '@/utils/raw-override-validation'
 
-export function restoreLegacyTheme(value: unknown): FoundationStateV4 | null {
+export function restoreLegacyTheme(value: unknown): ThemeStateV5 | null {
   if (typeof value === 'string') {
     try {
       value = JSON.parse(value)
@@ -16,15 +15,16 @@ export function restoreLegacyTheme(value: unknown): FoundationStateV4 | null {
   if (!isRecord(value) || (value.schemaVersion !== 3 && value.schemaVersion !== 4) || !isRecord(value.foundations)) return null
   const legacy = JSON.parse(JSON.stringify(value)) as Record<string, any>
 
-  const defaults = createDefaultThemeState()
+  const defaults = createDefaultCurrentThemeState()
   const foundations = mergeLegacyFoundations(defaults.foundations, legacy.foundations)
   const rawOverrides = validateRawOverrides(legacy.rawOverrides).valid ? structuredClone(legacy.rawOverrides) : []
-  const restored: FoundationStateV4 = {
-    schemaVersion: 4,
+  const restored: ThemeStateV5 = {
+    schemaVersion: 5,
     colors: { primary: foundations.palettes.primary.base },
     foundations,
     overrides: Array.isArray(legacy.overrides) ? structuredClone(legacy.overrides) as ThemeOverride[] : [],
     rawOverrides,
+    padding: [],
     customCss: typeof legacy.customCss === 'string' ? legacy.customCss : '',
     icons: defaults.icons,
     branding: defaults.branding,

@@ -1,12 +1,12 @@
 import type { ThemeMode } from '@/models/foundations.model'
-import type { ThemeStateV4 } from '@/models/theme.model'
+import type { ThemeStateInput } from '@/models/theme.model'
 import type { VanillaCssExportResult } from '@/models/vanilla-css-export-result.model'
 import { renderFoundations, renderDarkFoundations } from '@/utils/vanilla-css-export-foundations'
 import { renderRawOverrides } from '@/utils/vanilla-css-export-raw-overrides'
 import { renderSemanticOverrides } from '@/utils/vanilla-css-export-semantic-overrides'
 
-export function exportVanillaCss(theme: Readonly<ThemeStateV4>): VanillaCssExportResult {
-  const canonical = theme as ThemeStateV4
+export function exportVanillaCss(theme: Readonly<ThemeStateInput>): VanillaCssExportResult {
+  const canonical = theme as ThemeStateInput
   const errors: string[] = []
   const sections = [
     '/* Generated with Filament Theme Builder */',

@@ -32,7 +32,7 @@ describe('theme import UI flow', () => {
     const initial = store.themes.length
     const model = useThemeImport(store)
     await model.chooseFile(file('legacy.json'))
-    expect(model.state.preview?.migrationPath).toEqual([1, 2, 3, 4])
+    expect(model.state.preview?.migrationPath).toEqual([1, 2, 3, 4, 5])
     expect(store.themes).toHaveLength(initial)
     model.cancel()
     expect(store.themes).toHaveLength(initial)

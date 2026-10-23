@@ -15,7 +15,8 @@ describe('theme state migrations', () => {
   it('migrates version-1 colors.primary into the current state without losing the color', () => {
     localStorage.setItem('ftb-theme', JSON.stringify({ schemaVersion: 1, colors: { primary: '#0f766e' } }))
     const store = createThemeState()
-    expect(store.theme.schemaVersion).toBe(4)
+    expect(store.theme.schemaVersion).toBe(5)
+    expect(store.theme.padding).toEqual([])
     expect(store.theme.colors.primary).toBe('#0f766e')
     expect(store.theme.overrides).toEqual([])
     expect(store.theme.customCss).toBe('')
@@ -36,7 +37,7 @@ describe('theme state migrations', () => {
 
     const store = createThemeState()
 
-    expect(store.theme.schemaVersion).toBe(4)
+    expect(store.theme.schemaVersion).toBe(5)
     expect(store.theme.colors.primary).toBe('#0f766e')
     expect(store.theme.foundations.palettes.primary.base).toBe('#0f766e')
     expect(store.theme.overrides).toEqual([primaryButtonVariantOverride])
@@ -82,7 +83,7 @@ describe('theme state migrations', () => {
     }))
 
     const store = createThemeState()
-    expect(store.theme.schemaVersion).toBe(4)
+    expect(store.theme.schemaVersion).toBe(5)
     expect(store.theme.foundations.density).toBe('default')
     expect(() => store.setDensity('spacious')).not.toThrow()
   })

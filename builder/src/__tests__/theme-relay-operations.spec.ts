@@ -21,7 +21,7 @@ describe('relay read-only operation routing', () => {
       { operationId: 'b'.repeat(64), kind: 'export', status: 'pending', themeId: active },
     ], relay as never, store, vi.fn())
     expect(relay.publishListResult).toHaveBeenCalledWith('a'.repeat(64), [{ id: active, name: 'Untitled', updatedAt: expect.any(Number), active: true }])
-    expect(relay.publishExportResult).toHaveBeenCalledWith('b'.repeat(64), expect.stringContaining('"schemaVersion":4'))
+    expect(relay.publishExportResult).toHaveBeenCalledWith('b'.repeat(64), expect.stringContaining('"schemaVersion":5'))
     expect(store.themes).toHaveLength(count); expect(store.activeThemeId).toBe(active)
   })
 

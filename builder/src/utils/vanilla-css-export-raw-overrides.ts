@@ -1,7 +1,7 @@
-import type { ThemeStateV4 } from '@/models/theme.model'
+import type { ThemeStateInput } from '@/models/theme.model'
 import { validateRawElementOverride } from '@/utils/raw-override-validation'
 
-export function renderRawOverrides(theme: ThemeStateV4, errors: string[]): string {
+export function renderRawOverrides(theme: ThemeStateInput, errors: string[]): string {
   if (!Array.isArray(theme.rawOverrides)) {
     errors.push('Raw overrides must be an array')
     return ''

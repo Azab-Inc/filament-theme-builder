@@ -61,7 +61,7 @@ export function createThemeRelayClient(pairing: ThemePairing, fetcher: Fetcher =
     if (result.version !== 1 || result.status !== 'approved') throw new Error('operation_result_unacknowledged')
   }
   async function publishExportResult(id: string, json: string): Promise<void> {
-    const result = await request<{ version: 1; status: string }>(`/local-theme/relay/operations/${id}/result`, { filename: 'filament-theme.json', schemaVersion: 4, json })
+    const result = await request<{ version: 1; status: string }>(`/local-theme/relay/operations/${id}/result`, { filename: 'filament-theme.json', schemaVersion: 5, json })
     if (result.version !== 1 || result.status !== 'approved') throw new Error('operation_result_unacknowledged')
   }
   function start(onNotice: (notices: OperationNoticeDto[]) => void, onError: (error: Error) => void = () => undefined): () => void {

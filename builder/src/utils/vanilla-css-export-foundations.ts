@@ -1,12 +1,12 @@
 import type { FoundationProjection, ThemeMode } from '@/models/foundations.model'
-import type { ThemeStateV4 } from '@/models/theme.model'
+import type { ThemeStateInput } from '@/models/theme.model'
 import { projectFoundations } from '@/utils/foundation-projection'
 
-export function renderFoundations(theme: ThemeStateV4, mode: ThemeMode): string {
+export function renderFoundations(theme: ThemeStateInput, mode: ThemeMode): string {
   return renderProjection(projectFoundations(theme.foundations, mode))
 }
 
-export function renderDarkFoundations(theme: ThemeStateV4): string {
+export function renderDarkFoundations(theme: ThemeStateInput): string {
   const rules = renderProjection(projectFoundations(theme.foundations, 'dark'))
   return rules ? `.dark {\n${indent(rules)}\n}` : ''
 }

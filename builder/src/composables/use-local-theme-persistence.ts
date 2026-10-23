@@ -1,6 +1,6 @@
 import { getCurrentScope, onScopeDispose, readonly, ref } from 'vue'
 import type { LocalThemeHistory, LocalThemeLoadResult, LocalThemePendingSave, LocalThemePersistenceOptions as PersistenceOptions, LocalThemeRecord, StorageOperationResult } from '@/models/local-theme.model'
-import type { ThemeStateV4 } from '@/models/theme.model'
+import type { ThemeStateV5 } from '@/models/theme.model'
 import { initializeLocalThemeStorage, loadLocalThemeById, themeHistoryKey, themeStateKey, writeAndVerifyLocalTheme } from '@/utils/local-theme-storage'
 import { migrateToCurrent } from '@/utils/theme-store-normalization'
 import { cloneTheme } from '@/utils/theme-store-helpers'
@@ -9,11 +9,12 @@ import { type FreshThemeImport, type ImportCommitResult, importFreshLocalTheme, 
 const INDEX = 'ftb-themes'; const ACTIVE = 'ftb-theme-active'; const DELAY = 300
 export function useLocalThemePersistence(options: PersistenceOptions) {
   const themes = ref<LocalThemeRecord[]>([]); const activeThemeId = ref('')
-  const activeState = ref(cloneTheme(options.initialState)); const activeHistory = ref<LocalThemeHistory>({ snapshots: [cloneTheme(options.initialState)], cursor: 0 })
+  const initialState = migrateToCurrent(options.initialState)
+  const activeState = ref(cloneTheme(initialState)); const activeHistory = ref<LocalThemeHistory>({ snapshots: [cloneTheme(initialState)], cursor: 0 })
   const storageError = ref<string | null>(null); const pending = new Map<string, LocalThemePendingSave>()
   function initialize(preferInitialState = false): LocalThemeLoadResult {
     recoverLocalThemeImports(options.storage, options.now)
-    const loaded = initializeLocalThemeStorage(options.storage, options.initialState, migrateToCurrent, preferInitialState)
+    const loaded = initializeLocalThemeStorage(options.storage, initialState, migrateToCurrent, preferInitialState)
     themes.value = loaded.collection.themes; activeThemeId.value = loaded.collection.activeId; activeState.value = loaded.state; activeHistory.value = loaded.history; storageError.value = loaded.error
     if (!activeThemeId.value) { const id = nextId(); activeThemeId.value = id; themes.value = [{ id, name: 'Untitled', updatedAt: options.now() }] }
     return loaded
@@ -25,7 +26,7 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
     const loaded = loadLocalThemeById(options.storage, result.record.id); if (loaded.error) return { ok: false, error: loaded.error }
     themes.value = [...themes.value.filter((theme) => theme.id !== result.record.id), result.record]; activeThemeId.value = result.record.id; activeState.value = loaded.state; activeHistory.value = loaded.history; storageError.value = null; return result
   }
-  function scheduleSave(id: string, state: ThemeStateV4, history: LocalThemeHistory): void {
+  function scheduleSave(id: string, state: ThemeStateV5, history: LocalThemeHistory): void {
     const prior = pending.get(id); if (prior) options.cancel(prior.timer)
     const saved = { state: cloneTheme(state), history: cloneLocalThemeHistory(history) }; const timer = options.schedule(() => { flush(id) }, DELAY); pending.set(id, { ...saved, timer })
   }
@@ -58,7 +59,7 @@ export function useLocalThemePersistence(options: PersistenceOptions) {
   }
   if (getCurrentScope()) onScopeDispose(() => { for (const save of pending.values()) options.cancel(save.timer) }); return { themes, activeThemeId, activeState, activeHistory, storageError: readonly(storageError), initialize, scheduleSave, flush, importFreshTheme, switchTo, createTheme, renameTheme, duplicateTheme, deleteTheme }
   function writeIndex(records = themes.value): boolean { try { options.storage.setItem(INDEX, JSON.stringify(records)); return true } catch (error) { storageError.value = localThemeStorageMessage(error); return false } }
-  function persistNewTheme(record: LocalThemeRecord, state: ThemeStateV4, history: LocalThemeHistory): boolean {
+  function persistNewTheme(record: LocalThemeRecord, state: ThemeStateV5, history: LocalThemeHistory): boolean {
     const saved = writeAndVerifyLocalTheme(options.storage, record.id, state, history); if (!saved.ok) { storageError.value = saved.error; return false }
     themes.value.push(record); if (writeIndex()) { storageError.value = null; return true }; themes.value = themes.value.filter((theme) => theme.id !== record.id); removeRecords(record.id); return false
   }

@@ -32,10 +32,15 @@ export type ThemeStateV2 = {
 
 export type ThemeStateV3 = import('@/models/foundations.model').FoundationStateV3
 export type ThemeStateV4 = import('@/models/foundations.model').FoundationStateV4
+export type ThemeStateV5 = Omit<ThemeStateV4, 'schemaVersion'> & {
+  schemaVersion: 5
+  padding: import('@/models/padding.model').PaddingRecord[]
+}
+export type ThemeStateInput = ThemeStateV4 | ThemeStateV5
 
-export type ThemeState = ThemeStateV1 | ThemeStateV2 | ThemeStateV3 | ThemeStateV4
+export type ThemeState = ThemeStateV1 | ThemeStateV2 | ThemeStateV3 | ThemeStateV4 | ThemeStateV5
 
-export function migrateThemeState(state: ThemeState): ThemeStateV4 {
+export function migrateThemeState(state: ThemeState): ThemeStateV5 {
   const result = migrateVersionedTheme(state, createThemeRegistry())
   if (!result.ok) throw new Error(`${result.category}: ${result.message}`)
   return result.state

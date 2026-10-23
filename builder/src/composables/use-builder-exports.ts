@@ -1,5 +1,5 @@
 import type { BuilderState } from './use-builder-state'
-import type { ThemeStateV4 } from '@/models/theme.model'
+import type { ThemeStateV5 } from '@/models/theme.model'
 import { serializeCanonicalTheme } from '@/utils/theme-serialization'
 import { exportIconConfigurationPhp } from '@/utils/icon-export'
 import { exportPanelBrandingJson, exportPanelProviderBrandingPhp } from '@/utils/panel-branding-export'
@@ -13,12 +13,12 @@ export function useBuilderExports(state: BuilderState) {
   function exportBrandingPhp(): void { downloadFile('filament-panel-branding.php', exportPanelProviderBrandingPhp(state.theme.theme.branding), 'text/plain') }
   function errorMessage(error: unknown): string { return `Vanilla CSS export failed: ${error instanceof Error ? error.message : 'Unknown export error'}` }
   function exportVanillaThemeCss(): void {
-    try { const result = exportVanillaCss(state.theme.theme as unknown as ThemeStateV4); downloadFile('theme.css', result.css, 'text/css'); state.exportStatus.value = result.errors.length ? `Vanilla CSS exported with errors: ${result.errors.join('; ')}` : 'Vanilla CSS download started.' }
+    try { const result = exportVanillaCss(state.theme.theme as unknown as ThemeStateV5); downloadFile('theme.css', result.css, 'text/css'); state.exportStatus.value = result.errors.length ? `Vanilla CSS exported with errors: ${result.errors.join('; ')}` : 'Vanilla CSS download started.' }
     catch (error) { state.exportStatus.value = errorMessage(error) }
   }
   async function copyVanillaThemeCss(): Promise<void> {
     let result: ReturnType<typeof exportVanillaCss>
-    try { result = exportVanillaCss(state.theme.theme as unknown as ThemeStateV4) } catch (error) { state.exportStatus.value = errorMessage(error); return }
+    try { result = exportVanillaCss(state.theme.theme as unknown as ThemeStateV5) } catch (error) { state.exportStatus.value = errorMessage(error); return }
     const status = result.errors.length ? `Vanilla CSS copied with errors: ${result.errors.join('; ')}` : 'Vanilla CSS copied to clipboard.'
     try { await navigator.clipboard.writeText(result.css); state.exportStatus.value = status } catch {
       const textarea = document.createElement('textarea'); textarea.value = result.css; textarea.setAttribute('readonly', ''); textarea.style.position = 'fixed'; textarea.style.opacity = '0'; document.body.append(textarea); textarea.select()

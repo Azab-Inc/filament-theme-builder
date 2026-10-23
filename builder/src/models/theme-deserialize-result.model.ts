@@ -1,5 +1,5 @@
-import type { ThemeStateV4 } from '@/models/theme.model'
+import type { ThemeStateV5 } from '@/models/theme.model'
 
 export type ThemeDeserializeResult =
-  | { valid: true; state: ThemeStateV4 }
+  | { valid: true; state: ThemeStateV5 }
   | { valid: false; error: string }

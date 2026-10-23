@@ -26,7 +26,7 @@ describe('theme serialization round trips and invalid requests', () => {
     theme.foundations.palettes.primary.shades[500] = '#123456'
     theme.foundations.explicitPaths.push('palettes.primary.base')
     const exported = serializeCanonicalTheme(theme)
-    expect(exported.schemaVersion).toBe(4)
+    expect(exported.schemaVersion).toBe(5)
     expect(exported.foundations.palettes.primary.base).toBe('#0f766e')
     expect(exported.foundations.palettes.primary.shades[500]).toBe('#123456')
     expect(exported.foundations.explicitPaths).toEqual(['palettes.primary.base'])

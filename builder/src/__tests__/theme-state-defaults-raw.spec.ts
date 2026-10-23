@@ -15,7 +15,7 @@ describe('theme state defaults and raw overrides', () => {
   it('creates a versioned default state and changes the primary color', () => {
     const theme = createThemeState()
 
-    expect(theme.theme.schemaVersion).toBe(4)
+    expect(theme.theme.schemaVersion).toBe(5)
     expect(theme.theme.colors.primary).toBe('#6366f1')
     expect(theme.theme.overrides).toEqual([])
     expect(theme.theme.rawOverrides).toEqual([])
@@ -56,7 +56,7 @@ describe('theme state defaults and raw overrides', () => {
     vi.advanceTimersByTime(300)
 
     expect(readActiveThemeState()).toMatchObject({
-      schemaVersion: 4,
+      schemaVersion: 5,
       rawOverrides: [{ selector: '.fi-input', properties: { 'border-radius': '0.75rem' } }],
     })
   })

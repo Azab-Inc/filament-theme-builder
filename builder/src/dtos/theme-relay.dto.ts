@@ -35,5 +35,5 @@ export type OperationResultStatusDto = {
 
 export type OperationNoticeDto = { operationId: string; kind: 'list' | 'export' | 'import'; status: OperationResultStatusDto['status']; themeId?: string }
 export type RelayPayloadDto = { version: 1; operationId: string; payload: string; filename: string; proposedName: string; digest: string; byteLength: number }
-export type ImportPreviewDto = { sourceVersion: 1 | 2 | 3 | 4; targetVersion: 4; migrationPath: number[]; displayName: string; summary: string[]; payloadDigest: string; byteLength: number }
+export type ImportPreviewDto = { sourceVersion: 1 | 2 | 3 | 4 | 5; targetVersion: 5; migrationPath: number[]; displayName: string; summary: string[]; payloadDigest: string; byteLength: number }
 export type ApplyGrantDto = { version: 1; status: 'pending'; grantId: string; grantExpiresAt: number }

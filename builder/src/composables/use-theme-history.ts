@@ -1,10 +1,10 @@
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 
-import type { ThemeStateV4 } from '@/models/theme.model'
+import type { ThemeStateV5 } from '@/models/theme.model'
 import type { LocalThemeHistory } from '@/models/local-theme.model'
 import { cloneTheme, sameTheme, snapshot } from '@/utils/theme-store-helpers'
 
-export function useThemeHistory(theme: Ref<ThemeStateV4>, serialize: (value: ThemeStateV4) => unknown, storageKey: string, initial?: LocalThemeHistory, save?: (state: ThemeStateV4, history: LocalThemeHistory) => void) {
+export function useThemeHistory(theme: Ref<ThemeStateV5>, serialize: (value: ThemeStateV5) => unknown, storageKey: string, initial?: LocalThemeHistory, save?: (state: ThemeStateV5, history: LocalThemeHistory) => void) {
   const history = (initial?.snapshots ?? [snapshot(theme.value)]).map(snapshot)
   const historyIndex = ref(initial?.cursor ?? 0)
   const historyRevision = ref(0)
@@ -28,7 +28,7 @@ export function useThemeHistory(theme: Ref<ThemeStateV4>, serialize: (value: The
     }, 300)
   }, { deep: true, flush: 'sync' })
 
-  function applyTheme(value: ThemeStateV4): void {
+  function applyTheme(value: ThemeStateV5): void {
     applyingHistory = true
     theme.value = cloneTheme(value)
     applyingHistory = false

@@ -12,7 +12,7 @@ describe('relay import preview boundary', () => {
   it('routes verified bytes into the isolated preview and acknowledges receipt', async () => {
     const store = useThemeStore(); const model = useThemeImport(store); const relay = relayStub(); const input = await payload()
     await model.receiveRelayPayload(input, relay as never)
-    expect(model.state.preview?.migrationPath).toEqual([1, 2, 3, 4])
+    expect(model.state.preview?.migrationPath).toEqual([1, 2, 3, 4, 5])
     expect(store.themes).toHaveLength(1)
     expect(relay.acknowledgePayload).toHaveBeenCalledWith(input.operationId, input.digest)
     expect(relay.submitPreview).toHaveBeenCalledWith(input.operationId, expect.objectContaining({ payloadDigest: input.digest, byteLength: input.byteLength }))

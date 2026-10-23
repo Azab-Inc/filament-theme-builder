@@ -30,5 +30,5 @@ export async function previewThemeImport(bytes: Uint8Array, filename: string, pr
   if (bytes.byteLength > MAX_THEME_IMPORT_BYTES) return { valid: false, category: 'payload_too_large', message: 'Theme import exceeds the 1 MiB limit' }
   const parsed = parseAndMigrateTheme(bytes, filename, proposedName, registry)
   if (!parsed.ok) return { valid: false, category: parsed.category, message: parsed.message }
-  return { valid: true, preview: { sourceVersion: parsed.sourceVersion, targetVersion: 4, migrationPath: parsed.migrationPath, displayName: importDisplayName(filename, proposedName), summary: importSummary(parsed.sourceVersion, parsed.migrationPath, parsed.decisions), payloadDigest: await digestBytes(bytes), byteLength: bytes.byteLength, state: parsed.value } }
+  return { valid: true, preview: { sourceVersion: parsed.sourceVersion, targetVersion: 5, migrationPath: parsed.migrationPath, displayName: importDisplayName(filename, proposedName), summary: importSummary(parsed.sourceVersion, parsed.migrationPath, parsed.decisions), payloadDigest: await digestBytes(bytes), byteLength: bytes.byteLength, state: parsed.value } }
 }

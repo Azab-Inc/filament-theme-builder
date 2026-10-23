@@ -1,4 +1,4 @@
-import type { ThemeStateV4 } from '@/models/theme.model'
+import type { ThemeStateInput } from '@/models/theme.model'
 import type { SemanticMapping } from '@/models/vanilla-css-export-semantic-mapping.model'
 import { SUPPORTED_PSEUDO_STATES } from '@/models/theme-registry.model'
 import { createThemeRegistry } from '@/registry/theme-registry'
@@ -10,7 +10,7 @@ const semanticMappings = new Map<string, SemanticMapping>([
   ['global.primary\u0000primary', { selector: '.fi-color-primary', property: 'color' }],
 ])
 
-export function renderSemanticOverrides(theme: ThemeStateV4, errors: string[]): string {
+export function renderSemanticOverrides(theme: ThemeStateInput, errors: string[]): string {
   return theme.overrides.slice().sort((left, right) => semanticOverrideKey(left).localeCompare(semanticOverrideKey(right)))
     .flatMap((override) => {
       const mapping = semanticMappings.get(`${override.targetId}\u0000${override.controlId}`)
@@ -21,7 +21,7 @@ export function renderSemanticOverrides(theme: ThemeStateV4, errors: string[]): 
     }).filter(Boolean).join('\n')
 }
 
-function semanticSelector(override: ThemeStateV4['overrides'][number], mapping: SemanticMapping): string {
+function semanticSelector(override: ThemeStateInput['overrides'][number], mapping: SemanticMapping): string {
   const baseSelector = override.scope === 'global' ? mapping.globalSelector ?? mapping.selector
     : override.scope === 'component' ? mapping.componentSelector ?? mapping.selector : mapping.selector
   if (override.scope !== 'state') return baseSelector
@@ -32,6 +32,6 @@ function semanticSelector(override: ThemeStateV4['overrides'][number], mapping: 
   return override.stateId === 'default' ? baseSelector : `${baseSelector}:${override.stateId}`
 }
 
-function semanticOverrideKey(override: ThemeStateV4['overrides'][number]): string {
+function semanticOverrideKey(override: ThemeStateInput['overrides'][number]): string {
   return [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000')
 }

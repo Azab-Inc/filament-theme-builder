@@ -1,16 +1,16 @@
-import { createDefaultThemeState } from '@/utils/foundation-defaults'
+import { createDefaultCurrentThemeState } from '@/utils/foundation-defaults'
 import { deserializeTheme } from '@/utils/theme-serialization'
 import { validateFoundationState } from '@/utils/foundation-validation'
 import { createThemeRegistry } from '@/registry/theme-registry'
-import { migrateToCurrent, normalizeTheme, isLegacyVersionThree, isVersionFour } from '@/utils/theme-store-normalization'
+import { migrateToCurrent, isCurrentVersionFive, isLegacyVersionThree, isVersionFour } from '@/utils/theme-store-normalization'
 import { serializeTheme } from '@/utils/theme-store-serialization'
-import type { ThemeStateV4 } from '@/models/theme.model'
+import type { ThemeStateV5 } from '@/models/theme.model'
 
 const registry = createThemeRegistry()
 
 export function useThemePersistence(storageKey: string, recoveryStorageKey: string) {
   return {
-    restore: (): ThemeStateV4 => restoreTheme(storageKey, recoveryStorageKey),
+    restore: (): ThemeStateV5 => restoreTheme(storageKey, recoveryStorageKey),
     serialize: serializeTheme,
     archive: (value: unknown): void => archiveLegacyTheme(recoveryStorageKey, value),
     readRecovery: (): string | null => typeof localStorage === 'undefined' ? null : localStorage.getItem(recoveryStorageKey),
@@ -18,15 +18,15 @@ export function useThemePersistence(storageKey: string, recoveryStorageKey: stri
   }
 }
 
-function restoreTheme(storageKey: string, recoveryStorageKey: string): ThemeStateV4 {
+function restoreTheme(storageKey: string, recoveryStorageKey: string): ThemeStateV5 {
   try {
     const value = typeof localStorage === 'undefined' ? null : localStorage.getItem(storageKey)
-    if (!value) return structuredClone(createDefaultThemeState())
+    if (!value) return structuredClone(createDefaultCurrentThemeState())
     let parsed: unknown
-    try { parsed = JSON.parse(value) } catch { archiveLegacyTheme(recoveryStorageKey, value); return structuredClone(createDefaultThemeState()) }
-    if (isVersionFour(parsed) || isLegacyVersionThree(parsed)) {
+    try { parsed = JSON.parse(value) } catch { archiveLegacyTheme(recoveryStorageKey, value); return structuredClone(createDefaultCurrentThemeState()) }
+    if (isCurrentVersionFive(parsed) || isVersionFour(parsed) || isLegacyVersionThree(parsed)) {
       if (!hasTrustedProvenance(parsed)) archiveLegacyTheme(recoveryStorageKey, value)
-      const normalized = normalizeTheme(isVersionFour(parsed) ? parsed : { ...parsed, schemaVersion: 4, rawOverrides: [] })
+      const normalized = migrateToCurrent(parsed as never)
       if (validateFoundationState(normalized.foundations).valid) {
         return normalized
       }
@@ -35,10 +35,10 @@ function restoreTheme(storageKey: string, recoveryStorageKey: string): ThemeStat
       if (restored.valid) return migrateToCurrent(restored.state)
     }
   } catch { /* invalid or unavailable persisted data */ }
-  return structuredClone(createDefaultThemeState())
+  return structuredClone(createDefaultCurrentThemeState())
 }
 
-function hasTrustedProvenance(value: ThemeStateV4 | { foundations?: { provenanceVersion?: number } }): boolean {
+function hasTrustedProvenance(value: ThemeStateV5 | { foundations?: { provenanceVersion?: number } }): boolean {
   return value.foundations?.provenanceVersion === 1
 }
 

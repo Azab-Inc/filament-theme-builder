@@ -1,4 +1,5 @@
 import type { Density, DensityPreset, FoundationState, FoundationStateV4 } from '@/models/foundations.model'
+import type { ThemeStateV5 } from '@/models/theme.model'
 import { PALETTE_NAMES } from '@/models/foundations.model'
 import { generatePalette } from '@/utils/palette-generator'
 import { createDefaultIconConfiguration } from '@/registry/icon-registry'
@@ -59,6 +60,10 @@ export function createDefaultThemeState(): FoundationStateV4 {
     icons: createDefaultIconConfiguration(),
     branding: createDefaultPanelBrandingSettings(),
   }
+}
+
+export function createDefaultCurrentThemeState(): ThemeStateV5 {
+  return { ...createDefaultThemeState(), schemaVersion: 5, padding: [] }
 }
 
 export function densityPreset(value: Density): DensityPreset {

@@ -32,7 +32,7 @@ describe('theme state overrides', () => {
       overrides: [primaryButtonVariantOverride, { ...primaryButtonVariantOverride, value: '#dc2626' }],
     }))
 
-    expect(createThemeState().theme.schemaVersion).toBe(4)
+    expect(createThemeState().theme.schemaVersion).toBe(5)
     expect(createThemeState().theme.colors.primary).toBe('#6366f1')
     expect(createThemeState().theme.overrides).toEqual([])
   })
@@ -78,5 +78,20 @@ describe('theme state overrides', () => {
     const store = createThemeState()
     expect(store.theme.overrides).toEqual([])
     expect(() => store.setPrimaryColor('#0f766e')).not.toThrow()
+  })
+
+  it('mutates sparse padding atomically, supports reset inheritance, and records one undo step', () => {
+    vi.useFakeTimers()
+    const store = createThemeState()
+    store.setPadding({ operation: 'set', context: { scope: 'component', targetId: 'forms.input' }, edges: { top: 0, right: '2px' } })
+    expect(store.theme.padding).toEqual([{ scope: 'component', targetId: 'forms.input', edges: { top: 0, right: '2px' } }])
+    vi.advanceTimersByTime(300)
+    expect((readActiveThemeState() as { padding: unknown[] }).padding).toEqual(store.theme.padding)
+    store.resetPadding({ operation: 'reset', context: { scope: 'component', targetId: 'forms.input' }, resetEdges: ['top'] })
+    expect(store.theme.padding[0]?.edges).toEqual({ right: '2px' })
+    store.undo()
+    expect(store.theme.padding[0]?.edges).toEqual({ top: 0, right: '2px' })
+    store.redo()
+    expect(store.theme.padding[0]?.edges).toEqual({ right: '2px' })
   })
 })

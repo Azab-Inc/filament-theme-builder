@@ -1,5 +1,5 @@
 import type { LocalThemeHistory, LocalThemeRecord } from '@/models/local-theme.model'
-import type { ThemeStateV4 } from '@/models/theme.model'
+import type { ThemeStateInput, ThemeStateV5 } from '@/models/theme.model'
 
 const LOCAL_THEME_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/
 
@@ -25,16 +25,16 @@ export function parseLocalThemeCollection(value: unknown): LocalThemeRecord[] | 
 
 export function parseLocalThemeHistory(
   value: unknown,
-  validateState: (value: unknown) => ThemeStateV4 | null,
+  validateState: (value: unknown) => ThemeStateInput | null,
 ): LocalThemeHistory | null {
   if (!isRecord(value) || !Array.isArray(value.snapshots) || value.snapshots.length === 0) return null
   const cursor = value.cursor
   if (typeof cursor !== 'number' || !Number.isInteger(cursor) || cursor < 0 || cursor >= value.snapshots.length) return null
-  const snapshots: ThemeStateV4[] = []
+  const snapshots: ThemeStateV5[] = []
   for (const snapshot of value.snapshots) {
     const validated = validateState(snapshot)
     if (!validated) return null
-    snapshots.push(validated)
+    snapshots.push(validated as ThemeStateV5)
   }
   return { snapshots, cursor }
 }

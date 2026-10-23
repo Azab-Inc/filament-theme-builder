@@ -11,8 +11,8 @@ const registry = createThemeRegistry()
 describe('versioned theme migration edges', () => {
   it('migrates V1 through each explicit edge', () => {
     const result = migrateVersionedTheme({ schemaVersion: 1, colors: { primary: '#123456' } }, registry)
-    expect(result).toMatchObject({ ok: true, sourceVersion: 1, migrationPath: [1, 2, 3, 4] })
-    expect(result.ok && result.state.schemaVersion).toBe(4)
+    expect(result).toMatchObject({ ok: true, sourceVersion: 1, migrationPath: [1, 2, 3, 4, 5] })
+    expect(result.ok && result.state.schemaVersion).toBe(5)
     if (!result.ok) return
     expect(validateLocalThemeState(result.state)).not.toBeNull()
     expect(result.state.colors.primary).toBe('#123456')
@@ -22,7 +22,7 @@ describe('versioned theme migration edges', () => {
 
   it('migrates V2 through V3 and V4', () => {
     const result = migrateVersionedTheme({ schemaVersion: 2, colors: { primary: '#123456' }, overrides: [] }, registry)
-    expect(result).toMatchObject({ ok: true, sourceVersion: 2, migrationPath: [2, 3, 4] })
+    expect(result).toMatchObject({ ok: true, sourceVersion: 2, migrationPath: [2, 3, 4, 5] })
     expect(result.ok && result.state.colors.primary).toBe('#123456')
     expect(result.ok && result.state.foundations.palettes.primary.shades[500]).toBe('#123456')
   })
@@ -31,7 +31,7 @@ describe('versioned theme migration edges', () => {
     const v4 = createDefaultThemeState()
     const { rawOverrides: _rawOverrides, ...v3 } = v4
     const result = migrateVersionedTheme({ ...v3, schemaVersion: 3 }, registry)
-    expect(result).toMatchObject({ ok: true, sourceVersion: 3, migrationPath: [3, 4] })
+    expect(result).toMatchObject({ ok: true, sourceVersion: 3, migrationPath: [3, 4, 5] })
     expect(result.ok && result.state.rawOverrides).toEqual([])
     expect(result.ok && result.state.customCss).toBe('')
   })
@@ -41,7 +41,7 @@ describe('versioned theme migration edges', () => {
     const result = migrateVersionedTheme(source, registry)
     if (result.ok) result.state.colors.primary = '#123456'
     expect(source.colors.primary).not.toBe('#123456')
-    expect(result.ok && result.migrationPath).toEqual([4])
+    expect(result.ok && result.migrationPath).toEqual([4, 5])
   })
 
   it('reports invalid migration input instead of stripping fields', () => {
