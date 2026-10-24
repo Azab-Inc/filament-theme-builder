@@ -34,6 +34,12 @@
   flex: 0 0 auto;
 }
 
+/* Keep grouped menus outside the header's horizontal scroll clipping area. */
+.preview-shell .preview-shell__header-controls {
+  flex-wrap: wrap !important;
+  overflow: visible !important;
+}
+
 .preview-shell__header-controls .toolbar-primary-action {
   border-color: #315b53;
   background: #315b53;
