@@ -3,6 +3,7 @@ import LocalThemeManager from '@/components/LocalThemeManager.vue'
 import ThemeImportDialog from '@/components/ThemeImportDialog.vue'
 import ThemePairingControl from '@/components/ThemePairingControl.vue'
 import ColorField from '@/components/ColorField.vue'
+import ToolbarMenu from '@/components/ToolbarMenu.vue'
 import { useThemeRelayImportHandoff } from '@/composables/use-theme-relay-import-handoff'
 import type { LocalThemeRecord } from '@/models/local-theme.model'
 withDefaults(defineProps<{
@@ -56,31 +57,24 @@ function updatePrimaryColor(event: Event): void {
       <p data-demo-notice>Preview demo data is temporary.</p>
     </div>
     <div class="preview-shell__header-controls" data-editor-header-controls>
+      <button type="button" class="toolbar-primary-action" aria-label="Save theme" @click="emit('save')">Save theme</button>
       <ColorField id="toolbar-primary-color" label="Primary color" visible-label="Primary color" text-label="Primary color text" :value="primaryColor" :effective-value="primaryColor" profile="hex6" :context-key="activeThemeId" native-label="Primary color" :native-primary="true" @input="updatePrimaryColor" />
-      <button type="button" aria-label="Export theme JSON" @click="emit('exportCanonicalJson')">
-        Export JSON
-      </button>
-      <button type="button" aria-label="Copy vanilla CSS" @click="emit('copyVanillaThemeCss')">
-        Copy CSS
-      </button>
-      <button type="button" aria-label="Download vanilla CSS" @click="emit('exportVanillaThemeCss')">
-        Download CSS
-      </button>
-      <button type="button" aria-label="Export PanelProvider icon config" @click="emit('exportIconPhp')">
-        Export icon PHP
-      </button>
-      <button type="button" aria-label="Export panel branding JSON" @click="emit('exportBrandingJson')">
-        Export branding JSON
-      </button>
-      <button type="button" aria-label="Export PanelProvider branding config" @click="emit('exportBrandingPhp')">
-        Export branding PHP
-      </button>
+      <ToolbarMenu label="Export" ariaLabel="Export actions">
+        <button type="button" aria-label="Export theme JSON" @click="emit('exportCanonicalJson')">Export JSON</button>
+        <button type="button" aria-label="Copy vanilla CSS" @click="emit('copyVanillaThemeCss')">Copy CSS</button>
+        <button type="button" aria-label="Download vanilla CSS" @click="emit('exportVanillaThemeCss')">Download CSS</button>
+        <button type="button" aria-label="Export PanelProvider icon config" @click="emit('exportIconPhp')">Export icon PHP</button>
+        <button type="button" aria-label="Export panel branding JSON" @click="emit('exportBrandingJson')">Export branding JSON</button>
+        <button type="button" aria-label="Export PanelProvider branding config" @click="emit('exportBrandingPhp')">Export branding PHP</button>
+      </ToolbarMenu>
       <button type="button" aria-label="Undo" :disabled="!canUndo" @click="emit('undo')">Undo</button>
       <button type="button" aria-label="Redo" :disabled="!canRedo" @click="emit('redo')">Redo</button>
-      <button type="button" aria-label="Inspector" :aria-pressed="inspectorEnabled" @click="emit('toggleInspector')">Inspector</button>
-      <LocalThemeManager :themes="themes" :active-theme-id="activeThemeId" :storage-error="storageError" @save="emit('save')" @create="emit('create')" @open="emit('open', $event)" @rename="relayRename" @duplicate="emit('duplicate', $event)" @delete="emit('delete', $event)" @close="emit('close')" />
-      <ThemeImportDialog ref="importDialog" />
-      <ThemePairingControl :on-import-payload="receiveRelayImport" />
+      <ToolbarMenu label="Tools" ariaLabel="Theme tools">
+        <button type="button" aria-label="Inspector" :aria-pressed="inspectorEnabled" @click="emit('toggleInspector')">Inspector</button>
+        <LocalThemeManager :themes="themes" :active-theme-id="activeThemeId" :storage-error="storageError" @save="emit('save')" @create="emit('create')" @open="emit('open', $event)" @rename="relayRename" @duplicate="emit('duplicate', $event)" @delete="emit('delete', $event)" @close="emit('close')" />
+        <div class="toolbar-import"><ThemeImportDialog ref="importDialog" /></div>
+        <ThemePairingControl :on-import-payload="receiveRelayImport" />
+      </ToolbarMenu>
     </div>
   </header>
   <p v-if="exportStatus" role="status" aria-label="Export status" aria-live="polite" data-export-status>{{ exportStatus }}</p>

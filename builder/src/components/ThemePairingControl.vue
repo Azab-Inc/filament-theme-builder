@@ -61,7 +61,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section aria-label="Local client pairing" class="flex flex-wrap items-center gap-2">
+  <section aria-label="Local client pairing" class="toolbar-pairing flex flex-wrap items-center gap-2">
     <button v-if="!pairing" type="button" aria-label="Pair local client" :disabled="starting" @click="startPairing">Pair local client</button>
     <button v-if="claimId" type="button" aria-label="Approve pairing" @click="approvePairing">Approve pairing</button>
     <button v-if="pairing && !claimId && !paired" type="button" aria-label="Cancel pairing" @click="disconnect">Cancel pairing</button>

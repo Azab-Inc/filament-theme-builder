@@ -22,7 +22,7 @@ describe('App toolbar', () => {
     })
 
     for (const name of [
-      'Export theme JSON', 'Copy vanilla CSS', 'Download vanilla CSS',
+      'Save theme', 'Export theme JSON', 'Copy vanilla CSS', 'Download vanilla CSS',
       'Export PanelProvider icon config', 'Export panel branding JSON',
       'Export PanelProvider branding config', 'Undo', 'Redo', 'Inspector',
       'Restore legacy customization', 'Download archived legacy JSON',
@@ -30,6 +30,7 @@ describe('App toolbar', () => {
       expect(wrapper.get(`[aria-label="${name}"]`)).toBeTruthy()
     }
     expect(wrapper.get('[data-editor-header-controls]')).toBeTruthy()
+    expect(wrapper.findAll('[data-toolbar-menu]')).toHaveLength(2)
     expect(wrapper.get('[data-export-status]').text()).toBe('Vanilla CSS copied to clipboard.')
     expect(wrapper.get('[data-inspector-status]').text()).toBe('Product name input')
     expect(wrapper.get('[data-preview-loading]').text()).toBe('Refreshing runtime preview…')
@@ -38,6 +39,7 @@ describe('App toolbar', () => {
     expect(wrapper.get('[aria-label="Inspector"]').attributes('aria-pressed')).toBe('true')
 
     const actionButtons = {
+        save: 'Save theme',
         exportCanonicalJson: 'Export theme JSON',
         copyVanillaThemeCss: 'Copy vanilla CSS',
         exportVanillaThemeCss: 'Download vanilla CSS',
