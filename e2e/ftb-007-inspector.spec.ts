@@ -39,6 +39,16 @@ test.describe('FTB-007 semantic Inspector', () => {
     await expect(page.getByRole('status', { name: /inspector/i })).toContainText(/section/i)
   })
 
+  test('highlights a stats card instead of its containing section', async ({ page }) => {
+    const frame = page.frameLocator('iframe[title="Filament preview"]')
+    await page.getByRole('button', { name: 'Inspector' }).click()
+    const card = frame.locator('.fi-wi-stats-overview-stat').first()
+    const section = frame.locator('.fi-section').first()
+    await card.hover()
+    await expect(card).toHaveClass(/ftb-inspector-hover/)
+    await expect(section).not.toHaveClass(/ftb-inspector-hover/)
+  })
+
   test('selector-only matches show a breadcrumb without navigating the editor', async ({ page }) => {
     const frame = page.frameLocator('iframe[title="Filament preview"]')
     await page.getByRole('button', { name: 'Inspector' }).click()

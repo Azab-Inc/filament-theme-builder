@@ -69,8 +69,8 @@ function updatePrimaryColor(event: Event): void {
       </ToolbarMenu>
       <button type="button" aria-label="Undo" :disabled="!canUndo" @click="emit('undo')">Undo</button>
       <button type="button" aria-label="Redo" :disabled="!canRedo" @click="emit('redo')">Redo</button>
+      <button type="button" aria-label="Inspector" :aria-pressed="inspectorEnabled" @click="emit('toggleInspector')">Inspector</button>
       <ToolbarMenu label="Tools" ariaLabel="Theme tools">
-        <button type="button" aria-label="Inspector" :aria-pressed="inspectorEnabled" @click="emit('toggleInspector')">Inspector</button>
         <LocalThemeManager :themes="themes" :active-theme-id="activeThemeId" :storage-error="storageError" @save="emit('save')" @create="emit('create')" @open="emit('open', $event)" @rename="relayRename" @duplicate="emit('duplicate', $event)" @delete="emit('delete', $event)" @close="emit('close')" />
         <div class="toolbar-import"><ThemeImportDialog ref="importDialog" /></div>
         <ThemePairingControl :on-import-payload="receiveRelayImport" />
