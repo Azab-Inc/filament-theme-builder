@@ -49,6 +49,22 @@ test.describe('FTB-007 semantic Inspector', () => {
     await expect(section).not.toHaveClass(/ftb-inspector-hover/)
   })
 
+  test('highlights table rows and sidebar links as individual targets', async ({ page }) => {
+    const frame = page.frameLocator('iframe[title="Filament preview"]')
+    await page.getByRole('button', { name: 'Inspector' }).click()
+
+    const sidebarLink = frame.locator('.fi-sidebar-item-btn').first()
+    await sidebarLink.dispatchEvent('mouseover')
+    await expect(sidebarLink).toHaveClass(/ftb-inspector-hover/)
+    await sidebarLink.dispatchEvent('click')
+    await expect(sidebarLink).toHaveClass(/ftb-inspector-selected/)
+
+    const tableRow = frame.locator('.fi-ta-row').first()
+    await tableRow.dispatchEvent('mouseover')
+    await expect(tableRow).toHaveClass(/ftb-inspector-hover/)
+    await expect(tableRow).not.toHaveClass(/ftb-inspector-selected/)
+  })
+
   test('selector-only matches show a breadcrumb without navigating the editor', async ({ page }) => {
     const frame = page.frameLocator('iframe[title="Filament preview"]')
     await page.getByRole('button', { name: 'Inspector' }).click()

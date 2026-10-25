@@ -391,7 +391,8 @@
         const INSPECTOR_PROTOCOL_VERSION = 1;
         const inspectorTargetSelectors = [
             '.fi-btn', '.fi-input', '.fi-select-input', '.fi-fo-textarea',
-            '.fi-wi-stats-overview-stat', '.fi-ta-ctn', '.fi-section',
+            '.fi-wi-stats-overview-stat', '.fi-ta-row', '.fi-ta-ctn', '.fi-section',
+            '.fi-sidebar-item-btn', '.fi-sidebar-group-btn',
             '.fi-sidebar', '.fi-topbar', '.fi-page',
         ];
         const inspectorStyleId = 'ftb-inspector-style';
