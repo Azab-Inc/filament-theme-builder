@@ -8,4 +8,5 @@ export type AdvancedRawInspectorProps = {
   propertyValue: (property: RawVisualProperty) => string
   visible: boolean
   activeThemeId?: string
+  state?: import('@/utils/raw-inspector-state').InspectorVisualState
 }

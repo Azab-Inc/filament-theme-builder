@@ -4,6 +4,7 @@ import type { InspectorCommand } from '@/models/inspector-command.model'
 import type { InspectorEvent } from '@/models/inspector-event.model'
 import type { InspectorResolution } from '@/models/inspector-resolution.model'
 import type { InspectorTargetEvidence } from '@/models/inspector-target-evidence.model'
+import { findEditableSameTargetMatch, findSameTargetRegistryMatches, isEditableInspectorTarget } from '@/utils/inspector-target-matching'
 
 export type { InspectorCommand } from '@/models/inspector-command.model'
 export type { InspectorEvent } from '@/models/inspector-event.model'
@@ -16,8 +17,7 @@ const pseudoStatesPattern = SUPPORTED_PSEUDO_STATES.join('|')
 const selectorPattern = new RegExp(`^(?:\\.fi-[A-Za-z0-9_-]+)(?:\\.[A-Za-z0-9_-]+)*(?::(?:${pseudoStatesPattern}))?(?:\\s+\\.fi-[A-Za-z0-9_-]+(?:\\.[A-Za-z0-9_-]+)*(?::(?:${pseudoStatesPattern}))?)*$`)
 const classPattern = /^fi-[A-Za-z0-9_-]+$/
 const breadcrumbPattern = /^[^<>]{1,200}$/
-const allowedTargetKeys = ['candidateSelectors', 'classNames', 'semanticBreadcrumb', 'componentId', 'variantId', 'stateId'] as const
-const editableTargets = new Set(['form.product-name'])
+const allowedTargetKeys = ['candidateSelectors', 'classNames', 'targetSelector', 'semanticBreadcrumb', 'componentId', 'variantId', 'stateId'] as const
 
 export function isInspectorCommand(value: unknown): value is InspectorCommand {
   if (!isRecord(value) || value.protocolVersion !== INSPECTOR_PROTOCOL_VERSION) return false
@@ -38,6 +38,7 @@ export function isInspectorTargetEvidence(value: unknown): value is InspectorTar
   if (value.candidateSelectors.length > 20 || value.classNames.length > 30) return false
   if (value.candidateSelectors.some((selector) => typeof selector !== 'string' || !selectorPattern.test(selector))) return false
   if (value.classNames.some((className) => typeof className !== 'string' || !classPattern.test(className))) return false
+  if (value.targetSelector !== undefined && value.targetSelector !== null && (typeof value.targetSelector !== 'string' || !selectorPattern.test(value.targetSelector) || !value.candidateSelectors.includes(value.targetSelector))) return false
   for (const key of ['componentId', 'variantId', 'stateId'] as const) {
     if (value[key] !== undefined && (typeof value[key] !== 'string' || !classPattern.test(value[key]))) return false
   }
@@ -45,10 +46,27 @@ export function isInspectorTargetEvidence(value: unknown): value is InspectorTar
 }
 
 export function resolveInspectorTarget(registry: FilamentRegistry, evidence: InspectorTargetEvidence): InspectorResolution {
+  if (evidence.targetSelector === null) return { status: 'no-match', breadcrumb: evidence.semanticBreadcrumb ?? 'Detected preview element' }
+  if (evidence.targetSelector) {
+    const targetEntry = registry.entries.find((entry) => entry.selectors.includes(evidence.targetSelector!))
+    const sameTargetMatches = findSameTargetRegistryMatches(registry, evidence)
+    const editableMatch = findEditableSameTargetMatch(registry, evidence)
+    if (editableMatch) return { status: 'editable', entry: editableMatch.entry, editorTarget: editableMatch.entry.id, breadcrumb: editableMatch.entry.label }
+    if (targetEntry) {
+      if (isEditableInspectorTarget(targetEntry)) {
+        return { status: 'editable', entry: targetEntry, editorTarget: targetEntry.id, breadcrumb: targetEntry.label }
+      }
+      return { status: 'selector-only', entry: targetEntry, breadcrumb: evidence.semanticBreadcrumb ?? targetEntry.label }
+    }
+    const sameTargetMatch = sameTargetMatches[0]
+    return sameTargetMatch
+      ? { status: 'selector-only', entry: sameTargetMatch.entry, breadcrumb: evidence.semanticBreadcrumb ?? sameTargetMatch.entry.label }
+      : { status: 'no-match', breadcrumb: evidence.semanticBreadcrumb ?? 'Detected preview element' }
+  }
   for (const selector of evidence.candidateSelectors) {
     const result = registry.entries.find((entry) => entry.selectors.includes(selector))
     if (!result) continue
-    if (editableTargets.has(result.id) && result.controls.length > 0) {
+    if (isEditableInspectorTarget(result)) {
       return { status: 'editable', entry: result, editorTarget: result.id, breadcrumb: result.label }
     }
     return { status: 'selector-only', entry: result, breadcrumb: evidence.semanticBreadcrumb ?? result.label }

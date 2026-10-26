@@ -389,12 +389,6 @@
             return true;
         };
         const INSPECTOR_PROTOCOL_VERSION = 1;
-        const inspectorTargetSelectors = [
-            '.fi-btn', '.fi-input', '.fi-select-input', '.fi-fo-textarea',
-            '.fi-wi-stats-overview-stat', '.fi-ta-row', '.fi-ta-ctn', '.fi-section',
-            '.fi-sidebar-item-btn', '.fi-sidebar-group-btn',
-            '.fi-sidebar', '.fi-topbar', '.fi-page',
-        ];
         const inspectorStyleId = 'ftb-inspector-style';
         let inspectorEnabled = false;
         let inspectorParentOrigin = null;
@@ -408,17 +402,26 @@
         };
         const inspectorTarget = (node) => {
             if (!(node instanceof Element)) return null;
-            for (const selector of inspectorTargetSelectors) {
-                const target = node.closest(selector);
-                if (target) return target;
+            if (node.closest('script, style, link, meta, head, #ftb-preview-bridge, #ftb-inspector-style')) return null;
+            const interactiveAncestor = node.closest('button, a, [role="button"]');
+            if (node instanceof SVGElement || node.closest('svg')) {
+                return interactiveAncestor ?? node.closest('[class*="fi-"]');
             }
-            return null;
+            if (node === document.documentElement || node === document.body) return null;
+            if (interactiveAncestor && ![...node.classList].some((name) => /^fi-[A-Za-z0-9_-]+$/.test(name))) return interactiveAncestor;
+            return node;
+        };
+        const inspectorTargetSelector = (target) => {
+            const classes = [...target.classList].filter((name) => /^fi-[A-Za-z0-9_-]+$/.test(name));
+            return classes.length ? `.${classes.join('.')}` : undefined;
         };
         const inspectorEvidence = (target) => {
             const classNames = [];
             const candidateSelectors = [];
             const compoundSelectors = [];
+            const targetScopedSelectors = [];
             const selectorPath = [];
+            const targetFilamentClasses = [...target.classList].filter((name) => /^fi-[A-Za-z0-9_-]+$/.test(name)).slice(0, 30);
             let current = target;
             for (let depth = 0; current && depth < 5; depth++, current = current.parentElement) {
                 const filamentClasses = [...current.classList].filter((name) => /^fi-[A-Za-z0-9_-]+$/.test(name));
@@ -430,13 +433,22 @@
                     selectorPath.unshift(`.${filamentClasses[0]}`);
                     if (selectorPath.length > 1) compoundSelectors.push(selectorPath.join(' '));
                 }
+                if (current !== target) {
+                    for (const ancestorClass of filamentClasses) {
+                        for (const targetClass of targetFilamentClasses) {
+                            const selector = `.${ancestorClass} .${targetClass}`;
+                            if (targetScopedSelectors.length < 20 && target.matches(selector)) targetScopedSelectors.push(selector);
+                        }
+                    }
+                }
                 if (classNames.length >= 30) break;
             }
-            const uniqueSelectors = [...new Set([...compoundSelectors, ...candidateSelectors])].slice(0, 20);
+            const targetSelector = inspectorTargetSelector(target);
+            const uniqueSelectors = [...new Set([targetSelector, ...targetScopedSelectors, ...compoundSelectors, ...candidateSelectors].filter(Boolean))].slice(0, 20);
             const uniqueClasses = [...new Set(classNames)].slice(0, 30);
             const label = target.getAttribute('aria-label') || target.getAttribute('title');
             const semanticBreadcrumb = label ? label.slice(0, 200) : [...target.classList].filter((name) => name.startsWith('fi-')).slice(0, 3).join(' / ');
-            return { candidateSelectors: uniqueSelectors, classNames: uniqueClasses, ...(semanticBreadcrumb ? { semanticBreadcrumb } : {}) };
+            return { candidateSelectors: uniqueSelectors, classNames: uniqueClasses, targetSelector: targetSelector ?? null, ...(semanticBreadcrumb ? { semanticBreadcrumb } : {}) };
         };
         const ensureInspectorStyle = () => {
             let style = document.getElementById(inspectorStyleId);
@@ -489,6 +501,12 @@
             hoveredTarget.classList.remove('ftb-inspector-hover');
             hoveredTarget = null;
         });
+        document.addEventListener('mousedown', (event) => {
+            if (!inspectorEnabled || !inspectorTarget(event.target)) return;
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+        }, true);
         document.addEventListener('click', (event) => {
             if (!inspectorEnabled) return;
             const target = inspectorTarget(event.target);

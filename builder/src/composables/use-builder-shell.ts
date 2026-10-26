@@ -1,6 +1,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ALL_RAW_VISUAL_PROPERTIES } from '@/models/raw-overrides.model'
 import { classifyRawSelector } from '@/utils/raw-override-validation'
+import { inspectorStateForSelector } from '@/utils/raw-inspector-state'
 import { useBuilderState } from './use-builder-state'
 import { useBuilderFoundations } from './use-builder-foundations'
 import { useBuilderControls } from './use-builder-controls'
@@ -17,6 +18,7 @@ export function useBuilderShell(previewUrl: string) {
   const uploads = useBrandingUpload(state)
   const selectedRawOverride = computed(() => state.theme.theme.rawOverrides.find((override) => override.selector === state.rawSelector.value))
   const rawSelectorClassification = computed(() => state.rawSelector.value ? classifyRawSelector(state.rawSelector.value) : { selector: null, quality: 'unavailable' as const })
+  const rawInspectorState = computed(() => inspectorStateForSelector(state.rawSelector.value))
   const primaryColor = foundations.primaryColor
   function setPreviewIframe(element: HTMLIFrameElement | null): void { state.iframe.value = element ?? undefined }
   function handleKeydown(event: KeyboardEvent): void {
@@ -26,7 +28,7 @@ export function useBuilderShell(previewUrl: string) {
   }
   onMounted(() => window.addEventListener('keydown', handleKeydown))
   onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
-  return { ...state, ...foundations, ...controls, ...exports, ...actions, ...uploads, primaryColor, setPreviewIframe, handleKeydown, rawProperties: ALL_RAW_VISUAL_PROPERTIES, rawSelectorClassification, selectedRawOverride }
+  return { ...state, ...foundations, ...controls, ...exports, ...actions, ...uploads, primaryColor, setPreviewIframe, handleKeydown, rawProperties: ALL_RAW_VISUAL_PROPERTIES, rawSelectorClassification, rawInspectorState, selectedRawOverride }
 }
 
 export type { BuilderShell } from '@/models/builder-shell.model'

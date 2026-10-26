@@ -9,6 +9,7 @@ import {
   type RawVisualProperty,
 } from '@/models/raw-overrides.model'
 import { isSafePropertyValue } from '@/utils/raw-override-property-validation'
+import { findEditableSameTargetMatch } from '@/utils/inspector-target-matching'
 
 export type { RawValidationResult } from '@/models/raw-validation-result.model'
 
@@ -33,6 +34,11 @@ export function classifyRawSelector(selector: string): RawSelectorProposal {
 
 export function proposeRawSelector(evidence: InspectorTargetEvidence, registry: FilamentRegistry): RawSelectorProposal {
   const candidates = [...new Set(evidence.candidateSelectors)]
+  if (evidence.targetSelector === null) return { selector: null, quality: 'unavailable', warning: 'No safe editable selector was detected.' }
+  if (evidence.targetSelector) {
+    const canonicalSameTarget = findEditableSameTargetMatch(registry, evidence)
+    return classifyRawSelector(canonicalSameTarget?.selector ?? evidence.targetSelector)
+  }
   const semanticSelectors = new Set(registry.entries.flatMap((entry) => entry.selectors))
   const stableSemantic = candidates.find((candidate) => singleClassPattern.test(candidate) && semanticSelectors.has(candidate))
   if (stableSemantic) return { selector: stableSemantic, quality: 'stable' }

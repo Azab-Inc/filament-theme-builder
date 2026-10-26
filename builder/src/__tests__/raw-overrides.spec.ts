@@ -46,6 +46,38 @@ describe('raw Inspector overrides', () => {
     })
     expect(validateRawSelector('.fi-section > div').valid).toBe(false)
   })
+
+  it('does not propose an ancestor selector for a classless selected element', () => {
+    expect(proposeRawSelector({
+      candidateSelectors: ['.fi-section'],
+      classNames: [],
+      targetSelector: null,
+      semanticBreadcrumb: 'Detected preview element',
+    }, registry)).toMatchObject({ selector: null, quality: 'unavailable' })
+  })
+
+  it('prefers a registered scoped selector ending at the selected child', () => {
+    expect(proposeRawSelector({
+      candidateSelectors: [
+        '.fi-input',
+        '.fi-input-wrp-content-ctn .fi-input',
+        '.fi-fo-text-input .fi-input',
+        '.fi-fo-text-input .fi-input-wrp-content-ctn .fi-input',
+        '.fi-input-wrp-content-ctn',
+        '.fi-fo-text-input',
+      ],
+      classNames: ['fi-input', 'fi-fo-text-input'],
+      targetSelector: '.fi-input',
+    }, registry)).toMatchObject({ selector: '.fi-fo-text-input .fi-input', quality: 'fragile' })
+  })
+
+  it('does not borrow the product-name raw selector for an unrelated fi-input', () => {
+    expect(proposeRawSelector({
+      candidateSelectors: ['.fi-input', '.fi-global-search .fi-input', '.fi-input-wrp-content-ctn .fi-input'],
+      classNames: ['fi-input', 'fi-global-search', 'fi-input-wrp-content-ctn'],
+      targetSelector: '.fi-input.fi-input-has-inline-prefix',
+    }, registry)).toMatchObject({ selector: '.fi-input.fi-input-has-inline-prefix', quality: 'fragile' })
+  })
   it('accepts the complete typed visual property allowlist with representative values', () => {
     expect(ALL_RAW_VISUAL_PROPERTIES).toEqual(expect.arrayContaining([
       'color', 'background-color', 'border-color', 'border-width', 'border-radius',

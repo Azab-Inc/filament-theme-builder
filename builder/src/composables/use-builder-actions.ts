@@ -9,6 +9,7 @@ import type { RawPropertyChange, RawPropertyReset, RawSelectorChange } from '@/c
 import { validateRawSelector } from '@/utils/raw-override-validation'
 import { ICON_PACK_NAMES, RESOURCE_ICON_KEYS, ICON_PACK_PRESETS } from '@/registry/icon-registry'
 import { computed } from 'vue'
+import { selectorForInspectorState, type InspectorVisualState } from '@/utils/raw-inspector-state'
 
 export function useBuilderActions(state: BuilderState) {
   const iconOptions = ['heroicon-o-cube', 'heroicon-o-star', 'heroicon-o-bolt', 'heroicon-o-heart', 'heroicon-o-check-circle', 'heroicon-s-cube', 'heroicon-s-star', 'heroicon-s-bolt', 'heroicon-s-heart', 'heroicon-s-check-circle', 'heroicon-m-cube', 'heroicon-m-star', 'heroicon-m-bolt', 'heroicon-m-heart', 'heroicon-m-check-circle']
@@ -33,6 +34,7 @@ export function useBuilderActions(state: BuilderState) {
   function resetRawProperty(change: RawPropertyReset): void { if (state.rawSelector.value) state.theme.resetRawProperty(state.rawSelector.value, change.property) }
   function resetRawOverride(): void { if (state.rawSelector.value) state.theme.resetRawOverride(state.rawSelector.value) }
   function setRawSelector(change: RawSelectorChange): void { const next = (change.event.target as HTMLInputElement).value.trim(); const validation = validateRawSelector(next); state.rawSelectorError.value = validation.valid ? undefined : validation.error; if (validation.valid) state.rawSelector.value = next }
+  function setRawInspectorState(mode: InspectorVisualState): void { const next = selectorForInspectorState(state.rawSelector.value, mode); if (next && validateRawSelector(next).valid) { state.rawSelectorError.value = undefined; state.rawSelector.value = next } }
   function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean { return override.targetId === productNameTarget.targetId && override.controlId === productNameTarget.controlId && override.scope === scope && (scope === 'global' || override.componentId === productNameContext.componentId) && (scope === 'global' || scope === 'component' || override.variantId === productNameContext.variantId) && (scope !== 'state' || override.stateId === productNameContext.stateId) }
-  return { iconOptions, iconPreviews, productNameRows, applyBrandingChange, setBrandTypography, setCustomBrandTypography, setIconPack, setIconOverride, setProductNameValue, resetProductNameValue, rawPropertyValue, setRawProperty, resetRawProperty, resetRawOverride, setRawSelector, iconPackNames: ICON_PACK_NAMES, resourceIconKeys: RESOURCE_ICON_KEYS }
+  return { iconOptions, iconPreviews, productNameRows, applyBrandingChange, setBrandTypography, setCustomBrandTypography, setIconPack, setIconOverride, setProductNameValue, resetProductNameValue, rawPropertyValue, setRawProperty, resetRawProperty, resetRawOverride, setRawSelector, setRawInspectorState, iconPackNames: ICON_PACK_NAMES, resourceIconKeys: RESOURCE_ICON_KEYS }
 }
