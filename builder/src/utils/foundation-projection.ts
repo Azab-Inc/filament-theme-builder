@@ -1,6 +1,6 @@
 import { FILAMENT_FOUNDATION_INVENTORY } from '@/registry/filament-foundation-inventory'
 import type { FoundationProjection, FoundationState, ThemeMode } from '@/models/foundations.model'
-import { isExplicitPath, isPaletteExplicit } from '@/utils/foundation-provenance'
+import { isExplicitPath, isModeInherited, isPaletteExplicit, resolveModeValue } from '@/utils/foundation-provenance'
 
 const PREVIEW_MAPPINGS = FILAMENT_FOUNDATION_INVENTORY.filter((entry) =>
   entry.mapping === 'preview-emulatable' || entry.mapping === 'live-emulation',
@@ -14,7 +14,10 @@ export function projectFoundations(state: FoundationState, mode: ThemeMode): Fou
       const paletteName = /^palette\.([^.]+)\./.exec(entry.id)?.[1]
       if (paletteName !== undefined) return isPaletteExplicit(state, paletteName as keyof FoundationState['palettes'])
       const modePath = /^(surface|border|text)\.(.+)$/.exec(entry.id)
-      if (modePath) return isExplicitPath(state, `${modePath[1] === 'surface' ? 'surfaces' : modePath[1] === 'border' ? 'borders' : 'text'}.${modePath[2]}.${mode}`)
+       if (modePath) {
+         const collection = modePath[1] === 'surface' ? 'surfaces' : modePath[1] === 'border' ? 'borders' : 'text'
+         return isExplicitPath(state, `${collection}.${modePath[2]}.${mode}`) || isModeInherited(state, collection, modePath[2]!, mode)
+       }
       return isExplicitPath(state, entry.id)
     }).map((entry) => ({
       id: entry.id,
@@ -53,7 +56,8 @@ function foundationValue(state: FoundationState, id: string, mode: ThemeMode): s
   const modeValue = id.match(/^(surface|border|text)\.(.+)$/)
   if (modeValue) {
     const collection = modeValue[1] === 'surface' ? state.surfaces : modeValue[1] === 'border' ? state.borders : state.text
-    return collection[modeValue[2] as keyof typeof collection][mode]
+    const name = modeValue[2]!
+    return resolveModeValue(state, collection[name as keyof typeof collection], modeValue[1] === 'surface' ? 'surfaces' : modeValue[1] === 'border' ? 'borders' : 'text', name, mode)
   }
 
   const typography = id.match(/^typography\.(body|heading|mono)$/)

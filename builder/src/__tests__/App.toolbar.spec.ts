@@ -18,6 +18,7 @@ describe('App toolbar', () => {
         runtimeLoading: true,
         legacyRecoveryAvailable: true,
         legacyRecoveryError: 'Archive needs review',
+        activeMode: 'light',
       },
     })
 

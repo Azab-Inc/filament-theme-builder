@@ -77,6 +77,30 @@ describe('App foundations', () => {
     expect(localStorage.getItem('ftb-theme')).toBeNull()
   })
 
+  it('inherits light text into dark mode until dark text is explicitly edited', async () => {
+    localStorage.clear()
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+    const lightText = wrapper.get('input[aria-label="Text primary light"]')
+
+    await lightText.setValue('#123456')
+    await wrapper.get('header button[aria-label="Dark mode"]').trigger('click')
+
+    expect(wrapper.get('input[aria-label="Text primary dark"]').element).toHaveProperty('value', '#123456')
+
+    await wrapper.get('input[aria-label="Text primary dark"]').setValue('#abcdef')
+    await wrapper.get('header button[aria-label="Light mode"]').trigger('click')
+    expect(wrapper.get('input[aria-label="Text primary light"]').element).toHaveProperty('value', '#123456')
+    await wrapper.get('header button[aria-label="Dark mode"]').trigger('click')
+    expect(wrapper.get('input[aria-label="Text primary dark"]').element).toHaveProperty('value', '#abcdef')
+  })
+
+  it('places the mode switcher in the top toolbar', () => {
+    const wrapper = mount(App, { global: { plugins: [createPinia()] } })
+
+    expect(wrapper.get('header [aria-label="Light mode"]')).toBeTruthy()
+    expect(wrapper.find('fieldset [aria-label="Light mode"]').exists()).toBe(false)
+  })
+
   it('clears only the matching validation error when that foundation is reset', async () => {
     const wrapper = mount(App, { global: { plugins: [createPinia()] } })
     const sidebar = wrapper.get('#sidebar-surface')

@@ -2,6 +2,7 @@ import { toRaw } from 'vue'
 
 import type { ThemeOverride, ThemeStateV2, ThemeStateV5, ResolveRequest } from '@/models/theme.model'
 import type { ThemeMode } from '@/models/foundations.model'
+import { resolveModeValue } from '@/utils/foundation-provenance'
 
 export function cloneTheme(value: ThemeStateV5): ThemeStateV5 {
   return structuredClone(JSON.parse(JSON.stringify(toRaw(value))) as ThemeStateV5)
@@ -57,8 +58,8 @@ export function setPath(root: Record<string, unknown>, path: string, value: unkn
   return true
 }
 
-export function selectMode<T>(values: Record<string, { light: T; dark: T }>, mode: ThemeMode): Record<string, T> {
-  return Object.fromEntries(Object.entries(values).map(([key, value]) => [key, value[mode]]))
+export function selectMode<T, K extends string>(values: Record<K, { light: T; dark: T }>, mode: ThemeMode, state?: { readonly explicitPaths: readonly string[] }, collection?: string): Record<K, T> {
+  return Object.fromEntries(Object.keys(values).map((key) => [key, state && collection ? resolveModeValue(state, values[key as K]!, collection, key, mode) : values[key as K]![mode]])) as Record<K, T>
 }
 
 export function foundationPathSegments(path: string): string[] {

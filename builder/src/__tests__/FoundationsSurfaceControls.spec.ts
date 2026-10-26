@@ -49,12 +49,8 @@ describe('FoundationsSurfaceControls', () => {
     expect(wrapper.get('#surface-page-status').text()).toBe('explicit')
     expect(wrapper.find('[aria-label="Reset page surface"]').exists()).toBe(true)
 
-    await wrapper.get('[aria-label="Dark mode"]').trigger('click')
-    await wrapper.get('#page-surface').trigger('input')
     await wrapper.get('[aria-label="Reset border default light"]').trigger('click')
 
-    expect(wrapper.emitted('set-mode')).toEqual([['dark']])
-    expect(wrapper.emitted('set-mode-value')?.[0]?.[0]).toMatchObject({ path: 'surfaces.page' })
     expect(wrapper.emitted('reset')?.[0]).toEqual(['borders.default.light'])
   })
 })

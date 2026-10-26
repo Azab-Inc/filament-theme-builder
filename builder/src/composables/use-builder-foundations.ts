@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 import type { Density, PaletteName, PaletteShade, ThemeMode } from '@/models/foundations.model'
 import { lookupFoundationMapping } from '@/registry/filament-foundation-inventory'
-import { isExplicitPath } from '@/utils/foundation-provenance'
+import { isExplicitPath, isModeInherited } from '@/utils/foundation-provenance'
 import { validateFoundationColor } from '@/utils/foundation-validation'
 import type { FoundationModeValueChange } from '@/components/foundations-surface-controls.model'
 import type { PaletteBaseChange, PaletteShadeChange, PaletteShadeReset } from '@/components/foundations-palette-controls.model'
@@ -29,6 +29,7 @@ export function useBuilderFoundations(state: BuilderState) {
     const provenancePath = /^(surfaces|borders|text)\./.test(path) ? `${path}.${state.activeMode.value}` : path
     const shade = /^palettes\.([^.]+)\.shades\.(\d+)$/.exec(path)
     if (shade) return state.foundation.value.palettes[shade[1] as PaletteName]?.overrides[Number(shade[2]) as PaletteShade] ? 'explicit' : 'generated'
+    if (/^(surfaces|borders|text)\./.test(path) && isModeInherited(state.foundation.value, path.split('.')[0]!, path.split('.')[1]!, state.activeMode.value)) return 'inherited'
     return isExplicitPath(state.foundation.value, provenancePath) || JSON.stringify(getPath(state.foundation.value, provenancePath)) !== JSON.stringify(getPath(state.defaultFoundation, provenancePath)) ? 'explicit' : 'inherited'
   }
   function reset(path: string): void { delete state.foundationErrors.value[path]; state.theme.resetFoundation(path) }

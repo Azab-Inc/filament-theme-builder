@@ -13,24 +13,6 @@ function reset(path: string): void { resetField(path); emit('reset', path) }
 <template>
   <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
     <legend>Surfaces, borders, text, and modes</legend>
-    <div role="group" aria-label="Preview mode">
-      <button
-        type="button"
-        aria-label="Light mode"
-        :aria-pressed="activeMode === 'light'"
-        @click="emit('set-mode', 'light')"
-      >
-        Light
-      </button>
-      <button
-        type="button"
-        aria-label="Dark mode"
-        :aria-pressed="activeMode === 'dark'"
-        @click="emit('set-mode', 'dark')"
-      >
-        Dark
-      </button>
-    </div>
     <div v-for="name in surfaceNames" :key="name" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
       <ColorField :id="`${name}-surface`" :label="`${name} surface ${activeMode}`" :value="surfaces[name]" :effective-value="surfaces[name]" profile="foundation" :context-key="`${contextKey ?? ''}:${activeMode}`" :status-id="`surface-${name}-status`" :error-id="`surface-${name}-error`" :error="foundationError(`surfaces.${name}.${activeMode}`)" external-error :reset-key="resetKeys[`surfaces.${name}.${activeMode}`]" @input="emit('set-mode-value', { path: `surfaces.${name}`, event: $event })" />
       <span :id="`surface-${name}-status`" role="status" aria-live="polite">{{ statusFor(`surfaces.${name}`) }}</span>

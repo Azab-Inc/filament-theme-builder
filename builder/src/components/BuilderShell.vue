@@ -12,6 +12,7 @@ const shell = reactive(model)
 
 <template>
   <main class="preview-shell">
+    <a class="sr-only focus:not-sr-only" href="#builder-editor-panel">Skip to theme editor</a>
     <EditorToolbar
       :primary-color="shell.primaryColor"
       :can-undo="shell.canUndo"
@@ -24,8 +25,10 @@ const shell = reactive(model)
       :legacy-recovery-error="shell.theme.legacyRecoveryError"
       :themes="shell.theme.themes"
       :active-theme-id="shell.theme.activeThemeId"
+      :active-mode="shell.activeMode"
       :storage-error="shell.theme.storageError"
       @update:primary-color="shell.primaryColor = $event"
+      @set-mode="shell.setMode"
       @export-canonical-json="shell.exportCanonicalJson"
       @copy-vanilla-theme-css="shell.copyVanillaThemeCss"
       @export-vanilla-theme-css="shell.exportVanillaThemeCss"

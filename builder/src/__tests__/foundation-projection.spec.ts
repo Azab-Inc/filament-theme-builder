@@ -54,6 +54,22 @@ describe('foundation projection', () => {
     )
   })
 
+  it('projects a light edit into dark mode until dark is explicitly edited', () => {
+    const state = createDefaultFoundationState()
+    state.text.primary.light = '#123456'
+    state.explicitPaths.push('text.primary.light')
+
+    expect(projectFoundations(state, 'dark').mappings).toContainEqual(
+      expect.objectContaining({ id: 'text.primary', value: '#123456' }),
+    )
+
+    state.text.primary.dark = '#abcdef'
+    state.explicitPaths.push('text.primary.dark')
+    expect(projectFoundations(state, 'dark').mappings).toContainEqual(
+      expect.objectContaining({ id: 'text.primary', value: '#abcdef' }),
+    )
+  })
+
   it('omits untouched palettes but projects every value for an explicitly edited family', () => {
     const state = createDefaultFoundationState()
 

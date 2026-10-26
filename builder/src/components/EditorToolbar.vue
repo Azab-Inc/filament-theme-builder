@@ -6,6 +6,7 @@ import ColorField from '@/components/ColorField.vue'
 import ToolbarMenu from '@/components/ToolbarMenu.vue'
 import { useThemeRelayImportHandoff } from '@/composables/use-theme-relay-import-handoff'
 import type { LocalThemeRecord } from '@/models/local-theme.model'
+import type { ThemeMode } from '@/models/foundations.model'
 withDefaults(defineProps<{
   primaryColor: string
   canUndo: boolean
@@ -18,11 +19,13 @@ withDefaults(defineProps<{
   legacyRecoveryError: string | null
   themes?: ReadonlyArray<LocalThemeRecord>
   activeThemeId?: string
+  activeMode: ThemeMode
   storageError?: string | null
 }>(), { themes: () => [], activeThemeId: '', storageError: null })
 
 const emit = defineEmits<{
   'update:primaryColor': [color: string]
+  'set-mode': [mode: ThemeMode]
   exportCanonicalJson: []
   copyVanillaThemeCss: []
   exportVanillaThemeCss: []
@@ -59,6 +62,10 @@ function updatePrimaryColor(event: Event): void {
     <div class="preview-shell__header-controls" data-editor-header-controls>
       <button type="button" class="toolbar-primary-action" aria-label="Save theme" @click="emit('save')">Save theme</button>
       <ColorField id="toolbar-primary-color" label="Primary color" visible-label="Primary color" text-label="Primary color text" :value="primaryColor" :effective-value="primaryColor" profile="hex6" :context-key="activeThemeId" native-label="Primary color" :native-primary="true" @input="updatePrimaryColor" />
+      <div role="group" aria-label="Preview mode" class="inline-flex">
+        <button type="button" aria-label="Light mode" :aria-pressed="activeMode === 'light'" @click="emit('set-mode', 'light')">Light</button>
+        <button type="button" aria-label="Dark mode" :aria-pressed="activeMode === 'dark'" @click="emit('set-mode', 'dark')">Dark</button>
+      </div>
       <ToolbarMenu label="Export" ariaLabel="Export actions">
         <button type="button" aria-label="Export theme JSON" @click="emit('exportCanonicalJson')">Export JSON</button>
         <button type="button" aria-label="Copy vanilla CSS" @click="emit('copyVanillaThemeCss')">Copy CSS</button>
