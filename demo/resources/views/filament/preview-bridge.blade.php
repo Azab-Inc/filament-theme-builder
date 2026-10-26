@@ -268,14 +268,20 @@
              const accepted = hasSupportedKeys && paddingValid && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && foundationValid && Array.isArray(message.theme.overrides) && message.theme.overrides.every(isSafeOverride) && message.theme.overrides.every((override) => semanticOverrideMappings.has(`${override.targetId}\u0000${override.controlId}`)) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && Array.isArray(message.theme.rawOverrides) && message.theme.rawOverrides.every(isSafeRawOverride) && new Set(message.theme.rawOverrides.map((override) => override.selector)).size === message.theme.rawOverrides.length && message.theme.customCss === '' && (message.theme.branding === undefined || isSafeBranding(message.theme.branding)) && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && projectionValid;
              return accepted;
         };
-        const projectionMatchesCanonicalFoundation = (projection, foundations) => {
-            const expectedMappings = [...canonicalFoundationMappings.values()].filter((entry) => {
-                const palette = /^palette\.([^.]+)\./.exec(entry.id)?.[1];
-                if (palette) return foundations.explicitPaths.some((path) => path === `palettes.${palette}.base` || path.startsWith(`palettes.${palette}.overrides.`));
-                const modePath = /^(surface|border|text)\.(.+)$/.exec(entry.id);
-                if (modePath) return foundations.explicitPaths.includes(`${modePath[1] === 'surface' ? 'surfaces' : modePath[1] === 'border' ? 'borders' : 'text'}.${modePath[2]}.${projection.mode}`);
-                return foundations.explicitPaths.includes(entry.id);
-            }).map((entry) => ({ ...entry, value: foundationValue(foundations, entry.id, projection.mode) }));
+         const projectionMatchesCanonicalFoundation = (projection, foundations) => {
+             const expectedMappings = [...canonicalFoundationMappings.values()].filter((entry) => {
+                 const palette = /^palette\.([^.]+)\./.exec(entry.id)?.[1];
+                 if (palette) return foundations.explicitPaths.some((path) => path === `palettes.${palette}.base` || path.startsWith(`palettes.${palette}.overrides.`));
+                 const modePath = /^(surface|border|text)\.(.+)$/.exec(entry.id);
+                 if (modePath) {
+                     const collection = modePath[1] === 'surface' ? 'surfaces' : modePath[1] === 'border' ? 'borders' : 'text';
+                     const darkInheritsLight = projection.mode === 'dark'
+                         && foundations.explicitPaths.includes(`${collection}.${modePath[2]}.light`)
+                         && !foundations.explicitPaths.includes(`${collection}.${modePath[2]}.dark`);
+                     return foundations.explicitPaths.includes(`${collection}.${modePath[2]}.${projection.mode}`) || darkInheritsLight;
+                 }
+                 return foundations.explicitPaths.includes(entry.id);
+             }).map((entry) => ({ ...entry, value: foundationValue(foundations, entry.id, projection.mode) }));
             if (projection.mappings.length !== expectedMappings.length || expectedMappings.length > canonicalFoundationMappings.size) return false;
             return expectedMappings.every((expected) => projection.mappings.some((candidate) =>
                 candidate.id === expected.id && candidate.mapping === expected.mapping && candidate.property === expected.property && sameArray(candidate.selectors, expected.selectors) && candidate.variable === expected.variable && candidate.value === expected.value,
@@ -291,7 +297,14 @@
                 return palette.overrides[paletteShade[2]] ?? palette.shades[paletteShade[2]] ?? palette.base;
             }
             const modeValue = /^(surface|border|text)\.(.+)$/.exec(id);
-            if (modeValue) return foundations[modeValue[1] === 'surface' ? 'surfaces' : modeValue[1] === 'border' ? 'borders' : 'text'][modeValue[2]][mode];
+             if (modeValue) {
+                 const collection = modeValue[1] === 'surface' ? 'surfaces' : modeValue[1] === 'border' ? 'borders' : 'text';
+                 const values = foundations[collection][modeValue[2]];
+                 const darkInheritsLight = mode === 'dark'
+                     && foundations.explicitPaths.includes(`${collection}.${modeValue[2]}.light`)
+                     && !foundations.explicitPaths.includes(`${collection}.${modeValue[2]}.dark`);
+                 return darkInheritsLight ? values.light : values[mode];
+             }
             const typography = /^typography\.(body|heading|mono)$/.exec(id);
             if (typography) return foundations.typography[typography[1]].family;
             const spacing = /^spacing\.(.+)$/.exec(id);
