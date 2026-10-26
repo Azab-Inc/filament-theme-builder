@@ -48,6 +48,7 @@ Every Vue single-file component must keep its sections in this order:
 ## Functionality
 
 - Visual control changes should provide instantaneous feedback as the user types or changes a selector; do not require an Apply button unless the action is asynchronous, destructive, or explicitly transactional.
+- Preserve light/dark inheritance and overrides: a value changed in light mode should be visible in dark mode through inheritance until that value is explicitly changed in dark mode; after the dark-mode edit, store and render two independent values. This applies to semantic controls, Inspector/raw selectors, hover/focus/selected state variants, resets, undo/redo, and JSON/CSS exports. Always key reads and writes by the active theme mode and test both inherited and explicitly overridden modes.
 - Name composable files and exports `useX`, and give each one a focused responsibility. Composables coordinate Vue reactivity, lifecycle, and browser/network/storage effects through explicit, testable inputs.
 - Reusable pure functions belong in `src/utils/`, even when composables and stores consume them. Preserve their plain-function APIs rather than adding artificial refs, watchers, or component-instance requirements.
 - Keep shared canonical application state in Pinia stores; composables expose or coordinate that state rather than create competing copies.

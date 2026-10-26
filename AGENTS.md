@@ -33,6 +33,10 @@ Do not require separate host commands to start either application when using one
 
 Use test-driven development for every feature and bug fix: write the test first, run it and verify that it fails for the expected reason, then implement the smallest change that makes it pass. For user-visible behavior, create and run the Playwright CLI test before implementation and use it to verify the completed feature or fix. A feature is not done and a bug is not fixed until its test passes.
 
+## Theme mode isolation
+
+Treat light and dark mode values as independent theme-context values with inheritance. When a user changes a value in the light theme, the dark theme may inherit that value until the user explicitly changes the same value in dark mode. At that point, persist and render separate light and dark values. Verify this behavior for semantic controls, Inspector/raw overrides, state variants, exports, reset, and undo/redo; never overwrite the other mode when editing the active mode.
+
 ### Demo-first implementation gate
 
 After FTB-003, remaining builder feature work stays blocked until all demo-complete requirements are met: FTB-009A, FTB-009B, FTB-010, FTB-011, FTB-013, FTB-014, FTB-015, FTB-016, FTB-017, and FTB-018 are now evidenced complete. FTB-012 (tables) remains explicitly partial only for theme-density integration, which is not a blocker. Operational FTB-027/028 are parallel and outside the current plan; they retain separate status/prerequisites and are not substitutes for or relaxations of this gate. Preserve TDD and Playwright requirements above for all feature work.
