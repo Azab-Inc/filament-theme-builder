@@ -1,5 +1,7 @@
 import type { ThemeStateInput } from '@/models/theme.model'
 import { validateRawElementOverride } from '@/utils/raw-override-validation'
+import { userTokenCssValue } from '@/utils/user-token-css'
+import { expandRawOverrideSelectors } from '@/utils/raw-override-selector-expansion'
 
 export function renderRawOverrides(theme: ThemeStateInput, errors: string[]): string {
   if (!Array.isArray(theme.rawOverrides)) {
@@ -14,9 +16,20 @@ export function renderRawOverrides(theme: ThemeStateInput, errors: string[]): st
     seenSelectors.add(validation.value.selector)
     return [validation.value]
   })
-  return validOverrides.sort((left, right) => left.selector.localeCompare(right.selector)).map((override) => {
-    const declarations = Object.entries(override.properties).sort(([left], [right]) => left.localeCompare(right))
-      .map(([property, value]) => `  ${property}: ${value};`).join('\n')
-    return `${override.selector} {\n${declarations}\n}`
+  const ordered = validOverrides.sort((left, right) => {
+    const leftIcon = /(?:^| )\.fi-sidebar-item-icon$/.test(left.selector)
+    const rightIcon = /(?:^| )\.fi-sidebar-item-icon$/.test(right.selector)
+    return Number(leftIcon) - Number(rightIcon) || left.selector.localeCompare(right.selector)
+  })
+  const render = (override: typeof ordered[number], properties: Record<string, string>, prefix = '') => {
+    const declarations = Object.entries(properties).sort(([left], [right]) => left.localeCompare(right))
+      .map(([property, value]) => { const css = userTokenCssValue(value, theme.foundations.userTokens); if (css === null) { errors.push(`Unknown named color: ${value}`); return '' }; return `  ${property}: ${css};` }).filter(Boolean).join('\n')
+    return expandRawOverrideSelectors(override.selector).map((selector) => `${prefix}${selector} {\n${declarations}\n}`).join('\n')
+  }
+  const light = ordered.filter((override) => Object.keys(override.properties).length).map((override) => render(override, override.properties, ':where(html:not(.dark)) ')).join('\n')
+  const dark = ordered.flatMap((override) => {
+    const properties = { ...override.properties, ...(override.darkProperties ?? {}) }
+    return Object.keys(properties).length ? [render(override, properties, ':where(html.dark) ')] : []
   }).join('\n')
+  return [light, dark].filter(Boolean).join('\n')
 }

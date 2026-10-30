@@ -8,6 +8,9 @@ import {
   validateRawElementOverride,
   validateRawSelector,
 } from '@/utils/raw-override-validation'
+import { createDefaultCurrentThemeState } from '@/utils/foundation-defaults'
+import { expandRawOverrideSelectors } from '@/utils/raw-override-selector-expansion'
+import { renderRawOverrides } from '@/utils/vanilla-css-export-raw-overrides'
 const registry = createThemeRegistry()
 
 const evidence = (candidateSelectors: string[]): InspectorTargetEvidence => ({
@@ -69,6 +72,33 @@ describe('raw Inspector overrides', () => {
       classNames: ['fi-input', 'fi-fo-text-input'],
       targetSelector: '.fi-input',
     }, registry)).toMatchObject({ selector: '.fi-fo-text-input .fi-input', quality: 'fragile' })
+  })
+
+  it('expands sidebar label colors to icons without changing the stored selector', () => {
+    expect(expandRawOverrideSelectors('.fi-sidebar-item-label')).toEqual([
+      '.fi-sidebar-item-label',
+      '.fi-sidebar-item-icon',
+    ])
+    expect(expandRawOverrideSelectors('.fi-sidebar-item-btn:hover .fi-sidebar-item-label')).toEqual([
+      '.fi-sidebar-item-btn:hover .fi-sidebar-item-label',
+      '.fi-sidebar-item-btn:hover .fi-sidebar-item-icon',
+    ])
+    expect(expandRawOverrideSelectors('.fi-sidebar-item.fi-active .fi-sidebar-item-label')).toEqual([
+      '.fi-sidebar-item.fi-active .fi-sidebar-item-label',
+      '.fi-sidebar-item.fi-active .fi-sidebar-item-icon',
+    ])
+  })
+
+  it('lets an explicit icon color override win over the expanded label color', () => {
+    const theme = createDefaultCurrentThemeState()
+    theme.rawOverrides = [
+      { selector: '.fi-sidebar-item-label', properties: { color: '#111111' } },
+      { selector: '.fi-sidebar-item-icon', properties: { color: '#222222' } },
+    ]
+    const errors: string[] = []
+    const css = renderRawOverrides(theme, errors)
+    expect(errors).toEqual([])
+    expect(css.lastIndexOf('.fi-sidebar-item-icon {\n  color: #222222;')).toBeGreaterThan(css.indexOf('.fi-sidebar-item-label {\n  color: #111111;'))
   })
 
   it('does not borrow the product-name raw selector for an unrelated fi-input', () => {

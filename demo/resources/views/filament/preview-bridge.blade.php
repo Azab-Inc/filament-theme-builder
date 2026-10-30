@@ -370,7 +370,16 @@
                     const selector = override.scope === 'state' && override.stateId !== 'default' ? `${baseSelector}:${override.stateId}` : baseSelector;
                   rules.push(`${selector} { ${mapping.property}: ${override.value} !important; }`);
               }
-             const rawOverrideRules = [...message.theme.rawOverrides].sort((left, right) => left.selector.localeCompare(right.selector)).map((override) => `${override.selector} { ${Object.entries(override.properties).sort(([left], [right]) => left.localeCompare(right)).map(([property, value]) => `${property}: ${value};`).join(' ')} }`);
+             const expandRawSelector = (selector) => {
+                  const match = /^(?:(\.fi-sidebar-item-btn:(?:hover|focus)|\.fi-sidebar-item\.fi-active) )?\.fi-sidebar-item-label$/.exec(selector);
+                  if (!match) return [selector];
+                  return [selector, `${match[1] ? `${match[1]} ` : ''}.fi-sidebar-item-icon`];
+              };
+              const rawOverrideRules = [...message.theme.rawOverrides].sort((left, right) => {
+                  const leftIcon = /(?:^| )\.fi-sidebar-item-icon$/.test(left.selector);
+                  const rightIcon = /(?:^| )\.fi-sidebar-item-icon$/.test(right.selector);
+                  return Number(leftIcon) - Number(rightIcon) || left.selector.localeCompare(right.selector);
+              }).flatMap((override) => expandRawSelector(override.selector).map((selector) => `${selector} { ${Object.entries(override.properties).sort(([left], [right]) => left.localeCompare(right)).map(([property, value]) => `${property}: ${value};`).join(' ')} }`));
              rules.push(...rawOverrideRules);
             const iconConfiguration = message.theme.icons ?? { pack: 'default', overrides: {} };
             const preset = iconPresets[iconConfiguration.pack];
