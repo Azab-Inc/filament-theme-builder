@@ -15,6 +15,7 @@
 - Builder value padlock design: [FTB-052](#ftb-052) / [GitHub #52](https://github.com/Azab-Inc/filament-theme-builder/issues/52).
 - Deferred builder component/composable refactor: [FTB-053](#ftb-053) / [GitHub #53](https://github.com/Azab-Inc/filament-theme-builder/issues/53).
 - Urgent hierarchical padding design: [FTB-054](#ftb-054) / [GitHub #54](https://github.com/Azab-Inc/filament-theme-builder/issues/54).
+- Chat-driven follow-ups: [FTB-057](#ftb-057), [FTB-058](#ftb-058), [FTB-059](#ftb-059), and [FTB-060](#ftb-060).
 
 ## Dependency map
 
@@ -1686,3 +1687,75 @@ Use the existing shared color field/picker and Tailwind choices from FTB-051 whe
 - [ ] TDD unit/store/resolver tests cover the complete inventory, inheritance/source/effective values, mode/state separation, child slots and placeholder specificity, native fallback, unrelated numeric and non-color values remaining untouched, invalid input, stale apply, persistence/migration, reset, undo/redo, and export parity.
 - [ ] Playwright against the real Filament iframe verifies computed colors for representative primary/secondary/hover/disabled buttons, form values/placeholders/labels, table headers/cells, navigation links, badges, widgets, modal/notification/infolist text, native-before/after reset, no reload/non-GET mutation, and clean native baseline behavior.
 - [ ] MCP discovery, preview confirmation, authorization, apply revalidation, and AI-client verification pass. No third-party dependency, prototype, unrelated app/style/test change, parent-ticket edit, or gate relaxation is introduced.
+
+---
+
+<a id="ftb-057"></a>
+
+## FTB-057 — Complete theme palette references and native picker follow-up
+
+**Status:** in-progress. **GitHub:** [#57](https://github.com/Azab-Inc/filament-theme-builder/issues/57).
+
+Implemented in the existing uncommitted worktree; documentation commit `a1c9bad` is not the implementation commit. Follow-up to closed [FTB-051](#ftb-051).
+
+- [ ] Preserve built-in palette and custom-token choices with friendly labels, mode-aware swatches, and searchable Theme popover.
+- [ ] Preserve explicit native-picker replacement of inherited, reference, and alpha values without changes on open or cancel.
+- [ ] Verify bounded references, preview, export, light/dark isolation, reset and history; preserve existing native Filament variables.
+- [ ] Verify MCP capability inventory and the actual AI-client path using shared authorization and validation; document any gap.
+- [ ] Review and commit the relevant implementation without including unrelated work, then record commit and verification evidence.
+
+Focused unit tests: 31 passed; four Compose Playwright journeys passed; type-check and build passed. Full units: 637 passed and one CSS-entrypoint failure. PHP bridge: 6 passed and 2 failed. See [verification](./docs/superpowers/verification/2026-10-28-color-reference-picker.md). Actual AI-client MCP use was not verified. Resolve or establish applicability of outstanding checks before closure; see [FTB-060](#ftb-060).
+
+---
+
+<a id="ftb-058"></a>
+
+## FTB-058 — Complete Inspector scopes, named colors, and mode links
+
+**Status:** in-progress. **GitHub:** [#58](https://github.com/Azab-Inc/filament-theme-builder/issues/58).
+
+Chat-driven implementation exists in the uncommitted worktree. Related to FTB-007, FTB-008, FTB-022 and FTB-052; it does not complete those broader tickets.
+
+- [ ] Verify generic table header/body/row and positional-column targets and selectable chart/container parent surfaces.
+- [ ] Verify custom palettes and single color tokens, validation, preview, persistence, export, migration, and safe references.
+- [ ] Verify per-value light/dark mode links, confirmation, unlinking, reset, undo/redo and mode isolation for semantic and raw contexts. Mode links do not by themselves satisfy the broader strict padlock contract in FTB-052.
+- [ ] Verify MCP capability inventory, authorization, shared validation, and an actual AI-client flow; document and resolve gaps.
+- [ ] Review, isolate and commit the relevant implementation and synchronize evidence before closure.
+
+Prior focused tests, browser journeys, type-check, build and independent review were reported passing; full unit and PHP baseline failures and missing actual MCP-client evidence remain. See `docs/superpowers/progress/2026-10-28-inspector-tokens-mode-links.md` and `docs/superpowers/verification/2026-10-28-inspector-tokens-mode-links.md` in the current uncommitted worktree. [FTB-060](#ftb-060) tracks verification recovery.
+
+---
+
+<a id="ftb-059"></a>
+
+## FTB-059 — Verify sidebar icon selection and label-color inheritance
+
+**Status:** in-progress. **GitHub:** [#59](https://github.com/Azab-Inc/filament-theme-builder/issues/59).
+
+Sidebar behavior was implemented in commit `bd39243`; verification ran against the larger dirty worktree, so the committed slice still needs integrated verification before closure. Related to FTB-007, FTB-008 and FTB-056. The requested sidebar-specific icon inheritance is an explicit scoped exception; do not apply it generally to other icon families.
+
+- [ ] Inspector can select sidebar icons independently.
+- [ ] Sidebar label color applies to its icon by default, while an explicit icon color remains independent.
+- [ ] Verify default, hover, focus and selected states; independent light/dark values and inheritance; reset, undo/redo, preview and CSS export including icon override precedence.
+- [ ] Verify no unintended non-color properties are applied to icons and no other icon families are recolored.
+- [ ] Verify the integrated committed change, including actual browser interaction and applicable MCP discovery, authorization, validation and AI-client evidence; reconcile any outstanding work before closure.
+
+Focused tests and Compose browser checks were reported passing, as were type-check and build; a full unit run timed out with pre-existing failures. Evidence was gathered against the dirty integrated worktree rather than the isolated commit. [FTB-060](#ftb-060) tracks suite recovery.
+
+---
+
+<a id="ftb-060"></a>
+
+## FTB-060 — Restore reliable builder and preview verification
+
+**Status:** ready-for-agent. **GitHub:** [#60](https://github.com/Azab-Inc/filament-theme-builder/issues/60).
+
+Verification follow-up for the chat-driven color picker, Inspector and sidebar work. Diagnose failures before attributing causes; do not assume source-contract staleness or resource contention without evidence.
+
+- [ ] Investigate `css-entrypoint.spec.ts` expectation against the existing dashboard stylesheet and correct the applicable contract or implementation.
+- [ ] Reproduce and diagnose both failures in `demo/tests/Feature/PreviewInspectorBridgeTest.php`; capture the exact failed assertions and determine whether authentication, fixture, contract or application behavior is responsible.
+- [ ] Establish a reliable full builder unit run and record commands, execution time, exit status and relevant revision/worktree state; investigate timeouts and failures rather than labelling them flaky.
+- [ ] Run applicable PHP, type-check, build and Compose Playwright checks on the settled integrated state; report any remaining blockers precisely.
+- [ ] Record evidence and synchronize affected follow-up tickets without changing unrelated behavior or bypassing authentication.
+
+Picker full unit run: 637 passed, 1 failed (`css-entrypoint.spec.ts`); PHP bridge: 6 passed, 2 failed, response included login page. A later full unit attempt timed out at 300 seconds. See the [picker verification report](./docs/superpowers/verification/2026-10-28-color-reference-picker.md).
