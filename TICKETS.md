@@ -1749,7 +1749,7 @@ Focused tests and Compose browser checks were reported passing, as were type-che
 
 ## FTB-060 — Restore reliable builder and preview verification
 
-**Status:** ready-for-agent. **GitHub:** [#60](https://github.com/Azab-Inc/filament-theme-builder/issues/60).
+**Status:** done. **GitHub:** [#60](https://github.com/Azab-Inc/filament-theme-builder/issues/60).
 
 Verification follow-up for the chat-driven color picker, Inspector and sidebar work. Diagnose failures before attributing causes; do not assume source-contract staleness or resource contention without evidence.
 
@@ -1759,7 +1759,7 @@ Verification follow-up for the chat-driven color picker, Inspector and sidebar w
 - [x] Run applicable PHP, type-check, build and Compose Playwright checks on the settled integrated state; report any remaining blockers precisely.
 - [x] Record evidence and synchronize affected follow-up tickets without changing unrelated behavior or bypassing authentication.
 
-FTB-060 checkpoint evidence (2026-11-02): focused CSS-entrypoint and PreviewInspectorBridge contracts now pass after updating stale expectations for the dashboard import, responsive stylesheet snapshot, schema 5–7 acceptance, and padding context rejection. Full builder units passed 643 tests in 209s; type-check and build passed. Full PHP remains 266/268 with two unrelated stale-contract failures, and the affected Compose Inspector subset is 14/15 with one existing nested-sidebar-target mismatch. Details: [verification](./docs/superpowers/verification/2026-11-02-ftb-060.md).
+FTB-060 completed (2026-11-02): full builder units passed 643 tests in 437s with an explicit 20s per-test timeout after diagnosing two default-timeout failures under suite load; type-check and build passed. Full PHP passed 268 tests/2,309 assertions. The affected Compose bridge/Inspector/sidebar suite passed 16 tests in 192s. Stale inventory/schema contracts and the Inspector icon-target assertion were corrected without changing unrelated behavior. Details: [verification](./docs/superpowers/verification/2026-11-02-ftb-060.md).
 
 Picker full unit run: 637 passed, 1 failed (`css-entrypoint.spec.ts`); PHP bridge: 6 passed, 2 failed, response included login page. A later full unit attempt timed out at 300 seconds. See the [picker verification report](./docs/superpowers/verification/2026-10-28-color-reference-picker.md).
 

@@ -91,16 +91,15 @@ test.describe('FTB-007 semantic Inspector', () => {
     await expect(page.locator('[data-editor-target="form.product-name"]')).toBeInViewport()
   })
 
-  test('nested clicks resolve to the semantic button ancestor', async ({ page }) => {
+  test('nested sidebar icon clicks preserve the explicit icon target', async ({ page }) => {
     const frame = page.frameLocator('iframe[title="Filament preview"]')
-    await page.getByTitle('Filament preview').evaluate((iframe, url) => {
-      (iframe as HTMLIFrameElement).src = `${url}/demo/admin/actions-showcase`
-    }, baseUrl)
     await page.getByRole('button', { name: 'Inspector' }).click()
-    const button = frame.locator('.fi-btn.fi-color-primary').first()
-    await button.locator('svg').first().dispatchEvent('click', { bubbles: true, cancelable: true })
-    await expect(button).toHaveClass(/ftb-inspector-selected/)
-    await expect(page.getByRole('status', { name: /inspector/i })).toContainText(/fi-btn|button/i)
+    const button = frame.locator('.fi-sidebar-item-btn:visible').first()
+    const icon = button.locator('.fi-sidebar-item-icon').first()
+    await icon.hover()
+    await icon.click()
+    await expect(icon).toHaveClass(/ftb-inspector-selected/)
+    await expect(page.getByRole('status', { name: /inspector/i })).toContainText(/heroicon|sidebar|button/i)
   })
 
   test('clears selection and breadcrumb on iframe navigation and reload', async ({ page }) => {

@@ -40,7 +40,7 @@ class FilamentPanelTest extends TestCase
             ->assertSee('isSafeOverride', false)
             ->assertSee('sameArray(candidate.selectors, expected.selectors)', false)
             ->assertSee("message.theme.customCss === ''", false)
-            ->assertSee('message.theme.schemaVersion === 3', false)
+            ->assertSee('includes(message.theme.schemaVersion)', false)
             ->assertSee('isFoundationRecord(message.theme.foundations)', false)
             ->assertSee('Number.isFinite', false)
             ->assertSee('fontAllowlist', false)
