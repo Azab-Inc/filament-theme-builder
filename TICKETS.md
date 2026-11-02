@@ -16,6 +16,7 @@
 - Deferred builder component/composable refactor: [FTB-053](#ftb-053) / [GitHub #53](https://github.com/Azab-Inc/filament-theme-builder/issues/53).
 - Urgent hierarchical padding design: [FTB-054](#ftb-054) / [GitHub #54](https://github.com/Azab-Inc/filament-theme-builder/issues/54).
 - Chat-driven follow-ups: [FTB-057](#ftb-057), [FTB-058](#ftb-058), [FTB-059](#ftb-059), and [FTB-060](#ftb-060).
+- Transparent color picker option: [FTB-061](#ftb-061) / [GitHub #61](https://github.com/Azab-Inc/filament-theme-builder/issues/61).
 
 ## Dependency map
 
@@ -1761,3 +1762,31 @@ Verification follow-up for the chat-driven color picker, Inspector and sidebar w
 FTB-060 checkpoint evidence (2026-11-02): focused CSS-entrypoint and PreviewInspectorBridge contracts now pass after updating stale expectations for the dashboard import, responsive stylesheet snapshot, schema 5–7 acceptance, and padding context rejection. Full builder units passed 643 tests in 209s; type-check and build passed. Full PHP remains 266/268 with two unrelated stale-contract failures, and the affected Compose Inspector subset is 14/15 with one existing nested-sidebar-target mismatch. Details: [verification](./docs/superpowers/verification/2026-11-02-ftb-060.md).
 
 Picker full unit run: 637 passed, 1 failed (`css-entrypoint.spec.ts`); PHP bridge: 6 passed, 2 failed, response included login page. A later full unit attempt timed out at 300 seconds. See the [picker verification report](./docs/superpowers/verification/2026-10-28-color-reference-picker.md).
+
+---
+
+<a id="ftb-061"></a>
+
+## FTB-061 — Add an explicit transparent option to every color picker
+
+**Status:** ready-for-agent. **GitHub:** [#61](https://github.com/Azab-Inc/filament-theme-builder/issues/61).
+
+### What to build
+
+Add an explicit no-color / transparent choice to every color picker, so users can make backgrounds and other color properties transparent. Transparent is an intentional color value, distinct from clearing an override or resetting to an inherited/default value.
+
+### Acceptance criteria
+
+- [ ] Every color picker offers a clearly labeled, keyboard-accessible transparent choice and visibly indicates when it is selected, including for backgrounds, borders and text.
+- [ ] Selecting transparent renders the actual affected preview property transparent; reset still restores inheritance or the default rather than selecting transparent.
+- [ ] Light and dark values remain independent, including inheritance until a mode is explicitly edited; semantic controls, Inspector/raw overrides and applicable variants/states preserve that behavior.
+- [ ] Transparent values survive autosave/reload, local themes, undo/redo, JSON import/export and applicable CSS exports; exports reproduce the preview.
+- [ ] Existing colors, references, alpha controls, reset behavior and themes remain compatible.
+- [ ] Purpose-built MCP discovery/read/preview/apply and reset support the same transparent behavior using shared validation and authorization, confirmation and apply-time revalidation; update the capability inventory and verify an actual AI-client flow.
+
+### Verification
+
+- [ ] Follow TDD: add and run focused failing regression tests before implementation, then verify persistence, mode isolation, reset, history, projection and export.
+- [ ] Create and run a failing Playwright CLI test before implementation and verify the completed behavior in the real Filament preview, including a transparent background and reset/inheritance.
+
+**Related:** FTB-051, FTB-057, FTB-058, FTB-022. Follow the repository demo-first gate and existing project guidance.
