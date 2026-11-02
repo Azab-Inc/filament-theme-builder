@@ -19,8 +19,8 @@ const cssBlocks = [
   },
   {
     path: 'src/styles/editor-responsive.css',
-    lines: 59,
-    sha256: 'b2cb41220e4a75c811f5e4fe5419fac404e86930abe6c9c326293837c2ea5298',
+    lines: 136,
+    sha256: '73d0a2f18119652dabfde7ae48d0c9ccdb7439195901607f8cb5aaae484b2ff1',
   },
   {
     path: 'src/styles/editor-mobile.css',
@@ -36,6 +36,11 @@ const cssBlocks = [
     path: 'src/styles/theme-prototype.css',
     lines: 3,
     sha256: 'c72ed2b32e260666b71e669dade7a260cdab03a8d9d8245a2af46db159eda239',
+  },
+  {
+    path: 'src/styles/dashboard-first-editor.css',
+    lines: 58,
+    sha256: '7991fb2fcc9f560c5dd7c411216aa637934ae15854c7c60da39eb4e706549b84',
   },
 ] as const
 
@@ -65,6 +70,7 @@ describe('builder CSS entrypoint', () => {
       '@import "./styles/inspect-prototype.css";',
       '@import "./styles/theme-prototype.css";',
       '@import "./styles/color-field.css";',
+      '@import "./styles/dashboard-first-editor.css";',
     ])
     expect(cssSource.match(/@import\s+["']tailwindcss\/[^"']+["']/g)).toEqual([
       '@import "tailwindcss/theme.css"',

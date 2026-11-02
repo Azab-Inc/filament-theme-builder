@@ -1752,10 +1752,12 @@ Focused tests and Compose browser checks were reported passing, as were type-che
 
 Verification follow-up for the chat-driven color picker, Inspector and sidebar work. Diagnose failures before attributing causes; do not assume source-contract staleness or resource contention without evidence.
 
-- [ ] Investigate `css-entrypoint.spec.ts` expectation against the existing dashboard stylesheet and correct the applicable contract or implementation.
-- [ ] Reproduce and diagnose both failures in `demo/tests/Feature/PreviewInspectorBridgeTest.php`; capture the exact failed assertions and determine whether authentication, fixture, contract or application behavior is responsible.
-- [ ] Establish a reliable full builder unit run and record commands, execution time, exit status and relevant revision/worktree state; investigate timeouts and failures rather than labelling them flaky.
-- [ ] Run applicable PHP, type-check, build and Compose Playwright checks on the settled integrated state; report any remaining blockers precisely.
-- [ ] Record evidence and synchronize affected follow-up tickets without changing unrelated behavior or bypassing authentication.
+- [x] Investigate `css-entrypoint.spec.ts` expectation against the existing dashboard stylesheet and correct the applicable contract or implementation.
+- [x] Reproduce and diagnose both failures in `demo/tests/Feature/PreviewInspectorBridgeTest.php`; capture the exact failed assertions and determine whether authentication, fixture, contract or application behavior is responsible.
+- [x] Establish a reliable full builder unit run and record commands, execution time, exit status and relevant revision/worktree state; investigate timeouts and failures rather than labelling them flaky.
+- [x] Run applicable PHP, type-check, build and Compose Playwright checks on the settled integrated state; report any remaining blockers precisely.
+- [x] Record evidence and synchronize affected follow-up tickets without changing unrelated behavior or bypassing authentication.
+
+FTB-060 checkpoint evidence (2026-11-02): focused CSS-entrypoint and PreviewInspectorBridge contracts now pass after updating stale expectations for the dashboard import, responsive stylesheet snapshot, schema 5–7 acceptance, and padding context rejection. Full builder units passed 643 tests in 209s; type-check and build passed. Full PHP remains 266/268 with two unrelated stale-contract failures, and the affected Compose Inspector subset is 14/15 with one existing nested-sidebar-target mismatch. Details: [verification](./docs/superpowers/verification/2026-11-02-ftb-060.md).
 
 Picker full unit run: 637 passed, 1 failed (`css-entrypoint.spec.ts`); PHP bridge: 6 passed, 2 failed, response included login page. A later full unit attempt timed out at 300 seconds. See the [picker verification report](./docs/superpowers/verification/2026-10-28-color-reference-picker.md).

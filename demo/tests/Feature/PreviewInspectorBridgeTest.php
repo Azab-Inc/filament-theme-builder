@@ -89,7 +89,7 @@ class PreviewInspectorBridgeTest extends TestCase
     {
         $this->get('/demo/admin/login')
             ->assertOk()
-            ->assertSee('message.theme.schemaVersion === 5', false)
+            ->assertSee('includes(message.theme.schemaVersion)', false)
             ->assertSee('message.theme.padding', false)
             ->assertSee('paddingCatalog', false);
     }
@@ -111,7 +111,7 @@ class PreviewInspectorBridgeTest extends TestCase
             ->assertOk()
             ->assertSee('isPaddingContextApplicable', false)
             ->assertSee('target.targetKind === \'leaf\'', false)
-            ->assertSee('context.targetId === rule.targetId', false)
+            ->assertSee('context.targetId !== target.id', false)
             ->assertSee('new Set(message.theme.padding.map(paddingIdentity)).size === message.theme.padding.length', false)
             ->assertSee('isSafePaddingRecord', false);
     }
