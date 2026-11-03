@@ -10,8 +10,8 @@ The repository's demo-first gate is evidenced satisfied for FTB-009A/B, FTB-010,
 
 ## 1. Stabilize and finish active work
 
-1. [FTB-060](./TICKETS.md#ftb-060) — Diagnose and repair verification failures and timeouts; record reproducible results. This is recommended first to establish a reliable feedback loop, not a newly imposed hard dependency.
-2. [FTB-058](./TICKETS.md#ftb-058) — Finish and isolate the existing Inspector scopes, named colors, and mode-link work; verify persistence, mode behavior, exports and MCP. Related: FTB-007, FTB-008, FTB-022, FTB-052.
+1. [FTB-060](./TICKETS.md#ftb-060) — Completed and closed 2026-11-02; verification evidence is linked in the ticket.
+2. [FTB-058](./TICKETS.md#ftb-058) — Completed 2026-11-03 on draft [PR #62](https://github.com/Azab-Inc/filament-theme-builder/pull/62): Inspector scopes, named colors, mode links and actual MCP/browser verification pass. [Evidence](./docs/verification/ftb-058/README.md). Awaiting owner integration; related parent tickets retain their separate scope.
 3. [FTB-057](./TICKETS.md#ftb-057) — Finish the theme-palette/native-picker follow-up, including integration with existing token work. Related: FTB-051 and FTB-058.
 4. [FTB-059](./TICKETS.md#ftb-059) — Complete integrated verification of sidebar icon selection and label-color inheritance. Related: FTB-007, FTB-008, FTB-056. Ensure icon overrides and non-color properties behave correctly.
 5. [FTB-054](./TICKETS.md#ftb-054) — Complete the urgent, already-in-progress hierarchical padding work. Coordinate shared files with FTB-058 rather than running concurrent writers. Related: FTB-006, FTB-022, FTB-052, FTB-053; FTB-024/025 are conditional export coordination, not blockers.
