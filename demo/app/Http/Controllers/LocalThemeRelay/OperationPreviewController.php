@@ -34,14 +34,19 @@ final class OperationPreviewController extends SafeRelayController
         OperationPreviewLifecycle $previews): JsonResponse
     {
         return $this->safely(function () use ($request, $id, $sessions, $previews): JsonResponse {
-            $body = RelayRequestValidator::exact($request, ['version', 'digest', 'revision', 'displayName']);
+            $body = RelayRequestValidator::exact($request, ['version', 'digest', 'revision', 'displayName'])
+                ?? RelayRequestValidator::exact($request, ['version', 'digest', 'revision', 'displayName', 'candidateDigest']);
+            if ($body !== null && ! array_key_exists('candidateDigest', $body)) {
+                $body['candidateDigest'] = null;
+            }
             $session = $this->authorized($request, $sessions);
             if (! $body || ! is_string($body['digest']) || ! preg_match('/\A[a-f0-9]{64}\z/', $body['digest'])
                 || ! is_int($body['revision']) || $body['revision'] < 0 || ! is_string($body['displayName'])
-                || mb_strlen($body['displayName']) > 120 || ! RelayRequestValidator::id($id) || ! $session) {
+                || mb_strlen($body['displayName']) > 120 || ($body['candidateDigest'] !== null && (! is_string($body['candidateDigest']) || ! preg_match('/\A[a-f0-9]{64}\z/', $body['candidateDigest'])))
+                || ! RelayRequestValidator::id($id) || ! $session) {
                 return response()->json(['error' => 'invalid_request'], 422);
             }
-            $grant = $previews->authorizeApply($id, $body['digest'], $body['revision'], $body['displayName'], $session);
+            $grant = $previews->authorizeApply($id, $body['digest'], $body['revision'], $body['displayName'], $session, $body['candidateDigest']);
 
             return response()->json($grant ?? ['version' => 1, 'status' => 'rejected', 'errorCategory' => 'stale_revision']);
         });

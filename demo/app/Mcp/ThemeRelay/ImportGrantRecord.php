@@ -15,5 +15,6 @@ final readonly class ImportGrantRecord
         public string $sessionId,
         public int $expiresAt,
         public string $status = 'pending',
+        public ?string $candidateDigest = null,
     ) {}
 }

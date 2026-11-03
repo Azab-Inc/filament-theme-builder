@@ -10,13 +10,13 @@ use Laravel\Mcp\Server\Transport\FakeTransporter;
 
 final class LocalThemeToolSchemaTest extends LocalThemeToolTestCase
 {
-    public function test_server_registers_only_the_seven_local_theme_tools(): void
+    public function test_server_registers_only_the_eight_local_theme_tools(): void
     {
         $server = app()->make(LocalThemeServer::class, ['transport' => new FakeTransporter]);
         $tools = collect($server->createContext()->tools())->map(fn ($tool) => $tool->name())->sort()->values()->all();
 
         self::assertSame(['local_theme_disconnect', 'local_theme_export', 'local_theme_import_preview',
-            'local_theme_import_status', 'local_theme_list', 'local_theme_operation_status', 'local_theme_pair'], $tools);
+            'local_theme_import_status', 'local_theme_list', 'local_theme_operation_status', 'local_theme_pair', 'local_theme_token_operation'], $tools);
     }
 
     public function test_operation_status_is_the_common_async_retrieval_tool(): void
@@ -46,12 +46,13 @@ final class LocalThemeToolSchemaTest extends LocalThemeToolTestCase
             'local_theme_export' => ['pairing_id', 'theme_id'],
             'local_theme_import_preview' => ['pairing_id', 'raw_json', 'filename', 'proposed_name'],
             'local_theme_import_status' => ['operation_id'], 'local_theme_operation_status' => ['operation_id'],
-            'local_theme_disconnect' => ['pairing_id']];
+            'local_theme_disconnect' => ['pairing_id'],
+            'local_theme_token_operation' => ['pairing_id', 'action', 'target', 'mode', 'value', 'proposed_name', 'theme_id']];
         foreach ($expected as $name => $properties) {
             $tool = app(LocalThemeToolRegistry::class)->tool($name);
             self::assertNotNull($tool, $name);
             self::assertSame($properties, array_keys($tool['inputSchema']['properties']), $name);
-            self::assertSame($properties, $tool['inputSchema']['required'], $name);
+            self::assertSame($name === 'local_theme_token_operation' ? ['pairing_id', 'action'] : $properties, $tool['inputSchema']['required'], $name);
             self::assertFalse($tool['inputSchema']['additionalProperties'], $name);
         }
         $import = app(LocalThemeToolRegistry::class)->tool('local_theme_import_preview')['inputSchema']['properties'];

@@ -9,6 +9,7 @@ use App\Mcp\ThemeRelay\RelayStore;
 use App\Mcp\Tools\LocalThemeImportPreview;
 use App\Mcp\Tools\LocalThemeImportStatus;
 use App\Mcp\Tools\LocalThemeOperationStatus;
+use App\Mcp\Tools\LocalThemeTokenOperation;
 
 final class LocalThemeToolImportRelayTest extends LocalThemeRelayBrowserTestCase
 {
@@ -44,5 +45,21 @@ final class LocalThemeToolImportRelayTest extends LocalThemeRelayBrowserTestCase
         self::assertSame('rejected', $operation['status']);
         self::assertArrayNotHasKey('recordId', $operation);
         self::assertNull($operation['result']);
+    }
+
+    public function test_token_operations_publish_unrestricted_browser_intents_and_reads_use_export_boundary(): void
+    {
+        $pairingId = 'token-relay-pair';
+        $this->createBrowserPair($pairingId);
+        LocalThemeServer::tool(LocalThemeTokenOperation::class, ['pairing_id' => $pairingId, 'action' => 'set',
+            'target' => ['kind' => 'raw', 'selector' => '.fi-ta :is(.fi-ta-header-cell, .fi-ta-cell):nth-child(2)', 'property' => 'padding'], 'mode' => 'dark', 'value' => '12px'])
+            ->assertStructuredContent(fn ($json) => $json->where('kind', 'import')->where('status', 'pending')->etc());
+        $operationId = substr(app(RelayStore::class)->keys('operation-')[0], strlen('operation-'));
+        $operation = json_decode((string) app(RelayStore::class)->read('operation-'.$operationId), true);
+        self::assertSame('pending', $operation['status']);
+        $payloadResponse = $this->relay()->get('/local-theme/relay/operations/'.$operationId.'/payload')->assertOk();
+        self::assertSame('12px', json_decode((string) $payloadResponse->json('payload'), true)['value']);
+        LocalThemeServer::tool(LocalThemeTokenOperation::class, ['pairing_id' => $pairingId, 'action' => 'read', 'theme_id' => 'theme-1'])
+            ->assertStructuredContent(fn ($json) => $json->where('kind', 'export')->where('status', 'pending')->etc());
     }
 }

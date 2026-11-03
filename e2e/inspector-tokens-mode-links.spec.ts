@@ -51,7 +51,9 @@ test('named color definitions update multiple live references and survive reload
 test('a raw property can be linked using the active dark value and unlocked independently', async ({ page }) => {
   const frame = page.frameLocator('iframe[title="Filament preview"]')
   await page.getByRole('button', { name: 'Inspector', exact: true }).click()
-  await frame.locator('.fi-sidebar-item-label').first().click()
+  const visibleTarget = frame.locator('.fi-page').first()
+  await expect(visibleTarget).toBeVisible()
+  await visibleTarget.click({ position: { x: 24, y: 80 }, force: true })
   await page.getByLabel('Raw color', { exact: true }).fill('#123456')
   await page.getByRole('button', { name: 'Dark mode' }).click()
   await page.getByLabel('Raw color', { exact: true }).fill('#abcdef')

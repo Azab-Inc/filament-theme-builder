@@ -117,7 +117,7 @@ class DemoShowcaseCapabilityInventoryTest extends TestCase
             $this->assertNotSame('', $cells[4], 'Each capability names its authorization policy.');
             $this->assertNotSame('', $cells[5], 'Each capability names its confirmation policy.');
             $this->assertStringContainsString('MCP', $cells[6], 'Each capability names MCP tool status.');
-            if (str_starts_with($cells[1], '`builder.local-themes.')) {
+            if (str_starts_with($cells[1], '`builder.local-themes.') || $cells[1] === '`builder.named-tokens-and-mode-links`') {
                 $this->assertMatchesRegularExpression('/paired browser-local session/i', $cells[4]);
                 $this->assertStringContainsString('tested', strtolower($cells[6]));
             } else {

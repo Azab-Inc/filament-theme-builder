@@ -5,9 +5,12 @@ import type { ThemeImportUi } from '@/models/theme-import-ui.model'
 import { MAX_THEME_IMPORT_BYTES, previewThemeImport } from '@/utils/theme-import-service'
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { applyApprovedImport } from '@/utils/theme-relay-apply'
+import { parseThemeRelayIntent, applyThemeRelayIntent } from '@/utils/theme-relay-intent'
+import { serializeCanonicalTheme } from '@/utils/theme-serialization'
+import { digestBytes } from '@/utils/theme-import-bytes'
 
 type ThemeStore = ReturnType<typeof useThemeStore>
-type RemoteImport = { payload: BrowserPayload; relay: BrowserRelay; bytes: Uint8Array; revision: number; expiresAt: number; recordId?: string }
+type RemoteImport = { payload: BrowserPayload; relay: BrowserRelay; bytes: Uint8Array; revision: number; expiresAt: number; recordId?: string; intent?: ReturnType<typeof parseThemeRelayIntent> }
 
 export function useThemeImport(store: ThemeStore): ThemeImportUi {
   const state = shallowReactive({ preview: null, filename: '', proposedName: '', error: null, open: false, applying: false, canCancel: true }) as ThemeImportUi['state']
@@ -25,19 +28,28 @@ export function useThemeImport(store: ThemeStore): ThemeImportUi {
   }
   async function receiveRelayPayload(payload: BrowserPayload, relay: BrowserRelay): Promise<void> {
     if (state.open) { await relay.reject(payload.operationId, 'operation_failed').catch(() => undefined); return }
-    remote = { payload, relay, bytes: new TextEncoder().encode(payload.rawJson), revision: store.revision, expiresAt: Date.now() + 300_000 }
+    const registry = createThemeRegistry()
+    const intent = payload.filename === 'filament-theme-intent.json' ? parseThemeRelayIntent(payload.rawJson, registry) : null
+    remote = { payload, relay, bytes: new TextEncoder().encode(payload.rawJson), revision: store.revision, expiresAt: Date.now() + 300_000, ...(intent ? { intent } : {}) }
     state.open = true; state.preview = null; state.filename = payload.filename; state.proposedName = payload.proposedName; state.error = null
     state.canCancel = true
     let result
-    try { result = await previewThemeImport(remote.bytes, payload.filename, payload.proposedName, createThemeRegistry()) }
+    try {
+      const previewBytes = intent ? new TextEncoder().encode(JSON.stringify(serializeCanonicalTheme(applyThemeRelayIntent(serializeCanonicalTheme(store.theme), intent, registry)))) : remote.bytes
+      result = await previewThemeImport(previewBytes, intent ? 'filament-theme.json' : payload.filename, payload.proposedName, registry)
+    }
     catch { await rejectRemote(remote, 'invalid_theme'); state.error = 'Unable to validate this relay theme'; remote = null; return }
-    if (payload.version !== 1 || !result.valid || result.preview.payloadDigest !== payload.digest || result.preview.byteLength !== payload.byteLength
+    if (payload.version !== 1 || !result.valid || await digestBytes(remote.bytes) !== payload.digest || remote.bytes.byteLength !== payload.byteLength
       || remote.bytes.byteLength > MAX_THEME_IMPORT_BYTES) {
       await rejectRemote(remote, 'invalid_theme'); state.error = result.valid ? 'Relay payload digest or size did not match' : result.message; remote = null; return
     }
     try {
+      if (intent) {
+        result.preview.candidateDigest = result.preview.payloadDigest
+        result.preview.payloadDigest = payload.digest
+      }
       await relay.acknowledgePayload(payload.operationId, payload.digest)
-      await relay.submitPreview(payload.operationId, previewDto(result.preview))
+      await relay.submitPreview(payload.operationId, previewDto(result.preview, intent ? payload.digest : undefined))
       state.preview = result.preview
     } catch {
       await rejectRemote(remote, 'operation_failed'); state.error = 'The browser relay could not prepare this import'; remote = null
@@ -65,10 +77,25 @@ export function useThemeImport(store: ThemeStore): ThemeImportUi {
     if (store.revision !== current.revision && !current.recordId) return rejectStale(current)
     state.applying = true
     try {
-      const revision = current.recordId ? store.revision : current.revision
-      const grant = await current.relay.authorizeApply(current.payload.operationId, current.payload.digest, revision, state.proposedName)
+      const revision = current.recordId && !current.intent ? store.revision : current.revision
+      const grant = await current.relay.authorizeApply(current.payload.operationId, current.payload.digest, revision, state.proposedName, state.preview?.candidateDigest)
       if (grant.status !== 'pending' || !grant.grantId || grant.grantExpiresAt <= Date.now() || grant.grantExpiresAt > Date.now() + 5_000) return rejectStale(current)
-      const result = await applyApprovedImport(store, { operationId: current.payload.operationId, payloadDigest: current.payload.digest,
+       if (current.intent) {
+          if (current.recordId) {
+            await current.relay.publishImportResult(current.payload.operationId, grant.grantId, current.recordId, current.payload.digest)
+            remote = null; state.open = false
+            return { ok: true as const, record: { id: current.recordId, name: state.proposedName, updatedAt: Date.now() } }
+          }
+         if (store.revision !== revision) return rejectStale(current)
+         const applied = store.applyRelayIntent(current.intent)
+         if (!applied.ok) return rejectStale(current, applied.error)
+         current.recordId = current.payload.operationId
+         state.canCancel = false
+         await current.relay.publishImportResult(current.payload.operationId, grant.grantId, current.recordId, current.payload.digest)
+         remote = null; state.open = false
+         return { ok: true as const, record: { id: current.recordId, name: state.proposedName, updatedAt: Date.now() } }
+       }
+       const result = await applyApprovedImport(store, { operationId: current.payload.operationId, payloadDigest: current.payload.digest,
         rawBytes: current.bytes, filename: current.payload.filename, sourceProposedName: current.payload.proposedName, proposedName: state.proposedName,
         sourceVersion: state.preview!.sourceVersion, state: state.preview!.state, expectedRevision: revision,
         grant, operationExpiresAt: current.expiresAt })
@@ -93,8 +120,9 @@ export function useThemeImport(store: ThemeStore): ThemeImportUi {
   }
 }
 
-function previewDto(preview: NonNullable<ThemeImportUi['state']['preview']>) {
+function previewDto(preview: NonNullable<ThemeImportUi['state']['preview']>, relayDigest?: string) {
   return { sourceVersion: preview.sourceVersion, targetVersion: preview.targetVersion, migrationPath: preview.migrationPath,
-    displayName: preview.displayName, summary: preview.summary, payloadDigest: preview.payloadDigest, byteLength: preview.byteLength }
+    displayName: preview.displayName, summary: preview.summary, payloadDigest: relayDigest ?? preview.payloadDigest,
+    ...(relayDigest && preview.candidateDigest ? { candidateDigest: preview.candidateDigest } : {}), byteLength: preview.byteLength }
 }
 async function rejectRemote(remote: RemoteImport, category: string): Promise<void> { await remote.relay.reject(remote.payload.operationId, category).catch(() => undefined) }

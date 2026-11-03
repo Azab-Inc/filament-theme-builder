@@ -15,13 +15,13 @@ final class ImportGrantStore
         $this->reader = new RelayRecordReader($store);
     }
 
-    public function issue(string $operationId, string $digest, string $name, int $revision, string $sessionId): string
+    public function issue(string $operationId, string $digest, string $name, int $revision, string $sessionId, ?string $candidateDigest = null): string
     {
         $id = bin2hex(random_bytes(32));
         $lock = RelayRecordLock::acquire($this->store, 'grant-'.$id);
         try {
             $record = new ImportGrantRecord($id, $operationId, $digest, $name, $revision, $sessionId,
-                $this->clock->now() + 5);
+                $this->clock->now() + 5, 'pending', $candidateDigest);
             $this->store->atomicWrite('grant-'.$id, json_encode($record, JSON_THROW_ON_ERROR));
 
             return $id;

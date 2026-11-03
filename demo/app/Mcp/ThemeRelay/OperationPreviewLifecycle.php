@@ -65,14 +65,18 @@ final class OperationPreviewLifecycle
      * @param  array<string, mixed>  $session
      * @return array<string, mixed>|null
      */
-    public function authorizeApply(string $id, string $digest, int $revision, string $name, array $session): ?array
+    public function authorizeApply(string $id, string $digest, int $revision, string $name, array $session, ?string $candidateDigest = null): ?array
     {
         $record = $this->operationsRecord($id, $session);
         if (! $record || ($record['kind'] ?? null) !== 'import' || ($record['status'] ?? null) !== 'pending'
             || ($record['digest'] ?? null) !== $digest || ! is_array($record['preview'] ?? null)) {
             return null;
         }
-        $grant = $this->grants->issue($id, $digest, $name, $revision, $session['sessionId']);
+        $previewCandidate = $record['preview']['candidateDigest'] ?? null;
+        if (($previewCandidate !== null) !== ($candidateDigest !== null) || ($previewCandidate !== null && $previewCandidate !== $candidateDigest)) {
+            return null;
+        }
+        $grant = $this->grants->issue($id, $digest, $name, $revision, $session['sessionId'], $candidateDigest);
 
         return ['version' => 1, 'status' => 'pending', 'grantId' => $grant,
             'grantExpiresAt' => $this->clock->now() + 5];

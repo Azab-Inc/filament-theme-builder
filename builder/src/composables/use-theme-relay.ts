@@ -39,8 +39,8 @@ export function createThemeRelayClient(pairing: ThemePairing, fetcher: Fetcher =
     const result = await request<{ version: 1; status: string }>(`/local-theme/relay/operations/${id}/preview`, { preview })
     if (result.version !== 1 || result.status !== 'pending') throw new Error('preview_rejected')
   }
-  async function authorizeApply(id: string, digest: string, revision: number, displayName: string): Promise<VerifiedApplyGrant> {
-    const grant = await request<ApplyGrantDto>(`/local-theme/relay/operations/${encodeURIComponent(id)}/authorize-apply`, { digest, revision, displayName })
+  async function authorizeApply(id: string, digest: string, revision: number, displayName: string, candidateDigest?: string): Promise<VerifiedApplyGrant> {
+    const grant = await request<ApplyGrantDto>(`/local-theme/relay/operations/${encodeURIComponent(id)}/authorize-apply`, { digest, revision, displayName, ...(candidateDigest ? { candidateDigest } : {}) })
     const nowSeconds = Math.floor(now() / 1_000)
     if (grant.version !== 1 || grant.status !== 'pending' || !/^[a-f0-9]{64}$/.test(grant.grantId)
       || !Number.isSafeInteger(grant.grantExpiresAt) || grant.grantExpiresAt <= nowSeconds || grant.grantExpiresAt > nowSeconds + 5) {

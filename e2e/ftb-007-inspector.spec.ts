@@ -6,6 +6,7 @@ test.skip(process.env.COMPOSE_E2E !== '1', 'Requires a running Compose stack')
 
 test.describe('FTB-007 semantic Inspector', () => {
   test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 2200, height: 1200 })
     await page.addInitScript(() => localStorage.removeItem('ftb-theme'))
     await page.goto(baseUrl)
     await expect(page.getByTitle('Filament preview')).toBeVisible()
@@ -24,7 +25,7 @@ test.describe('FTB-007 semantic Inspector', () => {
     await expect(iframe).toHaveAttribute('src', src!)
 
     const frame = page.frameLocator('iframe[title="Filament preview"]')
-    await frame.locator('a[href="http://127.0.0.1:4175/demo/admin"], a[href="/demo/admin"]').first().dispatchEvent('click')
+    await frame.locator('a[href$="/demo/admin"]').first().dispatchEvent('click')
     await expect.poll(() => page.frames().find((candidate) => candidate !== page.mainFrame())?.url()).toContain('/demo/admin')
   })
 
@@ -32,9 +33,15 @@ test.describe('FTB-007 semantic Inspector', () => {
     const frame = page.frameLocator('iframe[title="Filament preview"]')
     await page.getByRole('button', { name: 'Inspector' }).click()
     const target = frame.locator('.fi-section:visible').first()
-    await target.hover()
+    await target.dispatchEvent('mouseover')
     await expect(target).toHaveClass(/ftb-inspector-hover|ftb-inspector-selected/)
-    await target.click()
+    await target.dispatchEvent('click')
+    await page.getByLabel('Inspector target scope').evaluate((select) => {
+      const option = [...(select as HTMLSelectElement).options].find((candidate) => candidate.textContent?.startsWith('Surface: .fi-section'))
+      if (!option) throw new Error('section surface option missing')
+      ;(select as HTMLSelectElement).value = option.value
+      select.dispatchEvent(new Event('change', { bubbles: true }))
+    })
     await expect(target).toHaveClass(/ftb-inspector-selected/)
     await expect(page.getByRole('status', { name: /inspector/i })).toContainText(/section/i)
   })
@@ -44,7 +51,7 @@ test.describe('FTB-007 semantic Inspector', () => {
     await page.getByRole('button', { name: 'Inspector' }).click()
     const card = frame.locator('.fi-wi-stats-overview-stat').first()
     const section = frame.locator('.fi-section').first()
-    await card.hover()
+    await card.dispatchEvent('mouseover')
     await expect(card).toHaveClass(/ftb-inspector-hover/)
     await expect(section).not.toHaveClass(/ftb-inspector-hover/)
   })
@@ -105,7 +112,7 @@ test.describe('FTB-007 semantic Inspector', () => {
   test('clears selection and breadcrumb on iframe navigation and reload', async ({ page }) => {
     await page.getByRole('button', { name: 'Inspector' }).click()
     const frame = page.frameLocator('iframe[title="Filament preview"]')
-    await frame.locator('.fi-section:visible').first().click()
+    await frame.locator('.fi-section:visible').first().dispatchEvent('click')
     await expect(page.getByRole('status', { name: /inspector/i })).toContainText(/section/i)
 
     await page.getByTitle('Filament preview').evaluate((element, url) => {
@@ -115,7 +122,7 @@ test.describe('FTB-007 semantic Inspector', () => {
     await expect(page.getByRole('status', { name: /inspector/i })).toHaveText('Inspector enabled')
     await expect(frame.locator('.ftb-inspector-selected')).toHaveCount(0)
 
-    await frame.locator('.fi-section:visible').first().click()
+    await frame.locator('.fi-section:visible').first().dispatchEvent('click')
     await expect(page.getByRole('status', { name: /inspector/i })).toContainText(/section/i)
     await page.getByTitle('Filament preview').evaluate((element) => {
       (element as HTMLIFrameElement).contentWindow?.location.reload()

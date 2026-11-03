@@ -5,6 +5,17 @@ const baseUrl = process.env.COMPOSE_BASE_URL ?? 'http://127.0.0.1:4175'
 test.skip(process.env.COMPOSE_E2E !== '1', 'Requires a running Compose stack')
 test.use({ acceptDownloads: true })
 
+async function chooseSectionSurface(page: import('@playwright/test').Page): Promise<string> {
+  const scope = page.getByLabel('Inspector target scope')
+  return scope.evaluate((select) => {
+    const option = [...select.options].find((candidate) => candidate.textContent?.startsWith('Surface: .fi-section'))
+    if (!option) throw new Error('section surface option missing')
+    select.value = option.value
+    select.dispatchEvent(new Event('change', { bubbles: true }))
+    return option.value
+  })
+}
+
 test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => localStorage.removeItem('ftb-theme'))
@@ -23,9 +34,10 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
     const beforeUrl = await page.getByTitle('Filament preview').getAttribute('src')
 
     await page.getByRole('button', { name: 'Inspector' }).click()
-    await target.click()
+    await target.dispatchEvent('click')
     await expect(page.locator('[data-advanced-inspector]')).toBeVisible()
-    await expect(page.getByLabel('Raw element selector')).toHaveValue('.fi-section')
+    const selector = await chooseSectionSurface(page)
+    await expect(page.getByLabel('Raw element selector')).toHaveValue(selector)
 
     await page.locator('#raw-background-color').fill('#0f766e')
     await expect.poll(() => target.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(/15, 118, 110|rgb\(15, 118, 110\)/)
@@ -41,13 +53,15 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
   test('shows a fragile warning for an editable compound selector and exports raw CSS', async ({ page }) => {
     const frame = page.frameLocator('iframe[title="Filament preview"]')
     await page.getByRole('button', { name: 'Inspector' }).click()
-    await frame.locator('.fi-section:visible').first().click()
-    await expect(page.getByLabel('Raw element selector')).toHaveValue('.fi-section')
+    await frame.locator('.fi-section:visible').first().dispatchEvent('click')
+    const selector = await chooseSectionSurface(page)
+    await expect(page.getByLabel('Raw element selector')).toHaveValue(selector)
 
     await page.getByLabel('Raw element selector').fill('.fi-section .fi-btn')
     await expect(page.locator('[data-selector-warning]')).toContainText(/fragile|multiple classes/i)
     await page.locator('#raw-border-radius').fill('0.75rem')
 
+    await page.getByLabel('Export actions').click()
     await page.getByRole('button', { name: 'Download vanilla CSS' }).click()
     await expect(page.getByRole('status', { name: /export/i })).toContainText(/download started/i)
   })
@@ -55,9 +69,11 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
   test('downloads deterministic CSS bytes containing the edited raw rule', async ({ page }) => {
     const frame = page.frameLocator('iframe[title="Filament preview"]')
     await page.getByRole('button', { name: 'Inspector' }).click()
-    await frame.locator('.fi-section:visible').first().click()
+    await frame.locator('.fi-section:visible').first().dispatchEvent('click')
+    const selector = await chooseSectionSurface(page)
     await page.locator('#raw-background-color').fill('#0f766e')
 
+    await page.getByLabel('Export actions').click()
     const [download] = await Promise.all([
       page.waitForEvent('download'),
       page.getByRole('button', { name: 'Download vanilla CSS' }).click(),
@@ -68,7 +84,7 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
 
     expect(download.suggestedFilename()).toBe('theme.css')
     expect(css).toContain('/* Generated with Filament Theme Builder */')
-    expect(css).toContain('.fi-section {')
+    expect(css).toContain(`${selector} {`)
     expect(css).toContain('background-color: #0f766e;')
     expect(css.indexOf('/* Foundations */')).toBeLessThan(css.indexOf('/* Semantic overrides */'))
     expect(css.indexOf('/* Semantic overrides */')).toBeLessThan(css.indexOf('/* Advanced raw-element overrides */'))
@@ -82,6 +98,7 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
       })
     })
 
+    await page.getByLabel('Export actions').click()
     await page.getByRole('button', { name: 'Copy vanilla CSS' }).click()
 
     await expect.poll(() => page.evaluate(() => (window as Window & { __ftbCopied?: string }).__ftbCopied ?? '')).toContain('/* Generated with Filament Theme Builder */')
@@ -92,13 +109,15 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
     const frame = page.frameLocator('iframe[title="Filament preview"]')
     await page.locator('#toolbar-primary-color').fill('#0f766e')
     await page.getByRole('button', { name: 'Inspector' }).click()
-    await frame.locator('.fi-section:visible').first().click()
+    await frame.locator('.fi-section:visible').first().dispatchEvent('click')
+    await chooseSectionSurface(page)
     await page.locator('#raw-background-color').fill('#fef3c7')
 
     const previewValues = await frame.locator('.fi-section:visible').first().evaluate((element) => ({
       background: getComputedStyle(element).backgroundColor,
       primary: getComputedStyle(element.ownerDocument.querySelector('.fi-color-primary')!).color,
     }))
+    await page.getByLabel('Export actions').click()
     const [download] = await Promise.all([
       page.waitForEvent('download'),
       page.getByRole('button', { name: 'Download vanilla CSS' }).click(),

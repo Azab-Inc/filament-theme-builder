@@ -19,7 +19,7 @@ const migratedRuntimeExports = {
   foundationDefaults: ['createDefaultCurrentThemeState', 'createDefaultFoundationState', 'createDefaultThemeState', 'densityPreset'],
   foundationRecovery: ['legacyRecoveryError', 'restoreLegacyTheme'],
   foundationProjection: ['projectFoundations'],
-  foundationProvenance: ['markExplicitPath', 'clearExplicitPath', 'isExplicitPath', 'isModeInherited', 'isPaletteExplicit', 'paletteOverridePath', 'resolveModeValue'],
+  foundationProvenance: ['markExplicitPath', 'clearExplicitPath', 'isExplicitPath', 'isModeInherited', 'isPaletteExplicit', 'isPaletteModeExplicit', 'paletteOverridePath', 'resolveModeValue'],
   foundationValidation: ['validateFoundationState', 'validateFoundationMapping', 'isEditableFoundationPath', 'validateFoundationColor'],
   iconExport: ['exportIconConfigurationPhp'],
   inspectorProtocol: ['INSPECTOR_PROTOCOL_VERSION', 'isInspectorCommand', 'isInspectorEvent', 'isInspectorTargetEvidence', 'resolveInspectorTarget'],
