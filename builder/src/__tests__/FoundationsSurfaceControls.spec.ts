@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 
 import FoundationsSurfaceControls from '@/components/FoundationsSurfaceControls.vue'
 import { createDefaultFoundationState } from '@/utils/foundation-defaults'
@@ -9,6 +10,7 @@ describe('FoundationsSurfaceControls', () => {
   it('preserves the surfaces fieldset markup, control order, status, errors, and actions', async () => {
     const foundation = createDefaultFoundationState()
     const wrapper = mount(FoundationsSurfaceControls, {
+      global: { plugins: [createPinia()] },
       props: {
         activeMode: 'light',
         surfaces: {

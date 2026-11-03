@@ -64,9 +64,9 @@ describe('padding store actions', () => {
     store.saveTheme()
     const id = store.activeThemeId
     const state = JSON.parse(localStorage.getItem(`ftb-theme:${id}`)!)
-    expect(state.schemaVersion).toBe(5)
+    expect(state.schemaVersion).toBe(7)
     expect(state.padding[0].edges.top).toBe(0)
-    expect(JSON.parse(localStorage.getItem(`ftb-theme-history:${id}`)!).snapshots[0].schemaVersion).toBe(5)
+    expect(JSON.parse(localStorage.getItem(`ftb-theme-history:${id}`)!).snapshots[0].schemaVersion).toBe(7)
   })
 
   it('migrates all V4 history snapshots without dropping the cursor', () => {
@@ -77,11 +77,11 @@ describe('padding store actions', () => {
     localStorage.setItem('ftb-theme:legacy', JSON.stringify(v4))
     localStorage.setItem('ftb-theme-history:legacy', JSON.stringify({ snapshots: [v4, second], cursor: 1 }))
     const store = useThemeStore()
-    expect(store.theme.schemaVersion).toBe(5)
+    expect(store.theme.schemaVersion).toBe(7)
     expect(store.theme.colors.primary).toBe('#6366f1')
     const history = JSON.parse(localStorage.getItem('ftb-theme-history:legacy')!)
     expect(history.snapshots).toHaveLength(2)
-    expect(history.snapshots.every((snapshot: { schemaVersion: number }) => snapshot.schemaVersion === 5)).toBe(true)
+    expect(history.snapshots.every((snapshot: { schemaVersion: number }) => snapshot.schemaVersion === 7)).toBe(true)
     expect(history.snapshots[1].colors.primary).toBe('#0f766e')
     expect(history.cursor).toBe(1)
   })

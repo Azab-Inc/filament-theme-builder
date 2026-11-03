@@ -32,7 +32,7 @@ describe('theme state overrides', () => {
       overrides: [primaryButtonVariantOverride, { ...primaryButtonVariantOverride, value: '#dc2626' }],
     }))
 
-    expect(createThemeState().theme.schemaVersion).toBe(5)
+    expect(createThemeState().theme.schemaVersion).toBe(7)
     expect(createThemeState().theme.colors.primary).toBe('#6366f1')
     expect(createThemeState().theme.overrides).toEqual([])
   })

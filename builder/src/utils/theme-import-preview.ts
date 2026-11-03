@@ -8,5 +8,5 @@ export function importDisplayName(filename: string, proposedName: string): strin
 }
 
 export function importSummary(sourceVersion: ImportVersion, migrationPath: number[], decisions: string[]): string[] {
-  return [`Imported schema v${sourceVersion} as v4`, `Migration path: ${migrationPath.join(' → ')}`, ...decisions]
+  return [`Imported schema v${sourceVersion} as v6`, `Migration path: ${migrationPath.join(' → ')}`, ...decisions]
 }

@@ -16,10 +16,13 @@ import { useLocalThemePersistence } from '@/composables/use-local-theme-persiste
 import type { FreshThemeImport } from '@/models/local-theme-import.model'
 import { themeStateRevision } from '@/utils/theme-state-revision'
 import { readLocalThemeForRelay } from '@/utils/local-theme-read'
+import { useThemeUserTokens } from '@/composables/use-theme-user-tokens'
+import { useThemeModeLinkActions } from '@/composables/use-theme-mode-link-actions'
+import { applyModeLinks } from '@/utils/apply-mode-links'
+import { validateFoundationState } from '@/utils/foundation-validation'
 
 const storageKey = 'ftb-theme'
 const recoveryStorageKey = 'ftb-theme-legacy-recovery'
-
 export const useThemeStore = defineStore('theme', () => {
   const persistence = useThemePersistence(storageKey, recoveryStorageKey)
   const restored = persistence.restore()
@@ -37,7 +40,7 @@ export const useThemeStore = defineStore('theme', () => {
   const history = useThemeHistory(theme, persistence.serialize, storageKey, localPersistence.activeHistory.value, (state, savedHistory) => {
     localPersistence.scheduleSave(localPersistence.activeThemeId.value, state, savedHistory)
   })
-  const context: ThemeStoreContext = { theme, registry }
+  const context: ThemeStoreContext = { theme, registry, commit: (candidate) => { const next = applyModeLinks(theme.value, candidate); if (validateFoundationState(next, registry).valid) theme.value = next } }
   const recovery = useThemeRecovery(theme, persistence, history.applyTheme)
   const openTheme = (id: string): void => {
     const result = localPersistence.switchTo(id)
@@ -84,17 +87,14 @@ export const useThemeStore = defineStore('theme', () => {
     ...useThemePaddingActions(context),
     ...useThemeRawActions(context),
     ...useThemeIconBrandingActions(context),
+    ...useThemeUserTokens(context),
+    ...useThemeModeLinkActions(context),
     ...useThemeProjection(context),
     ...recovery,
-    undo: history.undo,
-    redo: history.redo,
+    undo: history.undo, redo: history.redo,
     createTheme, saveTheme,
     openTheme,
-    renameTheme: localPersistence.renameTheme,
-    duplicateTheme,
-    deleteTheme,
-    importFreshTheme,
-    revision,
-    getThemeState,
+    renameTheme: localPersistence.renameTheme, duplicateTheme, deleteTheme,
+    importFreshTheme, revision, getThemeState,
   }
 })

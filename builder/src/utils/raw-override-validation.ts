@@ -18,8 +18,10 @@ export { ALL_RAW_VISUAL_PROPERTIES }
 const pseudoStatesPattern = SUPPORTED_PSEUDO_STATES.join('|')
 const selectorPattern = new RegExp(`^(?:\\.fi-[A-Za-z0-9_-]+)(?:\\.[A-Za-z0-9_-]+)*(?::(?:${pseudoStatesPattern}))?(?:\\s+\\.fi-[A-Za-z0-9_-]+(?:\\.[A-Za-z0-9_-]+)*(?::(?:${pseudoStatesPattern}))?)*$`)
 const singleClassPattern = /^\.fi-[A-Za-z0-9_-]+$/
+const columnPattern = /^\.fi-ta :is\(\.fi-ta-header-cell, \.fi-ta-cell\):nth-child\(([1-9]|[12]\d|3[0-2])\)$/
 export function validateRawSelector(value: unknown): RawValidationResult<string> {
-  if (typeof value !== 'string' || !selectorPattern.test(value)) {
+  if (typeof value === 'string' && /\.fi-ta-(?:header-cell|cell)-[^\s]+\.(?!fi-)/.test(value)) return { valid: false, error: 'Use generic Filament table classes instead of field-specific selectors' }
+  if (typeof value !== 'string' || (!selectorPattern.test(value) && !columnPattern.test(value))) {
     return { valid: false, error: 'Selector must contain only safe .fi-* class selectors and limited pseudo-classes' }
   }
   return { valid: true, value }
@@ -49,15 +51,15 @@ export function proposeRawSelector(evidence: InspectorTargetEvidence, registry: 
 }
 
 export function validateRawElementOverride(value: unknown): RawValidationResult {
-  if (!isRecord(value) || Object.keys(value).some((key) => !['selector', 'properties'].includes(key))) {
+  if (!isRecord(value) || Object.keys(value).some((key) => !['selector', 'properties', 'darkProperties'].includes(key))) {
     return { valid: false, error: 'Raw override contains unsupported keys' }
   }
   const selector = validateRawSelector(value.selector)
   if (!selector.valid) return selector
-  if (!isRecord(value.properties) || Object.keys(value.properties).length === 0) {
+  if (!isRecord(value.properties) || (value.darkProperties !== undefined && !isRecord(value.darkProperties)) || (Object.keys(value.properties).length === 0 && Object.keys(value.darkProperties ?? {}).length === 0)) {
     return { valid: false, error: 'Raw override requires at least one property' }
   }
-  for (const [property, propertyValue] of Object.entries(value.properties)) {
+  for (const [property, propertyValue] of [...Object.entries(value.properties), ...Object.entries(value.darkProperties ?? {})]) {
     if (!(ALL_RAW_VISUAL_PROPERTIES as readonly string[]).includes(property)) return { valid: false, error: `Unsupported raw property: ${property}` }
     if (!isSafePropertyValue(property as RawVisualProperty, propertyValue)) return { valid: false, error: `Invalid value for ${property}` }
   }

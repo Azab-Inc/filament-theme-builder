@@ -1,5 +1,5 @@
 import type { LocalThemeHistory, LocalThemeHistoryInput, LocalThemeLoadResult, LocalThemeRecord, StorageOperationResult } from '@/models/local-theme.model'
-import type { ThemeState, ThemeStateInput, ThemeStateV5 } from '@/models/theme.model'
+import type { ThemeState, ThemeStateInput, ThemeStateCurrent } from '@/models/theme.model'
 import { createDefaultCurrentThemeState } from '@/utils/foundation-defaults'
 import { parseLocalThemeCollection, parseLocalThemeHistory } from '@/utils/local-theme-validation'
 import { migrateToCurrent, normalizeTheme } from '@/utils/theme-store-normalization'
@@ -12,11 +12,11 @@ import { assertLocalThemeId, writeVerified } from '@/utils/local-theme-storage-w
 import { recoverLegacyState } from '@/utils/theme-store-recovery'
 const INDEX = 'ftb-themes'
 const ACTIVE = 'ftb-theme-active'; const LEGACY = 'ftb-theme'
-const validateState = (value: unknown): ThemeStateV5 | null => {
+const validateState = (value: unknown): ThemeStateCurrent | null => {
   if (!isThemeValue(value)) return null
   try { const state = normalizeTheme(migrateToCurrent(value)); return validateFoundationState(state.foundations).valid ? state : null } catch { return recoverLegacyState(value) }
 }
-export function validateLocalThemeState(value: unknown): ThemeStateV5 | null {
+export function validateLocalThemeState(value: unknown): ThemeStateCurrent | null {
   return validateState(value)
 }
 export function themeStateKey(id: string): string { assertLocalThemeId(id); return `ftb-theme:${id}` }
@@ -41,7 +41,7 @@ export function loadLocalThemeCollection(storage: Storage): LocalThemeLoadResult
   } catch (error) { return failedLocalThemeLoad(createDefaultCurrentThemeState(), storageErrorMessage(error)) }
 }
 
-export function loadLocalThemeById(storage: Storage, id: string): { state: ThemeStateV5; history: LocalThemeHistory; error: string | null } {
+export function loadLocalThemeById(storage: Storage, id: string): { state: ThemeStateCurrent; history: LocalThemeHistory; error: string | null } {
   try {
     const state = validateState(parseStorageJson(storage.getItem(themeStateKey(id))))
     const history = parseLocalThemeHistory(parseStorageJson(storage.getItem(themeHistoryKey(id))), validateState)
@@ -69,7 +69,7 @@ export function initializeLocalThemeStorage(storage: Storage, defaultState: Them
       return failedLocalThemeLoad(migrateToCurrent(defaultState), 'Partial local theme storage detected; existing records were preserved')
     }
     const bytes = storage.getItem(LEGACY)
-    let state: ThemeStateV5 = defaultState.schemaVersion === 5 ? defaultState : migrateToCurrent(defaultState)
+  let state: ThemeStateCurrent = defaultState.schemaVersion === 7 ? defaultState : migrateToCurrent(defaultState)
     let legacyError: string | null = null
     let migratedLegacy = false
     if (bytes !== null && !preferDefaultState) {
@@ -78,7 +78,7 @@ export function initializeLocalThemeStorage(storage: Storage, defaultState: Them
       else {
         const legacyValidation = parsed.schemaVersion <= 2 ? deserializeTheme(parsed, createThemeRegistry()) : { valid: true }
         if (!legacyValidation.valid) legacyError = 'Legacy theme is invalid'
-        try { if (!legacyError) { const migrated = migrateState(parsed); state = migrated.schemaVersion === 5 ? migrated : migrateToCurrent(migrated) } } catch {
+          try { if (!legacyError) { const migrated = migrateState(parsed); state = migrated.schemaVersion === 7 ? migrated : migrateToCurrent(migrated) } } catch {
           const recovered = recoverLegacyState(parsed)
           if (recovered) state = recovered
           else legacyError = 'Legacy theme migration failed'

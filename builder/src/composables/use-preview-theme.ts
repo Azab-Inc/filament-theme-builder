@@ -27,7 +27,7 @@ export function usePreviewTheme({
         activeMode: activeMode.value,
          theme: structuredClone(JSON.parse(JSON.stringify(toRaw(theme.theme)))),
          projection: theme.previewFoundation(activeMode.value),
-         paddingProjection: projectPadding(theme.theme as unknown as import('@/models/theme.model').ThemeStateV5, registry),
+         paddingProjection: projectPadding(theme.theme as unknown as import('@/models/theme.model').ThemeStateCurrent, registry),
       },
       targetOrigin,
     )

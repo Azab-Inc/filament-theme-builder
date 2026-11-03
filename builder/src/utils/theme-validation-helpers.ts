@@ -4,6 +4,8 @@ import type { ThemeValidationContext } from '@/models/theme-validation-context.m
 import type { FilamentRegistry, RegistryControl, RegistryEntry } from '@/models/theme-registry.model'
 import type { ThemeValue } from '@/models/theme.model'
 import { SUPPORTED_FILAMENT_COMPATIBILITY } from '@/registry/theme-registry'
+import { parseUserTokenReference } from '@/utils/user-token-validation'
+import { isBuiltinPaletteReference } from '@/utils/color-reference-options'
 
 export function failure(context: ThemeValidationContext, error: string): ThemeOverrideValidationFailure {
   return { ...context, valid: false, error }
@@ -25,6 +27,7 @@ export function isValidControlValue(value: unknown, control: RegistryControl): v
   if (control.valueType === 'boolean') return typeof value === 'boolean'
   if (control.valueType === 'number') return typeof value === 'number' && Number.isFinite(value) && (control.constraints?.min === undefined || value >= control.constraints.min) && (control.constraints?.max === undefined || value <= control.constraints.max)
   if (typeof value !== 'string') return false
+  if (control.valueType === 'color' && (parseUserTokenReference(value) || isBuiltinPaletteReference(value))) return true
   return control.constraints?.pattern === undefined || new RegExp(control.constraints.pattern.source, control.constraints.pattern.flags).test(value)
 }
 

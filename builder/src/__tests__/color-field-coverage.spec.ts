@@ -1,4 +1,5 @@
 import { mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { describe, expect, it } from 'vitest'
 import FoundationsSurfaceControls from '@/components/FoundationsSurfaceControls.vue'
 import SemanticComponentControls from '@/components/SemanticComponentControls.vue'
@@ -7,7 +8,7 @@ import { componentColorRows, modeColorProps } from './fixtures/color-control-pro
 describe('existing color field inventory', () => {
   for (const mode of ['light', 'dark'] as const) {
     it(`offers both methods for all 11 ${mode} surface/border/text values`, () => {
-      const wrapper = mount(FoundationsSurfaceControls, { props: { ...modeColorProps(), activeMode: mode } })
+      const wrapper = mount(FoundationsSurfaceControls, { global: { plugins: [createPinia()] }, props: { ...modeColorProps(), activeMode: mode } })
       const fields = wrapper.findAll('[data-color-field]')
       expect(fields).toHaveLength(11)
       for (const field of fields) {

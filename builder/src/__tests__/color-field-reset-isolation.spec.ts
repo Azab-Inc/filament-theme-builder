@@ -1,4 +1,5 @@
 import { mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { describe, expect, it } from 'vitest'
 import FoundationsSurfaceControls from '@/components/FoundationsSurfaceControls.vue'
 import SemanticComponentControls from '@/components/SemanticComponentControls.vue'
@@ -7,7 +8,7 @@ import { componentColorRows, modeColorProps } from './fixtures/color-control-pro
 
 describe('color adapter identity and reset isolation', () => {
   it('keeps one visible label/error ID and resets only the requested mode field', async () => {
-    const wrapper = mount(FoundationsSurfaceControls, { props: {
+    const wrapper = mount(FoundationsSurfaceControls, { global: { plugins: [createPinia()] }, props: {
       ...modeColorProps(), foundationError: path => path === 'surfaces.page.light' ? 'Invalid color' : undefined,
     } })
     expect(wrapper.findAll('label[for="page-surface"]')).toHaveLength(1)

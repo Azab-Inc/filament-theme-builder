@@ -114,7 +114,7 @@ describe('local theme storage', () => {
     storage.setItem('ftb-theme', JSON.stringify(old))
     const result = initializeLocalThemeStorage(storage, state, (legacy) => migrateToCurrent(legacy))
     expect(result.error).toBeNull()
-    expect(result.state.schemaVersion).toBe(5)
+    expect(result.state.schemaVersion).toBe(7)
     expect(result.state.colors.primary).toBe('#123456')
   })
   it('recovers the original V3 baseline fixture at the outer storage boundary', () => {
@@ -131,7 +131,7 @@ describe('local theme storage', () => {
     storage.setItem('ftb-theme', JSON.stringify(legacy))
     const result = initializeLocalThemeStorage(storage, state, migrateToCurrent)
     expect(result.error).toBeNull()
-    expect(result.state.schemaVersion).toBe(5)
+    expect(result.state.schemaVersion).toBe(7)
     expect(result.state.foundations.borders.default.light).toBe('var(--gray-200)')
     expect(storage.getItem('ftb-theme')).toBeNull()
   })

@@ -1,22 +1,22 @@
 import { toRaw } from 'vue'
 
-import type { ThemeOverride, ThemeStateV2, ThemeStateV5, ResolveRequest } from '@/models/theme.model'
+import type { ThemeOverride, ThemeStateV2, ThemeStateCurrent, ResolveRequest } from '@/models/theme.model'
 import type { ThemeMode } from '@/models/foundations.model'
 import { resolveModeValue } from '@/utils/foundation-provenance'
 
-export function cloneTheme(value: ThemeStateV5): ThemeStateV5 {
-  return structuredClone(JSON.parse(JSON.stringify(toRaw(value))) as ThemeStateV5)
+export function cloneTheme(value: ThemeStateCurrent): ThemeStateCurrent {
+  return structuredClone(JSON.parse(JSON.stringify(toRaw(value))) as ThemeStateCurrent)
 }
 
-export function snapshot(value: ThemeStateV5): ThemeStateV5 {
+export function snapshot(value: ThemeStateCurrent): ThemeStateCurrent {
   return cloneTheme(value)
 }
 
-export function sameTheme(left: ThemeStateV5, right: ThemeStateV5): boolean {
+export function sameTheme(left: ThemeStateCurrent, right: ThemeStateCurrent): boolean {
   return JSON.stringify(left) === JSON.stringify(right)
 }
 
-export function toLegacyTheme(value: ThemeStateV5): ThemeStateV2 {
+export function toLegacyTheme(value: ThemeStateCurrent): ThemeStateV2 {
   return {
     schemaVersion: 2,
     colors: { primary: value.colors.primary },

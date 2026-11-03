@@ -1,20 +1,19 @@
-import type { Density, PaletteName, PaletteShade } from '@/models/foundations.model'
+import type { Density, PaletteName, PaletteShade, ThemeMode } from '@/models/foundations.model'
 import { createDefaultFoundationState } from '@/utils/foundation-defaults'
 import { clearExplicitPath, markExplicitPath } from '@/utils/foundation-provenance'
 import { isEditableFoundationPath, validateFoundationState } from '@/utils/foundation-validation'
 import { cloneTheme, getPath, setPath } from '@/utils/theme-store-helpers'
 import { isDerivedShadePath, rebuildPalette, syncPalette } from '@/utils/theme-store-palettes'
 import type { ThemeStoreContext } from '@/models/theme-store.model'
+import { resetModeLinkTarget } from '@/utils/reset-mode-link-target'
 
-export function useThemeFoundationActions({ theme }: ThemeStoreContext) {
-  function setPrimaryColor(color: string): void {
+export function useThemeFoundationActions({ theme, commit = (candidate) => { theme.value = candidate } }: ThemeStoreContext) {
+  function setPrimaryColor(color: string, mode: ThemeMode = 'light'): void {
     if (!/^#[\da-f]{6}$/i.test(color)) return
     const candidate = cloneTheme(theme.value)
-    candidate.colors.primary = color.toLowerCase()
-    candidate.foundations.palettes.primary.base = candidate.colors.primary
-    markExplicitPath(candidate.foundations, 'palettes.primary.base')
-    rebuildPalette(candidate.foundations.palettes.primary)
-    theme.value = candidate
+    if (mode === 'dark') { candidate.foundations.palettes.primary.dark = { ...(candidate.foundations.palettes.primary.dark ?? {}), base: color.toLowerCase() }; markExplicitPath(candidate.foundations, 'palettes.primary.dark.base'); rebuildPalette(candidate.foundations.palettes.primary, 'dark') }
+    else { candidate.colors.primary = color.toLowerCase(); candidate.foundations.palettes.primary.base = candidate.colors.primary; markExplicitPath(candidate.foundations, 'palettes.primary.base'); rebuildPalette(candidate.foundations.palettes.primary) }
+    commit(candidate)
   }
 
   function setFoundation(path: string, value: unknown): void {
@@ -23,19 +22,37 @@ export function useThemeFoundationActions({ theme }: ThemeStoreContext) {
     if (!setPath(candidate.foundations as unknown as Record<string, unknown>, path, value)) return
     markExplicitPath(candidate.foundations, path)
     syncPalette(candidate, path)
-    if (validateFoundationState(candidate.foundations).valid) theme.value = candidate
+    if (validateFoundationState(candidate.foundations).valid) commit(candidate)
   }
 
   function resetFoundation(path: string): void {
     if (isDerivedShadePath(path)) return
     const defaults = createDefaultFoundationState()
-    const paletteOverride = /^palettes\.(primary|success|warning|danger|info|gray)\.overrides\.(50|100|200|300|400|500|600|700|800|900|950)$/.exec(path)
-    if (!isEditableFoundationPath(path) && !paletteOverride) return
+    const paletteOverride = /^palettes\.(primary|success|warning|danger|info|gray)\.(dark\.)?overrides\.(50|100|200|300|400|500|600|700|800|900|950)$/.exec(path)
+    const paletteBase = /^palettes\.(primary|success|warning|danger|info|gray)\.dark\.base$/.exec(path)
+    if (!isEditableFoundationPath(path) && !paletteOverride && !paletteBase) return
     const candidate = cloneTheme(theme.value)
+    const baseReset = /^palettes\.(primary|success|warning|danger|info|gray)\.(?:dark\.)?base$/.exec(path)
+    if (baseReset) {
+      const linked = Object.entries(candidate.modeLinks ?? {}).filter(([, link]) => link.target?.kind === 'palette-base' && link.target.name === baseReset[1])
+      if (linked.length) {
+        resetModeLinkTarget(candidate, { kind: 'palette-base', name: baseReset[1] as PaletteName })
+        for (const [identity] of linked) delete candidate.modeLinks[identity]
+        commit(candidate)
+        return
+      }
+    }
     if (paletteOverride) {
-      delete candidate.foundations.palettes[paletteOverride[1] as PaletteName].overrides[Number(paletteOverride[2]) as PaletteShade]
+      const palette = candidate.foundations.palettes[paletteOverride[1] as PaletteName]
+      if (paletteOverride[2]) delete palette.dark?.overrides?.[Number(paletteOverride[3]) as PaletteShade]
+      else delete palette.overrides[Number(paletteOverride[3]) as PaletteShade]
       clearExplicitPath(candidate.foundations, path)
-      rebuildPalette(candidate.foundations.palettes[paletteOverride[1] as keyof typeof candidate.foundations.palettes])
+      rebuildPalette(palette, paletteOverride[2] ? 'dark' : 'light')
+    } else if (paletteBase) {
+      const palette = candidate.foundations.palettes[paletteBase[1] as PaletteName]
+      if (palette.dark) { delete palette.dark.base; if (!palette.dark.overrides || !Object.keys(palette.dark.overrides).length) delete palette.dark }
+      clearExplicitPath(candidate.foundations, path)
+      rebuildPalette(palette, 'dark')
     } else {
       const value = getPath(defaults as unknown as Record<string, unknown>, path)
       if (value === undefined || !setPath(candidate.foundations as unknown as Record<string, unknown>, path, value)) return
@@ -43,7 +60,7 @@ export function useThemeFoundationActions({ theme }: ThemeStoreContext) {
       clearExplicitPath(candidate.foundations, path)
       syncPalette(candidate, path)
     }
-    if (validateFoundationState(candidate.foundations).valid) theme.value = candidate
+    if (validateFoundationState(candidate.foundations).valid) commit(candidate)
   }
 
   function setDensity(value: Density): void {
@@ -51,7 +68,7 @@ export function useThemeFoundationActions({ theme }: ThemeStoreContext) {
     const candidate = cloneTheme(theme.value)
     candidate.foundations.density = value
     markExplicitPath(candidate.foundations, 'density')
-    if (validateFoundationState(candidate.foundations).valid) theme.value = candidate
+    if (validateFoundationState(candidate.foundations).valid) commit(candidate)
   }
 
   return { setPrimaryColor, setFoundation, resetFoundation, setDensity }

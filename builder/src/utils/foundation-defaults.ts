@@ -1,5 +1,5 @@
 import type { Density, DensityPreset, FoundationState, FoundationStateV4 } from '@/models/foundations.model'
-import type { ThemeStateV5 } from '@/models/theme.model'
+import type { ThemeStateCurrent } from '@/models/theme.model'
 import { PALETTE_NAMES } from '@/models/foundations.model'
 import { generatePalette } from '@/utils/palette-generator'
 import { createDefaultIconConfiguration } from '@/registry/icon-registry'
@@ -43,6 +43,7 @@ const FOUNDATION_DEFAULTS: FoundationState = deepFreeze({
   shadow: 'sm',
   explicitPaths: [],
   provenanceVersion: 1,
+  userTokens: { palettes: {}, colors: {} },
 })
 
 export function createDefaultFoundationState(): FoundationState {
@@ -62,8 +63,8 @@ export function createDefaultThemeState(): FoundationStateV4 {
   }
 }
 
-export function createDefaultCurrentThemeState(): ThemeStateV5 {
-  return { ...createDefaultThemeState(), schemaVersion: 5, padding: [] }
+export function createDefaultCurrentThemeState(): ThemeStateCurrent {
+  return { ...createDefaultThemeState(), schemaVersion: 7, padding: [], foundations: { ...createDefaultThemeState().foundations, userTokens: { palettes: {}, colors: {} } }, modeLinks: {} }
 }
 
 export function densityPreset(value: Density): DensityPreset {
