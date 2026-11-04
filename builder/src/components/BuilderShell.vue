@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { computed, provide, reactive } from 'vue'
+import type { ModeLinkTarget } from '@/models/mode-link-target.model'
+import { PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
 import EditorToolbar from '@/components/EditorToolbar.vue'
 import PreviewFrame from '@/components/PreviewFrame.vue'
 import EditorWorkspace from '@/components/EditorWorkspace.vue'
@@ -8,6 +10,19 @@ import { useBuilderShell } from '@/composables/use-builder-shell'
 const previewUrl = import.meta.env.VITE_DEMO_URL ?? '/demo/admin'
 const model = useBuilderShell(previewUrl)
 const shell = reactive(model)
+provide('user-token-options', computed(() => {
+  const tokens = shell.theme.theme.foundations.userTokens
+  return [...Object.keys(tokens?.colors ?? {}).map((name) => `user.color.${name}`), ...Object.entries(tokens?.palettes ?? {}).flatMap(([name, palette]) => Object.keys(palette.shades).map((shade) => `user.palette.${name}.${shade}`))]
+}))
+provide('mode-link-binding', (target: ModeLinkTarget) => shell.theme.bindingForModeTarget(target, shell.activeMode))
+provide('theme-color-values', computed(() => {
+  const colors: Record<string, string> = {}
+  for (const name of PALETTE_NAMES) for (const shade of PALETTE_SHADES) colors[`var(--ftb-palette-${name}-${shade})`] = shell.palettes[name].shades[shade] ?? shell.palettes[name].base
+  const tokens = shell.theme.theme.foundations.userTokens
+  for (const [name, pair] of Object.entries(tokens.colors)) colors[`user.color.${name}`] = pair[shell.activeMode] ?? pair.light
+  for (const [name, palette] of Object.entries(tokens.palettes)) for (const shade of PALETTE_SHADES) colors[`user.palette.${name}.${shade}`] = palette.shades[shade][shell.activeMode] ?? palette.shades[shade].light
+  return colors
+}))
 </script>
 
 <template>

@@ -32,7 +32,11 @@ final class LocalThemeToolImportGrantTest extends LocalThemeToolTestCase
         $previews = app(OperationPreviewLifecycle::class);
         self::assertNull($previews->record($id, [...$preview, 'payloadDigest' => hash('sha256', 'altered')], $session));
         self::assertSame('pending', $previews->record($id, $preview, $session));
-        $grant = $previews->authorizeApply($id, $digest, 7, 'Imported', $session);
+        $candidateDigest = str_repeat('c', 64);
+        $candidatePreview = [...$preview, 'candidateDigest' => $candidateDigest];
+        self::assertSame('pending', $previews->record($id, $candidatePreview, $session));
+        self::assertNull($previews->authorizeApply($id, $digest, 7, 'Imported', $session, str_repeat('d', 64)));
+        $grant = $previews->authorizeApply($id, $digest, 7, 'Imported', $session, $candidateDigest);
         self::assertIsArray($grant);
         $grants = app(ImportGrantStore::class);
         self::assertFalse($grants->approve($grant['grantId'], $id, $digest, 'Imported', 8, $session['sessionId']));

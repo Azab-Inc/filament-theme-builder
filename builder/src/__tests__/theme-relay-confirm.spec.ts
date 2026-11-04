@@ -50,6 +50,31 @@ describe('relay import confirmation', () => {
     release({ version: 1, status: 'pending', grantId: 'f'.repeat(64), grantExpiresAt: Date.now() + 4_000, operationId, digest, revision, displayName })
     expect(await first).toMatchObject({ ok: true })
   })
+
+  it('applies a non-color positional raw intent once and does not reapply after a lost acknowledgement', async () => {
+    const store = useThemeStore(); const model = useThemeImport(store); const relay = relayStub()
+    relay.publishImportResult.mockRejectedValueOnce(new Error('lost acknowledgement'))
+    const rawJson = JSON.stringify({ schemaVersion: 1, kind: 'theme-intent', action: 'set', target: { kind: 'raw', selector: '.fi-ta :is(.fi-ta-header-cell, .fi-ta-cell):nth-child(2)', property: 'padding' }, mode: 'dark', value: '12px' })
+    await model.receiveRelayPayload(await intentPayload(rawJson), relay as never)
+    expect(await model.confirm()).toMatchObject({ ok: false })
+    expect(store.theme.rawOverrides[0]?.darkProperties?.padding).toBe('12px')
+    model.cancel()
+    expect(await model.confirm()).toMatchObject({ ok: true })
+    expect(store.theme.rawOverrides).toHaveLength(1)
+    expect(relay.publishImportResult).toHaveBeenCalledTimes(2)
+  })
+
+  it('creates a mode link through the relay and keeps link history available', async () => {
+    const store = useThemeStore(); const model = useThemeImport(store); const relay = relayStub()
+    const rawJson = JSON.stringify({ schemaVersion: 1, kind: 'theme-intent', action: 'link', target: { kind: 'raw', selector: '.fi-btn', property: 'color' }, mode: 'light', value: '#123456' })
+    await model.receiveRelayPayload(await intentPayload(rawJson), relay as never)
+    expect(await model.confirm()).toMatchObject({ ok: true })
+    expect(Object.values(store.theme.modeLinks)).toHaveLength(1)
+    store.setRawOverride('.fi-btn', 'color', '#abcdef', 'dark')
+    expect(store.theme.rawOverrides[0]?.properties.color).toBe('#abcdef')
+    expect(store.theme.rawOverrides[0]?.darkProperties?.color).toBe('#abcdef')
+    expect(store.canUndo).toBe(true)
+  })
 })
 
 function relayStub() {
@@ -64,4 +89,8 @@ function relayStub() {
 async function payload() {
   const bytes = new TextEncoder().encode(json)
   return { version: 1 as const, operationId: 'c'.repeat(64), rawJson: json, bytes, filename: 'from-mcp.json', proposedName: 'Relay theme', digest: await digestBytes(bytes), byteLength: bytes.length }
+}
+async function intentPayload(rawJson: string) {
+  const bytes = new TextEncoder().encode(rawJson)
+  return { version: 1 as const, operationId: 'd'.repeat(64), rawJson, bytes, filename: 'filament-theme-intent.json', proposedName: 'Intent', digest: await digestBytes(bytes), byteLength: bytes.length }
 }

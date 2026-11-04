@@ -1,5 +1,5 @@
-import type { ThemeStateV5 } from '@/models/theme.model'
+import type { ThemeStateCurrent } from '@/models/theme.model'
 
 export type ThemeDeserializeResult =
-  | { valid: true; state: ThemeStateV5 }
+  | { valid: true; state: ThemeStateCurrent }
   | { valid: false; error: string }

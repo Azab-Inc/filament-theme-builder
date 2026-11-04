@@ -3,12 +3,16 @@ import type { ValidationError } from '@/models/validation-error.model'
 import { BORDER_KEYS, DENSITIES, FONT_KEYS, KNOWN_EXPLICIT_PATHS, RADII, SHADOWS, SPACING_KEYS, SURFACE_KEYS, TEXT_KEYS } from '@/utils/foundation-validation-constants.util'
 import { validateFont, validateModeCollection, validatePaletteCollection } from '@/utils/foundation-collections-validation.util'
 import { checkKeys, invalid, isFiniteNumber, isRecord, join } from '@/utils/foundation-validation-shared.util'
+import { validateUserTokens, hasUnknownUserReference } from '@/utils/user-token-validation'
+import type { UserTokens } from '@/models/user-tokens.model'
 
 export function validateFoundationRecord(value: unknown, path: string): FoundationValidationResult {
   if (!isRecord(value)) return invalid('invalid-value', path || 'state', 'Foundation state must be an object')
-  const foundationKeys = ['palettes', 'surfaces', 'borders', 'text', 'typography', 'spacing', 'density', 'radius', 'borderWidth', 'shadow', 'explicitPaths', 'provenanceVersion']
-  const keys = checkKeys(value, foundationKeys, foundationKeys, path)
+  const foundationKeys = ['palettes', 'surfaces', 'borders', 'text', 'typography', 'spacing', 'density', 'radius', 'borderWidth', 'shadow', 'explicitPaths', 'provenanceVersion', 'userTokens']
+  const requiredKeys = foundationKeys.filter((key) => key !== 'userTokens')
+  const keys = checkKeys(value, foundationKeys, requiredKeys, path)
   if (keys) return keys
+  if (value.userTokens !== undefined && validateUserTokens(value.userTokens as UserTokens).length) return invalid('invalid-value', join(path, 'userTokens'), 'Invalid named color definitions')
   if (value.provenanceVersion !== 1) return invalid('invalid-value', join(path, 'provenanceVersion'), 'Unsupported foundation provenance version')
   const provenancePath = join(path, 'explicitPaths')
   if (!Array.isArray(value.explicitPaths) || new Set(value.explicitPaths).size !== value.explicitPaths.length || value.explicitPaths.some((candidate) => typeof candidate !== 'string' || !KNOWN_EXPLICIT_PATHS.has(candidate))) {
@@ -17,15 +21,18 @@ export function validateFoundationRecord(value: unknown, path: string): Foundati
   const paletteResult = validatePaletteCollection(value.palettes, join(path, 'palettes'))
   if (paletteResult) return paletteResult
   for (const explicitPath of value.explicitPaths as string[]) {
-    const overridePath = /^palettes\.([^.]+)\.overrides\.(\d+)$/.exec(explicitPath)
+    const overridePath = /^palettes\.([^.]+)\.(dark\.)?overrides\.(\d+)$/.exec(explicitPath)
     const palette = overridePath && isRecord(value.palettes) ? value.palettes[overridePath[1]!] : undefined
-    if (overridePath && (!isRecord(palette) || !isRecord(palette.overrides) || !Object.prototype.hasOwnProperty.call(palette.overrides, overridePath[2]!))) {
+    const collection = overridePath && isRecord(palette) ? overridePath[2] ? (isRecord(palette.dark) ? palette.dark.overrides : undefined) : palette.overrides : undefined
+    if (overridePath && (!isRecord(collection) || !Object.prototype.hasOwnProperty.call(collection, overridePath[3]!))) {
       return invalid('invalid-value', provenancePath, 'Palette override provenance must reference an existing override')
     }
   }
   for (const [name, collection, allowed] of [['surfaces', value.surfaces, SURFACE_KEYS], ['borders', value.borders, BORDER_KEYS], ['text', value.text, TEXT_KEYS]] as const) {
     const result = validateModeCollection(collection, allowed, join(path, name))
     if (result) return result
+    const colorValues = Object.values(collection as Record<string, { light: string; dark: string }>).flatMap((pair) => [pair.light, pair.dark])
+    if (hasUnknownUserReference(value.userTokens as UserTokens | undefined, colorValues)) return invalid('invalid-value', join(path, name), 'Unknown named color reference')
   }
   const typographyPath = join(path, 'typography')
   if (!isRecord(value.typography)) return invalid('invalid-value', typographyPath, 'Typography must be an object')

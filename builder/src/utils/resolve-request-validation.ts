@@ -7,7 +7,8 @@ export function validateResolveRequest(request: unknown, registry: FilamentRegis
   const targetId = isObject(request) && typeof request.targetId === 'string' ? request.targetId : ''
   const controlId = isObject(request) && typeof request.controlId === 'string' ? request.controlId : ''
   if (!isObject(request) || Array.isArray(request)) return { valid: false, targetId, controlId, error: 'Invalid resolve request' }
-  const allowedKeys = new Set(['targetId', 'controlId', 'componentId', 'variantId', 'stateId'])
+  const allowedKeys = new Set(['targetId', 'controlId', 'componentId', 'variantId', 'stateId', 'mode'])
+  if (request.mode !== undefined && request.mode !== 'light' && request.mode !== 'dark') return { valid: false, targetId, controlId, error: 'Invalid resolve request mode' }
   if (Reflect.ownKeys(request).some((key) => typeof key !== 'string' || !allowedKeys.has(key))) return { valid: false, targetId, controlId, error: 'Invalid resolve request: unsupported key' }
   if (!nonEmptyString(targetId) || !nonEmptyString(controlId) || !validOptionalIdentifiers(request)) return { valid: false, targetId, controlId, error: 'Invalid resolve request identifiers' }
   const entry = registry.entries.find(({ id }) => id === targetId)

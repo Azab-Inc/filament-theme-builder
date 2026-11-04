@@ -15,6 +15,8 @@ export const KNOWN_EXPLICIT_PATHS = new Set<string>([
   ...PALETTE_NAMES.flatMap((name) => [
     `palettes.${name}.base`,
     ...PALETTE_SHADES.map((shade) => `palettes.${name}.overrides.${shade}`),
+    `palettes.${name}.dark.base`,
+    ...PALETTE_SHADES.map((shade) => `palettes.${name}.dark.overrides.${shade}`),
   ]),
   ...['surfaces.page', 'surfaces.sidebar', 'surfaces.topbar', 'surfaces.card', 'surfaces.elevated', 'surfaces.input', 'borders.default', 'borders.strong', 'text.primary', 'text.muted', 'text.disabled'].flatMap((path) => [`${path}.light`, `${path}.dark`]),
   ...['body', 'heading', 'mono'].map((name) => `typography.${name}`),

@@ -4,13 +4,13 @@ import { validateFoundationState } from '@/utils/foundation-validation'
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { migrateToCurrent, isCurrentVersionFive, isLegacyVersionThree, isVersionFour } from '@/utils/theme-store-normalization'
 import { serializeTheme } from '@/utils/theme-store-serialization'
-import type { ThemeStateV5 } from '@/models/theme.model'
+import type { ThemeStateCurrent } from '@/models/theme.model'
 
 const registry = createThemeRegistry()
 
 export function useThemePersistence(storageKey: string, recoveryStorageKey: string) {
   return {
-    restore: (): ThemeStateV5 => restoreTheme(storageKey, recoveryStorageKey),
+    restore: (): ThemeStateCurrent => restoreTheme(storageKey, recoveryStorageKey),
     serialize: serializeTheme,
     archive: (value: unknown): void => archiveLegacyTheme(recoveryStorageKey, value),
     readRecovery: (): string | null => typeof localStorage === 'undefined' ? null : localStorage.getItem(recoveryStorageKey),
@@ -18,7 +18,7 @@ export function useThemePersistence(storageKey: string, recoveryStorageKey: stri
   }
 }
 
-function restoreTheme(storageKey: string, recoveryStorageKey: string): ThemeStateV5 {
+function restoreTheme(storageKey: string, recoveryStorageKey: string): ThemeStateCurrent {
   try {
     const value = typeof localStorage === 'undefined' ? null : localStorage.getItem(storageKey)
     if (!value) return structuredClone(createDefaultCurrentThemeState())
@@ -38,7 +38,7 @@ function restoreTheme(storageKey: string, recoveryStorageKey: string): ThemeStat
   return structuredClone(createDefaultCurrentThemeState())
 }
 
-function hasTrustedProvenance(value: ThemeStateV5 | { foundations?: { provenanceVersion?: number } }): boolean {
+function hasTrustedProvenance(value: ThemeStateCurrent | { foundations?: { provenanceVersion?: number } }): boolean {
   return value.foundations?.provenanceVersion === 1
 }
 

@@ -6,4 +6,6 @@ export type InspectorTargetEvidence = {
   componentId?: string
   variantId?: string
   stateId?: string
+  targetScope?: import('@/models/inspector-target-scope.model').InspectorTargetScope
+  surfaces?: Array<{ label: string; selector: string }>
 }

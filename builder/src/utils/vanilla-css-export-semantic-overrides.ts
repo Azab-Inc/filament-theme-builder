@@ -3,6 +3,7 @@ import type { SemanticMapping } from '@/models/vanilla-css-export-semantic-mappi
 import { SUPPORTED_PSEUDO_STATES } from '@/models/theme-registry.model'
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { projectPadding } from '@/utils/padding-projection'
+import { userTokenCssValue } from '@/utils/user-token-css'
 
 const semanticMappings = new Map<string, SemanticMapping>([
   ['button.primary\u0000background', { selector: '.fi-btn.fi-color-primary', globalSelector: '.fi-btn', componentSelector: '.fi-btn', property: 'background-color' }],
@@ -16,15 +17,28 @@ export function renderSemanticOverrides(theme: ThemeStateInput, errors: string[]
     .flatMap((override) => {
       const mapping = semanticMappings.get(`${override.targetId}\u0000${override.controlId}`)
       if (!mapping) { errors.push(`Unsupported semantic override: ${override.targetId}.${override.controlId}`); return [] }
-      if (typeof override.value !== 'string') { errors.push(`Unsupported semantic override value: ${override.targetId}.${override.controlId}`); return [] }
-      try { return [`${semanticSelector(override, mapping)} { ${mapping.property}: ${override.value} !important; }`] }
+       if ((override.value !== undefined && typeof override.value !== 'string') || (override.darkValue !== undefined && typeof override.darkValue !== 'string')) { errors.push(`Unsupported semantic override value: ${override.targetId}.${override.controlId}`); return [] }
+       try {
+          const lightValue = override.value === undefined ? undefined : userTokenCssValue(String(override.value), theme.foundations.userTokens)
+          if (lightValue === null) throw new Error('Unknown named color in semantic override')
+          const light = lightValue === undefined ? '' : `${modeSelector('light', semanticSelector(override, mapping))} { ${mapping.property}: ${lightValue} !important; }`
+          const darkValue = override.darkValue ?? override.value
+          const darkCss = darkValue === undefined ? undefined : userTokenCssValue(String(darkValue), theme.foundations.userTokens)
+          if (darkCss === null) throw new Error('Unknown named color in semantic override')
+          const dark = darkCss === undefined ? '' : `${modeSelector('dark', semanticSelector(override, mapping))} { ${mapping.property}: ${darkCss} !important; }`
+         return [light, dark].filter(Boolean)
+       }
       catch (error) { errors.push(error instanceof Error ? error.message : 'Unsupported semantic override'); return [] }
      }).filter(Boolean).join('\n')
-  const padding = theme.schemaVersion === 5 ? renderPadding(theme, errors) : ''
+     const padding = theme.schemaVersion >= 5 ? renderPadding(theme as unknown as import('@/models/theme.model').ThemeStateCurrent, errors) : ''
   return [semantic, padding].filter(Boolean).join('\n')
 }
 
-function renderPadding(theme: import('@/models/theme.model').ThemeStateV5, errors: string[]): string {
+function modeSelector(mode: 'light' | 'dark', selector: string): string {
+  return `:where(html${mode === 'dark' ? '.dark' : ':not(.dark)'}) ${selector}`
+}
+
+function renderPadding(theme: import('@/models/theme.model').ThemeStateCurrent, errors: string[]): string {
   try {
     return projectPadding(theme, createThemeRegistry()).rules
       .map((rule) => `${rule.selector} { ${Object.entries(rule.declarations).map(([edge, value]) => `padding-${edge}: ${value} !important;`).join(' ')} }`)

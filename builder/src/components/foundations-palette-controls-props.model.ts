@@ -6,4 +6,5 @@ export type FoundationsPaletteControlsProps = {
   paletteShades: readonly PaletteShade[]
   statusFor: (path: string) => string
   contextKey?: string
+  userTokenOptions?: readonly string[]
 }

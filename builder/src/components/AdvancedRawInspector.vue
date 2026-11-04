@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useColorFieldResets } from '@/composables/use-color-field-resets'
-import ColorField from '@/components/ColorField.vue'
-import type { RawVisualProperty } from '@/models/raw-overrides.model'
+import RawVisualProperties from './RawVisualProperties.vue'
+import InspectorTargetControls from '@/components/InspectorTargetControls.vue'
+import type { InspectorTargetEvidence } from '@/models/inspector-target-evidence.model'
+import type { ThemeMode } from '@/models/foundations.model'
 import type {
   RawPropertyChange,
   RawPropertyReset,
@@ -12,7 +13,7 @@ import type { AdvancedRawInspectorProps } from './advanced-raw-inspector.model'
 import type { InspectorVisualState } from '@/utils/raw-inspector-state'
 import { selectorForInspectorState } from '@/utils/raw-inspector-state'
 
-const props = defineProps<AdvancedRawInspectorProps>()
+const props = defineProps<AdvancedRawInspectorProps & { activeMode?: ThemeMode; evidence?: InspectorTargetEvidence | null }>()
 
 const emit = defineEmits<{
   'set-selector': [change: RawSelectorChange]
@@ -20,16 +21,13 @@ const emit = defineEmits<{
   'reset-property': [change: RawPropertyReset]
   'reset-override': []
   'set-state': [state: InspectorVisualState]
+  'choose-target': [selector: string]
 }>()
-const { resetKeys, resetField } = useColorFieldResets()
-const colorProperties = new Set<RawVisualProperty>(['color', 'background-color', 'border-color'])
 const stateOptions = computed((): InspectorVisualState[] => (['default', 'hover', 'focus', 'selected'] as const).filter((state) => selectorForInspectorState(props.selector, state) !== null))
 function chooseState(state: InspectorVisualState): void {
   const selector = selectorForInspectorState(props.selector, state)
   if (selector) emit('set-state', state)
 }
-function resetProperty(property: RawVisualProperty): void { resetField(property); emit('reset-property', { property }) }
-function resetOverride(): void { props.properties.forEach(resetField); emit('reset-override') }
 </script>
 
 <template>
@@ -44,6 +42,7 @@ function resetOverride(): void { props.properties.forEach(resetField); emit('res
     data-editor-section="inspector"
   >
     <h2 id="advanced-inspector-heading">Advanced Inspector</h2>
+    <InspectorTargetControls :evidence="evidence" :selector="selector" @choose="emit('choose-target', $event)" />
     <p>
       Raw visual overrides are validated typed properties and remain separate from Semantic
       controls.
@@ -79,26 +78,6 @@ function resetOverride(): void { props.properties.forEach(resetField); emit('res
         {{ state[0]?.toUpperCase() }}{{ state.slice(1) }}
       </button>
     </fieldset>
-    <fieldset class="grid gap-2 rounded-lg border border-zinc-200 p-4">
-      <legend>Visual properties</legend>
-      <div
-        v-for="property in properties"
-        :key="property"
-        class="raw-property-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto]"
-      >
-        <ColorField v-if="colorProperties.has(property)" :id="`raw-${property}`" :label="`Raw ${property}`" :visible-label="property" :text-label="`Raw ${property}`" :value="propertyValue(property)" :effective-value="propertyValue(property)" profile="raw" :context-key="`${activeThemeId ?? ''}:${selector}:${property}`" :property="property" :reset-key="resetKeys[property]" @input="emit('set-property', { property, event: $event })" />
-        <template v-else><label :for="`raw-${property}`">{{ property }}</label><input :id="`raw-${property}`" :name="`raw-${property}`" autocomplete="off" :aria-label="`Raw ${property}`" :value="propertyValue(property)" @input="emit('set-property', { property, event: $event })" /></template>
-        <button
-          type="button"
-          :aria-label="`Reset raw ${property}`"
-          @click="resetProperty(property)"
-        >
-          Reset
-        </button>
-      </div>
-      <button type="button" aria-label="Reset raw element override" @click="resetOverride">
-        Reset raw override
-      </button>
-    </fieldset>
+    <RawVisualProperties v-bind="props" @set-property="emit('set-property', $event)" @reset-property="emit('reset-property', $event)" @reset-override="emit('reset-override')" />
   </section>
 </template>

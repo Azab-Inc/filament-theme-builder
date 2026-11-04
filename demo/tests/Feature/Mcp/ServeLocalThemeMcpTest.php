@@ -56,7 +56,7 @@ class ServeLocalThemeMcpTest extends TestCase
         $names = array_map(fn ($tool) => $tool->name, $tools);
         sort($names);
         self::assertSame(['local_theme_disconnect', 'local_theme_export', 'local_theme_import_preview',
-            'local_theme_import_status', 'local_theme_list', 'local_theme_operation_status', 'local_theme_pair'], $names);
+            'local_theme_import_status', 'local_theme_list', 'local_theme_operation_status', 'local_theme_pair', 'local_theme_token_operation'], $names);
         foreach ($tools as $tool) {
             self::assertFalse($tool->inputSchema->additionalProperties, $tool->name);
             self::assertSame([], array_intersect(['owner_id', 'process_id', 'session_id', 'confirmed', 'force', 'apply'],
@@ -65,6 +65,10 @@ class ServeLocalThemeMcpTest extends TestCase
         $operationStatus = collect($tools)->firstWhere('name', 'local_theme_operation_status');
         self::assertSame(['operation_id'], array_keys((array) $operationStatus->inputSchema->properties));
         self::assertFalse($operationStatus->inputSchema->additionalProperties);
+        $tokenOperation = collect($tools)->firstWhere('name', 'local_theme_token_operation');
+        self::assertSame(['pairing_id', 'action', 'target', 'mode', 'value', 'proposed_name', 'theme_id'], array_keys((array) $tokenOperation->inputSchema->properties));
+        self::assertSame(['pairing_id', 'action'], (array) $tokenOperation->inputSchema->required);
+        self::assertFalse($tokenOperation->inputSchema->additionalProperties);
         self::assertSame(3, $responses[2]->id);
         self::assertSame(['error' => 'pairing_required'], (array) $responses[2]->result->structuredContent);
     }

@@ -24,6 +24,7 @@ export type RawVisualProperty = typeof ALL_RAW_VISUAL_PROPERTIES[number]
 export type RawElementOverride = {
   selector: string
   properties: Partial<Record<RawVisualProperty, string>>
+  darkProperties?: Partial<Record<RawVisualProperty, string>>
 }
 
 export type RawSelectorQuality = 'stable' | 'fragile' | 'unavailable'

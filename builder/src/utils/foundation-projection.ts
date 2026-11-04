@@ -1,6 +1,8 @@
 import { FILAMENT_FOUNDATION_INVENTORY } from '@/registry/filament-foundation-inventory'
 import type { FoundationProjection, FoundationState, ThemeMode } from '@/models/foundations.model'
-import { isExplicitPath, isModeInherited, isPaletteExplicit, resolveModeValue } from '@/utils/foundation-provenance'
+import { isExplicitPath, isModeInherited, isPaletteExplicit, isPaletteModeExplicit, resolveModeValue } from '@/utils/foundation-provenance'
+import { resolvePaletteShade } from '@/utils/theme-store-palettes'
+import { resolveUserColorValue } from '@/utils/user-token-resolution'
 
 const PREVIEW_MAPPINGS = FILAMENT_FOUNDATION_INVENTORY.filter((entry) =>
   entry.mapping === 'preview-emulatable' || entry.mapping === 'live-emulation',
@@ -12,7 +14,7 @@ export function projectFoundations(state: FoundationState, mode: ThemeMode): Fou
     mode,
     mappings: PREVIEW_MAPPINGS.filter((entry) => {
       const paletteName = /^palette\.([^.]+)\./.exec(entry.id)?.[1]
-      if (paletteName !== undefined) return isPaletteExplicit(state, paletteName as keyof FoundationState['palettes'])
+       if (paletteName !== undefined) return isPaletteModeExplicit(state, paletteName as keyof FoundationState['palettes'], mode) || (mode === 'dark' && isPaletteExplicit(state, paletteName as keyof FoundationState['palettes']))
       const modePath = /^(surface|border|text)\.(.+)$/.exec(entry.id)
        if (modePath) {
          const collection = modePath[1] === 'surface' ? 'surfaces' : modePath[1] === 'border' ? 'borders' : 'text'
@@ -37,7 +39,7 @@ function foundationValue(state: FoundationState, id: string, mode: ThemeMode): s
   if (id === 'shadow') return state.shadow
 
   const paletteBase = id.match(/^palette\.(primary|success|warning|danger|info|gray)\.base$/)
-  if (paletteBase) return state.palettes[paletteBase[1] as keyof FoundationState['palettes']].base
+  if (paletteBase) return mode === 'dark' ? state.palettes[paletteBase[1] as keyof FoundationState['palettes']].dark?.base ?? state.palettes[paletteBase[1] as keyof FoundationState['palettes']].base : state.palettes[paletteBase[1] as keyof FoundationState['palettes']].base
 
   const shade = id.match(
     /^palette\.(primary|success|warning|danger|info|gray)\.shades\.(50|100|200|300|400|500|600|700|800|900|950)$/,
@@ -46,18 +48,15 @@ function foundationValue(state: FoundationState, id: string, mode: ThemeMode): s
     const [, paletteName, shadeName] = /^palette\.([^.]+)\.shades\.(\d+)$/.exec(id) ?? []
     const palette = state.palettes[paletteName as keyof FoundationState['palettes']]
     const shadeKey = Number(shadeName) as keyof typeof palette.shades
-    return (
-      palette.overrides[shadeKey] ??
-      palette.shades[shadeKey] ??
-      palette.base
-    )
+     return resolvePaletteShade(palette, shadeKey, mode)
   }
 
   const modeValue = id.match(/^(surface|border|text)\.(.+)$/)
   if (modeValue) {
     const collection = modeValue[1] === 'surface' ? state.surfaces : modeValue[1] === 'border' ? state.borders : state.text
     const name = modeValue[2]!
-    return resolveModeValue(state, collection[name as keyof typeof collection], modeValue[1] === 'surface' ? 'surfaces' : modeValue[1] === 'border' ? 'borders' : 'text', name, mode)
+    const value = resolveModeValue<string>(state, collection[name as keyof typeof collection], modeValue[1] === 'surface' ? 'surfaces' : modeValue[1] === 'border' ? 'borders' : 'text', name, mode)
+    return value.startsWith('user.') ? resolveUserColorValue(state.userTokens, value, mode) ?? '' : value
   }
 
   const typography = id.match(/^typography\.(body|heading|mono)$/)

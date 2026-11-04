@@ -65,10 +65,10 @@ describe('preview theme state effects', () => {
     let store: ReturnType<typeof useThemeStore> | undefined
     const wrapper = mount({ setup() { store = useThemeStore(); usePreviewTheme({ theme: store, activeMode: ref('light'), previewUrl: '/demo/admin', iframe }); return {} }, template: '<div />' }, { global: { plugins: [createPinia()] } })
     const message = postMessage.mock.lastCall?.[0]
-    expect(message.theme.schemaVersion).toBe(5)
+    expect(message.theme.schemaVersion).toBe(7)
     expect(message.theme.padding).toEqual([])
     expect(message.paddingProjection).toEqual({ schemaVersion: 1, rules: [] })
-    expect(store?.theme.schemaVersion).toBe(5)
+    expect(store?.theme.schemaVersion).toBe(7)
     wrapper.unmount()
   })
 })

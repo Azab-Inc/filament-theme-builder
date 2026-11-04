@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test'
 
 const baseUrl = process.env.COMPOSE_BASE_URL ?? 'http://127.0.0.1:4175'
+const previewUrl = baseUrl.split('?')[0]
 
 test.skip(process.env.COMPOSE_E2E !== '1', 'Requires a running Compose stack')
 
 test('preview bridge enables the versioned inspector only for its allowed parent', async ({ page }) => {
-  await page.goto(baseUrl)
+  await page.goto(previewUrl)
   const iframe = page.locator('iframe[title="Filament preview"]')
   await expect(iframe).toBeVisible()
 
@@ -37,7 +38,7 @@ test('preview bridge enables the versioned inspector only for its allowed parent
 })
 
 test('preview inspector sends hover and selection evidence for the nearest semantic ancestor', async ({ page }) => {
-  await page.goto(baseUrl)
+  await page.goto(previewUrl)
   const frame = page.frameLocator('iframe[title="Filament preview"]')
   await expect(frame.getByRole('heading', { name: /dashboard/i })).toBeVisible()
 
@@ -54,13 +55,12 @@ test('preview inspector sends hover and selection evidence for the nearest seman
     const result = await frameWindow.eval(`(() => {
       const sidebar = document.querySelector('.fi-sidebar');
       if (!sidebar) return false;
-      const nested = sidebar.querySelector('a span') ?? sidebar.querySelector('a') ?? sidebar;
-      nested.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+       sidebar.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
       const hovered = sidebar.classList.contains('ftb-inspector-hover');
       sidebar.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }));
       const hoverCleared = !sidebar.classList.contains('ftb-inspector-hover');
-      nested.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
-      nested.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+       sidebar.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+       sidebar.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
       return { hovered, hoverCleared, selected: sidebar.classList.contains('ftb-inspector-selected') };
     })()`)
     await new Promise((resolve) => setTimeout(resolve, 50))

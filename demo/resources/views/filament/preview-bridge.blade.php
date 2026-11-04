@@ -92,13 +92,14 @@
         const overrideIdentities = new Set(controlDefinitions.keys());
         const resolveColorReference = (value) => {
             if (typeof value !== 'string') return null;
-            if (/^var\(--(?:primary|success|warning|danger|info|gray)-(?:50|100|200|300|400|500|600|700|800|900|950)\)$/.test(value)) return value;
+            if (/^var\(--(?:ftb-palette-)?(?:primary|success|warning|danger|info|gray)-(?:50|100|200|300|400|500|600|700|800|900|950)\)$/.test(value)) return value;
             const match = /^var\(--(?:color-)?([a-z]+)-(50|100|200|300|400|500|600|700|800|900|950)\)$/.exec(value);
             if (!match || !tailwindColorFamilies.includes(match[1]) || !tailwindColorShades.includes(Number(match[2]))) return null;
             const literal = tailwindColorValues[match[1]]?.[tailwindColorShades.indexOf(Number(match[2]))] ?? getComputedStyle(document.documentElement).getPropertyValue(`--color-${match[1]}-${match[2]}`).trim();
             return literal || null;
         };
-        const safeColor = (value) => typeof value === 'string' && (/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(value) || resolveColorReference(value) !== null);
+        @include('filament.preview-user-tokens')
+        const safeColor = (value, tokens) => typeof value === 'string' && (/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(value) || resolveColorReference(value) !== null || (value.startsWith('user.') && resolveUserToken(value, tokens, 'light') !== null));
         const systemMonoFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
         const safeFont = (value) => isRecord(value) && ['system', 'curated', 'custom'].includes(value.kind) && typeof value.name === 'string' && /^[A-Za-z0-9][A-Za-z0-9 .,_-]{0,99}$/.test(value.name) && typeof value.family === 'string' && (value.family === systemMonoFamily || /^[A-Za-z0-9][A-Za-z0-9 .,_-]*$/.test(value.family)) && (value.kind === 'curated' ? exactKeys(value, ['kind', 'name', 'family', 'provider']) && value.provider === 'google-fonts' && fontAllowlist.get(value.name) === value.family : exactKeys(value, ['kind', 'name', 'family']) && (value.kind !== 'custom' || value.name === value.family));
         const mapping = (id, property, selectors, variable) => ({ id, mapping: property === 'color' || property === 'fontFamily' ? 'preview-emulatable' : 'live-emulation', property, selectors, ...(variable ? { variable } : {}) });
@@ -115,27 +116,30 @@
         for (const id of ['density', 'radius', 'borderWidth', 'shadow']) canonicalFoundationMappings.set(id, mapping(id, id === 'density' ? 'density' : id, componentSelectors));
 
         const foundationKeys = ['palettes', 'surfaces', 'borders', 'text', 'typography', 'spacing', 'density', 'radius', 'borderWidth', 'shadow', 'explicitPaths', 'provenanceVersion'];
-        const exactKeys = (value, keys) => value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === keys.length && keys.every((key) => Object.prototype.hasOwnProperty.call(value, key));
+        const exactKeys = (value, keys, optional = []) => value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length >= keys.length && Object.keys(value).length <= keys.length + optional.length && keys.every((key) => Object.prototype.hasOwnProperty.call(value, key)) && Object.keys(value).every((key) => keys.includes(key) || optional.includes(key));
         const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
         const isFoundationRecord = (foundations) => {
-            if (!exactKeys(foundations, foundationKeys) || !exactKeys(foundations.palettes, paletteNames) || !exactKeys(foundations.surfaces, Object.keys(surfaceSelectors)) || !exactKeys(foundations.borders, Object.keys(borderSelectors)) || !exactKeys(foundations.text, Object.keys(textSelectors)) || !exactKeys(foundations.typography, Object.keys(typographySelectors)) || !exactKeys(foundations.spacing, Object.keys(spacingSelectors))) return false;
+            if (!exactKeys(foundations, foundationKeys, ['userTokens']) || !exactKeys(foundations.palettes, paletteNames) || !exactKeys(foundations.surfaces, Object.keys(surfaceSelectors)) || !exactKeys(foundations.borders, Object.keys(borderSelectors)) || !exactKeys(foundations.text, Object.keys(textSelectors)) || !exactKeys(foundations.typography, Object.keys(typographySelectors)) || !exactKeys(foundations.spacing, Object.keys(spacingSelectors))) return false;
+            if (foundations.userTokens !== undefined && !validUserTokens(foundations.userTokens)) return false;
             if (!Array.isArray(foundations.explicitPaths) || new Set(foundations.explicitPaths).size !== foundations.explicitPaths.length || foundations.explicitPaths.some((path) => typeof path !== 'string' || !isSafeExplicitPath(path))) return false;
             if (foundations.provenanceVersion !== 1 || !['compact', 'default', 'spacious'].includes(foundations.density) || !['none', 'sm', 'md', 'lg', 'xl', 'full'].includes(foundations.radius) || !['none', 'sm', 'md', 'lg', 'xl'].includes(foundations.shadow) || typeof foundations.borderWidth !== 'number' || !Number.isFinite(foundations.borderWidth) || foundations.borderWidth < 0 || foundations.borderWidth > 8) return false;
             for (const name of paletteNames) {
                 const value = foundations.palettes[name];
-                if (!exactKeys(value, ['base', 'shades', 'overrides']) || !isHexColor(value.base) || !exactKeys(value.shades, paletteShades.map(String)) || !isRecord(value.overrides)) return false;
+                if (!exactKeys(value, ['base', 'shades', 'overrides'], ['dark']) || !isHexColor(value.base) || !exactKeys(value.shades, paletteShades.map(String)) || !isRecord(value.overrides)) return false;
                 if (!paletteShades.every((shade) => isHexColor(value.shades[shade]) && (value.overrides[shade] === undefined || isHexColor(value.overrides[shade])))) return false;
-                if (Object.keys(value.overrides).some((shade) => !paletteShades.includes(Number(shade)) || !isHexColor(value.overrides[shade]))) return false;
+                if (Object.keys(value.overrides).some((shade) => String(Number(shade)) !== shade || !paletteShades.includes(Number(shade)) || !isHexColor(value.overrides[shade]))) return false;
+                if (value.dark && [value.dark.shades, value.dark.overrides].some((collection) => isRecord(collection) && Object.keys(collection).some((shade) => String(Number(shade)) !== shade))) return false;
+                if (value.dark !== undefined && (!isRecord(value.dark) || Object.keys(value.dark).some((key) => !['base', 'shades', 'overrides'].includes(key)) || (value.dark.base !== undefined && !isHexColor(value.dark.base)) || (value.dark.shades !== undefined && (!isRecord(value.dark.shades) || Object.keys(value.dark.shades).some((shade) => !paletteShades.includes(Number(shade)) || !isHexColor(value.dark.shades[shade])))) || (value.dark.overrides !== undefined && (!isRecord(value.dark.overrides) || Object.keys(value.dark.overrides).some((shade) => !paletteShades.includes(Number(shade)) || !isHexColor(value.dark.overrides[shade])))))) return false;
             }
             if (foundations.explicitPaths.some((path) => {
                 const match = /^palettes\.([^.]+)\.overrides\.(\d+)$/.exec(path);
                 return match && !Object.prototype.hasOwnProperty.call(foundations.palettes[match[1]].overrides, match[2]);
             })) return false;
-            for (const collection of [foundations.surfaces, foundations.borders, foundations.text]) for (const value of Object.values(collection)) if (!exactKeys(value, ['light', 'dark']) || !safeColor(value.light) || !safeColor(value.dark)) return false;
+            for (const collection of [foundations.surfaces, foundations.borders, foundations.text]) for (const value of Object.values(collection)) if (!exactKeys(value, ['light', 'dark']) || !safeColor(value.light, foundations.userTokens) || !safeColor(value.dark, foundations.userTokens)) return false;
             if (!Object.values(foundations.typography).every(safeFont)) return false;
             return Object.values(foundations.spacing).every((value) => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 256);
         };
-        const isSafeExplicitPath = (path) => /^(?:palettes\.(?:primary|success|warning|danger|info|gray)\.(?:base|overrides\.(?:50|100|200|300|400|500|600|700|800|900|950))|(?:surfaces\.(?:page|sidebar|topbar|card|elevated|input)|borders\.(?:default|strong)|text\.(?:primary|muted|disabled))\.(?:light|dark)|typography\.(?:body|heading|mono)|spacing\.(?:0|px|0\.5|1|1\.5|2|3|4|6|8)|density|radius|borderWidth|shadow)$/.test(path);
+         const isSafeExplicitPath = (path) => /^(?:palettes\.(?:primary|success|warning|danger|info|gray)\.(?:base|overrides\.(?:50|100|200|300|400|500|600|700|800|900|950)|dark\.(?:base|overrides\.(?:50|100|200|300|400|500|600|700|800|900|950)))|(?:surfaces\.(?:page|sidebar|topbar|card|elevated|input)|borders\.(?:default|strong)|text\.(?:primary|muted|disabled))\.(?:light|dark)|typography\.(?:body|heading|mono)|spacing\.(?:0|px|0\.5|1|1\.5|2|3|4|6|8)|density|radius|borderWidth|shadow)$/.test(path);
         const sameArray = (left, right) => Array.isArray(left) && left.length === right.length && left.every((value, index) => value === right[index]);
         const isHexColor = (value) => typeof value === 'string' && /^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(value);
         const isSafeToken = (value) => typeof value === 'string' && safeToken.test(value);
@@ -149,12 +153,12 @@
             if (override.scope === 'state') return hasComponent && hasVariant && hasState && override.componentId === definition.component && definition.variants.includes(override.variantId) && definition.states.includes(override.stateId);
             return false;
         };
-        const isValidOverrideValue = (value, definition) => definition.type === 'color' && isHexColor(value);
-        const isSafeOverride = (override) => {
-            if (!isRecord(override) || !isSafeToken(override.targetId) || !isSafeToken(override.controlId) || !['global', 'component', 'variant', 'state'].includes(override.scope) || Object.keys(override).some((key) => !['targetId', 'controlId', 'scope', 'componentId', 'variantId', 'stateId', 'value'].includes(key))) return false;
+        const isValidOverrideValue = (value, definition, tokens) => definition.type === 'color' && (isHexColor(value) || (typeof value === 'string' && /^var\(--(?:ftb-palette-)?(?:primary|success|warning|danger|info|gray)-(?:50|100|200|300|400|500|600|700|800|900|950)\)$/.test(value)) || (typeof value === 'string' && value.startsWith('user.') && resolveUserToken(value, tokens, 'light') !== null));
+        const isSafeOverride = (override, tokens) => {
+             if (!isRecord(override) || !isSafeToken(override.targetId) || !isSafeToken(override.controlId) || !['global', 'component', 'variant', 'state'].includes(override.scope) || Object.keys(override).some((key) => !['targetId', 'controlId', 'scope', 'componentId', 'variantId', 'stateId', 'value', 'darkValue', 'mode'].includes(key))) return false;
             const identity = `${override.targetId}\u0000${override.controlId}`;
             const definition = controlDefinitions.get(identity);
-            return overrideIdentities.has(identity) && definition && validateOverrideScope(override, definition) && isValidOverrideValue(override.value, definition) && ['componentId', 'variantId', 'stateId'].every((key) => override[key] === undefined || isSafeToken(override[key]));
+              return overrideIdentities.has(identity) && definition && validateOverrideScope(override, definition) && (override.value === undefined || isValidOverrideValue(override.value, definition, tokens)) && (override.darkValue === undefined || isValidOverrideValue(override.darkValue, definition, tokens)) && (override.value !== undefined || override.darkValue !== undefined) && (override.mode === undefined || ['light', 'dark'].includes(override.mode)) && ['componentId', 'variantId', 'stateId'].every((key) => override[key] === undefined || isSafeToken(override[key]));
         };
         const isAcceptedProjection = (projection, foundations) => {
             if (!isRecord(projection) || projection.schemaVersion !== 1 || projection.compatibility !== 'filament-5.9' || !['light', 'dark'].includes(projection.mode) || !Array.isArray(projection.mappings)) return false;
@@ -196,8 +200,12 @@
         const rawVisualProperties = ['color', 'background-color', 'border-color', 'border-width', 'border-radius', 'box-shadow', 'opacity', 'padding', 'margin', 'font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'text-decoration', 'border-style', 'text-align', 'white-space'];
         const rawSelectorPattern = /^(?:\.fi-[A-Za-z0-9_-]+)(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus))?(?:\s+\.fi-[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus))?)*$/;
         const rawValuePattern = /[;{}<>]|\/\*|\*\/|url\s*\(|@(?:import|supports|media|layer|font-face)|expression\s*\(|javascript\s*:/i;
-        const isSafeRawPropertyValue = (property, value) => {
+        const columnSelectorPattern = /^\.fi-ta :is\(\.fi-ta-header-cell, \.fi-ta-cell\):nth-child\(([1-9]|[12]\d|3[0-2])\)$/;
+        const isSafeRawSelector = (value) => typeof value === 'string' && (rawSelectorPattern.test(value) || columnSelectorPattern.test(value)) && !/\.fi-ta-(?:header-cell|cell)-[^\s]+\.(?!fi-)/.test(value);
+        const isSafeRawPropertyValue = (property, value, tokens) => {
             if (typeof value !== 'string' || value.length === 0 || value.length > 300 || rawValuePattern.test(value)) return false;
+            if (['color', 'background-color', 'border-color'].includes(property) && /^var\(--ftb-palette-(?:primary|success|warning|danger|info|gray)-(?:50|100|200|300|400|500|600|700|800|900|950)\)$/.test(value)) return true;
+            if (['color', 'background-color', 'border-color'].includes(property) && value.startsWith('user.')) return resolveUserToken(value, tokens, 'light') !== null;
             if (['color', 'background-color', 'border-color'].includes(property)) return /^(?:#[\da-f]{3,8}|(?:rgb|hsl|hwb|lab|lch|oklab|oklch)a?\([^;{}()]+\)|transparent|var\(--(?:color-)?(?:primary|success|warning|danger|info|gray)(?:-(?:50|100|200|300|400|500|600|700|800|900|950))?\))$/i.test(value);
             if (['border-width', 'border-radius', 'font-size', 'letter-spacing'].includes(property)) return /^(?:0|(?:0|[1-9]\d{0,3})(?:\.\d+)?(?:px|rem|em|ex|ch|lh|rlh|vw|vh|vmin|vmax|%)?)$/i.test(value);
             if (['padding', 'margin'].includes(property)) return /^(?:0|(?:0|[1-9]\d{0,3})(?:\.\d+)?(?:px|rem|em|ex|ch|lh|rlh|vw|vh|vmin|vmax|%)?)(?:\s+(?:0|(?:0|[1-9]\d{0,3})(?:\.\d+)?(?:px|rem|em|ex|ch|lh|rlh|vw|vh|vmin|vmax|%)?)){0,3}$/i.test(value);
@@ -212,11 +220,12 @@
             if (property === 'white-space') return /^(?:normal|nowrap|pre|pre-wrap|pre-line|break-spaces)$/.test(value);
             return false;
         };
-        const isSafeRawOverride = (override) => isRecord(override)
-            && Object.keys(override).every((key) => ['selector', 'properties'].includes(key))
-            && typeof override.selector === 'string' && rawSelectorPattern.test(override.selector)
-            && isRecord(override.properties) && Object.keys(override.properties).length > 0
-            && Object.keys(override.properties).every((property) => rawVisualProperties.includes(property) && isSafeRawPropertyValue(property, override.properties[property]));
+        const isSafeRawOverride = (override, tokens) => isRecord(override)
+             && Object.keys(override).every((key) => ['selector', 'properties', 'darkProperties'].includes(key))
+            && isSafeRawSelector(override.selector)
+             && (override.darkProperties === undefined || isRecord(override.darkProperties))
+             && (Object.keys(override.properties).length > 0 || Object.keys(override.darkProperties ?? {}).length > 0)
+              && [...Object.entries(override.properties), ...Object.entries(override.darkProperties ?? {})].every(([property, value]) => rawVisualProperties.includes(property) && isSafeRawPropertyValue(property, value, tokens));
         const isSafePaddingValue = (value) => value === '0' || (typeof value === 'string' && /^(?:0|[1-9]\d{0,3})(?:\.\d+)?(?:px|rem|em|ex|ch|lh|rlh|vw|vh|vmin|vmax|%)$/.test(value));
         const isAcceptedPaddingProjection = (projection, theme) => {
             if (!isRecord(projection) || projection.schemaVersion !== 1 || !Array.isArray(projection.rules)) return false;
@@ -260,18 +269,19 @@
             return keys.length > 0 && Object.keys(record).length === keys.length && keys.every((key) => Object.prototype.hasOwnProperty.call(record, key)) && isPaddingContextApplicable(paddingTargets.get(record.targetId) ?? { targetKind: 'leaf', sectionId: record.sectionId }, context);
         };
         const isAcceptedTheme = (message) => {
-            if (!isRecord(message) || message.type !== 'ftb:theme:update' || message.schemaVersion !== 1 || !['light', 'dark'].includes(message.activeMode) || !isRecord(message.projection) || message.activeMode !== message.projection.mode || !isRecord(message.theme) || !(message.theme.schemaVersion === 5) || !isAcceptedPaddingProjection(message.paddingProjection, message.theme)) return false;
-             const hasSupportedKeys = exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'padding']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'padding']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'branding', 'padding']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding', 'padding']);
+             if (!isRecord(message) || message.type !== 'ftb:theme:update' || message.schemaVersion !== 1 || !['light', 'dark'].includes(message.activeMode) || !isRecord(message.projection) || message.activeMode !== message.projection.mode || !isRecord(message.theme) || ![5, 6, 7].includes(message.theme.schemaVersion) || !isAcceptedPaddingProjection(message.paddingProjection, message.theme)) return false;
+             const hasSupportedKeys = exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'padding'], ['icons', 'branding', 'modeLinks']);
+             if (message.theme.schemaVersion === 7 && (!isRecord(message.theme.modeLinks) || !message.theme.foundations?.userTokens)) return false;
              const paddingValid = Array.isArray(message.theme.padding) && message.theme.padding.every(isSafePaddingRecord) && new Set(message.theme.padding.map(paddingIdentity)).size === message.theme.padding.length;
              const foundationValid = isFoundationRecord(message.theme.foundations);
-             const projectionValid = isAcceptedProjection(message.projection, message.theme.foundations);
-             const accepted = hasSupportedKeys && paddingValid && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && foundationValid && Array.isArray(message.theme.overrides) && message.theme.overrides.every(isSafeOverride) && message.theme.overrides.every((override) => semanticOverrideMappings.has(`${override.targetId}\u0000${override.controlId}`)) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && Array.isArray(message.theme.rawOverrides) && message.theme.rawOverrides.every(isSafeRawOverride) && new Set(message.theme.rawOverrides.map((override) => override.selector)).size === message.theme.rawOverrides.length && message.theme.customCss === '' && (message.theme.branding === undefined || isSafeBranding(message.theme.branding)) && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && projectionValid;
-             return accepted;
+             const projectionValid = foundationValid && isAcceptedProjection(message.projection, message.theme.foundations);
+              const accepted = hasSupportedKeys && paddingValid && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && foundationValid && Array.isArray(message.theme.overrides) && message.theme.overrides.every((override) => isSafeOverride(override, message.theme.foundations.userTokens)) && message.theme.overrides.every((override) => semanticOverrideMappings.has(`${override.targetId}\u0000${override.controlId}`)) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && Array.isArray(message.theme.rawOverrides) && message.theme.rawOverrides.every((override) => isSafeRawOverride(override, message.theme.foundations.userTokens)) && new Set(message.theme.rawOverrides.map((override) => override.selector)).size === message.theme.rawOverrides.length && message.theme.customCss === '' && (message.theme.branding === undefined || isSafeBranding(message.theme.branding)) && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && projectionValid;
+             return accepted && (message.theme.modeLinks === undefined || validModeLinks(message.theme.modeLinks, message.theme));
         };
          const projectionMatchesCanonicalFoundation = (projection, foundations) => {
              const expectedMappings = [...canonicalFoundationMappings.values()].filter((entry) => {
                  const palette = /^palette\.([^.]+)\./.exec(entry.id)?.[1];
-                 if (palette) return foundations.explicitPaths.some((path) => path === `palettes.${palette}.base` || path.startsWith(`palettes.${palette}.overrides.`));
+                  if (palette) return foundations.explicitPaths.some((path) => path === `palettes.${palette}.base` || path.startsWith(`palettes.${palette}.overrides.`) || (projection.mode === 'dark' && (path === `palettes.${palette}.dark.base` || path.startsWith(`palettes.${palette}.dark.overrides.`))));
                  const modePath = /^(surface|border|text)\.(.+)$/.exec(entry.id);
                  if (modePath) {
                      const collection = modePath[1] === 'surface' ? 'surfaces' : modePath[1] === 'border' ? 'borders' : 'text';
@@ -287,14 +297,30 @@
                 candidate.id === expected.id && candidate.mapping === expected.mapping && candidate.property === expected.property && sameArray(candidate.selectors, expected.selectors) && candidate.variable === expected.variable && candidate.value === expected.value,
             ));
         };
+        // Match the canonical encoded-sRGB generator; derived shade caches are not authority.
+        const generatedPaletteShade = (base, shade) => {
+            if (shade === 500) return base.toLowerCase();
+            const fraction = shade < 500 ? shade / 1000 : (shade - 500) / 500;
+            const target = shade < 500 ? 255 : 0;
+            const channels = base.slice(1, 7).match(/.{2}/g).map((part) => {
+                const channel = parseInt(part, 16);
+                return Math.round(channel + (target - channel) * fraction).toString(16).padStart(2, '0');
+            });
+            return `#${channels.join('')}${base.slice(7).toLowerCase()}`;
+        };
         const foundationValue = (foundations, id, mode) => {
             if (id === 'density' || id === 'radius' || id === 'borderWidth' || id === 'shadow') return foundations[id];
             const paletteBase = /^palette\.([^.]+)\.base$/.exec(id);
-            if (paletteBase) return foundations.palettes[paletteBase[1]].base;
+             if (paletteBase) return mode === 'dark' ? foundations.palettes[paletteBase[1]].dark?.base ?? foundations.palettes[paletteBase[1]].base : foundations.palettes[paletteBase[1]].base;
             const paletteShade = /^palette\.([^.]+)\.shades\.(\d+)$/.exec(id);
             if (paletteShade) {
                 const palette = foundations.palettes[paletteShade[1]];
-                return palette.overrides[paletteShade[2]] ?? palette.shades[paletteShade[2]] ?? palette.base;
+                 const shade = Number(paletteShade[2]);
+                 if (mode === 'dark') {
+                     if (palette.dark?.overrides?.[shade] !== undefined) return palette.dark.overrides[shade].toLowerCase();
+                     if (palette.dark?.base !== undefined) return generatedPaletteShade(palette.dark.base, shade);
+                 }
+                 return palette.overrides[shade]?.toLowerCase() ?? generatedPaletteShade(palette.base, shade);
             }
             const modeValue = /^(surface|border|text)\.(.+)$/.exec(id);
              if (modeValue) {
@@ -303,7 +329,7 @@
                  const darkInheritsLight = mode === 'dark'
                      && foundations.explicitPaths.includes(`${collection}.${modeValue[2]}.light`)
                      && !foundations.explicitPaths.includes(`${collection}.${modeValue[2]}.dark`);
-                 return darkInheritsLight ? values.light : values[mode];
+                 return resolveUserToken(darkInheritsLight ? values.light : values[mode], foundations.userTokens, mode);
              }
             const typography = /^typography\.(body|heading|mono)$/.exec(id);
             if (typography) return foundations.typography[typography[1]].family;
@@ -334,6 +360,10 @@
                  document.body.style.fontFamily = `var(--ftb-brand-font-family)`;
              }
              const rules = [`:root { color-scheme: ${message.projection.mode}; }`];
+             for (const name of paletteNames) for (const shade of paletteShades) rules.push(`:root { --ftb-palette-${name}-${shade}: ${foundationValue(message.theme.foundations, `palette.${name}.shades.${shade}`, message.activeMode)}; }`);
+             const tokens = message.theme.foundations.userTokens;
+             for (const [name, pair] of Object.entries(tokens?.colors ?? {})) rules.push(`:root { --ftb-user-color-${name}: ${pair[message.activeMode] ?? pair.light}; }`);
+             for (const [name, palette] of Object.entries(tokens?.palettes ?? {})) for (const [shade, pair] of Object.entries(palette.shades)) rules.push(`:root { --ftb-user-palette-${name}-${shade}: ${pair[message.activeMode] ?? pair.light}; }`);
              for (const rule of message.paddingProjection.rules) rules.push(`${rule.selector} { ${Object.entries(rule.declarations).map(([edge, value]) => `padding-${edge}: ${value} !important;`).join(' ')} }`);
             for (const candidate of message.projection.mappings) {
                 const selectors = candidate.selectors.join(',');
@@ -361,16 +391,19 @@
                 else if (candidate.property === 'shadow') rules.push(`${selectors} { box-shadow: ${shadowValues[candidate.value]}; }`);
             }
               const semanticOverrides = [...message.theme.overrides].sort((left, right) => [left.targetId, left.controlId, left.scope, left.componentId ?? '', left.variantId ?? '', left.stateId ?? ''].join('\u0000').localeCompare([right.targetId, right.controlId, right.scope, right.componentId ?? '', right.variantId ?? '', right.stateId ?? ''].join('\u0000')));
-              for (const override of semanticOverrides) {
-                  const mapping = semanticOverrideMappings.get(`${override.targetId}\u0000${override.controlId}`);
-                  if (!mapping || typeof override.value !== 'string') return false;
+               for (const override of semanticOverrides) {
+                   if ((override.mode ?? 'light') !== message.activeMode && !(message.activeMode === 'dark' && override.mode === undefined)) continue;
+                   const mapping = semanticOverrideMappings.get(`${override.targetId}\u0000${override.controlId}`);
+                   if (!mapping) return false;
                    const baseSelector = override.scope === 'global' ? (mapping.globalSelector ?? mapping.selector) : override.scope === 'component' ? (mapping.componentSelector ?? mapping.selector) : mapping.selector;
                     const definition = controlDefinitions.get(`${override.targetId}\u0000${override.controlId}`);
                     if (override.scope === 'state' && (!definition?.states.includes(override.stateId) || (override.stateId !== 'default' && !supportedPseudoStates.includes(override.stateId)))) return false;
                     const selector = override.scope === 'state' && override.stateId !== 'default' ? `${baseSelector}:${override.stateId}` : baseSelector;
-                  rules.push(`${selector} { ${mapping.property}: ${override.value} !important; }`);
-              }
-             const expandRawSelector = (selector) => {
+                     const value = resolveUserToken(message.activeMode === 'dark' ? (override.darkValue ?? override.value) : override.value, tokens, message.activeMode);
+                    if (typeof value !== 'string') continue;
+                   rules.push(`${selector} { ${mapping.property}: ${value} !important; }`);
+               }
+              const expandRawSelector = (selector) => {
                   const match = /^(?:(\.fi-sidebar-item-btn:(?:hover|focus)|\.fi-sidebar-item\.fi-active) )?\.fi-sidebar-item-label$/.exec(selector);
                   if (!match) return [selector];
                   return [selector, `${match[1] ? `${match[1]} ` : ''}.fi-sidebar-item-icon`];
@@ -379,7 +412,10 @@
                   const leftIcon = /(?:^| )\.fi-sidebar-item-icon$/.test(left.selector);
                   const rightIcon = /(?:^| )\.fi-sidebar-item-icon$/.test(right.selector);
                   return Number(leftIcon) - Number(rightIcon) || left.selector.localeCompare(right.selector);
-              }).flatMap((override) => expandRawSelector(override.selector).map((selector) => `${selector} { ${Object.entries(override.properties).sort(([left], [right]) => left.localeCompare(right)).map(([property, value]) => `${property}: ${value};`).join(' ')} }`));
+              }).flatMap((override) => {
+                   const properties = message.activeMode === 'dark' ? { ...override.properties, ...(override.darkProperties ?? {}) } : override.properties;
+                    return Object.keys(properties).length ? expandRawSelector(override.selector).map((selector) => `${selector} { ${Object.entries(properties).sort(([left], [right]) => left.localeCompare(right)).map(([property, value]) => `${property}: ${resolveUserToken(value, tokens, message.activeMode)};`).join(' ')} }`) : [];
+              });
              rules.push(...rawOverrideRules);
             const iconConfiguration = message.theme.icons ?? { pack: 'default', overrides: {} };
             const preset = iconPresets[iconConfiguration.pack];
@@ -416,6 +452,8 @@
         let inspectorParentOrigin = null;
         let hoveredTarget = null;
         let selectedTarget = null;
+        let scopedTargets = [];
+        const clearScope = () => { scopedTargets.forEach((target) => target.classList.remove('ftb-inspector-selected')); scopedTargets = []; };
 
         const postInspectorEvent = (message) => {
             if (inspectorParentOrigin && window.parent !== window) {
@@ -425,8 +463,13 @@
         const inspectorTarget = (node) => {
             if (!(node instanceof Element)) return null;
             if (node.closest('script, style, link, meta, head, #ftb-preview-bridge, #ftb-inspector-style')) return null;
+            const tableCell = node.closest('.fi-ta-header-cell, .fi-ta-cell');
+            if (tableCell) return tableCell;
             const interactiveAncestor = node.closest('button, a, [role="button"]');
+            if (node instanceof HTMLCanvasElement) return node.closest('.fi-wi-chart-canvas-ctn, .fi-wi-chart, .fi-section');
             if (node instanceof SVGElement || node.closest('svg')) {
+                const sidebarIcon = node.closest('.fi-sidebar-item-icon');
+                if (sidebarIcon) return sidebarIcon;
                 return interactiveAncestor ?? node.closest('[class*="fi-"]');
             }
             if (node === document.documentElement || node === document.body) return null;
@@ -434,8 +477,29 @@
             return node;
         };
         const inspectorTargetSelector = (target) => {
-            const classes = [...target.classList].filter((name) => /^fi-[A-Za-z0-9_-]+$/.test(name));
+            if (target.classList.contains('fi-ta-header-cell')) return '.fi-ta-header-cell';
+            if (target.classList.contains('fi-ta-cell')) return '.fi-ta-cell';
+            if (target.classList.contains('fi-wi-chart-canvas-ctn')) return '.fi-wi-chart-canvas-ctn';
+            if (target.classList.contains('fi-sidebar-item-icon')) return '.fi-sidebar-item-icon';
+            const classes = [...target.classList].filter((name) => /^fi-[A-Za-z0-9_-]+$/.test(name) && !/^fi-ta-(header-cell|cell)-.+$/.test(name));
             return classes.length ? `.${classes.join('.')}` : undefined;
+        };
+        const inspectorTargetScope = (target) => {
+            const table = target.closest('.fi-ta');
+            if (!table) return undefined;
+            const headerCell = target.closest('.fi-ta-header-cell');
+            const bodyCell = target.closest('.fi-ta-cell');
+            if (headerCell || bodyCell) {
+                const cell = headerCell || bodyCell;
+                const row = cell.parentElement;
+                const columnIndex = row ? [...row.children].indexOf(cell) + 1 : 0;
+                if (columnIndex < 1 || columnIndex > 32) return undefined;
+                return { kind: 'table-column', columnIndex, parts: [...new Set([...(headerCell ? ['header'] : []), ...(bodyCell ? ['body'] : [])])] };
+            }
+            if (target.closest('.fi-ta-header')) return { kind: 'table-header' };
+            if (target.closest('.fi-ta-row')) return { kind: 'table-row' };
+            if (target.closest('.fi-ta-table, .fi-ta-content')) return { kind: 'table-body' };
+            return { kind: 'table-container' };
         };
         const inspectorEvidence = (target) => {
             const classNames = [];
@@ -443,10 +507,10 @@
             const compoundSelectors = [];
             const targetScopedSelectors = [];
             const selectorPath = [];
-            const targetFilamentClasses = [...target.classList].filter((name) => /^fi-[A-Za-z0-9_-]+$/.test(name)).slice(0, 30);
+            const targetFilamentClasses = [...target.classList].filter((name) => /^fi-[A-Za-z0-9_-]+$/.test(name) && !/^fi-ta-(header-cell|cell)-.+$/.test(name)).slice(0, 30);
             let current = target;
             for (let depth = 0; current && depth < 5; depth++, current = current.parentElement) {
-                const filamentClasses = [...current.classList].filter((name) => /^fi-[A-Za-z0-9_-]+$/.test(name));
+                const filamentClasses = [...current.classList].filter((name) => /^fi-[A-Za-z0-9_-]+$/.test(name) && !/^fi-ta-(header-cell|cell)-.+$/.test(name));
                 for (const name of filamentClasses) {
                     classNames.push(name);
                     candidateSelectors.push(`.${name}`);
@@ -470,7 +534,15 @@
             const uniqueClasses = [...new Set(classNames)].slice(0, 30);
             const label = target.getAttribute('aria-label') || target.getAttribute('title');
             const semanticBreadcrumb = label ? label.slice(0, 200) : [...target.classList].filter((name) => name.startsWith('fi-')).slice(0, 3).join(' / ');
-            return { candidateSelectors: uniqueSelectors, classNames: uniqueClasses, targetSelector: targetSelector ?? null, ...(semanticBreadcrumb ? { semanticBreadcrumb } : {}) };
+            const targetScope = inspectorTargetScope(target);
+            const surfaces = [];
+            for (let current = target; current && surfaces.length < 8; current = current.parentElement) {
+                const classes = [...current.classList].filter((name) => /^fi-[A-Za-z0-9_-]+$/.test(name) && !/^fi-(?:color|active|clickable)(?:-|$)/.test(name) && !/^fi-ta-(header-cell|cell)-.+$/.test(name));
+                if (!classes.length) continue;
+                const selector = `.${classes[classes.length - 1]}`;
+                if (!surfaces.some((surface) => surface.selector === selector)) surfaces.push({ label: `Surface: ${selector}`, selector });
+            }
+            return { candidateSelectors: uniqueSelectors, classNames: uniqueClasses, targetSelector: targetSelector ?? null, surfaces, ...(targetScope ? { targetScope } : {}), ...(semanticBreadcrumb ? { semanticBreadcrumb } : {}) };
         };
         const ensureInspectorStyle = () => {
             let style = document.getElementById(inspectorStyleId);
@@ -488,6 +560,7 @@
             else selectedTarget = target;
         };
         const clearInspector = () => {
+            clearScope();
             if (hoveredTarget) hoveredTarget.classList.remove('ftb-inspector-hover');
             if (selectedTarget) selectedTarget.classList.remove('ftb-inspector-selected');
             hoveredTarget = null;
@@ -537,6 +610,7 @@
             event.stopPropagation();
             event.stopImmediatePropagation();
             ensureInspectorStyle();
+            clearScope();
             if (selectedTarget) selectedTarget.classList.remove('ftb-inspector-selected');
             if (hoveredTarget) hoveredTarget.classList.remove('ftb-inspector-hover');
             hoveredTarget = null;
@@ -546,6 +620,12 @@
         window.addEventListener('message', (event) => {
             if (!allowedOrigins.includes(event.origin) || event.source !== window.parent) return;
             const message = event.data;
+            if (inspectorEnabled && message?.type === 'ftb:inspector:scope' && message.protocolVersion === INSPECTOR_PROTOCOL_VERSION && Object.keys(message).length === 3 && isSafeRawSelector(message.selector)) {
+                clearScope();
+                if (selectedTarget) selectedTarget.classList.remove('ftb-inspector-selected');
+                scopedTargets = [...document.querySelectorAll(message.selector)].slice(0, 1000);
+                scopedTargets.forEach((target) => target.classList.add('ftb-inspector-selected'));
+            }
             if (message && message.protocolVersion === INSPECTOR_PROTOCOL_VERSION && Object.keys(message).length === 2) {
                 if (message.type === 'ftb:inspector:enable') enableInspector(event.origin);
                 else if (message.type === 'ftb:inspector:disable' && inspectorEnabled) disableInspector();

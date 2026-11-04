@@ -12,7 +12,7 @@ describe('canonical V4 serialization', () => {
     const restored = deserializeTheme(serializeCanonicalTheme(state), registry)
     expect(restored).toMatchObject({ valid: true })
     if (restored.valid) {
-      expect(restored.state.schemaVersion).toBe(5)
+      expect(restored.state.schemaVersion).toBe(7)
       expect('rawOverrides' in restored.state ? restored.state.rawOverrides : undefined).toEqual(state.rawOverrides)
       expect('overrides' in restored.state ? restored.state.overrides : undefined).toEqual([])
     }
@@ -34,7 +34,7 @@ describe('canonical V4 serialization', () => {
     const restored = deserializeTheme(v3, registry)
     expect(restored).toMatchObject({ valid: true })
     if (restored.valid) {
-      expect(restored.state.schemaVersion).toBe(5)
+      expect(restored.state.schemaVersion).toBe(7)
       expect(restored.state).toMatchObject({ colors: v3.colors, overrides: v3.overrides })
       expect('icons' in restored.state ? restored.state.icons : undefined).toEqual(v3.icons)
       expect('branding' in restored.state ? restored.state.branding : undefined).toEqual(v3.branding)

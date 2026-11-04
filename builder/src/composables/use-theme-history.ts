@@ -1,10 +1,10 @@
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 
-import type { ThemeStateV5 } from '@/models/theme.model'
+import type { ThemeStateCurrent } from '@/models/theme.model'
 import type { LocalThemeHistory } from '@/models/local-theme.model'
 import { cloneTheme, sameTheme, snapshot } from '@/utils/theme-store-helpers'
 
-export function useThemeHistory(theme: Ref<ThemeStateV5>, serialize: (value: ThemeStateV5) => unknown, storageKey: string, initial?: LocalThemeHistory, save?: (state: ThemeStateV5, history: LocalThemeHistory) => void) {
+export function useThemeHistory(theme: Ref<ThemeStateCurrent>, serialize: (value: ThemeStateCurrent) => unknown, storageKey: string, initial?: LocalThemeHistory, save?: (state: ThemeStateCurrent, history: LocalThemeHistory) => void) {
   const history = (initial?.snapshots ?? [snapshot(theme.value)]).map(snapshot)
   const historyIndex = ref(initial?.cursor ?? 0)
   const historyRevision = ref(0)
@@ -15,7 +15,7 @@ export function useThemeHistory(theme: Ref<ThemeStateV5>, serialize: (value: The
   let lastPaddingEditSignature: string | null = null
   let saveTimer: ReturnType<typeof setTimeout> | undefined
 
-  function paddingEditSignature(previous: ThemeStateV5, next: ThemeStateV5): string | null {
+  function paddingEditSignature(previous: ThemeStateCurrent, next: ThemeStateCurrent): string | null {
     if (JSON.stringify({ ...previous, padding: [] }) !== JSON.stringify({ ...next, padding: [] })) return null
     const before = new Map(previous.padding.map(({ edges, ...context }) => [JSON.stringify(context), edges]))
     const after = new Map(next.padding.map(({ edges, ...context }) => [JSON.stringify(context), edges]))
@@ -28,9 +28,9 @@ export function useThemeHistory(theme: Ref<ThemeStateV5>, serialize: (value: The
     return changes.length ? changes.sort().join('|') : null
   }
 
-  function isPaddingValueReplacement(previous: ThemeStateV5, next: ThemeStateV5): boolean {
+  function isPaddingValueReplacement(previous: ThemeStateCurrent, next: ThemeStateCurrent): boolean {
     if (JSON.stringify({ ...previous, padding: [] }) !== JSON.stringify({ ...next, padding: [] })) return false
-    const shape = (value: ThemeStateV5) => value.padding.map(({ edges, ...context }) => ({ context, edges: Object.keys(edges).sort() }))
+    const shape = (value: ThemeStateCurrent) => value.padding.map(({ edges, ...context }) => ({ context, edges: Object.keys(edges).sort() }))
     return JSON.stringify(shape(previous)) === JSON.stringify(shape(next))
   }
 
@@ -56,7 +56,7 @@ export function useThemeHistory(theme: Ref<ThemeStateV5>, serialize: (value: The
     }, 300)
   }, { deep: true, flush: 'sync' })
 
-  function applyTheme(value: ThemeStateV5): void {
+  function applyTheme(value: ThemeStateCurrent): void {
     applyingHistory = true
     theme.value = cloneTheme(value)
     applyingHistory = false

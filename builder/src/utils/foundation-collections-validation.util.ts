@@ -1,7 +1,7 @@
 import { CURATED_FONT_CHOICES, SAFE_FONT_FAMILY, SYSTEM_MONO_FALLBACK } from '@/utils/foundation-validation-constants.util'
 import { PALETTE_NAMES, PALETTE_SHADES, type PaletteShade } from '@/models/foundations.model'
 import type { ValidationError } from '@/models/validation-error.model'
-import { checkKeys, invalid, isColor, isRecord, isSafeFontName, join } from '@/utils/foundation-validation-shared.util'
+import { checkKeys, invalid, isColor, isHexColor, isRecord, isSafeFontName, join } from '@/utils/foundation-validation-shared.util'
 
 export function validatePaletteCollection(value: unknown, path: string): ValidationError | undefined {
   if (!isRecord(value)) return invalid('invalid-value', path, 'Palettes must be an object')
@@ -11,17 +11,31 @@ export function validatePaletteCollection(value: unknown, path: string): Validat
     const palettePath = join(path, name)
     const palette = value[name]
     if (!isRecord(palette)) return invalid('invalid-value', palettePath, 'Palette must be an object')
-    const paletteKeys = checkKeys(palette, ['base', 'shades', 'overrides'], ['base', 'shades', 'overrides'], palettePath)
+     const paletteKeys = checkKeys(palette, ['base', 'shades', 'overrides', 'dark'], ['base', 'shades', 'overrides'], palettePath)
     if (paletteKeys) return paletteKeys
-    if (!isColor(palette.base)) return invalid('invalid-value', join(palettePath, 'base'), 'Invalid palette base color')
+    if (!isHexColor(palette.base)) return invalid('invalid-value', join(palettePath, 'base'), 'Palette seeds require literal hex colors')
     for (const collectionName of ['shades', 'overrides'] as const) {
       const collection = palette[collectionName]
       const collectionPath = join(palettePath, collectionName)
       if (!isRecord(collection)) return invalid('invalid-value', collectionPath, 'Shade values must be an object')
       for (const [shade, color] of Object.entries(collection)) {
-        if (!PALETTE_SHADES.includes(Number(shade) as PaletteShade)) return invalid('unknown-key', join(collectionPath, shade), 'Unknown palette shade')
-        if (!isColor(color)) return invalid('invalid-value', join(collectionPath, shade), 'Invalid palette shade color')
-      }
+        if (String(Number(shade)) !== shade || !PALETTE_SHADES.includes(Number(shade) as PaletteShade)) return invalid('unknown-key', join(collectionPath, shade), 'Unknown palette shade')
+        if (!isHexColor(color)) return invalid('invalid-value', join(collectionPath, shade), 'Palette shades require literal hex colors')
+     }
+     if (palette.dark !== undefined) {
+       if (!isRecord(palette.dark)) return invalid('invalid-value', join(palettePath, 'dark'), 'Dark palette values must be an object')
+       if (Object.keys(palette.dark).some((key) => !['base', 'shades', 'overrides'].includes(key))) return invalid('unknown-key', join(palettePath, 'dark'), 'Unknown dark palette key')
+        if (palette.dark.base !== undefined && !isHexColor(palette.dark.base)) return invalid('invalid-value', join(palettePath, 'dark.base'), 'Dark palette seeds require literal hex colors')
+       for (const collectionName of ['shades', 'overrides'] as const) {
+         const collection = palette.dark[collectionName]
+         if (collection === undefined) continue
+         if (!isRecord(collection)) return invalid('invalid-value', join(palettePath, `dark.${collectionName}`), 'Dark shade values must be an object')
+         for (const [shade, color] of Object.entries(collection)) {
+            if (String(Number(shade)) !== shade || !PALETTE_SHADES.includes(Number(shade) as PaletteShade)) return invalid('unknown-key', join(palettePath, `dark.${collectionName}.${shade}`), 'Unknown dark palette shade')
+            if (!isHexColor(color)) return invalid('invalid-value', join(palettePath, `dark.${collectionName}.${shade}`), 'Dark palette shades require literal hex colors')
+         }
+       }
+     }
     }
   }
   return undefined

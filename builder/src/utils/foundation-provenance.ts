@@ -24,6 +24,10 @@ export function isPaletteExplicit(state: { readonly explicitPaths: readonly stri
   return state.explicitPaths.some((path) => path === `palettes.${name}.base` || path.startsWith(`palettes.${name}.overrides.`))
 }
 
+export function isPaletteModeExplicit(state: { readonly explicitPaths: readonly string[] }, name: PaletteName, mode: ThemeMode): boolean {
+  return mode === 'light' ? isPaletteExplicit(state, name) : state.explicitPaths.some((path) => path === `palettes.${name}.dark.base` || path.startsWith(`palettes.${name}.dark.overrides.`))
+}
+
 export function paletteOverridePath(name: PaletteName, shade: PaletteShade): string {
   return `palettes.${name}.overrides.${shade}`
 }

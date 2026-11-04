@@ -19,7 +19,7 @@ final class OperationPayloadLifecycle
     {
         $bytes = strlen($payload);
         if (! preg_match('/\A[a-f0-9]{64}\z/', $id) || $bytes > RelayLimits::MAX_THEME_BYTES || ! mb_check_encoding($payload, 'UTF-8')
-            || $filename !== 'filament-theme.json' || mb_strlen($proposedName) > 120) {
+            || ! in_array($filename, ['filament-theme.json', 'filament-theme-intent.json'], true) || mb_strlen($proposedName) > 120) {
             return false;
         }
         $lock = RelayRecordLock::acquire($this->store, 'operation-'.$id);

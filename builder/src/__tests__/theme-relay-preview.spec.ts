@@ -12,7 +12,7 @@ describe('relay import preview boundary', () => {
   it('routes verified bytes into the isolated preview and acknowledges receipt', async () => {
     const store = useThemeStore(); const model = useThemeImport(store); const relay = relayStub(); const input = await payload()
     await model.receiveRelayPayload(input, relay as never)
-    expect(model.state.preview?.migrationPath).toEqual([1, 2, 3, 4, 5])
+    expect(model.state.preview?.migrationPath).toEqual([1, 2, 3, 4, 5, 6, 7])
     expect(store.themes).toHaveLength(1)
     expect(relay.acknowledgePayload).toHaveBeenCalledWith(input.operationId, input.digest)
     expect(relay.submitPreview).toHaveBeenCalledWith(input.operationId, expect.objectContaining({ payloadDigest: input.digest, byteLength: input.byteLength }))
@@ -33,6 +33,26 @@ describe('relay import preview boundary', () => {
     const input = await payload(JSON.stringify(state), 'd')
     await model.receiveRelayPayload(input, relay as never)
     expect(model.state.preview).toBeNull()
+    expect(relay.acknowledgePayload).not.toHaveBeenCalled()
+    expect(relay.reject).toHaveBeenCalledWith(input.operationId, 'invalid_theme')
+  })
+
+  it('previews a semantic/raw intent through the canonical browser domain without mutating before confirmation', async () => {
+    const store = useThemeStore(); const model = useThemeImport(store); const relay = relayStub()
+    const rawJson = JSON.stringify({ schemaVersion: 1, kind: 'theme-intent', action: 'set', target: { kind: 'raw', selector: '.fi-btn', property: 'color' }, mode: 'dark', value: '#123456' })
+    const input = await payload(rawJson, 'intent'); input.filename = 'filament-theme-intent.json'
+    await model.receiveRelayPayload(input, relay as never)
+    expect(model.state.preview).not.toBeNull()
+    expect(model.state.preview?.payloadDigest).toBe(input.digest)
+    expect(model.state.preview?.candidateDigest).toMatch(/^[a-f0-9]{64}$/)
+    expect(store.theme.rawOverrides).toEqual([])
+    expect(relay.acknowledgePayload).toHaveBeenCalledWith(input.operationId, input.digest)
+  })
+
+  it('rejects forged intent byte lengths before receipt', async () => {
+    const model = useThemeImport(useThemeStore()); const relay = relayStub(); const input = await payload('{}', 'e')
+    input.filename = 'filament-theme-intent.json'; input.byteLength++
+    await model.receiveRelayPayload(input, relay as never)
     expect(relay.acknowledgePayload).not.toHaveBeenCalled()
     expect(relay.reject).toHaveBeenCalledWith(input.operationId, 'invalid_theme')
   })

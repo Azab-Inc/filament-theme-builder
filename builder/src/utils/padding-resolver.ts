@@ -1,12 +1,12 @@
 import type { FilamentRegistry } from '@/models/theme-registry.model'
-import type { ThemeStateV5 } from '@/models/theme.model'
+import type { ThemeStateCurrent } from '@/models/theme.model'
 import type { PaddingContext, PaddingEdge, PaddingReadRequest, PaddingReadResult, PaddingResolutionRequest, ResolvedPadding, ResolvedPaddingEdge } from '@/models/padding.model'
 import { paddingEdges, validatePaddingContext, validatePaddingState } from '@/utils/padding-validation'
 import { paddingRecordContext, samePaddingContext } from '@/utils/padding-identity'
 
 const EDGES: readonly PaddingEdge[] = ['top', 'right', 'bottom', 'left']
 
-export function resolvePadding(state: ThemeStateV5, registry: FilamentRegistry, request: PaddingResolutionRequest): ResolvedPadding {
+export function resolvePadding(state: ThemeStateCurrent, registry: FilamentRegistry, request: PaddingResolutionRequest): ResolvedPadding {
   const target = findTarget(registry, request.targetId)
   if (!target || target.status !== 'supported') throw new Error('Padding target is unsupported')
   const validRequest = validateRequest(request, target)
@@ -16,7 +16,7 @@ export function resolvePadding(state: ThemeStateV5, registry: FilamentRegistry, 
   return { targetId: validRequest.targetId, edges: Object.fromEntries(EDGES.map((edge) => [edge, resolveEdge(edge, records, validRequest)])) as ResolvedPadding['edges'] }
 }
 
-export function readPadding(state: ThemeStateV5, registry: FilamentRegistry, request: PaddingReadRequest): PaddingReadResult {
+export function readPadding(state: ThemeStateCurrent, registry: FilamentRegistry, request: PaddingReadRequest): PaddingReadResult {
   validateReadRequest(request)
   const target = findTarget(registry, request.targetId)
   const selected = validatePaddingContext(request.selectedContext, registry)
@@ -27,7 +27,7 @@ export function readPadding(state: ThemeStateV5, registry: FilamentRegistry, req
   return { resolved: { ...resolved, edges }, selectedContext: request.selectedContext, explicitEdges: record ? paddingEdges(record.edges) : [] }
 }
 
-function resolveEdge(edge: PaddingEdge, records: ThemeStateV5['padding'], request: PaddingResolutionRequest): ResolvedPaddingEdge {
+function resolveEdge(edge: PaddingEdge, records: ThemeStateCurrent['padding'], request: PaddingResolutionRequest): ResolvedPaddingEdge {
   const matching = records.filter((record) => hasEdge(record, edge)).sort((left, right) => score(right) - score(left))
   const winner = matching[0]
   if (!winner) return { edge, value: null, source: 'native', explicit: false, native: true }
@@ -35,15 +35,15 @@ function resolveEdge(edge: PaddingEdge, records: ThemeStateV5['padding'], reques
   return { edge, value: winner.edges[edge] === 0 ? '0' : winner.edges[edge]!, source: winner.scope, sourceTargetId: 'targetId' in winner ? winner.targetId : undefined, sourceContext, explicit: winner.scope === deepestScope(request), native: false }
 }
 
-function score(record: ThemeStateV5['padding'][number]): number {
+function score(record: ThemeStateCurrent['padding'][number]): number {
   if (record.scope === 'state') return 500 + ('variantId' in record && record.variantId ? 1 : 0)
   if (record.scope === 'variant') return 400
   if (record.scope === 'component') return 300
   if (record.scope === 'section') return 200
   return 100
 }
-function hasEdge(record: ThemeStateV5['padding'][number], edge: PaddingEdge): boolean { return Object.prototype.hasOwnProperty.call(record.edges, edge) }
-function applies(record: ThemeStateV5['padding'][number], sectionId: string, kind: 'leaf' | 'container', request: PaddingResolutionRequest): boolean {
+function hasEdge(record: ThemeStateCurrent['padding'][number], edge: PaddingEdge): boolean { return Object.prototype.hasOwnProperty.call(record.edges, edge) }
+function applies(record: ThemeStateCurrent['padding'][number], sectionId: string, kind: 'leaf' | 'container', request: PaddingResolutionRequest): boolean {
   if (record.scope === 'global') return kind !== 'container'
   if (record.scope === 'section') return sectionId === record.sectionId && kind !== 'container'
   if ('targetId' in record && record.targetId !== request.targetId) return false

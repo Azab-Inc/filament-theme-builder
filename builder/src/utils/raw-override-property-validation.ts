@@ -1,4 +1,6 @@
 import type { RawVisualProperty } from '@/models/raw-overrides.model'
+import { parseUserTokenReference } from '@/utils/user-token-validation'
+import { isBuiltinPaletteReference } from '@/utils/color-reference-options'
 
 const colorPattern = /^(?:#[\da-f]{3,8}|(?:rgb|hsl|hwb|lab|lch|oklab|oklch)a?\([^;{}()]+\)|transparent|var\(--(?:color-)?(?:primary|success|warning|danger|info|gray)(?:-(?:50|100|200|300|400|500|600|700|800|900|950))?\))$/i
 const lengthToken = '(?:0|(?:0|[1-9]\\d{0,3})(?:\\.\\d+)?(?:px|rem|em|ex|ch|lh|rlh|vw|vh|vmin|vmax|%)?)'
@@ -15,7 +17,7 @@ export function isSafePropertyValue(property: RawVisualProperty, value: unknown)
     case 'color':
     case 'background-color':
     case 'border-color':
-      return colorPattern.test(value)
+      return colorPattern.test(value) || parseUserTokenReference(value) !== null || isBuiltinPaletteReference(value)
     case 'border-width':
     case 'border-radius':
     case 'font-size':

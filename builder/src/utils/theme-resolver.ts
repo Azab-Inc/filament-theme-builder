@@ -17,7 +17,11 @@ export function resolveThemeValue(state: ThemeState, registry: FilamentRegistry,
 
   for (const scope of ['state', 'variant', 'component', 'global'] as const) {
     const override = validOverrides.find((candidate) => isApplicable(candidate, validRequest, scope))
-    if (override) return { status: 'resolved', value: override.value, source: scope }
+      if (override) {
+        const mode = validRequest.mode ?? 'light'
+        const value = mode === 'dark' ? (override.darkValue ?? override.value) : override.value
+        if (value !== undefined) return { status: 'resolved', value, source: scope }
+      }
   }
 
   if (control.globalValue === 'primary') {

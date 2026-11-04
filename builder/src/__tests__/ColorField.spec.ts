@@ -28,21 +28,20 @@ describe('ColorField', () => {
     expect(wrapper.get('button[aria-label="Choose Primary 500 from Tailwind palette"]').attributes('type')).toBe('button')
   })
 
-  it('preserves unsupported native values and emits the owned input event for a named selection', async () => {
+  it('preserves a named reference until an explicit native replacement', async () => {
     const wrapper = mount(ColorField, { props: {
       id: 'surface', label: 'Surface', value: 'var(--gray-900)', effectiveValue: '#101828',
       profile: 'foundation', contextKey: 'surface',
     } })
-    expect((wrapper.get('[aria-label="Surface native color picker"]').element as HTMLInputElement).value).not.toBe('#101828')
-    expect(wrapper.text()).toContain('Native color picker unavailable')
+    const native = wrapper.get('[aria-label="Surface native color picker"]')
+    expect((native.element as HTMLInputElement).value).toBe('#101828')
     await wrapper.get('[aria-label="Choose Surface from Tailwind palette"]').trigger('click')
-    buttonByName('Tailwind')?.click()
-    await nextTick()
-    buttonByName('gray 900 #101828')?.click()
-    await nextTick()
+    document.querySelector<HTMLButtonElement>('[aria-label="Close Surface color choices"]')?.click()
+    expect((wrapper.get('#surface').element as HTMLInputElement).value).toBe('var(--gray-900)')
+    expect(wrapper.emitted('input')).toBeUndefined()
+    await native.setValue('#123456')
     const input = wrapper.emitted('input')?.[0]?.[0] as Event
-    expect(input.target).toBe(wrapper.get('#surface').element)
-    expect((input.target as HTMLInputElement).value).toBe('#101828')
+    expect(input.target).toBe(native.element)
     expect(wrapper.emitted('input')).toHaveLength(1)
   })
 

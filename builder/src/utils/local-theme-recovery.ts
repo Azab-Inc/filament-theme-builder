@@ -1,12 +1,12 @@
 import type { LocalThemeHistory, LocalThemeRecord, LocalThemeRecoveredRecords, StorageOperationResult } from '@/models/local-theme.model'
-import type { ThemeStateV5 } from '@/models/theme.model'
+import type { ThemeStateCurrent } from '@/models/theme.model'
 import { isSafeLocalThemeId, parseLocalThemeCollection, parseLocalThemeHistory } from '@/utils/local-theme-validation'
 
 export function recoverLocalThemeRecords(
   storage: Storage,
   indexed: LocalThemeRecord[],
-  validateState: (value: unknown) => ThemeStateV5 | null,
-  repair: (id: string, state: ThemeStateV5, history: LocalThemeHistory) => StorageOperationResult,
+  validateState: (value: unknown) => ThemeStateCurrent | null,
+  repair: (id: string, state: ThemeStateCurrent, history: LocalThemeHistory) => StorageOperationResult,
 ): LocalThemeRecoveredRecords {
   const metadata = new Map(indexed.map((theme) => [theme.id, theme]))
   const ids = new Set(metadata.keys())
@@ -18,7 +18,7 @@ export function recoverLocalThemeRecords(
     }
   }
   const records: LocalThemeRecord[] = []
-  const values = new Map<string, { state: ThemeStateV5; history: LocalThemeHistory }>()
+  const values = new Map<string, { state: ThemeStateCurrent; history: LocalThemeHistory }>()
   let repaired = false
   let repairError: string | null = null
   for (const id of ids) {
@@ -47,7 +47,7 @@ function readJson(value: string | null): unknown {
   try { return value === null ? null : JSON.parse(value) as unknown } catch { return null }
 }
 
-function needsMigration(value: unknown): boolean { return isRecord(value) && value.schemaVersion !== 5 }
+function needsMigration(value: unknown): boolean { return isRecord(value) && value.schemaVersion !== 7 }
 function needsHistoryMigration(value: unknown): boolean { return isRecord(value) && Array.isArray(value.snapshots) && value.snapshots.some(needsMigration) }
 function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value) }
 

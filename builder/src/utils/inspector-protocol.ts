@@ -5,6 +5,8 @@ import type { InspectorEvent } from '@/models/inspector-event.model'
 import type { InspectorResolution } from '@/models/inspector-resolution.model'
 import type { InspectorTargetEvidence } from '@/models/inspector-target-evidence.model'
 import { findEditableSameTargetMatch, findSameTargetRegistryMatches, isEditableInspectorTarget } from '@/utils/inspector-target-matching'
+import { isInspectorTargetScope } from '@/utils/inspector-target-scope-validation'
+import { validateRawSelector } from '@/utils/raw-override-validation'
 
 export type { InspectorCommand } from '@/models/inspector-command.model'
 export type { InspectorEvent } from '@/models/inspector-event.model'
@@ -17,10 +19,11 @@ const pseudoStatesPattern = SUPPORTED_PSEUDO_STATES.join('|')
 const selectorPattern = new RegExp(`^(?:\\.fi-[A-Za-z0-9_-]+)(?:\\.[A-Za-z0-9_-]+)*(?::(?:${pseudoStatesPattern}))?(?:\\s+\\.fi-[A-Za-z0-9_-]+(?:\\.[A-Za-z0-9_-]+)*(?::(?:${pseudoStatesPattern}))?)*$`)
 const classPattern = /^fi-[A-Za-z0-9_-]+$/
 const breadcrumbPattern = /^[^<>]{1,200}$/
-const allowedTargetKeys = ['candidateSelectors', 'classNames', 'targetSelector', 'semanticBreadcrumb', 'componentId', 'variantId', 'stateId'] as const
+const allowedTargetKeys = ['candidateSelectors', 'classNames', 'targetSelector', 'semanticBreadcrumb', 'componentId', 'variantId', 'stateId', 'targetScope', 'surfaces'] as const
 
 export function isInspectorCommand(value: unknown): value is InspectorCommand {
   if (!isRecord(value) || value.protocolVersion !== INSPECTOR_PROTOCOL_VERSION) return false
+  if (value.type === 'ftb:inspector:scope') return Object.keys(value).length === 3 && validateRawSelector(value.selector).valid
   if (value.type !== 'ftb:inspector:enable' && value.type !== 'ftb:inspector:disable') return false
   return Object.keys(value).length === 2
 }
@@ -42,6 +45,8 @@ export function isInspectorTargetEvidence(value: unknown): value is InspectorTar
   for (const key of ['componentId', 'variantId', 'stateId'] as const) {
     if (value[key] !== undefined && (typeof value[key] !== 'string' || !classPattern.test(value[key]))) return false
   }
+  if (value.targetScope !== undefined && !isInspectorTargetScope(value.targetScope)) return false
+  if (value.surfaces !== undefined && (!Array.isArray(value.surfaces) || value.surfaces.length > 8 || value.surfaces.some((surface) => !isRecord(surface) || Object.keys(surface).length !== 2 || typeof surface.label !== 'string' || !breadcrumbPattern.test(surface.label) || typeof surface.selector !== 'string' || !selectorPattern.test(surface.selector)))) return false
   return value.semanticBreadcrumb === undefined || (typeof value.semanticBreadcrumb === 'string' && breadcrumbPattern.test(value.semanticBreadcrumb))
 }
 

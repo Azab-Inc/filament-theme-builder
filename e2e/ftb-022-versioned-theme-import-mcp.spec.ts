@@ -17,6 +17,7 @@ async function browserStorage(page: import('@playwright/test').Page): Promise<st
 
 test('browser import previews before creating a fresh local theme', async ({ page }) => {
   await page.goto(builderBaseUrl)
+  await page.getByLabel('Theme tools').click()
   await expect(page.getByRole('button', { name: 'Import theme' })).toBeVisible()
   await expect(page.getByRole('button', { name: /Pair local client/i })).toBeEnabled()
   const activeBefore = await page.locator('[data-active-theme-name]').textContent()
@@ -66,6 +67,7 @@ test('real ftb:mcp import previews, cancels, rejects stale state, confirms once,
     expect((await client.initialize()).protocolVersion).toBe('2025-11-25')
     expect(await client.listTools()).toEqual(expect.arrayContaining(['local_theme_pair', 'local_theme_import_preview', 'local_theme_operation_status']))
     await page.goto(builderBaseUrl)
+    await page.getByLabel('Theme tools').click()
     const themesBefore = await localThemeCollection(page)
     const storageBefore = await browserStorage(page)
     await page.getByRole('button', { name: 'Pair local client' }).click()

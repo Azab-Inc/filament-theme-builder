@@ -1713,17 +1713,17 @@ Focused unit tests: 31 passed; four Compose Playwright journeys passed; type-che
 
 ## FTB-058 — Complete Inspector scopes, named colors, and mode links
 
-**Status:** in-progress. **GitHub:** [#58](https://github.com/Azab-Inc/filament-theme-builder/issues/58).
+**Status:** done (2026-11-03). **GitHub:** [#58](https://github.com/Azab-Inc/filament-theme-builder/issues/58). **Draft PR:** [#62](https://github.com/Azab-Inc/filament-theme-builder/pull/62), targeting `dev`.
 
-Chat-driven implementation exists in the uncommitted worktree. Related to FTB-007, FTB-008, FTB-022 and FTB-052; it does not complete those broader tickets.
+Implemented and independently verified in isolated branch `feature/complete-inspector-scopes-named-colors-and-mode-links`, commits `8239f07` and `6402dba`. Related to FTB-007, FTB-008, FTB-022 and FTB-052; it does not complete those broader tickets.
 
-- [ ] Verify generic table header/body/row and positional-column targets and selectable chart/container parent surfaces.
-- [ ] Verify custom palettes and single color tokens, validation, preview, persistence, export, migration, and safe references.
-- [ ] Verify per-value light/dark mode links, confirmation, unlinking, reset, undo/redo and mode isolation for semantic and raw contexts. Mode links do not by themselves satisfy the broader strict padlock contract in FTB-052.
-- [ ] Verify MCP capability inventory, authorization, shared validation, and an actual AI-client flow; document and resolve gaps.
-- [ ] Review, isolate and commit the relevant implementation and synchronize evidence before closure.
+- [x] Verify generic table header/body/row and positional-column targets and selectable chart/container parent surfaces.
+- [x] Verify custom palettes and single color tokens, validation, preview, persistence, export, migration, and safe references.
+- [x] Verify per-value light/dark mode links, confirmation, unlinking, reset, undo/redo and mode isolation for semantic and raw contexts. Mode links do not by themselves satisfy the broader strict padlock contract in FTB-052.
+- [x] Verify MCP capability inventory, authorization, shared validation, and an actual AI-client flow; document and resolve gaps.
+- [x] Review, isolate and commit the relevant implementation and synchronize evidence before closure.
 
-Prior focused tests, browser journeys, type-check, build and independent review were reported passing; full unit and PHP baseline failures and missing actual MCP-client evidence remain. See `docs/superpowers/progress/2026-10-28-inspector-tokens-mode-links.md` and `docs/superpowers/verification/2026-10-28-inspector-tokens-mode-links.md` in the current uncommitted worktree. [FTB-060](#ftb-060) tracks verification recovery.
+Completion evidence: [FTB-058 verification](./docs/verification/ftb-058/README.md). Full builder: **625 tests / 135 files passed**; full PHP: **269 tests / 2,330 assertions passed**; affected Compose integration: **19 passed**; feature browser acceptance: **3 passed**; actual stdio MCP/browser journey: **1 passed**. Type-check, production build, Pint, PHPStan, root contracts (18 tests), and independent review pass. Matched before/after screenshots are recorded. The MCP intent path executes the same browser domain services and canonical validation as the UI with revision-bound confirmation. Original dirty worktree preserved. PR remains draft; no merge or deployment.
 
 ---
 

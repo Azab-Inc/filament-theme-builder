@@ -3,6 +3,7 @@ export type PaletteName = typeof PALETTE_NAMES[number]
 
 export const PALETTE_SHADES = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const
 export type PaletteShade = typeof PALETTE_SHADES[number]
+import type { UserTokens } from '@/models/user-tokens.model'
 
 export type Density = 'compact' | 'default' | 'spacious'
 export type ThemeMode = 'light' | 'dark'
@@ -23,6 +24,11 @@ export type PaletteState = {
   base: string
   shades: Partial<Record<PaletteShade, string>>
   overrides: Partial<Record<PaletteShade, string>>
+  dark?: {
+    base?: string
+    shades?: Partial<Record<PaletteShade, string>>
+    overrides?: Partial<Record<PaletteShade, string>>
+  }
 }
 
 export type FoundationState = {
@@ -40,6 +46,7 @@ export type FoundationState = {
   explicitPaths: string[]
   /** Persisted provenance is only trusted after this migration marker exists. */
   provenanceVersion: 1
+  userTokens?: UserTokens
 }
 
 export type FoundationSurfaceName = keyof FoundationState['surfaces']

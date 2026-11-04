@@ -11,6 +11,7 @@ use App\Mcp\Tools\LocalThemeImportStatus;
 use App\Mcp\Tools\LocalThemeList;
 use App\Mcp\Tools\LocalThemeOperationStatus;
 use App\Mcp\Tools\LocalThemePair;
+use App\Mcp\Tools\LocalThemeTokenOperation;
 use Laravel\Mcp\Server;
 
 final class LocalThemeServer extends Server
@@ -27,5 +28,6 @@ final class LocalThemeServer extends Server
         LocalThemeImportStatus::class,
         LocalThemeOperationStatus::class,
         LocalThemeDisconnect::class,
+        LocalThemeTokenOperation::class,
     ];
 }

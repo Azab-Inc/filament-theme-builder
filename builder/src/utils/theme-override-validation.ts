@@ -14,7 +14,7 @@ export function validateThemeOverride(override: ThemeOverride, registry: Filamen
   if (!isScope(override.scope)) return failure(context, 'Invalid scope value')
   if (!nonEmptyString(override.targetId)) return failure(context, 'Target identifier must be a non-empty string')
   if (!nonEmptyString(override.controlId)) return failure(context, 'Control identifier must be a non-empty string')
-  const allowedKeys = new Set(['targetId', 'controlId', 'scope', 'componentId', 'variantId', 'stateId', 'value'])
+  const allowedKeys = new Set(['targetId', 'controlId', 'scope', 'componentId', 'variantId', 'stateId', 'value', 'darkValue', 'mode'])
   if (Reflect.ownKeys(override).some((key) => typeof key !== 'string' || !allowedKeys.has(key))) return failure(context, 'Unsupported override key')
   if (!validOptionalIdentifiers(override)) return failure(context, 'Override identifiers must be non-empty strings')
   const compatibilityError = validateCompatibilityBaseline(registry)
@@ -27,6 +27,9 @@ export function validateThemeOverride(override: ThemeOverride, registry: Filamen
   if (!control) return failure(context, `Unknown control: ${override.controlId}`)
   const scopeError = validateScope(override, entry)
   if (scopeError) return failure(context, scopeError)
-  if (!isValidControlValue(override.value, control)) return failure(context, `Invalid value for ${override.targetId}.${override.controlId}`)
+  if (override.value !== undefined && !isValidControlValue(override.value, control)) return failure(context, `Invalid value for ${override.targetId}.${override.controlId}`)
+  if (override.darkValue !== undefined && !isValidControlValue(override.darkValue, control)) return failure(context, `Invalid dark value for ${override.targetId}.${override.controlId}`)
+  if (override.mode !== undefined && override.mode !== 'light' && override.mode !== 'dark') return failure(context, 'Invalid override mode')
+  if (override.value === undefined && override.darkValue === undefined) return failure(context, `Missing value for ${override.targetId}.${override.controlId}`)
   return { ...context, valid: true, override }
 }

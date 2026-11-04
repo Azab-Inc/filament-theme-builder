@@ -1,5 +1,6 @@
 import { migrateVersionedTheme } from '@/utils/theme-import-migrations'
 import { createThemeRegistry } from '@/registry/theme-registry'
+import type { ThemeMode } from '@/models/foundations.model'
 
 export type ThemeScope = 'global' | 'component' | 'variant' | 'state'
 
@@ -12,7 +13,9 @@ export type ThemeOverride = {
   componentId?: string
   variantId?: string
   stateId?: string
-  value: ThemeValue
+  value?: ThemeValue
+  darkValue?: ThemeValue
+  mode?: ThemeMode
 }
 
 export type ThemeStateV1 = {
@@ -36,11 +39,18 @@ export type ThemeStateV5 = Omit<ThemeStateV4, 'schemaVersion'> & {
   schemaVersion: 5
   padding: import('@/models/padding.model').PaddingRecord[]
 }
-export type ThemeStateInput = ThemeStateV4 | ThemeStateV5
+export type ThemeStateV6 = Omit<ThemeStateV5, 'schemaVersion'> & { schemaVersion: 6; modeLinks?: import('@/models/theme-mode-link.model').ModeLinkMap }
+export type ThemeStateV7 = Omit<ThemeStateV6, 'schemaVersion'> & {
+  schemaVersion: 7
+  foundations: Omit<ThemeStateV6['foundations'], 'userTokens'> & { userTokens: import('@/models/user-tokens.model').UserTokens }
+  modeLinks: import('@/models/theme-mode-link.model').ModeLinkMap
+}
+export type ThemeStateCurrent = ThemeStateV7
+export type ThemeStateInput = ThemeStateV4 | ThemeStateV5 | ThemeStateV6 | ThemeStateV7
 
-export type ThemeState = ThemeStateV1 | ThemeStateV2 | ThemeStateV3 | ThemeStateV4 | ThemeStateV5
+export type ThemeState = ThemeStateV1 | ThemeStateV2 | ThemeStateV3 | ThemeStateV4 | ThemeStateV5 | ThemeStateV6 | ThemeStateV7
 
-export function migrateThemeState(state: ThemeState): ThemeStateV5 {
+export function migrateThemeState(state: ThemeState): ThemeStateCurrent {
   const result = migrateVersionedTheme(state, createThemeRegistry())
   if (!result.ok) throw new Error(`${result.category}: ${result.message}`)
   return result.state
@@ -52,6 +62,7 @@ export type ResolveRequest = {
   componentId?: string
   variantId?: string
   stateId?: string
+  mode?: ThemeMode
 }
 
 export type ResolveResult =

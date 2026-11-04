@@ -1,9 +1,9 @@
 import { computed, ref, type Ref } from 'vue'
 
-import type { ThemeStateV5 } from '@/models/theme.model'
+import type { ThemeStateCurrent } from '@/models/theme.model'
 import { legacyRecoveryError, restoreLegacyTheme } from '@/utils/foundation-recovery'
 
-export function useThemeRecovery(theme: Ref<ThemeStateV5>, recovery: ReturnType<typeof import('@/composables/use-theme-persistence').useThemePersistence>, applyTheme: (value: ThemeStateV5) => void) {
+export function useThemeRecovery(theme: Ref<ThemeStateCurrent>, recovery: ReturnType<typeof import('@/composables/use-theme-persistence').useThemePersistence>, applyTheme: (value: ThemeStateCurrent) => void) {
   const archived = ref(recovery.readRecovery())
   const errorMessage = ref(legacyRecoveryError(archived.value))
 
