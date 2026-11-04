@@ -10,6 +10,7 @@ export type ColorPopoverProps = {
   profile: ColorFieldProfile
   triggerElement: HTMLElement | null
   property?: RawVisualProperty
+  nativePrimary?: boolean
 }
 
 export type ColorPopoverEmits = {
@@ -24,8 +25,9 @@ export type CustomColorPanelProps = {
   profile: ColorFieldProfile
   label: string
   property?: RawVisualProperty
+  nativePrimary?: boolean
 }
 
 export type CustomColorPanelEmits = { apply: [value: string] }
-export type TailwindColorPanelProps = { id: string; selectedValue: string }
+export type TailwindColorPanelProps = { id: string; selectedValue: string; allowTransparent: boolean }
 export type TailwindColorPanelEmits = { select: [color: TailwindColor] }

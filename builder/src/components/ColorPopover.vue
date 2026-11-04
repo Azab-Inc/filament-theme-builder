@@ -6,6 +6,7 @@ import { usePopoverPosition } from '@/composables/use-popover-position'
 import type { ColorPopoverProps, ColorPopoverEmits } from '@/models/color-popover.model'
 import type { TailwindColor } from '@/models/tailwind-palette.model'
 import { findTailwindColor } from '@/utils/tailwind-palette'
+import { isTransparentColorAllowed } from '@/utils/color-field-validation'
 
 const props = defineProps<ColorPopoverProps>()
 const emit = defineEmits<ColorPopoverEmits>()
@@ -13,6 +14,7 @@ const panel = shallowRef<HTMLElement | null>(null)
 const tab = shallowRef<'Custom' | 'Tailwind'>('Tailwind')
 const position = shallowRef({ top: 8, left: 8 })
 const selected = computed(() => findTailwindColor(props.value))
+const allowTransparent = computed(() => !props.nativePrimary && isTransparentColorAllowed(props.profile, props.property))
 const trigger = computed(() => props.triggerElement)
 usePopoverPosition(computed(() => props.open), trigger, panel, position)
 function close(restoreFocus = false): void { emit('close'); if (restoreFocus) nextTick(() => props.triggerElement?.focus()) }
@@ -31,7 +33,7 @@ watch(() => props.open, async (open) => {
   panel.value?.querySelector<HTMLInputElement>('[type="search"]')?.focus()
 }, { flush: 'post', immediate: true })
 onUnmounted(() => { document.removeEventListener('keydown', keydown); document.removeEventListener('pointerdown', outside, true) })
-function choose(color: TailwindColor): void { emit('select', color); close(true) }
+function choose(color: TailwindColor): void { if (color.value === 'transparent') apply(color.value); else { emit('select', color); close(true) } }
 function apply(value: string): void { emit('apply', value); close(true) }
 </script>
 
@@ -45,9 +47,9 @@ function apply(value: string): void { emit('apply', value); close(true) }
         <button :id="`${id}-tailwind-tab`" type="button" role="tab" :aria-controls="`${id}-tailwind-panel`" :aria-selected="tab === 'Tailwind'" @click="tab = 'Tailwind'">Tailwind</button>
       </div>
       <div v-if="tab === 'Custom'" :id="`${id}-custom-panel`" role="tabpanel" :aria-labelledby="`${id}-custom-tab`">
-        <CustomColorPanel :id="id" :value="value" :profile="profile" :label="label" :property="property" @apply="apply" />
+        <CustomColorPanel :id="id" :value="value" :profile="profile" :label="label" :property="property" :native-primary="nativePrimary" @apply="apply" />
       </div>
-      <TailwindColorPanel v-else :id="id" :selected-value="value" @select="choose" />
+      <TailwindColorPanel v-else :id="id" :selected-value="value" :allow-transparent="allowTransparent" @select="choose" />
       <p v-if="selected" class="color-popover__selected" role="status">Selected: {{ selected.name }} {{ selected.value }}</p>
     </div>
   </Teleport>

@@ -21,7 +21,7 @@ export function checkKeys(value: Record<string, unknown>, allowed: readonly stri
 }
 
 export function isColor(value: unknown): value is string {
-  return isHexColor(value) || isTrustedColor(value) || (typeof value === 'string' && /^user\.(?:palette\.[a-z][a-z0-9-]{0,31}\.(?:50|100|200|300|400|500|600|700|800|900|950)|color\.[a-z][a-z0-9-]{0,31})$/.test(value))
+  return isHexColor(value) || value === 'transparent' || isTrustedColor(value) || (typeof value === 'string' && /^user\.(?:palette\.[a-z][a-z0-9-]{0,31}\.(?:50|100|200|300|400|500|600|700|800|900|950)|color\.[a-z][a-z0-9-]{0,31})$/.test(value))
 }
 
 export function isHexColor(value: unknown): value is string {

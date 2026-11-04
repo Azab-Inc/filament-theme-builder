@@ -29,4 +29,12 @@ describe('color field validation profiles', () => {
     expect(isColorFieldValueValid('var(--color-gray-900)', 'raw', 'color')).toBe(true)
     expect(isColorFieldValueValid('url(evil)', 'raw', 'color')).toBe(false)
   })
+
+  it('accepts explicit transparent values for every editable color profile', () => {
+    expect(isColorFieldValueValid('transparent', 'hex6')).toBe(true)
+    expect(isColorFieldValueValid('transparent', 'hex68')).toBe(false)
+    expect(isColorFieldValueValid('transparent', 'foundation')).toBe(true)
+    expect(isColorFieldValueValid('transparent', 'raw', 'background-color')).toBe(true)
+    expect(isColorFieldValueValid('', 'foundation')).toBe(false)
+  })
 })

@@ -53,4 +53,10 @@ describe('vanilla CSS semantic states', () => {
 
     expect(exportVanillaCss(theme).errors).toContainEqual(expect.stringMatching(/Unsupported semantic override/i))
   })
+
+  it('exports transparent semantic values unchanged', () => {
+    const theme = createDefaultThemeState()
+    theme.overrides = [{ targetId: 'form.product-name', controlId: 'background', scope: 'global', value: 'transparent' }]
+    expect(exportVanillaCss(theme).css).toContain('.fi-input { background-color: transparent !important; }')
+  })
 })

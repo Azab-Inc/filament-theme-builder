@@ -37,6 +37,8 @@ class FilamentPanelTest extends TestCase
             ->assertSee('included !== 0 && included !== paletteIds.length', false)
             ->assertSee('validateOverrideScope', false)
             ->assertSee('isValidOverrideValue', false)
+            ->assertSee("value.toLowerCase() === 'transparent'", false)
+            ->assertSee("value.toLowerCase() === 'transparent' || isHexColor(value)", false)
             ->assertSee('isSafeOverride', false)
             ->assertSee('sameArray(candidate.selectors, expected.selectors)', false)
             ->assertSee("message.theme.customCss === ''", false)
