@@ -99,7 +99,7 @@
             return literal || null;
         };
         @include('filament.preview-user-tokens')
-        const safeColor = (value, tokens) => typeof value === 'string' && (/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(value) || resolveColorReference(value) !== null || (value.startsWith('user.') && resolveUserToken(value, tokens, 'light') !== null));
+        const safeColor = (value, tokens) => typeof value === 'string' && (value.toLowerCase() === 'transparent' || /^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(value) || resolveColorReference(value) !== null || (value.startsWith('user.') && resolveUserToken(value, tokens, 'light') !== null));
         const systemMonoFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
         const safeFont = (value) => isRecord(value) && ['system', 'curated', 'custom'].includes(value.kind) && typeof value.name === 'string' && /^[A-Za-z0-9][A-Za-z0-9 .,_-]{0,99}$/.test(value.name) && typeof value.family === 'string' && (value.family === systemMonoFamily || /^[A-Za-z0-9][A-Za-z0-9 .,_-]*$/.test(value.family)) && (value.kind === 'curated' ? exactKeys(value, ['kind', 'name', 'family', 'provider']) && value.provider === 'google-fonts' && fontAllowlist.get(value.name) === value.family : exactKeys(value, ['kind', 'name', 'family']) && (value.kind !== 'custom' || value.name === value.family));
         const mapping = (id, property, selectors, variable) => ({ id, mapping: property === 'color' || property === 'fontFamily' ? 'preview-emulatable' : 'live-emulation', property, selectors, ...(variable ? { variable } : {}) });
@@ -153,7 +153,7 @@
             if (override.scope === 'state') return hasComponent && hasVariant && hasState && override.componentId === definition.component && definition.variants.includes(override.variantId) && definition.states.includes(override.stateId);
             return false;
         };
-        const isValidOverrideValue = (value, definition, tokens) => definition.type === 'color' && (isHexColor(value) || (typeof value === 'string' && /^var\(--(?:ftb-palette-)?(?:primary|success|warning|danger|info|gray)-(?:50|100|200|300|400|500|600|700|800|900|950)\)$/.test(value)) || (typeof value === 'string' && value.startsWith('user.') && resolveUserToken(value, tokens, 'light') !== null));
+        const isValidOverrideValue = (value, definition, tokens) => definition.type === 'color' && typeof value === 'string' && (value.toLowerCase() === 'transparent' || isHexColor(value) || /^var\(--(?:ftb-palette-)?(?:primary|success|warning|danger|info|gray)-(?:50|100|200|300|400|500|600|700|800|900|950)\)$/.test(value) || (value.startsWith('user.') && resolveUserToken(value, tokens, 'light') !== null));
         const isSafeOverride = (override, tokens) => {
              if (!isRecord(override) || !isSafeToken(override.targetId) || !isSafeToken(override.controlId) || !['global', 'component', 'variant', 'state'].includes(override.scope) || Object.keys(override).some((key) => !['targetId', 'controlId', 'scope', 'componentId', 'variantId', 'stateId', 'value', 'darkValue', 'mode'].includes(key))) return false;
             const identity = `${override.targetId}\u0000${override.controlId}`;

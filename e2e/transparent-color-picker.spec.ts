@@ -1,0 +1,27 @@
+import { expect, test } from '@playwright/test'
+import { authenticate, readCanonical, setPreviewRoute } from './color-picker-acceptance.helpers'
+
+test('color picker exposes an explicit keyboard-accessible transparent choice', async ({ page }) => {
+  await authenticate(page)
+  await page.goto('/')
+  const frame = await setPreviewRoute(page, '/demo/admin/forms-showcase')
+  await page.getByRole('tab', { name: 'Components' }).click()
+  await page.getByRole('button', { name: /Choose Product name Global background from Tailwind palette/i }).click()
+  const transparent = page.getByRole('button', { name: 'Transparent', exact: true })
+  await expect(transparent).toBeVisible()
+  await expect(transparent).toHaveAttribute('aria-pressed', 'false')
+  await page.screenshot({ path: 'docs/verification/ftb-061/before.png', fullPage: false })
+  await transparent.focus()
+  await page.keyboard.press('Enter')
+  await expect(page.locator('#product-name-global-background')).toHaveValue('transparent')
+  await expect(frame.locator('.fi-fo-text-input .fi-input').first()).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+  await page.getByRole('button', { name: /Choose Product name Global background from Tailwind palette/i }).click()
+  await expect(page.getByRole('button', { name: 'Transparent', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await page.screenshot({ path: 'docs/verification/ftb-061/after.png', fullPage: false })
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: 'Reset Product name global background' }).click()
+  await expect(page.locator('#product-name-global-background')).not.toHaveValue('transparent')
+  await expect.poll(async () => (await readCanonical(page)).overrides.some((override: { targetId: string; scope: string }) => override.targetId === 'form.product-name' && override.scope === 'global')).toBe(false)
+  await page.getByRole('button', { name: /Choose Product name Global background from Tailwind palette/i }).click()
+  await expect(page.getByRole('button', { name: 'Transparent', exact: true })).toHaveAttribute('aria-pressed', 'false')
+})

@@ -27,7 +27,7 @@ export function isValidControlValue(value: unknown, control: RegistryControl): v
   if (control.valueType === 'boolean') return typeof value === 'boolean'
   if (control.valueType === 'number') return typeof value === 'number' && Number.isFinite(value) && (control.constraints?.min === undefined || value >= control.constraints.min) && (control.constraints?.max === undefined || value <= control.constraints.max)
   if (typeof value !== 'string') return false
-  if (control.valueType === 'color' && (parseUserTokenReference(value) || isBuiltinPaletteReference(value))) return true
+  if (control.valueType === 'color' && (value.toLowerCase() === 'transparent' || parseUserTokenReference(value) || isBuiltinPaletteReference(value))) return true
   return control.constraints?.pattern === undefined || new RegExp(control.constraints.pattern.source, control.constraints.pattern.flags).test(value)
 }
 

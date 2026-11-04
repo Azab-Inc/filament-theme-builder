@@ -73,6 +73,19 @@ describe('theme state overrides', () => {
     expect(persisted.overrides).not.toContainEqual(expect.objectContaining({ scope: 'state', value: '#4f46e5' }))
   })
 
+  it('persists transparent, keeps it distinct from inheritance, and resets back to inherited value', () => {
+    vi.useFakeTimers()
+    const store = createThemeState()
+    const request = { targetId: 'button.primary', controlId: 'background' }
+    store.setOverride({ ...request, scope: 'global', value: 'transparent' })
+    expect(store.resolve(request)).toMatchObject({ value: 'transparent', source: 'global' })
+    vi.advanceTimersByTime(300)
+    expect(readActiveThemeState()).toEqual(expect.objectContaining({ overrides: [expect.objectContaining({ value: 'transparent' })] }))
+    store.resetOverride(request)
+    expect(store.resolve(request)).toMatchObject({ source: 'global', value: expect.not.stringMatching(/^transparent$/) })
+    expect(store.theme.overrides).toEqual([])
+  })
+
   it('ignores invalid persisted overrides and leaves editing usable', () => {
     localStorage.setItem('ftb-theme', JSON.stringify({ schemaVersion: 2, colors: { primary: '#6366f1' }, overrides: [invalidExternalOverride] }))
     const store = createThemeState()

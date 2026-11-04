@@ -12,6 +12,9 @@ const families = computed(() => [...new Set((search.value ? colors.value : getTa
 
 <template>
   <div :id="`${id}-tailwind-panel`" class="color-popover__palette" role="tabpanel" :aria-labelledby="`${id}-tailwind-tab`">
+    <button v-if="props.allowTransparent" type="button" class="color-popover__transparent" data-color-choice="transparent" aria-label="Transparent" :aria-pressed="props.selectedValue.toLowerCase() === 'transparent'" @click="emit('select', { name: 'Transparent', family: 'Special', shade: 0, value: 'transparent', sourceValue: 'transparent' })">
+      <span aria-hidden="true"></span>Transparent
+    </button>
     <label class="color-popover__search-label" :for="`${id}-tailwind-search`">Search Tailwind colors</label>
     <input :id="`${id}-tailwind-search`" v-model="search" type="search" aria-label="Search Tailwind colors" />
     <p class="color-popover__result-count" role="status" aria-live="polite">{{ colors.length }} colors</p>

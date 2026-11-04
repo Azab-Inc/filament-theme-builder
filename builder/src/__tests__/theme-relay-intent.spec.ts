@@ -19,6 +19,16 @@ describe('canonical relay token intents', () => {
     expect(final.rawOverrides[0]?.darkProperties?.color).toBe('#abcdef')
   })
 
+  it('applies transparent through the same semantic, foundation, and raw relay validators', () => {
+    const registry = createThemeRegistry(); const initial = createDefaultCurrentThemeState()
+    const semantic = applyThemeRelayIntent(initial, { schemaVersion: 1, kind: 'theme-intent', action: 'set', target: { kind: 'semantic', targetId: 'form.product-name', controlId: 'background', scope: 'global' }, mode: 'light', value: 'transparent' }, registry)
+    const foundation = applyThemeRelayIntent(semantic, { schemaVersion: 1, kind: 'theme-intent', action: 'set', target: { kind: 'foundation', path: 'surfaces.page' }, mode: 'dark', value: 'transparent' }, registry)
+    const raw = applyThemeRelayIntent(foundation, { schemaVersion: 1, kind: 'theme-intent', action: 'set', target: { kind: 'raw', selector: '.fi-section', property: 'background-color' }, mode: 'light', value: 'transparent' }, registry)
+    expect(raw.overrides.find((item) => item.targetId === 'form.product-name')?.value).toBe('transparent')
+    expect(raw.foundations.surfaces.page.dark).toBe('transparent')
+    expect(raw.rawOverrides[0]?.properties['background-color']).toBe('transparent')
+  })
+
   it('uses the existing token and palette actions for CRUD and regeneration', () => {
     const registry = createThemeRegistry(); const initial = createDefaultCurrentThemeState()
     const created = applyThemeRelayIntent(initial, { schemaVersion: 1, kind: 'theme-intent', action: 'create-palette', target: { kind: 'user-palette', name: 'brand' }, value: '#123456' }, registry)
