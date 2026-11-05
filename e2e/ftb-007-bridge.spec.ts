@@ -55,13 +55,15 @@ test('preview inspector sends hover and selection evidence for the nearest seman
     const result = await frameWindow.eval(`(() => {
       const sidebar = document.querySelector('.fi-sidebar');
       if (!sidebar) return false;
-       sidebar.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
-      const hovered = sidebar.classList.contains('ftb-inspector-hover');
-      sidebar.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }));
-      const hoverCleared = !sidebar.classList.contains('ftb-inspector-hover');
-       sidebar.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
-       sidebar.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-      return { hovered, hoverCleared, selected: sidebar.classList.contains('ftb-inspector-selected') };
+      const nested = sidebar.querySelector('a span') ?? sidebar.querySelector('a') ?? sidebar;
+      nested.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+      const hovered = Boolean(document.querySelector('.ftb-inspector-hover'));
+      const hoverTarget = document.querySelector('.ftb-inspector-hover');
+      hoverTarget?.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }));
+      const hoverCleared = !document.querySelector('.ftb-inspector-hover');
+      nested.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+      nested.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      return { hovered, hoverCleared, selected: Boolean(document.querySelector('.ftb-inspector-selected')) };
     })()`)
     await new Promise((resolve) => setTimeout(resolve, 50))
     frameWindow.postMessage({ type: 'ftb:inspector:disable', protocolVersion: 1 }, location.origin)

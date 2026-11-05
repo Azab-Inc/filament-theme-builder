@@ -24,6 +24,8 @@ test.describe('semantic and raw color acceptance', () => {
   test('offers chooser only for raw color properties and projects to the existing iframe', async ({ page }) => {
     await page.goto(baseUrl); const frame = await setPreviewRoute(page, '/demo/admin/showcase')
     await page.getByRole('button', { name: 'Inspector' }).click(); await frame.locator('.fi-section:visible').first().click()
+    await page.getByRole('textbox', { name: 'Raw element selector' }).fill('.fi-section')
+    await expect(page.getByRole('textbox', { name: 'Raw element selector' })).toHaveValue('.fi-section')
     for (const property of ['color', 'background-color', 'border-color']) await expect(page.getByRole('button', { name: `Choose Raw ${property} from Tailwind palette` })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Choose Raw border-radius from Tailwind palette' })).toHaveCount(0)
     await openChooser(page, 'Raw background-color'); await chooseToken(page)
@@ -37,14 +39,14 @@ test.describe('semantic and raw color acceptance', () => {
 
   test('persists after reload and reset returns the original canonical value', async ({ page }) => {
     await page.goto(baseUrl); let input = page.locator('#primary-palette-base'); const baseline = await readCanonical(page); const baselineProjection = await page.frame({ url: /\/demo\/admin/ })!.evaluate(() => document.getElementById('ftb-managed-theme')?.textContent ?? '')
-    await page.getByRole('button', { name: 'Primary', exact: true }).click(); await openChooser(page, 'primary palette base'); await chooseToken(page)
+    await page.getByRole('button', { name: /^primary /i }).click(); await openChooser(page, 'primary palette base'); await chooseToken(page)
     await expect.poll(async () => (await readCanonical(page)).foundations.palettes.primary.base).toBe('#101828')
-    await page.reload(); await page.getByRole('button', { name: 'Primary', exact: true }).click(); input = page.locator('#primary-palette-base'); await expect(input).toHaveValue('#101828')
+    await page.reload(); await page.getByRole('button', { name: /^primary /i }).click(); input = page.locator('#primary-palette-base'); await expect(input).toHaveValue('#101828')
     await page.getByRole('button', { name: 'Reset primary palette base' }).click(); await expect(input).toHaveValue(baseline.foundations.palettes.primary.base)
     await expect(page.locator('[data-palette-status="primary-base"]')).toContainText('inherited')
     await expect.poll(async () => (await readCanonical(page)).foundations.palettes.primary.base).toBe(baseline.foundations.palettes.primary.base)
     await expect.poll(() => page.frame({ url: /\/demo\/admin/ })!.evaluate(() => document.getElementById('ftb-managed-theme')?.textContent ?? '')).toBe(baselineProjection)
-    await page.reload(); await page.getByRole('button', { name: 'Primary', exact: true }).click(); input = page.locator('#primary-palette-base')
+    await page.reload(); await page.getByRole('button', { name: /^primary /i }).click(); input = page.locator('#primary-palette-base')
     await expect(input).toHaveValue(baseline.foundations.palettes.primary.base); await expect(page.locator('[data-palette-status="primary-base"]')).toContainText('inherited')
     await expect.poll(() => page.frame({ url: /\/demo\/admin/ })!.evaluate(() => document.getElementById('ftb-managed-theme')?.textContent ?? '')).toBe(baselineProjection)
   })

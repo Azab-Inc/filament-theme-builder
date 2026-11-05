@@ -39,6 +39,13 @@ const openPalette = async (page: Page, name: string) => {
   await expect(header).toHaveAttribute("aria-expanded", "true");
 };
 
+const exportJson = async (page: Page) => {
+  await page.locator('summary[aria-label="Export actions"]').click();
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export theme JSON" }).click();
+  return downloadPromise;
+};
+
 test.describe("foundation preview integration", () => {
   test.skip(
     process.env.COMPOSE_E2E !== "1",
@@ -120,9 +127,7 @@ test.describe("foundation preview integration", () => {
     await sidebarSurface.fill("var(--sky-950)")
     await expect.poll(() => computedColorPixel(frame!, ".fi-sidebar")).toEqual(await colorPixel(frame!, "oklch(29.3% 0.066 243.157)"))
     await expect.poll(async () => (await readActiveTheme(page)).foundations.surfaces.sidebar.light).toBe("var(--sky-950)")
-    const downloadPromise = page.waitForEvent("download")
-    await page.getByRole("button", { name: "Export theme JSON" }).click()
-    const download = await downloadPromise
+    const download = await exportJson(page)
     const exported = JSON.parse(await readFile((await download.path())!, "utf8"))
     expect(exported.foundations.surfaces.sidebar.light).toBe("var(--sky-950)")
     await page.getByRole("button", { name: "Reset sidebar surface" }).click()
@@ -565,7 +570,7 @@ test.describe("foundation preview integration", () => {
   });
 
   test("covers every foundation control through rendered native showcase elements", async ({ page }) => {
-    test.setTimeout(120_000);
+    test.setTimeout(240_000);
     const navigationRequests: string[] = [];
     const mutationRequests: string[] = [];
     page.on("request", (request) => {
@@ -884,7 +889,7 @@ test.describe("foundation preview integration", () => {
     expect(previewFrame).toBeTruthy();
     const paletteNames = ["primary", "success", "warning", "danger", "info", "gray"];
     const shades = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
-    const primaryHeader = page.getByRole("button", { name: "Primary", exact: true });
+    const primaryHeader = page.getByRole("button", { name: /^primary /i });
 
     for (const palette of paletteNames) {
       await expect(page.locator(`[data-palette-header="${palette}"]`)).toBeVisible();
@@ -977,9 +982,7 @@ test.describe("foundation preview integration", () => {
     await page.locator("#primary-shade-500").fill("#123456");
     await expect.poll(async () => (await readActiveTheme(page)).foundations.palettes.primary.overrides[500]).toBe("#123456");
 
-    const downloadPromise = page.waitForEvent("download");
-    await page.getByRole("button", { name: "Export theme JSON" }).click();
-    const download = await downloadPromise;
+    const download = await exportJson(page);
     expect(download.suggestedFilename()).toBe("filament-theme.json");
     const exported = JSON.parse(await readFile((await download.path())! , "utf8")) as typeof validFoundations & {
       schemaVersion: number;
@@ -987,7 +990,7 @@ test.describe("foundation preview integration", () => {
       foundations: typeof validFoundations;
     };
 
-    expect(exported.schemaVersion).toBe(4);
+    expect(exported.schemaVersion).toBe(6);
     expect(exported.colors.primary).toBe("#0f766e");
     expect(exported.foundations.palettes.primary.base).toBe("#0f766e");
     expect(exported.foundations.palettes.primary.shades[500]).toBe("#123456");

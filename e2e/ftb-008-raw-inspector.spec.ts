@@ -2,6 +2,11 @@ import { expect, test } from '@playwright/test'
 
 const baseUrl = process.env.COMPOSE_BASE_URL ?? 'http://127.0.0.1:4175'
 
+async function openExportMenu(page: import('@playwright/test').Page) {
+  const summary = page.locator('summary[aria-label="Export actions"]')
+  if (!(await summary.evaluate((element) => element.parentElement?.hasAttribute('open')))) await summary.click()
+}
+
 test.skip(process.env.COMPOSE_E2E !== '1', 'Requires a running Compose stack')
 test.use({ acceptDownloads: true })
 
@@ -30,14 +35,14 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
     page.on('request', (request) => {
       if (request.method() !== 'GET') requests.push(request.method())
     })
-    const target = frame.locator('.fi-section:visible').first()
     const beforeUrl = await page.getByTitle('Filament preview').getAttribute('src')
 
     await page.getByRole('button', { name: 'Inspector' }).click()
-    await target.dispatchEvent('click')
+    await frame.locator('.fi-section:visible').first().dispatchEvent('click')
     await expect(page.locator('[data-advanced-inspector]')).toBeVisible()
     const selector = await chooseSectionSurface(page)
     await expect(page.getByLabel('Raw element selector')).toHaveValue(selector)
+    const target = frame.locator(`${selector}:visible`).first()
 
     await page.locator('#raw-background-color').fill('#0f766e')
     await expect.poll(() => target.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(/15, 118, 110|rgb\(15, 118, 110\)/)
@@ -61,7 +66,7 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
     await expect(page.locator('[data-selector-warning]')).toContainText(/fragile|multiple classes/i)
     await page.locator('#raw-border-radius').fill('0.75rem')
 
-    await page.getByLabel('Export actions').click()
+    await openExportMenu(page)
     await page.getByRole('button', { name: 'Download vanilla CSS' }).click()
     await expect(page.getByRole('status', { name: /export/i })).toContainText(/download started/i)
   })
@@ -73,7 +78,7 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
     const selector = await chooseSectionSurface(page)
     await page.locator('#raw-background-color').fill('#0f766e')
 
-    await page.getByLabel('Export actions').click()
+    await openExportMenu(page)
     const [download] = await Promise.all([
       page.waitForEvent('download'),
       page.getByRole('button', { name: 'Download vanilla CSS' }).click(),
@@ -98,7 +103,7 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
       })
     })
 
-    await page.getByLabel('Export actions').click()
+    await openExportMenu(page)
     await page.getByRole('button', { name: 'Copy vanilla CSS' }).click()
 
     await expect.poll(() => page.evaluate(() => (window as Window & { __ftbCopied?: string }).__ftbCopied ?? '')).toContain('/* Generated with Filament Theme Builder */')
@@ -117,7 +122,7 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
       background: getComputedStyle(element).backgroundColor,
       primary: getComputedStyle(element.ownerDocument.querySelector('.fi-color-primary')!).color,
     }))
-    await page.getByLabel('Export actions').click()
+    await openExportMenu(page)
     const [download] = await Promise.all([
       page.waitForEvent('download'),
       page.getByRole('button', { name: 'Download vanilla CSS' }).click(),

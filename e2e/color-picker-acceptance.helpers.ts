@@ -17,8 +17,9 @@ export const readCanonical = (page: Page) => page.evaluate(() => {
 })
 
 export async function openChooser(page: Page, label: string): Promise<void> {
-  await page.getByRole('button', { name: `Choose ${label} from Tailwind palette` }).click()
-  await expect(page.getByRole('dialog', { name: `${label} color choices` })).toBeVisible()
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  await page.getByRole('button', { name: new RegExp(`^Choose ${escaped}(?: (?:light|dark))? from Tailwind palette$`, 'i') }).click()
+  await expect(page.getByRole('dialog', { name: new RegExp(`^${escaped}(?: (?:light|dark))? color choices$`, 'i') })).toBeVisible()
 }
 
 export async function chooseToken(page: Page, token = 'gray 900 #101828'): Promise<void> {

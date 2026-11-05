@@ -7,7 +7,7 @@ test.describe('color picker boundaries and recovery', () => {
   test('supports custom alpha, invalid draft recovery, and native compatibility', async ({ page }) => {
     await page.goto(baseUrl)
     const input = page.locator('#primary-palette-base')
-    await page.getByRole('button', { name: 'Primary', exact: true }).click()
+    await page.getByRole('button', { name: /^primary /i }).click()
     await page.locator('#primary-palette-base-picker').fill('#123456')
     await expect(input).toHaveValue('#123456')
     await expect.poll(async () => (await readCanonical(page)).foundations.palettes.primary.base).toBe('#123456')

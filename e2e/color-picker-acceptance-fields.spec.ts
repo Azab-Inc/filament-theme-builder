@@ -16,7 +16,7 @@ test.describe('color picker field acceptance', () => {
     await expect.poll(() => frame.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--ftb-primary').trim())).toBe('#101828')
     navigations.length = 0
     const baseBefore = await readCanonical(page)
-    await page.getByRole('button', { name: 'Primary', exact: true }).click()
+    await page.getByRole('button', { name: /^primary /i }).click()
     await openChooser(page, 'primary palette base'); await chooseToken(page, 'red 500 #fb2c36')
     await expect(page.locator('#primary-palette-base')).toHaveValue('#fb2c36')
     await expect.poll(async () => (await readCanonical(page)).foundations.palettes.primary.base).toBe('#fb2c36')
@@ -31,7 +31,7 @@ test.describe('color picker field acceptance', () => {
 
   test('selects a shade, undoes/redoes it, and reset restores the generated ramp', async ({ page }) => {
     await page.goto(baseUrl); const frame = await setPreviewRoute(page, '/demo/admin/showcase')
-    await page.getByRole('button', { name: 'Primary', exact: true }).click()
+    await page.getByRole('button', { name: /^primary /i }).click()
     const input = page.locator('#primary-shade-900')
     await expect(input).toHaveValue('')
     await expect(page.locator('[data-palette-status="primary-shade-900"]')).toContainText('generated')
