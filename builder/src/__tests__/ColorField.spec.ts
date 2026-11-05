@@ -17,6 +17,28 @@ describe('ColorField', () => {
     expect(wrapper.find('button[aria-label="Choose Inventory surface from Tailwind palette"]').exists()).toBe(true)
   })
 
+  it('offers the built-in palette in compatible reference fields with friendly labels', () => {
+    const wrapper = mount(ColorField, { props: {
+      id: 'surface-ref', label: 'Surface', value: 'var(--gray-900)', effectiveValue: '#101828',
+      profile: 'foundation', contextKey: 'surface-ref', userTokenOptions: ['user.color.secondary', 'user.palette.brand.500'],
+    } })
+    const choices = [...wrapper.get('[data-user-token-select]').element.querySelectorAll('option')].map((option) => [option.value, option.textContent])
+    expect(choices).toContainEqual(['var(--ftb-palette-primary-500)', 'primary 500'])
+    expect(choices).toContainEqual(['user.color.secondary', 'secondary'])
+    expect(choices).toContainEqual(['user.palette.brand.500', 'brand 500'])
+  })
+
+  it('gives color-value text fields a stable form name and disables password/spell suggestions', () => {
+    const wrapper = mount(ColorField, { props: {
+      id: 'inventory-surface', label: 'Inventory surface', value: '#ffffff', effectiveValue: '#ffffff',
+      profile: 'hex6', contextKey: 'inventory',
+    } })
+    const input = wrapper.get('#inventory-surface')
+    expect(input.attributes('name')).toBe('inventory-surface')
+    expect(input.attributes('autocomplete')).toBe('off')
+    expect(input.attributes('spellcheck')).toBe('false')
+  })
+
   it('preserves existing labels and IDs while showing empty shade overrides with their effective swatch', () => {
     const wrapper = mount(ColorField, { props: {
       id: 'primary-shade-500', label: 'Primary 500', value: '', effectiveValue: '#fb2c36',
@@ -35,6 +57,8 @@ describe('ColorField', () => {
     } })
     const native = wrapper.get('[aria-label="Surface native color picker"]')
     expect((native.element as HTMLInputElement).value).toBe('#101828')
+    expect(wrapper.get('#surface').element).toHaveProperty('value', 'var(--gray-900)')
+    expect(wrapper.text()).toContain('Choosing a native color replaces the current value')
     await wrapper.get('[aria-label="Choose Surface from Tailwind palette"]').trigger('click')
     document.querySelector<HTMLButtonElement>('[aria-label="Close Surface color choices"]')?.click()
     expect((wrapper.get('#surface').element as HTMLInputElement).value).toBe('var(--gray-900)')
@@ -84,5 +108,4 @@ describe('ColorField', () => {
     expect((wrapper.get('#brand').element as HTMLInputElement).value).toBe('#654321')
     expect(document.activeElement).toBe(wrapper.get('#brand-palette-trigger').element)
   })
-
 })

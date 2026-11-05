@@ -11,6 +11,8 @@ describe('ColorField alpha preservation', () => {
     const native = wrapper.get('[aria-label="Alpha token native color picker"]')
     expect((text.element as HTMLInputElement).value).toBe('#12345678')
     expect((native.element as HTMLInputElement).value).toBe('#000000')
+    expect(native.attributes('disabled')).toBeUndefined()
+    expect(wrapper.text()).toContain('Choosing a native color replaces the current value')
     await wrapper.get('[aria-label="Choose Alpha token from Tailwind palette"]').trigger('click')
     document.querySelector<HTMLButtonElement>('[aria-label="Close Alpha token color choices"]')?.click()
     expect((text.element as HTMLInputElement).value).toBe('#12345678')

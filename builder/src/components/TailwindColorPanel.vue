@@ -16,7 +16,7 @@ const families = computed(() => [...new Set((search.value ? colors.value : getTa
       <span aria-hidden="true"></span>Transparent
     </button>
     <label class="color-popover__search-label" :for="`${id}-tailwind-search`">Search Tailwind colors</label>
-    <input :id="`${id}-tailwind-search`" v-model="search" type="search" aria-label="Search Tailwind colors" />
+    <input :id="`${id}-tailwind-search`" v-model="search" name="tailwind-color-search" autocomplete="off" type="search" aria-label="Search Tailwind colors" />
     <p class="color-popover__result-count" role="status" aria-live="polite">{{ colors.length }} colors</p>
     <p v-if="!colors.length" class="color-popover__empty">No colors found. Clear search to see all colors.</p>
     <div class="color-popover__families">

@@ -39,7 +39,7 @@ const TAILWIND_COLOR_VALUES: Record<string, Record<number, string>> = {
 }
 
 export function resolveTrustedColorReference(value: string): string | null {
-  const semantic = /^var\(--(?:primary|success|warning|danger|info|gray)-(50|100|200|300|400|500|600|700|800|900|950)\)$/.exec(value)
+  const semantic = /^var\(--(?:ftb-palette-)?(?:primary|success|warning|danger|info|gray)-(50|100|200|300|400|500|600|700|800|900|950)\)$/.exec(value)
   if (semantic) return value
 
   const match = standardReference.exec(value)

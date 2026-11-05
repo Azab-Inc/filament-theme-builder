@@ -60,6 +60,6 @@ function chooseToken(event: Event): void { const select = event.target as HTMLSe
     </div>
     <span v-if="!nativeSupported" class="color-field__native-help" role="status">Choosing a native color replaces the current value.</span>
     <span v-if="error && !externalError" :id="errorId" class="color-field__error" role="alert">{{ error }}</span>
-      <ColorPopover :id="id" :label="label" :open="open" :value="draft" :profile="profile" :trigger-element="trigger" :property="property" :native-primary="nativePrimary" @close="open = false" @select="select($event.value)" @apply="select" />
+    <ColorPopover :id="id" :label="label" :open="open" :value="draft" :effective-value="nativeValue" :profile="profile" :trigger-element="trigger" :property="property" :native-primary="nativePrimary" :reference-options="referenceOptions" @close="open = false" @select="select($event.value)" @apply="select" />
   </div>
 </template>
