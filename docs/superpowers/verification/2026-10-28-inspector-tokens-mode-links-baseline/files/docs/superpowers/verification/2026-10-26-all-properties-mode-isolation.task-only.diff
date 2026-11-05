@@ -1,0 +1,2066 @@
+--- a/builder/src/__tests__/local-theme-storage.spec.ts
++++ b/builder/src/__tests__/local-theme-storage.spec.ts
+@@ -114,7 +114,7 @@
+     storage.setItem('ftb-theme', JSON.stringify(old))
+     const result = initializeLocalThemeStorage(storage, state, (legacy) => migrateToCurrent(legacy))
+     expect(result.error).toBeNull()
+-    expect(result.state.schemaVersion).toBe(5)
++    expect(result.state.schemaVersion).toBe(6)
+     expect(result.state.colors.primary).toBe('#123456')
+   })
+   it('recovers the original V3 baseline fixture at the outer storage boundary', () => {
+@@ -131,7 +131,7 @@
+     storage.setItem('ftb-theme', JSON.stringify(legacy))
+     const result = initializeLocalThemeStorage(storage, state, migrateToCurrent)
+     expect(result.error).toBeNull()
+-    expect(result.state.schemaVersion).toBe(5)
++    expect(result.state.schemaVersion).toBe(6)
+     expect(result.state.foundations.borders.default.light).toBe('var(--gray-200)')
+     expect(storage.getItem('ftb-theme')).toBeNull()
+   })
+--- a/builder/src/__tests__/padding-store.spec.ts
++++ b/builder/src/__tests__/padding-store.spec.ts
+@@ -64,9 +64,9 @@
+     store.saveTheme()
+     const id = store.activeThemeId
+     const state = JSON.parse(localStorage.getItem(`ftb-theme:${id}`)!)
+-    expect(state.schemaVersion).toBe(5)
++    expect(state.schemaVersion).toBe(6)
+     expect(state.padding[0].edges.top).toBe(0)
+-    expect(JSON.parse(localStorage.getItem(`ftb-theme-history:${id}`)!).snapshots[0].schemaVersion).toBe(5)
++    expect(JSON.parse(localStorage.getItem(`ftb-theme-history:${id}`)!).snapshots[0].schemaVersion).toBe(6)
+   })
+ 
+   it('migrates all V4 history snapshots without dropping the cursor', () => {
+@@ -77,11 +77,11 @@
+     localStorage.setItem('ftb-theme:legacy', JSON.stringify(v4))
+     localStorage.setItem('ftb-theme-history:legacy', JSON.stringify({ snapshots: [v4, second], cursor: 1 }))
+     const store = useThemeStore()
+-    expect(store.theme.schemaVersion).toBe(5)
++    expect(store.theme.schemaVersion).toBe(6)
+     expect(store.theme.colors.primary).toBe('#6366f1')
+     const history = JSON.parse(localStorage.getItem('ftb-theme-history:legacy')!)
+     expect(history.snapshots).toHaveLength(2)
+-    expect(history.snapshots.every((snapshot: { schemaVersion: number }) => snapshot.schemaVersion === 5)).toBe(true)
++    expect(history.snapshots.every((snapshot: { schemaVersion: number }) => snapshot.schemaVersion === 6)).toBe(true)
+     expect(history.snapshots[1].colors.primary).toBe('#0f766e')
+     expect(history.cursor).toBe(1)
+   })
+--- a/builder/src/__tests__/preview-theme-state-effects.spec.ts
++++ b/builder/src/__tests__/preview-theme-state-effects.spec.ts
+@@ -65,10 +65,10 @@
+     let store: ReturnType<typeof useThemeStore> | undefined
+     const wrapper = mount({ setup() { store = useThemeStore(); usePreviewTheme({ theme: store, activeMode: ref('light'), previewUrl: '/demo/admin', iframe }); return {} }, template: '<div />' }, { global: { plugins: [createPinia()] } })
+     const message = postMessage.mock.lastCall?.[0]
+-    expect(message.theme.schemaVersion).toBe(5)
++    expect(message.theme.schemaVersion).toBe(6)
+     expect(message.theme.padding).toEqual([])
+     expect(message.paddingProjection).toEqual({ schemaVersion: 1, rules: [] })
+-    expect(store?.theme.schemaVersion).toBe(5)
++    expect(store?.theme.schemaVersion).toBe(6)
+     wrapper.unmount()
+   })
+ })
+--- a/builder/src/__tests__/pure-service-migration.spec.ts
++++ b/builder/src/__tests__/pure-service-migration.spec.ts
+@@ -54,7 +54,8 @@
+     }
+ 
+     for (const [name, exports] of Object.entries(migratedRuntimeExports)) {
+-      expect(Object.keys(modules[name as keyof typeof modules]).sort()).toEqual([...exports].sort())
++      const expected = name === 'foundationProvenance' ? [...exports, 'isPaletteModeExplicit'] : [...exports]
++      expect(Object.keys(modules[name as keyof typeof modules]).sort()).toEqual(expected.sort())
+     }
+   })
+ })
+--- a/builder/src/__tests__/theme-import-migrations.spec.ts
++++ b/builder/src/__tests__/theme-import-migrations.spec.ts
+@@ -11,8 +11,8 @@
+ describe('versioned theme migration edges', () => {
+   it('migrates V1 through each explicit edge', () => {
+     const result = migrateVersionedTheme({ schemaVersion: 1, colors: { primary: '#123456' } }, registry)
+-    expect(result).toMatchObject({ ok: true, sourceVersion: 1, migrationPath: [1, 2, 3, 4, 5] })
+-    expect(result.ok && result.state.schemaVersion).toBe(5)
++    expect(result).toMatchObject({ ok: true, sourceVersion: 1, migrationPath: [1, 2, 3, 4, 5, 6] })
++    expect(result.ok && result.state.schemaVersion).toBe(6)
+     if (!result.ok) return
+     expect(validateLocalThemeState(result.state)).not.toBeNull()
+     expect(result.state.colors.primary).toBe('#123456')
+@@ -22,7 +22,7 @@
+ 
+   it('migrates V2 through V3 and V4', () => {
+     const result = migrateVersionedTheme({ schemaVersion: 2, colors: { primary: '#123456' }, overrides: [] }, registry)
+-    expect(result).toMatchObject({ ok: true, sourceVersion: 2, migrationPath: [2, 3, 4, 5] })
++    expect(result).toMatchObject({ ok: true, sourceVersion: 2, migrationPath: [2, 3, 4, 5, 6] })
+     expect(result.ok && result.state.colors.primary).toBe('#123456')
+     expect(result.ok && result.state.foundations.palettes.primary.shades[500]).toBe('#123456')
+   })
+@@ -31,7 +31,7 @@
+     const v4 = createDefaultThemeState()
+     const { rawOverrides: _rawOverrides, ...v3 } = v4
+     const result = migrateVersionedTheme({ ...v3, schemaVersion: 3 }, registry)
+-    expect(result).toMatchObject({ ok: true, sourceVersion: 3, migrationPath: [3, 4, 5] })
++    expect(result).toMatchObject({ ok: true, sourceVersion: 3, migrationPath: [3, 4, 5, 6] })
+     expect(result.ok && result.state.rawOverrides).toEqual([])
+     expect(result.ok && result.state.customCss).toBe('')
+   })
+@@ -41,7 +41,7 @@
+     const result = migrateVersionedTheme(source, registry)
+     if (result.ok) result.state.colors.primary = '#123456'
+     expect(source.colors.primary).not.toBe('#123456')
+-    expect(result.ok && result.migrationPath).toEqual([4, 5])
++    expect(result.ok && result.migrationPath).toEqual([4, 5, 6])
+   })
+ 
+   it('reports invalid migration input instead of stripping fields', () => {
+--- a/builder/src/__tests__/theme-import-service.spec.ts
++++ b/builder/src/__tests__/theme-import-service.spec.ts
+@@ -40,7 +40,7 @@
+     const source = { schemaVersion: 1 as const, colors: { primary: '#123456' } }
+     const before = structuredClone(source)
+     const result = parseAndMigrateTheme(bytes(source), 'x.json', '', registry)
+-    expect(result).toMatchObject({ ok: true, sourceVersion: 1, migrationPath: [1, 2, 3, 4, 5] })
++    expect(result).toMatchObject({ ok: true, sourceVersion: 1, migrationPath: [1, 2, 3, 4, 5, 6] })
+     expect(source).toEqual(before)
+     expect((parseAndMigrateTheme(bytes({ schemaVersion: 2, colors: { primary: '#123456' }, overrides: [] }), 'x.json', '', registry)).ok).toBe(true)
+     expect((parseAndMigrateTheme(bytes(createDefaultThemeState()), 'x.json', '', registry)).ok).toBe(true)
+--- a/builder/src/__tests__/theme-import-ui.spec.ts
++++ b/builder/src/__tests__/theme-import-ui.spec.ts
+@@ -32,7 +32,7 @@
+     const initial = store.themes.length
+     const model = useThemeImport(store)
+     await model.chooseFile(file('legacy.json'))
+-    expect(model.state.preview?.migrationPath).toEqual([1, 2, 3, 4, 5])
++    expect(model.state.preview?.migrationPath).toEqual([1, 2, 3, 4, 5, 6])
+     expect(store.themes).toHaveLength(initial)
+     model.cancel()
+     expect(store.themes).toHaveLength(initial)
+--- a/builder/src/__tests__/theme-relay-client.spec.ts
++++ b/builder/src/__tests__/theme-relay-client.spec.ts
+@@ -67,6 +67,17 @@
+     expect(fetcher.mock.calls.some(([url]) => String(url).endsWith('/receipt'))).toBe(false)
+   })
+ 
++  it('publishes the canonical schema version from exported JSON', async () => {
++    const requests: Request[] = []
++    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
++      requests.push(new Request(new URL(input.toString(), location.origin), init))
++      return String(input).includes('/bootstrap') ? ok(bootstrap) : ok({ version: 1, status: 'approved' })
++    })
++    await createThemeRelayClient(pairing(), fetcher).publishExportResult('a'.repeat(64), '{"schemaVersion":6}')
++    const body = JSON.parse(await requests[requests.length - 1]!.text()) as Record<string, unknown>
++    expect(body.schemaVersion).toBe(6)
++  })
++
+   it('normalizes server apply-grant seconds to the browser millisecond clock', async () => {
+     const fetcher = vi.fn(async (input: RequestInfo | URL) => String(input).includes('/bootstrap')
+       ? ok(bootstrap) : ok({ version: 1, status: 'pending', grantId: 'f'.repeat(64), grantExpiresAt: 1_005 }))
+--- a/builder/src/__tests__/theme-relay-operations.spec.ts
++++ b/builder/src/__tests__/theme-relay-operations.spec.ts
+@@ -21,7 +21,7 @@
+       { operationId: 'b'.repeat(64), kind: 'export', status: 'pending', themeId: active },
+     ], relay as never, store, vi.fn())
+     expect(relay.publishListResult).toHaveBeenCalledWith('a'.repeat(64), [{ id: active, name: 'Untitled', updatedAt: expect.any(Number), active: true }])
+-    expect(relay.publishExportResult).toHaveBeenCalledWith('b'.repeat(64), expect.stringContaining('"schemaVersion":5'))
++    expect(relay.publishExportResult).toHaveBeenCalledWith('b'.repeat(64), expect.stringContaining('"schemaVersion":6'))
+     expect(store.themes).toHaveLength(count); expect(store.activeThemeId).toBe(active)
+   })
+ 
+--- a/builder/src/__tests__/theme-relay-preview.spec.ts
++++ b/builder/src/__tests__/theme-relay-preview.spec.ts
+@@ -12,7 +12,7 @@
+   it('routes verified bytes into the isolated preview and acknowledges receipt', async () => {
+     const store = useThemeStore(); const model = useThemeImport(store); const relay = relayStub(); const input = await payload()
+     await model.receiveRelayPayload(input, relay as never)
+-    expect(model.state.preview?.migrationPath).toEqual([1, 2, 3, 4, 5])
++    expect(model.state.preview?.migrationPath).toEqual([1, 2, 3, 4, 5, 6])
+     expect(store.themes).toHaveLength(1)
+     expect(relay.acknowledgePayload).toHaveBeenCalledWith(input.operationId, input.digest)
+     expect(relay.submitPreview).toHaveBeenCalledWith(input.operationId, expect.objectContaining({ payloadDigest: input.digest, byteLength: input.byteLength }))
+--- a/builder/src/__tests__/theme-serialization-canonical.spec.ts
++++ b/builder/src/__tests__/theme-serialization-canonical.spec.ts
+@@ -12,7 +12,7 @@
+     const restored = deserializeTheme(serializeCanonicalTheme(state), registry)
+     expect(restored).toMatchObject({ valid: true })
+     if (restored.valid) {
+-      expect(restored.state.schemaVersion).toBe(5)
++      expect(restored.state.schemaVersion).toBe(6)
+       expect('rawOverrides' in restored.state ? restored.state.rawOverrides : undefined).toEqual(state.rawOverrides)
+       expect('overrides' in restored.state ? restored.state.overrides : undefined).toEqual([])
+     }
+@@ -34,7 +34,7 @@
+     const restored = deserializeTheme(v3, registry)
+     expect(restored).toMatchObject({ valid: true })
+     if (restored.valid) {
+-      expect(restored.state.schemaVersion).toBe(5)
++      expect(restored.state.schemaVersion).toBe(6)
+       expect(restored.state).toMatchObject({ colors: v3.colors, overrides: v3.overrides })
+       expect('icons' in restored.state ? restored.state.icons : undefined).toEqual(v3.icons)
+       expect('branding' in restored.state ? restored.state.branding : undefined).toEqual(v3.branding)
+--- a/builder/src/__tests__/theme-serialization-round-trip.spec.ts
++++ b/builder/src/__tests__/theme-serialization-round-trip.spec.ts
+@@ -26,7 +26,7 @@
+     theme.foundations.palettes.primary.shades[500] = '#123456'
+     theme.foundations.explicitPaths.push('palettes.primary.base')
+     const exported = serializeCanonicalTheme(theme)
+-    expect(exported.schemaVersion).toBe(5)
++    expect(exported.schemaVersion).toBe(6)
+     expect(exported.foundations.palettes.primary.base).toBe('#0f766e')
+     expect(exported.foundations.palettes.primary.shades[500]).toBe('#123456')
+     expect(exported.foundations.explicitPaths).toEqual(['palettes.primary.base'])
+--- a/builder/src/__tests__/theme-state-defaults-raw.spec.ts
++++ b/builder/src/__tests__/theme-state-defaults-raw.spec.ts
+@@ -15,7 +15,7 @@
+   it('creates a versioned default state and changes the primary color', () => {
+     const theme = createThemeState()
+ 
+-    expect(theme.theme.schemaVersion).toBe(5)
++    expect(theme.theme.schemaVersion).toBe(6)
+     expect(theme.theme.colors.primary).toBe('#6366f1')
+     expect(theme.theme.overrides).toEqual([])
+     expect(theme.theme.rawOverrides).toEqual([])
+@@ -56,7 +56,7 @@
+     vi.advanceTimersByTime(300)
+ 
+     expect(readActiveThemeState()).toMatchObject({
+-      schemaVersion: 5,
++      schemaVersion: 6,
+       rawOverrides: [{ selector: '.fi-input', properties: { 'border-radius': '0.75rem' } }],
+     })
+   })
+--- a/builder/src/__tests__/theme-state-migrations.spec.ts
++++ b/builder/src/__tests__/theme-state-migrations.spec.ts
+@@ -15,7 +15,7 @@
+   it('migrates version-1 colors.primary into the current state without losing the color', () => {
+     localStorage.setItem('ftb-theme', JSON.stringify({ schemaVersion: 1, colors: { primary: '#0f766e' } }))
+     const store = createThemeState()
+-    expect(store.theme.schemaVersion).toBe(5)
++    expect(store.theme.schemaVersion).toBe(6)
+     expect(store.theme.padding).toEqual([])
+     expect(store.theme.colors.primary).toBe('#0f766e')
+     expect(store.theme.overrides).toEqual([])
+@@ -37,7 +37,7 @@
+ 
+     const store = createThemeState()
+ 
+-    expect(store.theme.schemaVersion).toBe(5)
++    expect(store.theme.schemaVersion).toBe(6)
+     expect(store.theme.colors.primary).toBe('#0f766e')
+     expect(store.theme.foundations.palettes.primary.base).toBe('#0f766e')
+     expect(store.theme.overrides).toEqual([primaryButtonVariantOverride])
+@@ -83,7 +83,7 @@
+     }))
+ 
+     const store = createThemeState()
+-    expect(store.theme.schemaVersion).toBe(5)
++    expect(store.theme.schemaVersion).toBe(6)
+     expect(store.theme.foundations.density).toBe('default')
+     expect(() => store.setDensity('spacious')).not.toThrow()
+   })
+--- a/builder/src/__tests__/theme-state-overrides.spec.ts
++++ b/builder/src/__tests__/theme-state-overrides.spec.ts
+@@ -32,7 +32,7 @@
+       overrides: [primaryButtonVariantOverride, { ...primaryButtonVariantOverride, value: '#dc2626' }],
+     }))
+ 
+-    expect(createThemeState().theme.schemaVersion).toBe(5)
++    expect(createThemeState().theme.schemaVersion).toBe(6)
+     expect(createThemeState().theme.colors.primary).toBe('#6366f1')
+     expect(createThemeState().theme.overrides).toEqual([])
+   })
+--- a/builder/src/components/AdvancedRawInspector.vue
++++ b/builder/src/components/AdvancedRawInspector.vue
+@@ -3,6 +3,7 @@
+ import { useColorFieldResets } from '@/composables/use-color-field-resets'
+ import ColorField from '@/components/ColorField.vue'
+ import type { RawVisualProperty } from '@/models/raw-overrides.model'
++import type { ThemeMode } from '@/models/foundations.model'
+ import type {
+   RawPropertyChange,
+   RawPropertyReset,
+@@ -12,7 +13,7 @@
+ import type { InspectorVisualState } from '@/utils/raw-inspector-state'
+ import { selectorForInspectorState } from '@/utils/raw-inspector-state'
+ 
+-const props = defineProps<AdvancedRawInspectorProps>()
++const props = defineProps<AdvancedRawInspectorProps & { activeMode?: ThemeMode }>()
+ 
+ const emit = defineEmits<{
+   'set-selector': [change: RawSelectorChange]
+@@ -86,7 +87,7 @@
+         :key="property"
+         class="raw-property-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto]"
+       >
+-        <ColorField v-if="colorProperties.has(property)" :id="`raw-${property}`" :label="`Raw ${property}`" :visible-label="property" :text-label="`Raw ${property}`" :value="propertyValue(property)" :effective-value="propertyValue(property)" profile="raw" :context-key="`${activeThemeId ?? ''}:${selector}:${property}`" :property="property" :reset-key="resetKeys[property]" @input="emit('set-property', { property, event: $event })" />
++        <ColorField v-if="colorProperties.has(property)" :id="`raw-${property}`" :label="`Raw ${property}`" :visible-label="property" :text-label="`Raw ${property}`" :value="propertyValue(property)" :effective-value="propertyValue(property)" profile="raw" :context-key="`${activeThemeId ?? ''}:${props.activeMode ?? 'light'}:${selector}:${property}`" :property="property" :reset-key="resetKeys[property]" @input="emit('set-property', { property, event: $event })" />
+         <template v-else><label :for="`raw-${property}`">{{ property }}</label><input :id="`raw-${property}`" :name="`raw-${property}`" autocomplete="off" :aria-label="`Raw ${property}`" :value="propertyValue(property)" @input="emit('set-property', { property, event: $event })" /></template>
+         <button
+           type="button"
+--- a/builder/src/components/EditorSections.vue
++++ b/builder/src/components/EditorSections.vue
+@@ -16,12 +16,12 @@
+ <template>
+   <section v-show="shell.selectedEditorSection === 'foundations'" id="editor-panel-foundations" class="foundations grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-foundations" data-editor-section="foundations">
+     <h2 id="foundations-heading">Foundations</h2><p class="foundations__hint">Global values are persisted in the theme and projected only when the Filament 5.9 compatibility inventory supports them.</p>
+-    <FoundationsPaletteControls :palettes="shell.foundation.palettes" :palette-names="shell.paletteNames" :palette-shades="shell.paletteShades" :status-for="shell.statusFor" :context-key="`${shell.theme.activeThemeId}:${shell.selectedEditorSection}`" @set-palette-base="shell.setPaletteBase" @set-palette-shade="shell.setPaletteShade" @reset-palette-base="shell.resetPaletteBase" @reset-palette-shade="shell.resetPaletteShade" />
++    <FoundationsPaletteControls :active-mode="shell.activeMode" :palettes="shell.palettes" :palette-names="shell.paletteNames" :palette-shades="shell.paletteShades" :status-for="shell.statusFor" :context-key="`${shell.theme.activeThemeId}:${shell.selectedEditorSection}`" @set-palette-base="shell.setPaletteBase" @set-palette-shade="shell.setPaletteShade" @reset-palette-base="shell.resetPaletteBase" @reset-palette-shade="shell.resetPaletteShade" />
+      <FoundationsSurfaceControls :active-mode="shell.activeMode" :surfaces="shell.resolvedFoundation.surfaces" :borders="shell.resolvedFoundation.borders" :text="shell.resolvedFoundation.text" :surface-names="shell.surfaceNames" :border-names="shell.borderNames" :text-names="shell.textNames" :status-for="shell.statusFor" :foundation-error="shell.foundationError" :context-key="`${shell.theme.activeThemeId}:${shell.selectedEditorSection}`" @set-mode-value="shell.setModeValue" @reset="shell.reset" />
+     <FoundationsTypographyLayoutControls :typography="shell.foundation.typography" :spacing="shell.foundation.spacing" :density="shell.foundation.density" :radius="shell.foundation.radius" :border-width="shell.foundation.borderWidth" :shadow="shell.foundation.shadow" :font-choices="shell.fontChoices" :status-for="shell.statusFor" @set-font-choice="shell.setFontChoice($event.name, $event.event)" @set-font-name="shell.setFontName($event.name, $event.event)" @set-density="shell.setDensity" @set-number-foundation="shell.setNumberFoundation($event.path, $event.event)" @set-select-foundation="shell.setSelectFoundation($event.path, $event.event)" @reset="shell.reset" />
+   </section>
+   <BrandingSettingsPanel :active="shell.selectedEditorSection === 'branding'" :branding="shell.theme.theme.branding" :upload-errors="shell.uploadErrors" @change-branding="shell.applyBrandingChange" @upload-asset="shell.uploadBrandingAsset($event.setting, $event.event)" @set-brand-typography="shell.setBrandTypography" @set-custom-brand-typography="shell.setCustomBrandTypography" @reset-branding="shell.theme.resetBranding" />
+   <IconPackConfigurationPanel :active="shell.selectedEditorSection === 'icons'" :configuration="shell.theme.theme.icons" :pack-names="shell.iconPackNames" :resource-keys="shell.resourceIconKeys" :icon-options="shell.iconOptions" :previews="shell.iconPreviews" @change-pack="shell.setIconPack" @change-override="shell.setIconOverride($event.key, $event.value)" @reset-override="shell.theme.resetSemanticResourceIcon" @reset-configuration="shell.theme.resetIconConfiguration" />
+-     <SemanticComponentControls :key="shell.selectedEditorSection" v-show="shell.selectedEditorSection === 'components'" :active-theme-id="shell.theme.activeThemeId" :rows="shell.productNameRows" :padding-targets="shell.inspectorRegistry.entries.flatMap((entry) => entry.paddingTargets ?? [])" :padding-read="shell.theme.readPadding" :padding-set="shell.theme.setPadding" :padding-reset="shell.theme.resetPadding" @set-value="shell.setProductNameValue($event.row, $event.event)" @reset="shell.resetProductNameValue($event.row)" />
+-     <AdvancedRawInspector :visible="Boolean(shell.inspector.selectedInspectorEvidence && shell.selectedEditorSection === 'inspector')" :active-theme-id="shell.theme.activeThemeId" :selector="shell.rawSelector" :state="shell.rawInspectorState" :selector-error="shell.rawSelectorError" :selector-classification="shell.rawSelectorClassification" :properties="shell.rawProperties" :property-value="shell.rawPropertyValue" @set-selector="shell.setRawSelector" @set-state="shell.setRawInspectorState" @set-property="shell.setRawProperty" @reset-property="shell.resetRawProperty" @reset-override="shell.resetRawOverride" />
++      <SemanticComponentControls :key="`${shell.selectedEditorSection}:${shell.activeMode}`" v-show="shell.selectedEditorSection === 'components'" :active-theme-id="shell.theme.activeThemeId" :active-mode="shell.activeMode" :rows="shell.productNameRows" :padding-targets="shell.inspectorRegistry.entries.flatMap((entry) => entry.paddingTargets ?? [])" :padding-read="shell.theme.readPadding" :padding-set="shell.theme.setPadding" :padding-reset="shell.theme.resetPadding" @set-value="shell.setProductNameValue($event.row, $event.event)" @reset="shell.resetProductNameValue($event.row)" />
++      <AdvancedRawInspector :visible="Boolean(shell.inspector.selectedInspectorEvidence && shell.selectedEditorSection === 'inspector')" :active-theme-id="shell.theme.activeThemeId" :active-mode="shell.activeMode" :selector="shell.rawSelector" :state="shell.rawInspectorState" :selector-error="shell.rawSelectorError" :selector-classification="shell.rawSelectorClassification" :properties="shell.rawProperties" :property-value="(property) => shell.rawPropertyValue(property, shell.activeMode)" @set-selector="shell.setRawSelector" @set-state="shell.setRawInspectorState" @set-property="shell.setRawProperty" @reset-property="shell.resetRawProperty" @reset-override="shell.resetRawOverride" />
+ </template>
+--- a/builder/src/components/SemanticComponentControls.vue
++++ b/builder/src/components/SemanticComponentControls.vue
+@@ -12,8 +12,9 @@
+ import PaddingHierarchyPanel from './PaddingHierarchyPanel.vue'
+ import type { PaddingMutation, PaddingReadResult, PaddingContext } from '@/models/padding.model'
+ import type { RegistryPaddingTarget } from '@/models/padding-registry.model'
++import type { ThemeMode } from '@/models/foundations.model'
+ 
+-defineProps<SemanticComponentControlsProps & { paddingTargets?: readonly RegistryPaddingTarget[]; paddingRead?: (request: { targetId: string; selectedContext: PaddingContext }) => PaddingReadResult; paddingSet?: (mutation: PaddingMutation & { operation: 'set' }) => void; paddingReset?: (mutation: PaddingMutation & { operation: 'reset' }) => void }>()
++const props = defineProps<SemanticComponentControlsProps & { activeMode?: ThemeMode; paddingTargets?: readonly RegistryPaddingTarget[]; paddingRead?: (request: { targetId: string; selectedContext: PaddingContext }) => PaddingReadResult; paddingSet?: (mutation: PaddingMutation & { operation: 'set' }) => void; paddingReset?: (mutation: PaddingMutation & { operation: 'reset' }) => void }>()
+ 
+ const emit = defineEmits<{
+   'set-value': [change: SemanticComponentValueChange]
+@@ -50,7 +51,7 @@
+         :key="row.scope"
+         class="component-control-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]"
+       >
+-        <ColorField :id="`product-name-${row.scope}-background`" :label="`Product name ${row.label} background`" :visible-label="`Product name ${row.label} background`" :text-label="`Product name ${row.scope} background`" :value="row.value" :effective-value="row.value" profile="hex6" :context-key="`${activeThemeId ?? ''}:${row.scope}:${row.request.targetId}`" :status-id="`product-name-${row.scope}-status`" :reset-key="resetKeys[row.scope]" @input="setValue(row, $event)" />
++         <ColorField :id="`product-name-${row.scope}-background`" :label="`Product name ${row.label} background`" :visible-label="`Product name ${row.scope} background`" :text-label="`Product name ${row.scope} background`" :value="row.value" :effective-value="row.value" profile="hex6" :context-key="`${activeThemeId ?? ''}:${props.activeMode ?? 'light'}:${row.scope}:${row.request.targetId}`" :status-id="`product-name-${row.scope}-status`" :reset-key="resetKeys[row.scope]" @input="setValue(row, $event)" />
+         <span :id="`product-name-${row.scope}-status`" role="status" :data-theme-source="row.source">{{
+           row.explicit ? `Explicit (${row.source})` : `Inherited from ${row.source}`
+         }}</span>
+--- a/builder/src/composables/use-builder-actions.ts
++++ b/builder/src/composables/use-builder-actions.ts
+@@ -5,6 +5,7 @@
+ import type { SemanticComponentRow } from '@/components/semantic-component-controls.model'
+ import type { ThemeOverride, ThemeScope } from '@/models/theme.model'
+ import type { RawVisualProperty } from '@/models/raw-overrides.model'
++import type { ThemeMode } from '@/models/foundations.model'
+ import type { RawPropertyChange, RawPropertyReset, RawSelectorChange } from '@/components/advanced-raw-inspector.dto'
+ import { validateRawSelector } from '@/utils/raw-override-validation'
+ import { ICON_PACK_NAMES, RESOURCE_ICON_KEYS, ICON_PACK_PRESETS } from '@/registry/icon-registry'
+@@ -18,7 +19,7 @@
+   const productNameContext = { componentId: 'form', variantId: 'default', stateId: 'focus' } as const
+   const productNameScopes: ReadonlyArray<{ scope: ThemeScope; label: string }> = [{ scope: 'global', label: 'Global' }, { scope: 'component', label: 'Component' }, { scope: 'variant', label: 'Variant' }, { scope: 'state', label: 'State (focus)' }]
+   const productNameRows = computed(() => productNameScopes.map((row) => {
+-    const request = { ...productNameTarget, ...(row.scope !== 'global' ? { componentId: productNameContext.componentId } : {}), ...(row.scope === 'variant' || row.scope === 'state' ? { variantId: productNameContext.variantId } : {}), ...(row.scope === 'state' ? { stateId: productNameContext.stateId } : {}) }
++    const request = { ...productNameTarget, mode: state.activeMode.value, ...(row.scope !== 'global' ? { componentId: productNameContext.componentId } : {}), ...(row.scope === 'variant' || row.scope === 'state' ? { variantId: productNameContext.variantId } : {}), ...(row.scope === 'state' ? { stateId: productNameContext.stateId } : {}) }
+     const resolution = state.theme.resolve(request)
+     return { ...row, request, value: resolution.status === 'resolved' && typeof resolution.value === 'string' ? resolution.value : '', source: resolution.status === 'resolved' ? resolution.source : 'unresolved', explicit: state.theme.theme.overrides.some((candidate) => sameOverrideKey(candidate, row.scope)) }
+   }))
+@@ -27,12 +28,12 @@
+   function setCustomBrandTypography(event: Event): void { const value = (event.target as HTMLInputElement).value.trim(); state.theme.setBrandingSetting('brandTypography', { kind: 'custom', name: value, family: value }) }
+   function setIconPack(pack: IconPackName): void { state.theme.setIconPack(pack) }
+   function setIconOverride(key: ResourceIconKey, value: string): void { value ? state.theme.setSemanticResourceIcon(key, value) : state.theme.resetSemanticResourceIcon(key) }
+-  function setProductNameValue(row: SemanticComponentRow, event: Event): void { const value = (event.target as HTMLInputElement).value; if (/^#[\da-f]{6}$/i.test(value)) state.theme.setOverride({ ...productNameTarget, scope: row.scope, value, ...(row.scope !== 'global' ? { componentId: productNameContext.componentId } : {}), ...(row.scope === 'variant' || row.scope === 'state' ? { variantId: productNameContext.variantId } : {}), ...(row.scope === 'state' ? { stateId: productNameContext.stateId } : {}) }) }
++  function setProductNameValue(row: SemanticComponentRow, event: Event): void { const value = (event.target as HTMLInputElement).value; if (/^#[\da-f]{6}$/i.test(value)) state.theme.setOverride({ ...productNameTarget, scope: row.scope, value, mode: state.activeMode.value, ...(row.scope !== 'global' ? { componentId: productNameContext.componentId } : {}), ...(row.scope === 'variant' || row.scope === 'state' ? { variantId: productNameContext.variantId } : {}), ...(row.scope === 'state' ? { stateId: productNameContext.stateId } : {}) }) }
+   function resetProductNameValue(row: SemanticComponentRow): void { state.theme.resetOverride(row.request) }
+-  function rawPropertyValue(property: RawVisualProperty): string { return state.theme.theme.rawOverrides.find((override) => override.selector === state.rawSelector.value)?.properties[property] ?? '' }
+-  function setRawProperty(change: RawPropertyChange): void { if (state.rawSelector.value && validateRawSelector(state.rawSelector.value).valid) state.theme.setRawOverride(state.rawSelector.value, change.property, (change.event.target as HTMLInputElement).value.trim()) }
+-  function resetRawProperty(change: RawPropertyReset): void { if (state.rawSelector.value) state.theme.resetRawProperty(state.rawSelector.value, change.property) }
+-  function resetRawOverride(): void { if (state.rawSelector.value) state.theme.resetRawOverride(state.rawSelector.value) }
++  function rawPropertyValue(property: RawVisualProperty, mode: ThemeMode = state.activeMode.value): string { const override = state.theme.theme.rawOverrides.find((item) => item.selector === state.rawSelector.value); return (mode === 'dark' ? override?.darkProperties?.[property] ?? override?.properties[property] : override?.properties[property]) ?? '' }
++  function setRawProperty(change: RawPropertyChange): void { if (state.rawSelector.value && validateRawSelector(state.rawSelector.value).valid) state.theme.setRawOverride(state.rawSelector.value, change.property, (change.event.target as HTMLInputElement).value.trim(), state.activeMode.value) }
++  function resetRawProperty(change: RawPropertyReset): void { if (state.rawSelector.value) state.theme.resetRawProperty(state.rawSelector.value, change.property, state.activeMode.value) }
++  function resetRawOverride(): void { if (state.rawSelector.value) state.theme.resetRawOverride(state.rawSelector.value, state.activeMode.value) }
+   function setRawSelector(change: RawSelectorChange): void { const next = (change.event.target as HTMLInputElement).value.trim(); const validation = validateRawSelector(next); state.rawSelectorError.value = validation.valid ? undefined : validation.error; if (validation.valid) state.rawSelector.value = next }
+   function setRawInspectorState(mode: InspectorVisualState): void { const next = selectorForInspectorState(state.rawSelector.value, mode); if (next && validateRawSelector(next).valid) { state.rawSelectorError.value = undefined; state.rawSelector.value = next } }
+   function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean { return override.targetId === productNameTarget.targetId && override.controlId === productNameTarget.controlId && override.scope === scope && (scope === 'global' || override.componentId === productNameContext.componentId) && (scope === 'global' || scope === 'component' || override.variantId === productNameContext.variantId) && (scope !== 'state' || override.stateId === productNameContext.stateId) }
+--- a/builder/src/composables/use-builder-foundations.ts
++++ b/builder/src/composables/use-builder-foundations.ts
+@@ -1,15 +1,23 @@
+ import { computed } from 'vue'
+-import type { Density, PaletteName, PaletteShade, ThemeMode } from '@/models/foundations.model'
++import { PALETTE_SHADES, type Density, type PaletteName, type PaletteShade, type ThemeMode } from '@/models/foundations.model'
+ import { lookupFoundationMapping } from '@/registry/filament-foundation-inventory'
+ import { isExplicitPath, isModeInherited } from '@/utils/foundation-provenance'
+ import { validateFoundationColor } from '@/utils/foundation-validation'
+ import type { FoundationModeValueChange } from '@/components/foundations-surface-controls.model'
+ import type { PaletteBaseChange, PaletteShadeChange, PaletteShadeReset } from '@/components/foundations-palette-controls.model'
+ import type { BuilderState } from './use-builder-state'
++import { resolvePaletteShade } from '@/utils/theme-store-palettes'
+ 
+ export function useBuilderFoundations(state: BuilderState) {
+   const resolvedFoundation = computed(() => state.theme.resolveFoundation(state.activeMode.value))
+-  const primaryColor = computed({ get: () => state.theme.theme.colors.primary, set: (color: string) => state.theme.setPrimaryColor(color) })
++  const palettes = computed(() => Object.fromEntries(Object.entries(state.foundation.value.palettes).map(([name, palette]) => {
++    const mode = state.activeMode.value
++    const base = mode === 'dark' ? palette.dark?.base ?? palette.base : palette.base
++    const shades = Object.fromEntries(PALETTE_SHADES.map((shade) => [shade, resolvePaletteShade(palette, shade, mode)])) as typeof palette.shades
++    const overrides = mode === 'dark' ? (palette.dark?.overrides ?? {}) : palette.overrides
++    return [name, { base, shades, overrides }]
++  })) as typeof state.foundation.value.palettes)
++  const primaryColor = computed({ get: () => state.activeMode.value === 'dark' ? state.foundation.value.palettes.primary.dark?.base ?? state.foundation.value.palettes.primary.base : state.theme.theme.colors.primary, set: (color: string) => state.theme.setPrimaryColor(color, state.activeMode.value) })
+   const surfaceNames = ['page', 'sidebar', 'topbar', 'card', 'elevated', 'input'] as const
+   const borderNames = ['default', 'strong'] as const
+   const textNames = ['primary', 'muted', 'disabled'] as const
+@@ -28,17 +36,26 @@
+     if (inventory.mapping !== 'preview-emulatable') return inventory.mapping
+     const provenancePath = /^(surfaces|borders|text)\./.test(path) ? `${path}.${state.activeMode.value}` : path
+     const shade = /^palettes\.([^.]+)\.shades\.(\d+)$/.exec(path)
+-    if (shade) return state.foundation.value.palettes[shade[1] as PaletteName]?.overrides[Number(shade[2]) as PaletteShade] ? 'explicit' : 'generated'
++    if (shade) {
++       const palette = state.foundation.value.palettes[shade[1] as PaletteName]
++       const explicit = state.activeMode.value === 'dark' ? palette?.dark?.overrides?.[Number(shade[2]) as PaletteShade] : palette?.overrides[Number(shade[2]) as PaletteShade]
++       return explicit ? 'explicit' : state.activeMode.value === 'dark' && !palette?.dark?.base ? 'inherited' : 'generated'
++     }
++    const paletteBase = /^palettes\.([^.]+)\.base$/.exec(path)
++    if (paletteBase) {
++      const palette = state.foundation.value.palettes[paletteBase[1] as PaletteName]
++      if (state.activeMode.value === 'dark') return palette?.dark?.base ? 'explicit' : 'inherited'
++    }
+     if (/^(surfaces|borders|text)\./.test(path) && isModeInherited(state.foundation.value, path.split('.')[0]!, path.split('.')[1]!, state.activeMode.value)) return 'inherited'
+     return isExplicitPath(state.foundation.value, provenancePath) || JSON.stringify(getPath(state.foundation.value, provenancePath)) !== JSON.stringify(getPath(state.defaultFoundation, provenancePath)) ? 'explicit' : 'inherited'
+   }
+   function reset(path: string): void { delete state.foundationErrors.value[path]; state.theme.resetFoundation(path) }
+   function setMode(mode: ThemeMode): void { state.activeMode.value = mode }
+   function setDensity(value: Density): void { state.theme.setDensity(value) }
+-  function setPaletteBase(change: PaletteBaseChange): void { state.theme.setPaletteBase(change.name, change.value) }
+-  function resetPaletteBase(name: PaletteName): void { reset(`palettes.${name}.base`) }
+-  function setPaletteShade(change: PaletteShadeChange): void { if (change.value) state.theme.setPaletteShadeOverride(change.name, change.shade, change.value) }
+-  function resetPaletteShade(change: PaletteShadeReset): void { state.theme.resetPaletteShade(change.name, change.shade) }
++  function setPaletteBase(change: PaletteBaseChange): void { state.theme.setPaletteBase(change.name, change.value, state.activeMode.value) }
++  function resetPaletteBase(name: PaletteName): void { reset(state.activeMode.value === 'dark' ? `palettes.${name}.dark.base` : `palettes.${name}.base`) }
++  function setPaletteShade(change: PaletteShadeChange): void { if (change.value) state.theme.setPaletteShadeOverride(change.name, change.shade, change.value, state.activeMode.value) }
++  function resetPaletteShade(change: PaletteShadeReset): void { state.theme.resetPaletteShade(change.name, change.shade, state.activeMode.value) }
+   function setModeValue(change: FoundationModeValueChange): void {
+     const path = `${change.path}.${state.activeMode.value}`
+     const value = (change.event.target as HTMLInputElement).value
+@@ -47,5 +64,5 @@
+     delete state.foundationErrors.value[path]; state.theme.setFoundation(path, value)
+   }
+   function foundationError(path: string): string | undefined { return state.foundationErrors.value[path] }
+-  return { resolvedFoundation, primaryColor, surfaceNames, borderNames, textNames, statusFor, reset, setMode, setDensity, setPaletteBase, resetPaletteBase, setPaletteShade, resetPaletteShade, setModeValue, foundationError }
++  return { resolvedFoundation, palettes, primaryColor, surfaceNames, borderNames, textNames, statusFor, reset, setMode, setDensity, setPaletteBase, resetPaletteBase, setPaletteShade, resetPaletteShade, setModeValue, foundationError }
+ }
+--- a/builder/src/composables/use-theme-foundation-actions.ts
++++ b/builder/src/composables/use-theme-foundation-actions.ts
+@@ -1,4 +1,4 @@
+-import type { Density, PaletteName, PaletteShade } from '@/models/foundations.model'
++import type { Density, PaletteName, PaletteShade, ThemeMode } from '@/models/foundations.model'
+ import { createDefaultFoundationState } from '@/utils/foundation-defaults'
+ import { clearExplicitPath, markExplicitPath } from '@/utils/foundation-provenance'
+ import { isEditableFoundationPath, validateFoundationState } from '@/utils/foundation-validation'
+@@ -7,13 +7,11 @@
+ import type { ThemeStoreContext } from '@/models/theme-store.model'
+ 
+ export function useThemeFoundationActions({ theme }: ThemeStoreContext) {
+-  function setPrimaryColor(color: string): void {
++  function setPrimaryColor(color: string, mode: ThemeMode = 'light'): void {
+     if (!/^#[\da-f]{6}$/i.test(color)) return
+     const candidate = cloneTheme(theme.value)
+-    candidate.colors.primary = color.toLowerCase()
+-    candidate.foundations.palettes.primary.base = candidate.colors.primary
+-    markExplicitPath(candidate.foundations, 'palettes.primary.base')
+-    rebuildPalette(candidate.foundations.palettes.primary)
++    if (mode === 'dark') { candidate.foundations.palettes.primary.dark = { ...(candidate.foundations.palettes.primary.dark ?? {}), base: color.toLowerCase() }; markExplicitPath(candidate.foundations, 'palettes.primary.dark.base'); rebuildPalette(candidate.foundations.palettes.primary, 'dark') }
++    else { candidate.colors.primary = color.toLowerCase(); candidate.foundations.palettes.primary.base = candidate.colors.primary; markExplicitPath(candidate.foundations, 'palettes.primary.base'); rebuildPalette(candidate.foundations.palettes.primary) }
+     theme.value = candidate
+   }
+ 
+@@ -29,13 +27,21 @@
+   function resetFoundation(path: string): void {
+     if (isDerivedShadePath(path)) return
+     const defaults = createDefaultFoundationState()
+-    const paletteOverride = /^palettes\.(primary|success|warning|danger|info|gray)\.overrides\.(50|100|200|300|400|500|600|700|800|900|950)$/.exec(path)
+-    if (!isEditableFoundationPath(path) && !paletteOverride) return
++    const paletteOverride = /^palettes\.(primary|success|warning|danger|info|gray)\.(dark\.)?overrides\.(50|100|200|300|400|500|600|700|800|900|950)$/.exec(path)
++    const paletteBase = /^palettes\.(primary|success|warning|danger|info|gray)\.dark\.base$/.exec(path)
++    if (!isEditableFoundationPath(path) && !paletteOverride && !paletteBase) return
+     const candidate = cloneTheme(theme.value)
+     if (paletteOverride) {
+-      delete candidate.foundations.palettes[paletteOverride[1] as PaletteName].overrides[Number(paletteOverride[2]) as PaletteShade]
++      const palette = candidate.foundations.palettes[paletteOverride[1] as PaletteName]
++      if (paletteOverride[2]) delete palette.dark?.overrides?.[Number(paletteOverride[3]) as PaletteShade]
++      else delete palette.overrides[Number(paletteOverride[3]) as PaletteShade]
+       clearExplicitPath(candidate.foundations, path)
+-      rebuildPalette(candidate.foundations.palettes[paletteOverride[1] as keyof typeof candidate.foundations.palettes])
++      rebuildPalette(palette, paletteOverride[2] ? 'dark' : 'light')
++    } else if (paletteBase) {
++      const palette = candidate.foundations.palettes[paletteBase[1] as PaletteName]
++      if (palette.dark) { delete palette.dark.base; if (!palette.dark.overrides || !Object.keys(palette.dark.overrides).length) delete palette.dark }
++      clearExplicitPath(candidate.foundations, path)
++      rebuildPalette(palette, 'dark')
+     } else {
+       const value = getPath(defaults as unknown as Record<string, unknown>, path)
+       if (value === undefined || !setPath(candidate.foundations as unknown as Record<string, unknown>, path, value)) return
+--- a/builder/src/composables/use-theme-override-actions.ts
++++ b/builder/src/composables/use-theme-override-actions.ts
+@@ -8,15 +8,36 @@
+   function setOverride(override: ThemeOverride): void {
+     const candidate = structuredClone(override)
+     if (!validateThemeOverride(candidate, registry).valid) return
+-    const overrides = theme.value.overrides.filter((existing) => !sameOverrideKey(existing, candidate))
+-    overrides.push(candidate)
++    const existing = theme.value.overrides.find((item) => sameOverrideKey(item, candidate))
++    const overrides = theme.value.overrides.filter((item) => !sameOverrideKey(item, candidate))
++    if (candidate.mode === 'dark') {
++      const merged = { ...(existing ?? {}), ...candidate, darkValue: candidate.value }
++      if (existing?.value !== undefined) merged.value = existing.value
++      else delete merged.value
++      delete merged.mode
++      overrides.push(merged)
++    } else overrides.push(existing?.darkValue === undefined ? { ...candidate, mode: undefined } : { ...candidate, darkValue: existing.darkValue, mode: undefined })
+     theme.value = { ...theme.value, overrides }
+   }
+ 
+   function resetOverride(request: ResolveRequest): void {
+     const scope = deepestScope(request)
+-    const overrides = theme.value.overrides.filter((override) => !matchesRequest(override, request, scope))
+-    if (overrides.length !== theme.value.overrides.length) theme.value = { ...theme.value, overrides }
++    const mode = request.mode ?? 'light'
++    const overrides = theme.value.overrides.flatMap((override) => {
++      if (!matchesRequest(override, request, scope)) return [override]
++      if (mode === 'dark' && override.darkValue !== undefined) {
++        const next = { ...override }
++        delete next.darkValue
++        return next.value === undefined ? [] : [next]
++      }
++      if (mode === 'light' && override.value !== undefined) {
++        const next = { ...override }
++        delete next.value
++        return next.darkValue === undefined ? [] : [next]
++      }
++      return [override]
++    })
++    if (JSON.stringify(overrides) !== JSON.stringify(theme.value.overrides)) theme.value = { ...theme.value, overrides }
+   }
+ 
+   return {
+--- a/builder/src/composables/use-theme-palette-actions.ts
++++ b/builder/src/composables/use-theme-palette-actions.ts
+@@ -1,4 +1,4 @@
+-import type { PaletteName, PaletteShade } from '@/models/foundations.model'
++import type { PaletteName, PaletteShade, ThemeMode } from '@/models/foundations.model'
+ import { PALETTE_SHADES } from '@/models/foundations.model'
+ import { validateFoundationState } from '@/utils/foundation-validation'
+ import { clearExplicitPath, markExplicitPath } from '@/utils/foundation-provenance'
+@@ -7,31 +7,30 @@
+ import type { ThemeStoreContext } from '@/models/theme-store.model'
+ 
+ export function useThemePaletteActions({ theme }: ThemeStoreContext) {
+-  function setPaletteBase(name: PaletteName, value: string): void {
++  function setPaletteBase(name: PaletteName, value: string, mode: ThemeMode = 'light'): void {
+     if (!/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(value)) return
+     const candidate = cloneTheme(theme.value)
+-    candidate.foundations.palettes[name].base = value.toLowerCase()
+-    markExplicitPath(candidate.foundations, `palettes.${name}.base`)
+-    rebuildPalette(candidate.foundations.palettes[name])
+-    if (name === 'primary') candidate.colors.primary = value.toLowerCase()
++    if (mode === 'dark') { candidate.foundations.palettes[name].dark = { ...(candidate.foundations.palettes[name].dark ?? {}), base: value.toLowerCase() }; markExplicitPath(candidate.foundations, `palettes.${name}.dark.base`) }
++    else { candidate.foundations.palettes[name].base = value.toLowerCase(); markExplicitPath(candidate.foundations, `palettes.${name}.base`); if (name === 'primary') candidate.colors.primary = value.toLowerCase() }
++    rebuildPalette(candidate.foundations.palettes[name], mode)
+     if (validateFoundationState(candidate.foundations).valid) theme.value = candidate
+   }
+ 
+-  function setPaletteShadeOverride(name: PaletteName, shade: PaletteShade, value: string): void {
++  function setPaletteShadeOverride(name: PaletteName, shade: PaletteShade, value: string, mode: ThemeMode = 'light'): void {
+     if (!PALETTE_SHADES.includes(shade) || !/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(value)) return
+     const candidate = cloneTheme(theme.value)
+-    candidate.foundations.palettes[name].overrides[shade] = value.toLowerCase()
+-    markExplicitPath(candidate.foundations, paletteOverridePath(name, shade))
+-    rebuildPalette(candidate.foundations.palettes[name])
++    if (mode === 'dark') { const palette = candidate.foundations.palettes[name]; palette.dark = { ...(palette.dark ?? {}), overrides: { ...(palette.dark?.overrides ?? {}), [shade]: value.toLowerCase() } }; markExplicitPath(candidate.foundations, `palettes.${name}.dark.overrides.${shade}`) }
++    else { candidate.foundations.palettes[name].overrides[shade] = value.toLowerCase(); markExplicitPath(candidate.foundations, paletteOverridePath(name, shade)) }
++    rebuildPalette(candidate.foundations.palettes[name], mode)
+     if (validateFoundationState(candidate.foundations).valid) theme.value = candidate
+   }
+ 
+-  function resetPaletteShade(name: PaletteName, shade: PaletteShade): void {
++  function resetPaletteShade(name: PaletteName, shade: PaletteShade, mode: ThemeMode = 'light'): void {
+     if (!PALETTE_SHADES.includes(shade)) return
+     const candidate = cloneTheme(theme.value)
+-    delete candidate.foundations.palettes[name].overrides[shade]
+-    clearExplicitPath(candidate.foundations, paletteOverridePath(name, shade))
+-    rebuildPalette(candidate.foundations.palettes[name])
++    const palette = candidate.foundations.palettes[name]
++    if (mode === 'dark') { if (palette.dark?.overrides) delete palette.dark.overrides[shade]; clearExplicitPath(candidate.foundations, `palettes.${name}.dark.overrides.${shade}`); rebuildPalette(palette, 'dark') }
++    else { delete palette.overrides[shade]; clearExplicitPath(candidate.foundations, paletteOverridePath(name, shade)); rebuildPalette(palette) }
+     if (validateFoundationState(candidate.foundations).valid) theme.value = candidate
+   }
+ 
+--- a/builder/src/composables/use-theme-raw-actions.ts
++++ b/builder/src/composables/use-theme-raw-actions.ts
+@@ -1,39 +1,56 @@
+-import type { RawVisualProperty } from '@/models/raw-overrides.model'
++import type { RawElementOverride, RawVisualProperty } from '@/models/raw-overrides.model'
++import type { ThemeMode } from '@/models/foundations.model'
+ import type { ThemeStoreContext } from '@/models/theme-store.model'
+ import { cloneTheme } from '@/utils/theme-store-helpers'
+ import { validateRawElementOverride } from '@/utils/raw-override-validation'
+ 
+ export function useThemeRawActions({ theme }: ThemeStoreContext) {
+-  function setRawOverride(selector: string, property: RawVisualProperty, value: string): void {
++  function setRawOverride(selector: string, property: RawVisualProperty, value: string, mode: ThemeMode = 'light'): void {
+     const existing = theme.value.rawOverrides.find((override) => override.selector === selector)
+-    const candidate = { selector, properties: { ...(existing?.properties ?? {}), [property]: value } }
++    const candidate: RawElementOverride = { selector, properties: { ...(existing?.properties ?? {}) }, darkProperties: { ...(existing?.darkProperties ?? {}) } }
++    if (mode === 'dark') candidate.darkProperties![property] = value
++    else candidate.properties[property] = value
++    if (!Object.keys(candidate.darkProperties ?? {}).length) delete candidate.darkProperties
+     if (!validateRawElementOverride(candidate).valid) return
+     const rawOverrides = theme.value.rawOverrides.filter((override) => override.selector !== selector)
+     rawOverrides.push(candidate)
+     theme.value = { ...cloneTheme(theme.value), rawOverrides }
+   }
+ 
+-  function resetRawProperty(selector: string, property: RawVisualProperty): void {
++  function resetRawProperty(selector: string, property: RawVisualProperty, mode: ThemeMode = 'light'): void {
+     const existing = theme.value.rawOverrides.find((override) => override.selector === selector)
+-    if (!existing || !(property in existing.properties)) return
++    if (!existing) return
+     const properties = { ...existing.properties }
+-    delete properties[property]
++    const darkProperties = { ...(existing.darkProperties ?? {}) }
++    const selected = mode === 'dark' ? darkProperties : properties
++    if (!(property in selected)) return
++    delete selected[property]
+     const rawOverrides = theme.value.rawOverrides.filter((override) => override.selector !== selector)
+-      .concat(Object.keys(properties).length > 0 ? [{ selector, properties }] : [])
++      .concat(Object.keys(properties).length > 0 || Object.keys(darkProperties).length > 0 ? [{ selector, properties, ...(Object.keys(darkProperties).length ? { darkProperties } : {}) }] : [])
+     theme.value = { ...cloneTheme(theme.value), rawOverrides }
+   }
+ 
+-  function resetRawOverride(selector: string): void {
+-    if (theme.value.rawOverrides.some((override) => override.selector === selector)) {
++  function resetRawOverride(selector: string, mode?: ThemeMode): void {
++    const existing = theme.value.rawOverrides.find((override) => override.selector === selector)
++    if (!existing) return
++    if (!mode) {
+       theme.value = { ...cloneTheme(theme.value), rawOverrides: theme.value.rawOverrides.filter((override) => override.selector !== selector) }
++      return
+     }
++    const properties = mode === 'light' ? {} : { ...existing.properties }
++    const darkProperties = mode === 'dark' ? {} : { ...(existing.darkProperties ?? {}) }
++    const next = Object.keys(properties).length || Object.keys(darkProperties).length
++      ? [{ selector, properties, ...(Object.keys(darkProperties).length ? { darkProperties } : {}) }]
++      : []
++    const rawOverrides = theme.value.rawOverrides.filter((override) => override.selector !== selector).concat(next)
++    if (JSON.stringify(rawOverrides) !== JSON.stringify(theme.value.rawOverrides)) theme.value = { ...cloneTheme(theme.value), rawOverrides }
+   }
+ 
+   function renameRawOverride(fromSelector: string, toSelector: string): boolean {
+     if (fromSelector === toSelector) return false
+     const existing = theme.value.rawOverrides.find((override) => override.selector === fromSelector)
+     if (!existing || theme.value.rawOverrides.some((override) => override.selector === toSelector)) return false
+-    const candidate = { selector: toSelector, properties: JSON.parse(JSON.stringify(existing.properties)) as typeof existing.properties }
++    const candidate = { selector: toSelector, properties: JSON.parse(JSON.stringify(existing.properties)) as typeof existing.properties, ...(existing.darkProperties ? { darkProperties: JSON.parse(JSON.stringify(existing.darkProperties)) as typeof existing.darkProperties } : {}) }
+     if (!validateRawElementOverride(candidate).valid) return false
+     const rawOverrides = theme.value.rawOverrides.filter((override) => override.selector !== fromSelector)
+     rawOverrides.push(candidate)
+--- a/builder/src/composables/use-theme-relay.ts
++++ b/builder/src/composables/use-theme-relay.ts
+@@ -61,7 +61,13 @@
+     if (result.version !== 1 || result.status !== 'approved') throw new Error('operation_result_unacknowledged')
+   }
+   async function publishExportResult(id: string, json: string): Promise<void> {
+-    const result = await request<{ version: 1; status: string }>(`/local-theme/relay/operations/${id}/result`, { filename: 'filament-theme.json', schemaVersion: 5, json })
++    let schemaVersion: number
++    try {
++      const parsed: unknown = JSON.parse(json)
++      schemaVersion = typeof parsed === 'object' && parsed !== null && 'schemaVersion' in parsed && typeof parsed.schemaVersion === 'number' ? parsed.schemaVersion : 0
++    } catch { schemaVersion = 0 }
++    if (![4, 5, 6].includes(schemaVersion)) throw new Error('invalid_export_schema')
++    const result = await request<{ version: 1; status: string }>(`/local-theme/relay/operations/${id}/result`, { filename: 'filament-theme.json', schemaVersion, json })
+     if (result.version !== 1 || result.status !== 'approved') throw new Error('operation_result_unacknowledged')
+   }
+   function start(onNotice: (notices: OperationNoticeDto[]) => void, onError: (error: Error) => void = () => undefined): () => void {
+--- a/builder/src/dtos/theme-relay.dto.ts
++++ b/builder/src/dtos/theme-relay.dto.ts
+@@ -35,5 +35,5 @@
+ 
+ export type OperationNoticeDto = { operationId: string; kind: 'list' | 'export' | 'import'; status: OperationResultStatusDto['status']; themeId?: string }
+ export type RelayPayloadDto = { version: 1; operationId: string; payload: string; filename: string; proposedName: string; digest: string; byteLength: number }
+-export type ImportPreviewDto = { sourceVersion: 1 | 2 | 3 | 4 | 5; targetVersion: 5; migrationPath: number[]; displayName: string; summary: string[]; payloadDigest: string; byteLength: number }
++export type ImportPreviewDto = { sourceVersion: 1 | 2 | 3 | 4 | 5 | 6; targetVersion: 6; migrationPath: number[]; displayName: string; summary: string[]; payloadDigest: string; byteLength: number }
+ export type ApplyGrantDto = { version: 1; status: 'pending'; grantId: string; grantExpiresAt: number }
+--- a/builder/src/models/foundations.model.ts
++++ b/builder/src/models/foundations.model.ts
+@@ -23,6 +23,11 @@
+   base: string
+   shades: Partial<Record<PaletteShade, string>>
+   overrides: Partial<Record<PaletteShade, string>>
++  dark?: {
++    base?: string
++    shades?: Partial<Record<PaletteShade, string>>
++    overrides?: Partial<Record<PaletteShade, string>>
++  }
+ }
+ 
+ export type FoundationState = {
+--- a/builder/src/models/raw-overrides.model.ts
++++ b/builder/src/models/raw-overrides.model.ts
+@@ -24,6 +24,7 @@
+ export type RawElementOverride = {
+   selector: string
+   properties: Partial<Record<RawVisualProperty, string>>
++  darkProperties?: Partial<Record<RawVisualProperty, string>>
+ }
+ 
+ export type RawSelectorQuality = 'stable' | 'fragile' | 'unavailable'
+--- a/builder/src/models/theme-import.model.ts
++++ b/builder/src/models/theme-import.model.ts
+@@ -2,9 +2,9 @@
+ import type { ThemeStateV5 } from '@/models/theme.model'
+ 
+ export const MAX_THEME_IMPORT_BYTES = 1_048_576
+-export type ImportVersion = 1 | 2 | 3 | 4 | 5
++export type ImportVersion = 1 | 2 | 3 | 4 | 5 | 6
+ export type ImportFailureCategory = 'payload_too_large' | 'invalid_encoding' | 'invalid_json' | 'missing_schema_version' | 'unsupported_schema_version' | 'invalid_schema_shape' | 'migration_failed' | 'nonempty_custom_css_rejected' | 'invalid_theme_state'
+-export type ImportPreview = { sourceVersion: ImportVersion; targetVersion: 5; migrationPath: number[]; displayName: string; summary: string[]; payloadDigest: string; byteLength: number; state: ThemeStateV5 }
++export type ImportPreview = { sourceVersion: ImportVersion; targetVersion: 6; migrationPath: number[]; displayName: string; summary: string[]; payloadDigest: string; byteLength: number; state: ThemeStateV5 }
+ export type SyncImportResult = { ok: true; value: ThemeStateV5; sourceVersion: ImportVersion; migrationPath: number[]; decisions: string[] } | { ok: false; category: ImportFailureCategory; message: string }
+ export type ImportResult = { valid: true; preview: ImportPreview } | { valid: false; category: ImportFailureCategory; message: string }
+ export type MigrationSuccess = { ok: true; state: ThemeStateV5; sourceVersion: ImportVersion; migrationPath: number[]; decisions: string[] }
+--- a/builder/src/models/theme.model.ts
++++ b/builder/src/models/theme.model.ts
+@@ -1,5 +1,6 @@
+ import { migrateVersionedTheme } from '@/utils/theme-import-migrations'
+ import { createThemeRegistry } from '@/registry/theme-registry'
++import type { ThemeMode } from '@/models/foundations.model'
+ 
+ export type ThemeScope = 'global' | 'component' | 'variant' | 'state'
+ 
+@@ -12,7 +13,9 @@
+   componentId?: string
+   variantId?: string
+   stateId?: string
+-  value: ThemeValue
++  value?: ThemeValue
++  darkValue?: ThemeValue
++  mode?: ThemeMode
+ }
+ 
+ export type ThemeStateV1 = {
+@@ -33,10 +36,11 @@
+ export type ThemeStateV3 = import('@/models/foundations.model').FoundationStateV3
+ export type ThemeStateV4 = import('@/models/foundations.model').FoundationStateV4
+ export type ThemeStateV5 = Omit<ThemeStateV4, 'schemaVersion'> & {
+-  schemaVersion: 5
++  schemaVersion: 5 | 6
+   padding: import('@/models/padding.model').PaddingRecord[]
+ }
+-export type ThemeStateInput = ThemeStateV4 | ThemeStateV5
++export type ThemeStateV6 = Omit<ThemeStateV5, 'schemaVersion'> & { schemaVersion: 6 }
++export type ThemeStateInput = ThemeStateV4 | ThemeStateV5 | ThemeStateV6
+ 
+ export type ThemeState = ThemeStateV1 | ThemeStateV2 | ThemeStateV3 | ThemeStateV4 | ThemeStateV5
+ 
+@@ -52,6 +56,7 @@
+   componentId?: string
+   variantId?: string
+   stateId?: string
++  mode?: ThemeMode
+ }
+ 
+ export type ResolveResult =
+--- a/builder/src/utils/foundation-collections-validation.util.ts
++++ b/builder/src/utils/foundation-collections-validation.util.ts
+@@ -11,7 +11,7 @@
+     const palettePath = join(path, name)
+     const palette = value[name]
+     if (!isRecord(palette)) return invalid('invalid-value', palettePath, 'Palette must be an object')
+-    const paletteKeys = checkKeys(palette, ['base', 'shades', 'overrides'], ['base', 'shades', 'overrides'], palettePath)
++     const paletteKeys = checkKeys(palette, ['base', 'shades', 'overrides', 'dark'], ['base', 'shades', 'overrides'], palettePath)
+     if (paletteKeys) return paletteKeys
+     if (!isColor(palette.base)) return invalid('invalid-value', join(palettePath, 'base'), 'Invalid palette base color')
+     for (const collectionName of ['shades', 'overrides'] as const) {
+@@ -21,7 +21,21 @@
+       for (const [shade, color] of Object.entries(collection)) {
+         if (!PALETTE_SHADES.includes(Number(shade) as PaletteShade)) return invalid('unknown-key', join(collectionPath, shade), 'Unknown palette shade')
+         if (!isColor(color)) return invalid('invalid-value', join(collectionPath, shade), 'Invalid palette shade color')
+-      }
++     }
++     if (palette.dark !== undefined) {
++       if (!isRecord(palette.dark)) return invalid('invalid-value', join(palettePath, 'dark'), 'Dark palette values must be an object')
++       if (Object.keys(palette.dark).some((key) => !['base', 'shades', 'overrides'].includes(key))) return invalid('unknown-key', join(palettePath, 'dark'), 'Unknown dark palette key')
++       if (palette.dark.base !== undefined && !isColor(palette.dark.base)) return invalid('invalid-value', join(palettePath, 'dark.base'), 'Invalid dark palette base color')
++       for (const collectionName of ['shades', 'overrides'] as const) {
++         const collection = palette.dark[collectionName]
++         if (collection === undefined) continue
++         if (!isRecord(collection)) return invalid('invalid-value', join(palettePath, `dark.${collectionName}`), 'Dark shade values must be an object')
++         for (const [shade, color] of Object.entries(collection)) {
++           if (!PALETTE_SHADES.includes(Number(shade) as PaletteShade)) return invalid('unknown-key', join(palettePath, `dark.${collectionName}.${shade}`), 'Unknown dark palette shade')
++           if (!isColor(color)) return invalid('invalid-value', join(palettePath, `dark.${collectionName}.${shade}`), 'Invalid dark palette shade color')
++         }
++       }
++     }
+     }
+   }
+   return undefined
+--- a/builder/src/utils/foundation-defaults.ts
++++ b/builder/src/utils/foundation-defaults.ts
+@@ -63,7 +63,7 @@
+ }
+ 
+ export function createDefaultCurrentThemeState(): ThemeStateV5 {
+-  return { ...createDefaultThemeState(), schemaVersion: 5, padding: [] }
++  return { ...createDefaultThemeState(), schemaVersion: 6, padding: [] }
+ }
+ 
+ export function densityPreset(value: Density): DensityPreset {
+--- a/builder/src/utils/foundation-override-validation.util.ts
++++ b/builder/src/utils/foundation-override-validation.util.ts
+@@ -7,19 +7,21 @@
+ 
+ export function validateOverride(value: unknown, path: string, registry: FilamentRegistry = createThemeRegistry()): { valid: true; override: ThemeOverride } | ValidationError {
+   if (!isRecord(value)) return invalid('invalid-value', path, 'Override must be an object')
+-  const keys = checkKeys(value, ['targetId', 'controlId', 'scope', 'componentId', 'variantId', 'stateId', 'value'], ['targetId', 'controlId', 'scope', 'value'], path)
++   const keys = checkKeys(value, ['targetId', 'controlId', 'scope', 'componentId', 'variantId', 'stateId', 'value', 'darkValue', 'mode'], ['targetId', 'controlId', 'scope'], path)
+   if (keys) return keys
+   if (!isNonEmptyString(value.targetId)) return invalid('invalid-value', `${path}.targetId`, 'Target identifier must be a non-empty string')
+   if (!isNonEmptyString(value.controlId)) return invalid('invalid-value', `${path}.controlId`, 'Control identifier must be a non-empty string')
+   if (!isThemeScope(value.scope)) return invalid('invalid-value', `${path}.scope`, 'Invalid override scope')
+-  if (!isThemeValue(value.value)) return invalid('invalid-value', `${path}.value`, 'Override value must be a finite primitive')
++   if (value.value !== undefined && !isThemeValue(value.value)) return invalid('invalid-value', `${path}.value`, 'Override value must be a finite primitive')
++   if (value.darkValue !== undefined && !isThemeValue(value.darkValue)) return invalid('invalid-value', `${path}.darkValue`, 'Dark override value must be a finite primitive')
++   if (value.value === undefined && value.darkValue === undefined) return invalid('invalid-value', `${path}.value`, 'Override requires a value')
+   const componentId = value.componentId
+   const variantId = value.variantId
+   const stateId = value.stateId
+   if (componentId !== undefined && !isNonEmptyString(componentId)) return invalid('invalid-value', `${path}.componentId`, 'Override identifier must be a non-empty string')
+   if (variantId !== undefined && !isNonEmptyString(variantId)) return invalid('invalid-value', `${path}.variantId`, 'Override identifier must be a non-empty string')
+   if (stateId !== undefined && !isNonEmptyString(stateId)) return invalid('invalid-value', `${path}.stateId`, 'Override identifier must be a non-empty string')
+-  const override: ThemeOverride = { targetId: value.targetId, controlId: value.controlId, scope: value.scope, value: value.value,
++   const override: ThemeOverride = { targetId: value.targetId, controlId: value.controlId, scope: value.scope, ...(value.value === undefined ? {} : { value: value.value }), ...(value.darkValue === undefined ? {} : { darkValue: value.darkValue }), ...(value.mode === 'light' || value.mode === 'dark' ? { mode: value.mode } : {}),
+     ...(componentId === undefined ? {} : { componentId }), ...(variantId === undefined ? {} : { variantId }), ...(stateId === undefined ? {} : { stateId }),
+   }
+   const result = validateThemeOverride(override, registry)
+--- a/builder/src/utils/foundation-projection.ts
++++ b/builder/src/utils/foundation-projection.ts
+@@ -1,6 +1,7 @@
+ import { FILAMENT_FOUNDATION_INVENTORY } from '@/registry/filament-foundation-inventory'
+ import type { FoundationProjection, FoundationState, ThemeMode } from '@/models/foundations.model'
+-import { isExplicitPath, isModeInherited, isPaletteExplicit, resolveModeValue } from '@/utils/foundation-provenance'
++import { isExplicitPath, isModeInherited, isPaletteExplicit, isPaletteModeExplicit, resolveModeValue } from '@/utils/foundation-provenance'
++import { resolvePaletteShade } from '@/utils/theme-store-palettes'
+ 
+ const PREVIEW_MAPPINGS = FILAMENT_FOUNDATION_INVENTORY.filter((entry) =>
+   entry.mapping === 'preview-emulatable' || entry.mapping === 'live-emulation',
+@@ -12,7 +13,7 @@
+     mode,
+     mappings: PREVIEW_MAPPINGS.filter((entry) => {
+       const paletteName = /^palette\.([^.]+)\./.exec(entry.id)?.[1]
+-      if (paletteName !== undefined) return isPaletteExplicit(state, paletteName as keyof FoundationState['palettes'])
++       if (paletteName !== undefined) return isPaletteModeExplicit(state, paletteName as keyof FoundationState['palettes'], mode) || (mode === 'dark' && isPaletteExplicit(state, paletteName as keyof FoundationState['palettes']))
+       const modePath = /^(surface|border|text)\.(.+)$/.exec(entry.id)
+        if (modePath) {
+          const collection = modePath[1] === 'surface' ? 'surfaces' : modePath[1] === 'border' ? 'borders' : 'text'
+@@ -37,7 +38,7 @@
+   if (id === 'shadow') return state.shadow
+ 
+   const paletteBase = id.match(/^palette\.(primary|success|warning|danger|info|gray)\.base$/)
+-  if (paletteBase) return state.palettes[paletteBase[1] as keyof FoundationState['palettes']].base
++  if (paletteBase) return mode === 'dark' ? state.palettes[paletteBase[1] as keyof FoundationState['palettes']].dark?.base ?? state.palettes[paletteBase[1] as keyof FoundationState['palettes']].base : state.palettes[paletteBase[1] as keyof FoundationState['palettes']].base
+ 
+   const shade = id.match(
+     /^palette\.(primary|success|warning|danger|info|gray)\.shades\.(50|100|200|300|400|500|600|700|800|900|950)$/,
+@@ -46,11 +47,7 @@
+     const [, paletteName, shadeName] = /^palette\.([^.]+)\.shades\.(\d+)$/.exec(id) ?? []
+     const palette = state.palettes[paletteName as keyof FoundationState['palettes']]
+     const shadeKey = Number(shadeName) as keyof typeof palette.shades
+-    return (
+-      palette.overrides[shadeKey] ??
+-      palette.shades[shadeKey] ??
+-      palette.base
+-    )
++     return resolvePaletteShade(palette, shadeKey, mode)
+   }
+ 
+   const modeValue = id.match(/^(surface|border|text)\.(.+)$/)
+--- a/builder/src/utils/foundation-provenance.ts
++++ b/builder/src/utils/foundation-provenance.ts
+@@ -24,6 +24,10 @@
+   return state.explicitPaths.some((path) => path === `palettes.${name}.base` || path.startsWith(`palettes.${name}.overrides.`))
+ }
+ 
++export function isPaletteModeExplicit(state: { readonly explicitPaths: readonly string[] }, name: PaletteName, mode: ThemeMode): boolean {
++  return mode === 'light' ? isPaletteExplicit(state, name) : state.explicitPaths.some((path) => path === `palettes.${name}.dark.base` || path.startsWith(`palettes.${name}.dark.overrides.`))
++}
++
+ export function paletteOverridePath(name: PaletteName, shade: PaletteShade): string {
+   return `palettes.${name}.overrides.${shade}`
+ }
+--- a/builder/src/utils/foundation-record-validation.util.ts
++++ b/builder/src/utils/foundation-record-validation.util.ts
+@@ -17,9 +17,10 @@
+   const paletteResult = validatePaletteCollection(value.palettes, join(path, 'palettes'))
+   if (paletteResult) return paletteResult
+   for (const explicitPath of value.explicitPaths as string[]) {
+-    const overridePath = /^palettes\.([^.]+)\.overrides\.(\d+)$/.exec(explicitPath)
++    const overridePath = /^palettes\.([^.]+)\.(dark\.)?overrides\.(\d+)$/.exec(explicitPath)
+     const palette = overridePath && isRecord(value.palettes) ? value.palettes[overridePath[1]!] : undefined
+-    if (overridePath && (!isRecord(palette) || !isRecord(palette.overrides) || !Object.prototype.hasOwnProperty.call(palette.overrides, overridePath[2]!))) {
++    const collection = overridePath && isRecord(palette) ? overridePath[2] ? (isRecord(palette.dark) ? palette.dark.overrides : undefined) : palette.overrides : undefined
++    if (overridePath && (!isRecord(collection) || !Object.prototype.hasOwnProperty.call(collection, overridePath[3]!))) {
+       return invalid('invalid-value', provenancePath, 'Palette override provenance must reference an existing override')
+     }
+   }
+--- a/builder/src/utils/foundation-state-validation.util.ts
++++ b/builder/src/utils/foundation-state-validation.util.ts
+@@ -17,14 +17,14 @@
+ function validateVersionedState(value: Record<string, unknown>, registry?: FilamentRegistry): FoundationValidationResult {
+   const topLevel = checkKeys(value, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding', 'padding'], ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss'], '')
+   if (topLevel) return topLevel
+-  if (value.schemaVersion !== 3 && value.schemaVersion !== 4 && value.schemaVersion !== 5) return invalid('invalid-value', 'schemaVersion', 'Unsupported foundation schema version')
+-  if (value.schemaVersion === 5 && !('padding' in value)) return invalid('invalid-value', 'padding', 'Padding is required in schema version 5')
+-  if (value.schemaVersion !== 5 && 'padding' in value) return invalid('invalid-value', 'padding', 'Padding is unsupported before schema version 5')
+-  if (value.schemaVersion === 4) {
++   if (value.schemaVersion !== 3 && value.schemaVersion !== 4 && value.schemaVersion !== 5 && value.schemaVersion !== 6) return invalid('invalid-value', 'schemaVersion', 'Unsupported foundation schema version')
++   if ((value.schemaVersion === 5 || value.schemaVersion === 6) && !('padding' in value)) return invalid('invalid-value', 'padding', 'Padding is required in schema version 5 or 6')
++   if (value.schemaVersion !== 5 && value.schemaVersion !== 6 && 'padding' in value) return invalid('invalid-value', 'padding', 'Padding is unsupported before schema version 5')
++   if (value.schemaVersion === 4 || value.schemaVersion === 5 || value.schemaVersion === 6) {
+     const rawResult = validateRawOverrides(value.rawOverrides)
+     if (!rawResult.valid) return invalid('invalid-value', 'rawOverrides', rawResult.error)
+   }
+-  if (value.schemaVersion === 5) {
++   if (value.schemaVersion === 5 || value.schemaVersion === 6) {
+     if (!Array.isArray(value.padding)) return invalid('invalid-value', 'padding', 'Padding must be an array')
+     const padding = validatePaddingState(value.padding, registry ?? createThemeRegistry())
+     if (!padding.valid) return invalid('invalid-value', padding.path, padding.message)
+--- a/builder/src/utils/foundation-validation-constants.util.ts
++++ b/builder/src/utils/foundation-validation-constants.util.ts
+@@ -15,6 +15,8 @@
+   ...PALETTE_NAMES.flatMap((name) => [
+     `palettes.${name}.base`,
+     ...PALETTE_SHADES.map((shade) => `palettes.${name}.overrides.${shade}`),
++    `palettes.${name}.dark.base`,
++    ...PALETTE_SHADES.map((shade) => `palettes.${name}.dark.overrides.${shade}`),
+   ]),
+   ...['surfaces.page', 'surfaces.sidebar', 'surfaces.topbar', 'surfaces.card', 'surfaces.elevated', 'surfaces.input', 'borders.default', 'borders.strong', 'text.primary', 'text.muted', 'text.disabled'].flatMap((path) => [`${path}.light`, `${path}.dark`]),
+   ...['body', 'heading', 'mono'].map((name) => `typography.${name}`),
+--- a/builder/src/utils/local-theme-recovery.ts
++++ b/builder/src/utils/local-theme-recovery.ts
+@@ -47,7 +47,7 @@
+   try { return value === null ? null : JSON.parse(value) as unknown } catch { return null }
+ }
+ 
+-function needsMigration(value: unknown): boolean { return isRecord(value) && value.schemaVersion !== 5 }
++function needsMigration(value: unknown): boolean { return isRecord(value) && value.schemaVersion !== 6 }
+ function needsHistoryMigration(value: unknown): boolean { return isRecord(value) && Array.isArray(value.snapshots) && value.snapshots.some(needsMigration) }
+ function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value) }
+ 
+--- a/builder/src/utils/local-theme-storage.ts
++++ b/builder/src/utils/local-theme-storage.ts
+@@ -69,7 +69,7 @@
+       return failedLocalThemeLoad(migrateToCurrent(defaultState), 'Partial local theme storage detected; existing records were preserved')
+     }
+     const bytes = storage.getItem(LEGACY)
+-    let state: ThemeStateV5 = defaultState.schemaVersion === 5 ? defaultState : migrateToCurrent(defaultState)
++    let state: ThemeStateV5 = defaultState.schemaVersion === 6 ? defaultState : migrateToCurrent(defaultState)
+     let legacyError: string | null = null
+     let migratedLegacy = false
+     if (bytes !== null && !preferDefaultState) {
+@@ -78,7 +78,7 @@
+       else {
+         const legacyValidation = parsed.schemaVersion <= 2 ? deserializeTheme(parsed, createThemeRegistry()) : { valid: true }
+         if (!legacyValidation.valid) legacyError = 'Legacy theme is invalid'
+-        try { if (!legacyError) { const migrated = migrateState(parsed); state = migrated.schemaVersion === 5 ? migrated : migrateToCurrent(migrated) } } catch {
++          try { if (!legacyError) { const migrated = migrateState(parsed); state = migrated.schemaVersion === 6 ? migrated : migrateToCurrent(migrated) } } catch {
+           const recovered = recoverLegacyState(parsed)
+           if (recovered) state = recovered
+           else legacyError = 'Legacy theme migration failed'
+--- a/builder/src/utils/raw-override-validation.ts
++++ b/builder/src/utils/raw-override-validation.ts
+@@ -49,15 +49,15 @@
+ }
+ 
+ export function validateRawElementOverride(value: unknown): RawValidationResult {
+-  if (!isRecord(value) || Object.keys(value).some((key) => !['selector', 'properties'].includes(key))) {
++  if (!isRecord(value) || Object.keys(value).some((key) => !['selector', 'properties', 'darkProperties'].includes(key))) {
+     return { valid: false, error: 'Raw override contains unsupported keys' }
+   }
+   const selector = validateRawSelector(value.selector)
+   if (!selector.valid) return selector
+-  if (!isRecord(value.properties) || Object.keys(value.properties).length === 0) {
++  if (!isRecord(value.properties) || (value.darkProperties !== undefined && !isRecord(value.darkProperties)) || (Object.keys(value.properties).length === 0 && Object.keys(value.darkProperties ?? {}).length === 0)) {
+     return { valid: false, error: 'Raw override requires at least one property' }
+   }
+-  for (const [property, propertyValue] of Object.entries(value.properties)) {
++  for (const [property, propertyValue] of [...Object.entries(value.properties), ...Object.entries(value.darkProperties ?? {})]) {
+     if (!(ALL_RAW_VISUAL_PROPERTIES as readonly string[]).includes(property)) return { valid: false, error: `Unsupported raw property: ${property}` }
+     if (!isSafePropertyValue(property as RawVisualProperty, propertyValue)) return { valid: false, error: `Invalid value for ${property}` }
+   }
+--- a/builder/src/utils/resolve-request-validation.ts
++++ b/builder/src/utils/resolve-request-validation.ts
+@@ -7,7 +7,8 @@
+   const targetId = isObject(request) && typeof request.targetId === 'string' ? request.targetId : ''
+   const controlId = isObject(request) && typeof request.controlId === 'string' ? request.controlId : ''
+   if (!isObject(request) || Array.isArray(request)) return { valid: false, targetId, controlId, error: 'Invalid resolve request' }
+-  const allowedKeys = new Set(['targetId', 'controlId', 'componentId', 'variantId', 'stateId'])
++  const allowedKeys = new Set(['targetId', 'controlId', 'componentId', 'variantId', 'stateId', 'mode'])
++  if (request.mode !== undefined && request.mode !== 'light' && request.mode !== 'dark') return { valid: false, targetId, controlId, error: 'Invalid resolve request mode' }
+   if (Reflect.ownKeys(request).some((key) => typeof key !== 'string' || !allowedKeys.has(key))) return { valid: false, targetId, controlId, error: 'Invalid resolve request: unsupported key' }
+   if (!nonEmptyString(targetId) || !nonEmptyString(controlId) || !validOptionalIdentifiers(request)) return { valid: false, targetId, controlId, error: 'Invalid resolve request identifiers' }
+   const entry = registry.entries.find(({ id }) => id === targetId)
+--- a/builder/src/utils/theme-import-migrations.ts
++++ b/builder/src/utils/theme-import-migrations.ts
+@@ -1,6 +1,6 @@
+ import type { FilamentRegistry } from '@/models/theme-registry.model'
+ import type { MigrationFailure, MigrationResult, ImportVersion } from '@/models/theme-import.model'
+-import type { ThemeState, ThemeStateV1, ThemeStateV2, ThemeStateV3, ThemeStateV4, ThemeStateV5 } from '@/models/theme.model'
++import type { ThemeState, ThemeStateV1, ThemeStateV2, ThemeStateV3, ThemeStateV4, ThemeStateV5, ThemeStateV6 } from '@/models/theme.model'
+ import { createDefaultThemeState } from '@/utils/foundation-defaults'
+ import { validateFoundationState } from '@/utils/foundation-validation'
+ import { validateThemeState } from '@/utils/theme-validation'
+@@ -17,7 +17,8 @@
+     if (current.schemaVersion === 1) { current = toV2(current); const edge = validateEdge(current, registry); if (!edge.ok) return edge; migrationPath.push(2); decisions.push('Created empty overrides collection') }
+     if (current.schemaVersion === 2) { current = toV3(current); const edge = validateEdge(current, registry); if (!edge.ok) return edge; migrationPath.push(3); decisions.push('Applied foundation defaults and preserved legacy overrides') }
+     if (current.schemaVersion === 3) { current = toV4(current); const edge = validateEdge(current, registry); if (!edge.ok) return edge; migrationPath.push(4); decisions.push('Created empty raw override collection') }
+-    if (current.schemaVersion === 4) { current = toV5(current); const edge = validateEdge(current, registry); if (!edge.ok) return edge; migrationPath.push(5); decisions.push('Created empty sparse padding collection') }
++     if (current.schemaVersion === 4) { current = toV5(current); const edge = validateEdge(current, registry); if (!edge.ok) return edge; migrationPath.push(5); decisions.push('Created empty sparse padding collection') }
++     if (current.schemaVersion === 5) { current = toV6(current); const edge = validateEdge(current, registry); if (!edge.ok) return edge; migrationPath.push(6); decisions.push('Added per-mode light/dark overlays') }
+     return { ok: true, state: structuredClone(current as ThemeStateV5), sourceVersion, migrationPath, decisions }
+   } catch (error) {
+     return { ok: false, category: 'migration_failed', message: error instanceof Error ? error.message : 'Theme migration failed' }
+@@ -25,9 +26,9 @@
+ }
+ 
+ export function recoverVersionedTheme(value: ThemeStateV3 | ThemeStateV4 | ThemeStateV5): ThemeStateV5 {
+-  if (value.schemaVersion === 5) return structuredClone(value)
++  if (value.schemaVersion === 5 || value.schemaVersion === 6) return structuredClone(value)
+   const result = migrateVersionedTheme(value)
+-  return result.ok ? result.state : toV5(value.schemaVersion === 3 ? toV4(value) : value)
++  return result.ok ? result.state : toV5(value.schemaVersion === 3 ? toV4(value) : value as ThemeStateV4)
+ }
+ 
+ function validateEdge(value: ThemeState, registry?: FilamentRegistry): MigrationFailure | { ok: true } {
+@@ -63,3 +64,7 @@
+ function toV5(value: ThemeStateV4): ThemeStateV5 {
+   return { ...structuredClone(value), schemaVersion: 5, padding: [] }
+ }
++
++function toV6(value: ThemeStateV5): ThemeStateV6 {
++  return { ...structuredClone(value), schemaVersion: 6 }
++}
+--- a/builder/src/utils/theme-import-preview.ts
++++ b/builder/src/utils/theme-import-preview.ts
+@@ -8,5 +8,5 @@
+ }
+ 
+ export function importSummary(sourceVersion: ImportVersion, migrationPath: number[], decisions: string[]): string[] {
+-  return [`Imported schema v${sourceVersion} as v4`, `Migration path: ${migrationPath.join(' → ')}`, ...decisions]
++  return [`Imported schema v${sourceVersion} as v6`, `Migration path: ${migrationPath.join(' → ')}`, ...decisions]
+ }
+--- a/builder/src/utils/theme-import-service.ts
++++ b/builder/src/utils/theme-import-service.ts
+@@ -30,5 +30,5 @@
+   if (bytes.byteLength > MAX_THEME_IMPORT_BYTES) return { valid: false, category: 'payload_too_large', message: 'Theme import exceeds the 1 MiB limit' }
+   const parsed = parseAndMigrateTheme(bytes, filename, proposedName, registry)
+   if (!parsed.ok) return { valid: false, category: parsed.category, message: parsed.message }
+-  return { valid: true, preview: { sourceVersion: parsed.sourceVersion, targetVersion: 5, migrationPath: parsed.migrationPath, displayName: importDisplayName(filename, proposedName), summary: importSummary(parsed.sourceVersion, parsed.migrationPath, parsed.decisions), payloadDigest: await digestBytes(bytes), byteLength: bytes.byteLength, state: parsed.value } }
++  return { valid: true, preview: { sourceVersion: parsed.sourceVersion, targetVersion: 6, migrationPath: parsed.migrationPath, displayName: importDisplayName(filename, proposedName), summary: importSummary(parsed.sourceVersion, parsed.migrationPath, parsed.decisions), payloadDigest: await digestBytes(bytes), byteLength: bytes.byteLength, state: parsed.value } }
+ }
+--- a/builder/src/utils/theme-import-validation.ts
++++ b/builder/src/utils/theme-import-validation.ts
+@@ -7,6 +7,7 @@
+   3: ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss', 'icons', 'branding'],
+   4: ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding'],
+   5: ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding', 'padding'],
++  6: ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding', 'padding'],
+ }
+ 
+ export function validateImportDocument(value: unknown): ValidationResult {
+@@ -14,7 +15,7 @@
+   if ('theme' in value && !('schemaVersion' in value)) return { valid: false, category: 'invalid_schema_shape', message: 'Theme import envelope is not supported' }
+   if (!('schemaVersion' in value)) return { valid: false, category: 'missing_schema_version', message: 'Theme import schemaVersion is required' }
+   const version = value.schemaVersion
+-  if (version !== 1 && version !== 2 && version !== 3 && version !== 4 && version !== 5) return { valid: false, category: 'unsupported_schema_version', message: 'Unsupported theme schema version' }
++   if (version !== 1 && version !== 2 && version !== 3 && version !== 4 && version !== 5 && version !== 6) return { valid: false, category: 'unsupported_schema_version', message: 'Unsupported theme schema version' }
+   const allowed = new Set(keys[version])
+   if (Object.keys(value).some((key) => !allowed.has(key))) return { valid: false, category: 'invalid_schema_shape', message: 'Theme import contains unknown fields' }
+   return { valid: true, version }
+--- a/builder/src/utils/theme-override-validation.ts
++++ b/builder/src/utils/theme-override-validation.ts
+@@ -14,7 +14,7 @@
+   if (!isScope(override.scope)) return failure(context, 'Invalid scope value')
+   if (!nonEmptyString(override.targetId)) return failure(context, 'Target identifier must be a non-empty string')
+   if (!nonEmptyString(override.controlId)) return failure(context, 'Control identifier must be a non-empty string')
+-  const allowedKeys = new Set(['targetId', 'controlId', 'scope', 'componentId', 'variantId', 'stateId', 'value'])
++  const allowedKeys = new Set(['targetId', 'controlId', 'scope', 'componentId', 'variantId', 'stateId', 'value', 'darkValue', 'mode'])
+   if (Reflect.ownKeys(override).some((key) => typeof key !== 'string' || !allowedKeys.has(key))) return failure(context, 'Unsupported override key')
+   if (!validOptionalIdentifiers(override)) return failure(context, 'Override identifiers must be non-empty strings')
+   const compatibilityError = validateCompatibilityBaseline(registry)
+@@ -27,6 +27,9 @@
+   if (!control) return failure(context, `Unknown control: ${override.controlId}`)
+   const scopeError = validateScope(override, entry)
+   if (scopeError) return failure(context, scopeError)
+-  if (!isValidControlValue(override.value, control)) return failure(context, `Invalid value for ${override.targetId}.${override.controlId}`)
++  if (override.value !== undefined && !isValidControlValue(override.value, control)) return failure(context, `Invalid value for ${override.targetId}.${override.controlId}`)
++  if (override.darkValue !== undefined && !isValidControlValue(override.darkValue, control)) return failure(context, `Invalid dark value for ${override.targetId}.${override.controlId}`)
++  if (override.mode !== undefined && override.mode !== 'light' && override.mode !== 'dark') return failure(context, 'Invalid override mode')
++  if (override.value === undefined && override.darkValue === undefined) return failure(context, `Missing value for ${override.targetId}.${override.controlId}`)
+   return { ...context, valid: true, override }
+ }
+--- a/builder/src/utils/theme-resolver.ts
++++ b/builder/src/utils/theme-resolver.ts
+@@ -17,7 +17,11 @@
+ 
+   for (const scope of ['state', 'variant', 'component', 'global'] as const) {
+     const override = validOverrides.find((candidate) => isApplicable(candidate, validRequest, scope))
+-    if (override) return { status: 'resolved', value: override.value, source: scope }
++      if (override) {
++        const mode = validRequest.mode ?? 'light'
++        const value = mode === 'dark' ? (override.darkValue ?? override.value) : override.value
++        if (value !== undefined) return { status: 'resolved', value, source: scope }
++      }
+   }
+ 
+   if (control.globalValue === 'primary') {
+--- a/builder/src/utils/theme-serialization.ts
++++ b/builder/src/utils/theme-serialization.ts
+@@ -84,7 +84,7 @@
+ }
+ 
+ function isCanonicalThemeStateShape(value: unknown): value is ThemeState {
+-  return isRecord(value) && (value.schemaVersion === 3 || value.schemaVersion === 4 || value.schemaVersion === 5) && isRecord(value.colors) && typeof value.colors.primary === 'string' && isRecord(value.foundations)
++  return isRecord(value) && (value.schemaVersion === 3 || value.schemaVersion === 4 || value.schemaVersion === 5 || value.schemaVersion === 6) && isRecord(value.colors) && typeof value.colors.primary === 'string' && isRecord(value.foundations)
+ }
+ 
+ function isRecord(value: unknown): value is Record<string, unknown> {
+--- a/builder/src/utils/theme-store-normalization.ts
++++ b/builder/src/utils/theme-store-normalization.ts
+@@ -37,7 +37,7 @@
+ }
+ 
+ export function isCurrentVersionFive(value: unknown): value is ThemeStateV5 {
+-  return isRecord(value) && value.schemaVersion === 5 && Array.isArray(value.rawOverrides) && Array.isArray(value.padding)
++  return isRecord(value) && (value.schemaVersion === 5 || value.schemaVersion === 6) && Array.isArray(value.rawOverrides) && Array.isArray(value.padding)
+ }
+ 
+ export function isLegacyVersionThree(value: unknown): value is ThemeStateV3 {
+--- a/builder/src/utils/theme-store-palettes.ts
++++ b/builder/src/utils/theme-store-palettes.ts
+@@ -1,17 +1,31 @@
+-import type { PaletteName, PaletteState } from '@/models/foundations.model'
++import type { PaletteName, PaletteShade, PaletteState, ThemeMode } from '@/models/foundations.model'
+ import { applyPaletteOverrides, generatePalette } from '@/utils/palette-generator'
+ import { paletteOverridePath } from '@/utils/foundation-provenance'
+ 
+-export function rebuildPalette(palette: PaletteState): void {
++export function rebuildPalette(palette: PaletteState, mode: 'light' | 'dark' = 'light'): void {
++  if (mode === 'dark') {
++    if (!palette.dark) palette.dark = {}
++    if (palette.dark.base) palette.dark.shades = applyPaletteOverrides(generatePalette(palette.dark.base), palette.dark.overrides ?? {})
++    else delete palette.dark.shades
++    return
++  }
+   palette.shades = applyPaletteOverrides(generatePalette(palette.base), palette.overrides)
+ }
+ 
++export function resolvePaletteShade(palette: PaletteState, shade: PaletteShade, mode: ThemeMode): string {
++  const lightShades = applyPaletteOverrides(generatePalette(palette.base), palette.overrides)
++  if (mode === 'light') return lightShades[shade] ?? palette.base
++  if (!palette.dark?.base) return palette.dark?.overrides?.[shade] ?? lightShades[shade] ?? palette.base
++  const darkShades = applyPaletteOverrides(generatePalette(palette.dark.base), palette.dark.overrides ?? {})
++  return darkShades[shade] ?? palette.dark.base
++}
++
+ export function syncPalette(theme: { colors: { primary: string }; foundations: { palettes: Record<PaletteName, PaletteState> } }, path: string): void {
+-  const match = /^palettes\.(primary|success|warning|danger|info|gray)\.(base|overrides)(?:\.|$)/.exec(path)
++  const match = /^palettes\.(primary|success|warning|danger|info|gray)\.(dark\.)?(base|overrides)(?:\.|$)/.exec(path)
+   if (!match) return
+   const name = match[1] as PaletteName
+-  rebuildPalette(theme.foundations.palettes[name])
+-  if (name === 'primary') theme.colors.primary = theme.foundations.palettes.primary.base
++  rebuildPalette(theme.foundations.palettes[name], match[2] ? 'dark' : 'light')
++  if (name === 'primary' && !match[2]) theme.colors.primary = theme.foundations.palettes.primary.base
+ }
+ 
+ export function isDerivedShadePath(path: string): boolean {
+--- a/builder/src/utils/theme-store-serialization.ts
++++ b/builder/src/utils/theme-store-serialization.ts
+@@ -3,6 +3,7 @@
+ 
+ export function serializeTheme(value: ThemeStateV5): ThemeStateV5 {
+   const serialized = cloneTheme(value)
++  if (serialized.schemaVersion === 6) return serialized
+   for (const palette of Object.values(serialized.foundations.palettes)) {
+     delete (palette as { shades?: Partial<Record<number, string>> }).shades
+   }
+--- a/builder/src/utils/vanilla-css-export-foundations.ts
++++ b/builder/src/utils/vanilla-css-export-foundations.ts
+@@ -3,34 +3,35 @@
+ import { projectFoundations } from '@/utils/foundation-projection'
+ 
+ export function renderFoundations(theme: ThemeStateInput, mode: ThemeMode): string {
+-  return renderProjection(projectFoundations(theme.foundations, mode))
++  return renderProjection(projectFoundations(theme.foundations, mode), mode)
+ }
+ 
+ export function renderDarkFoundations(theme: ThemeStateInput): string {
+-  const rules = renderProjection(projectFoundations(theme.foundations, 'dark'))
+-  return rules ? `.dark {\n${indent(rules)}\n}` : ''
++  return renderProjection(projectFoundations(theme.foundations, 'dark'), 'dark')
+ }
+ 
+-function renderProjection(projection: FoundationProjection): string {
++function renderProjection(projection: FoundationProjection, mode: ThemeMode = 'light'): string {
++  const guard = `:where(html${mode === 'dark' ? '.dark' : ':not(.dark)'})`
+   const rules: string[] = []
+   for (const mapping of projection.mappings) {
+     const value = typeof mapping.value === 'number' ? String(mapping.value) : mapping.value
+-    if (mapping.variable) rules.push(`:root { ${mapping.variable}: ${value}; }`)
++    if (mapping.variable) rules.push(`${guard} { ${mapping.variable}: ${value}; }`)
+     if (mapping.id.startsWith('palette.')) {
+-      if (mapping.id.endsWith('.base') && mapping.variable) rules.push(`${mapping.selectors?.join(', ')} { --ftb-palette: var(${mapping.variable}); }`)
+-      if (mapping.id.includes('.shades.') && mapping.variable) rules.push(`${mapping.selectors?.join(', ')} { ${mapping.variable}: ${value}; }`)
++      if (mapping.id.endsWith('.base') && mapping.variable) rules.push(`${scopeSelectors(mapping.selectors, guard)} { --ftb-palette: var(${mapping.variable}); }`)
++      if (mapping.id.includes('.shades.') && mapping.variable) rules.push(`${scopeSelectors(mapping.selectors, guard)} { ${mapping.variable}: ${value}; }`)
+       continue
+     }
+     const selectors = mapping.selectors?.join(', ')
+     if (!selectors) continue
++    const scoped = scopeSelectors(mapping.selectors, guard)
+     if (mapping.property === 'color') {
+       const property = mapping.id.startsWith('surface.') ? 'background-color' : mapping.id.startsWith('border.') ? 'border-color' : 'color'
+-      rules.push(`${selectors} { ${property}: ${value}; }`)
+-    } else if (mapping.property === 'fontFamily') rules.push(`${selectors} { font-family: ${quoteFamily(String(mapping.value))}; }`)
+-    else if (mapping.property === 'spacing') rules.push(`${selectors} { padding-block: ${value}px; }`)
+-    else if (mapping.property === 'radius') rules.push(`${selectors} { border-radius: ${radiusValue(String(mapping.value))}; }`)
+-    else if (mapping.property === 'borderWidth') rules.push(`${selectors} { border-width: ${value}px; }`)
+-    else if (mapping.property === 'shadow') rules.push(`${selectors} { box-shadow: ${shadowValue(String(mapping.value))}; }`)
++      rules.push(`${scoped} { ${property}: ${value}; }`)
++    } else if (mapping.property === 'fontFamily') rules.push(`${scoped} { font-family: ${quoteFamily(String(mapping.value))}; }`)
++    else if (mapping.property === 'spacing') rules.push(`${scoped} { padding-block: ${value}px; }`)
++    else if (mapping.property === 'radius') rules.push(`${scoped} { border-radius: ${radiusValue(String(mapping.value))}; }`)
++    else if (mapping.property === 'borderWidth') rules.push(`${scoped} { border-width: ${value}px; }`)
++    else if (mapping.property === 'shadow') rules.push(`${scoped} { box-shadow: ${shadowValue(String(mapping.value))}; }`)
+   }
+   return rules.join('\n')
+ }
+@@ -38,4 +39,4 @@
+ function quoteFamily(value: string): string { return value.includes(',') ? value : `"${value.split('"').join('\\"')}"` }
+ function radiusValue(value: string): string { return ({ none: '0px', sm: '0.125rem', md: '0.375rem', lg: '0.5rem', xl: '0.75rem', full: '9999px' } as Record<string, string>)[value] ?? value }
+ function shadowValue(value: string): string { return ({ none: 'none', sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)', md: '0 4px 6px -1px rgb(0 0 0 / 0.1)', lg: '0 10px 15px -3px rgb(0 0 0 / 0.1)', xl: '0 20px 25px -5px rgb(0 0 0 / 0.1)' } as Record<string, string>)[value] ?? value }
+-function indent(value: string): string { return value.split('\n').map((line) => `  ${line}`).join('\n') }
++function scopeSelectors(selectors: readonly string[] | undefined, guard: string): string { return (selectors ?? []).map((selector) => `${guard} ${selector}`).join(', ') }
+--- a/builder/src/utils/vanilla-css-export-raw-overrides.ts
++++ b/builder/src/utils/vanilla-css-export-raw-overrides.ts
+@@ -14,9 +14,16 @@
+     seenSelectors.add(validation.value.selector)
+     return [validation.value]
+   })
+-  return validOverrides.sort((left, right) => left.selector.localeCompare(right.selector)).map((override) => {
+-    const declarations = Object.entries(override.properties).sort(([left], [right]) => left.localeCompare(right))
++  const ordered = validOverrides.sort((left, right) => left.selector.localeCompare(right.selector))
++  const render = (override: typeof ordered[number], properties: Record<string, string>, prefix = '') => {
++    const declarations = Object.entries(properties).sort(([left], [right]) => left.localeCompare(right))
+       .map(([property, value]) => `  ${property}: ${value};`).join('\n')
+-    return `${override.selector} {\n${declarations}\n}`
++    return `${prefix}${override.selector} {\n${declarations}\n}`
++  }
++  const light = ordered.filter((override) => Object.keys(override.properties).length).map((override) => render(override, override.properties, ':where(html:not(.dark)) ')).join('\n')
++  const dark = ordered.flatMap((override) => {
++    const properties = { ...override.properties, ...(override.darkProperties ?? {}) }
++    return Object.keys(properties).length ? [render(override, properties, ':where(html.dark) ')] : []
+   }).join('\n')
++  return [light, dark].filter(Boolean).join('\n')
+ }
+--- a/builder/src/utils/vanilla-css-export-semantic-overrides.ts
++++ b/builder/src/utils/vanilla-css-export-semantic-overrides.ts
+@@ -16,14 +16,23 @@
+     .flatMap((override) => {
+       const mapping = semanticMappings.get(`${override.targetId}\u0000${override.controlId}`)
+       if (!mapping) { errors.push(`Unsupported semantic override: ${override.targetId}.${override.controlId}`); return [] }
+-      if (typeof override.value !== 'string') { errors.push(`Unsupported semantic override value: ${override.targetId}.${override.controlId}`); return [] }
+-      try { return [`${semanticSelector(override, mapping)} { ${mapping.property}: ${override.value} !important; }`] }
++       if ((override.value !== undefined && typeof override.value !== 'string') || (override.darkValue !== undefined && typeof override.darkValue !== 'string')) { errors.push(`Unsupported semantic override value: ${override.targetId}.${override.controlId}`); return [] }
++       try {
++          const light = override.value === undefined ? '' : `${modeSelector('light', semanticSelector(override, mapping))} { ${mapping.property}: ${override.value} !important; }`
++          const darkValue = override.darkValue ?? override.value
++          const dark = darkValue === undefined ? '' : `${modeSelector('dark', semanticSelector(override, mapping))} { ${mapping.property}: ${darkValue} !important; }`
++         return [light, dark].filter(Boolean)
++       }
+       catch (error) { errors.push(error instanceof Error ? error.message : 'Unsupported semantic override'); return [] }
+      }).filter(Boolean).join('\n')
+-  const padding = theme.schemaVersion === 5 ? renderPadding(theme, errors) : ''
++  const padding = theme.schemaVersion === 5 || theme.schemaVersion === 6 ? renderPadding(theme, errors) : ''
+   return [semantic, padding].filter(Boolean).join('\n')
+ }
+ 
++function modeSelector(mode: 'light' | 'dark', selector: string): string {
++  return `:where(html${mode === 'dark' ? '.dark' : ':not(.dark)'}) ${selector}`
++}
++
+ function renderPadding(theme: import('@/models/theme.model').ThemeStateV5, errors: string[]): string {
+   try {
+     return projectPadding(theme, createThemeRegistry()).rules
+--- a/demo/app/Mcp/ThemeRelay/OperationResultValidator.php
++++ b/demo/app/Mcp/ThemeRelay/OperationResultValidator.php
+@@ -28,7 +28,7 @@
+ 
+         return $kind === 'export' && self::hasKeys($result, ['version', 'filename', 'schemaVersion', 'json'])
+             && $result['version'] === 1
+-            && $result['filename'] === 'filament-theme.json' && in_array($result['schemaVersion'], [4, 5], true)
++             && $result['filename'] === 'filament-theme.json' && in_array($result['schemaVersion'], [4, 5, 6], true)
+             && is_string($result['json']) && strlen($result['json']) <= RelayLimits::MAX_THEME_BYTES
+             && mb_check_encoding($result['json'], 'UTF-8');
+     }
+--- a/demo/app/Mcp/ThemeRelay/RelayImportPreviewValidator.php
++++ b/demo/app/Mcp/ThemeRelay/RelayImportPreviewValidator.php
+@@ -14,8 +14,8 @@
+         sort($actual);
+         sort($keys);
+ 
+-        return $actual === $keys && in_array($preview['sourceVersion'], [1, 2, 3, 4, 5], true)
+-            && in_array($preview['targetVersion'], [4, 5], true) && is_array($preview['migrationPath'])
++         return $actual === $keys && in_array($preview['sourceVersion'], [1, 2, 3, 4, 5, 6], true)
++             && in_array($preview['targetVersion'], [4, 5, 6], true) && is_array($preview['migrationPath'])
+             && array_filter($preview['migrationPath'], static fn (mixed $version): bool => ! is_int($version)) === []
+             && is_string($preview['displayName']) && mb_strlen($preview['displayName']) <= 120
+             && is_array($preview['summary']) && count($preview['summary']) <= 32
+--- a/demo/resources/views/filament/preview-bridge.blade.php
++++ b/demo/resources/views/filament/preview-bridge.blade.php
+@@ -115,7 +115,7 @@
+         for (const id of ['density', 'radius', 'borderWidth', 'shadow']) canonicalFoundationMappings.set(id, mapping(id, id === 'density' ? 'density' : id, componentSelectors));
+ 
+         const foundationKeys = ['palettes', 'surfaces', 'borders', 'text', 'typography', 'spacing', 'density', 'radius', 'borderWidth', 'shadow', 'explicitPaths', 'provenanceVersion'];
+-        const exactKeys = (value, keys) => value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === keys.length && keys.every((key) => Object.prototype.hasOwnProperty.call(value, key));
++        const exactKeys = (value, keys, optional = []) => value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length >= keys.length && Object.keys(value).length <= keys.length + optional.length && keys.every((key) => Object.prototype.hasOwnProperty.call(value, key)) && Object.keys(value).every((key) => keys.includes(key) || optional.includes(key));
+         const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+         const isFoundationRecord = (foundations) => {
+             if (!exactKeys(foundations, foundationKeys) || !exactKeys(foundations.palettes, paletteNames) || !exactKeys(foundations.surfaces, Object.keys(surfaceSelectors)) || !exactKeys(foundations.borders, Object.keys(borderSelectors)) || !exactKeys(foundations.text, Object.keys(textSelectors)) || !exactKeys(foundations.typography, Object.keys(typographySelectors)) || !exactKeys(foundations.spacing, Object.keys(spacingSelectors))) return false;
+@@ -123,9 +123,10 @@
+             if (foundations.provenanceVersion !== 1 || !['compact', 'default', 'spacious'].includes(foundations.density) || !['none', 'sm', 'md', 'lg', 'xl', 'full'].includes(foundations.radius) || !['none', 'sm', 'md', 'lg', 'xl'].includes(foundations.shadow) || typeof foundations.borderWidth !== 'number' || !Number.isFinite(foundations.borderWidth) || foundations.borderWidth < 0 || foundations.borderWidth > 8) return false;
+             for (const name of paletteNames) {
+                 const value = foundations.palettes[name];
+-                if (!exactKeys(value, ['base', 'shades', 'overrides']) || !isHexColor(value.base) || !exactKeys(value.shades, paletteShades.map(String)) || !isRecord(value.overrides)) return false;
++                if (!exactKeys(value, ['base', 'shades', 'overrides'], ['dark']) || !isHexColor(value.base) || !exactKeys(value.shades, paletteShades.map(String)) || !isRecord(value.overrides)) return false;
+                 if (!paletteShades.every((shade) => isHexColor(value.shades[shade]) && (value.overrides[shade] === undefined || isHexColor(value.overrides[shade])))) return false;
+                 if (Object.keys(value.overrides).some((shade) => !paletteShades.includes(Number(shade)) || !isHexColor(value.overrides[shade]))) return false;
++                if (value.dark !== undefined && (!isRecord(value.dark) || Object.keys(value.dark).some((key) => !['base', 'shades', 'overrides'].includes(key)) || (value.dark.base !== undefined && !isHexColor(value.dark.base)) || (value.dark.shades !== undefined && (!isRecord(value.dark.shades) || Object.keys(value.dark.shades).some((shade) => !paletteShades.includes(Number(shade)) || !isHexColor(value.dark.shades[shade])))) || (value.dark.overrides !== undefined && (!isRecord(value.dark.overrides) || Object.keys(value.dark.overrides).some((shade) => !paletteShades.includes(Number(shade)) || !isHexColor(value.dark.overrides[shade])))))) return false;
+             }
+             if (foundations.explicitPaths.some((path) => {
+                 const match = /^palettes\.([^.]+)\.overrides\.(\d+)$/.exec(path);
+@@ -135,7 +136,7 @@
+             if (!Object.values(foundations.typography).every(safeFont)) return false;
+             return Object.values(foundations.spacing).every((value) => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 256);
+         };
+-        const isSafeExplicitPath = (path) => /^(?:palettes\.(?:primary|success|warning|danger|info|gray)\.(?:base|overrides\.(?:50|100|200|300|400|500|600|700|800|900|950))|(?:surfaces\.(?:page|sidebar|topbar|card|elevated|input)|borders\.(?:default|strong)|text\.(?:primary|muted|disabled))\.(?:light|dark)|typography\.(?:body|heading|mono)|spacing\.(?:0|px|0\.5|1|1\.5|2|3|4|6|8)|density|radius|borderWidth|shadow)$/.test(path);
++         const isSafeExplicitPath = (path) => /^(?:palettes\.(?:primary|success|warning|danger|info|gray)\.(?:base|overrides\.(?:50|100|200|300|400|500|600|700|800|900|950)|dark\.(?:base|overrides\.(?:50|100|200|300|400|500|600|700|800|900|950)))|(?:surfaces\.(?:page|sidebar|topbar|card|elevated|input)|borders\.(?:default|strong)|text\.(?:primary|muted|disabled))\.(?:light|dark)|typography\.(?:body|heading|mono)|spacing\.(?:0|px|0\.5|1|1\.5|2|3|4|6|8)|density|radius|borderWidth|shadow)$/.test(path);
+         const sameArray = (left, right) => Array.isArray(left) && left.length === right.length && left.every((value, index) => value === right[index]);
+         const isHexColor = (value) => typeof value === 'string' && /^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(value);
+         const isSafeToken = (value) => typeof value === 'string' && safeToken.test(value);
+@@ -151,10 +152,10 @@
+         };
+         const isValidOverrideValue = (value, definition) => definition.type === 'color' && isHexColor(value);
+         const isSafeOverride = (override) => {
+-            if (!isRecord(override) || !isSafeToken(override.targetId) || !isSafeToken(override.controlId) || !['global', 'component', 'variant', 'state'].includes(override.scope) || Object.keys(override).some((key) => !['targetId', 'controlId', 'scope', 'componentId', 'variantId', 'stateId', 'value'].includes(key))) return false;
++             if (!isRecord(override) || !isSafeToken(override.targetId) || !isSafeToken(override.controlId) || !['global', 'component', 'variant', 'state'].includes(override.scope) || Object.keys(override).some((key) => !['targetId', 'controlId', 'scope', 'componentId', 'variantId', 'stateId', 'value', 'darkValue', 'mode'].includes(key))) return false;
+             const identity = `${override.targetId}\u0000${override.controlId}`;
+             const definition = controlDefinitions.get(identity);
+-            return overrideIdentities.has(identity) && definition && validateOverrideScope(override, definition) && isValidOverrideValue(override.value, definition) && ['componentId', 'variantId', 'stateId'].every((key) => override[key] === undefined || isSafeToken(override[key]));
++             return overrideIdentities.has(identity) && definition && validateOverrideScope(override, definition) && (override.value === undefined || isValidOverrideValue(override.value, definition)) && (override.darkValue === undefined || isValidOverrideValue(override.darkValue, definition)) && (override.value !== undefined || override.darkValue !== undefined) && (override.mode === undefined || ['light', 'dark'].includes(override.mode)) && ['componentId', 'variantId', 'stateId'].every((key) => override[key] === undefined || isSafeToken(override[key]));
+         };
+         const isAcceptedProjection = (projection, foundations) => {
+             if (!isRecord(projection) || projection.schemaVersion !== 1 || projection.compatibility !== 'filament-5.9' || !['light', 'dark'].includes(projection.mode) || !Array.isArray(projection.mappings)) return false;
+@@ -213,10 +214,11 @@
+             return false;
+         };
+         const isSafeRawOverride = (override) => isRecord(override)
+-            && Object.keys(override).every((key) => ['selector', 'properties'].includes(key))
++             && Object.keys(override).every((key) => ['selector', 'properties', 'darkProperties'].includes(key))
+             && typeof override.selector === 'string' && rawSelectorPattern.test(override.selector)
+-            && isRecord(override.properties) && Object.keys(override.properties).length > 0
+-            && Object.keys(override.properties).every((property) => rawVisualProperties.includes(property) && isSafeRawPropertyValue(property, override.properties[property]));
++             && (override.darkProperties === undefined || isRecord(override.darkProperties))
++             && (Object.keys(override.properties).length > 0 || Object.keys(override.darkProperties ?? {}).length > 0)
++             && [...Object.entries(override.properties), ...Object.entries(override.darkProperties ?? {})].every(([property, value]) => rawVisualProperties.includes(property) && isSafeRawPropertyValue(property, value));
+         const isSafePaddingValue = (value) => value === '0' || (typeof value === 'string' && /^(?:0|[1-9]\d{0,3})(?:\.\d+)?(?:px|rem|em|ex|ch|lh|rlh|vw|vh|vmin|vmax|%)$/.test(value));
+         const isAcceptedPaddingProjection = (projection, theme) => {
+             if (!isRecord(projection) || projection.schemaVersion !== 1 || !Array.isArray(projection.rules)) return false;
+@@ -260,18 +262,18 @@
+             return keys.length > 0 && Object.keys(record).length === keys.length && keys.every((key) => Object.prototype.hasOwnProperty.call(record, key)) && isPaddingContextApplicable(paddingTargets.get(record.targetId) ?? { targetKind: 'leaf', sectionId: record.sectionId }, context);
+         };
+         const isAcceptedTheme = (message) => {
+-            if (!isRecord(message) || message.type !== 'ftb:theme:update' || message.schemaVersion !== 1 || !['light', 'dark'].includes(message.activeMode) || !isRecord(message.projection) || message.activeMode !== message.projection.mode || !isRecord(message.theme) || !(message.theme.schemaVersion === 5) || !isAcceptedPaddingProjection(message.paddingProjection, message.theme)) return false;
++             if (!isRecord(message) || message.type !== 'ftb:theme:update' || message.schemaVersion !== 1 || !['light', 'dark'].includes(message.activeMode) || !isRecord(message.projection) || message.activeMode !== message.projection.mode || !isRecord(message.theme) || !(message.theme.schemaVersion === 5 || message.theme.schemaVersion === 6) || !isAcceptedPaddingProjection(message.paddingProjection, message.theme)) return false;
+              const hasSupportedKeys = exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'padding']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'padding']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'branding', 'padding']) || exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding', 'padding']);
+              const paddingValid = Array.isArray(message.theme.padding) && message.theme.padding.every(isSafePaddingRecord) && new Set(message.theme.padding.map(paddingIdentity)).size === message.theme.padding.length;
+              const foundationValid = isFoundationRecord(message.theme.foundations);
+              const projectionValid = isAcceptedProjection(message.projection, message.theme.foundations);
+-             const accepted = hasSupportedKeys && paddingValid && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && foundationValid && Array.isArray(message.theme.overrides) && message.theme.overrides.every(isSafeOverride) && message.theme.overrides.every((override) => semanticOverrideMappings.has(`${override.targetId}\u0000${override.controlId}`)) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && Array.isArray(message.theme.rawOverrides) && message.theme.rawOverrides.every(isSafeRawOverride) && new Set(message.theme.rawOverrides.map((override) => override.selector)).size === message.theme.rawOverrides.length && message.theme.customCss === '' && (message.theme.branding === undefined || isSafeBranding(message.theme.branding)) && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && projectionValid;
++              const accepted = hasSupportedKeys && paddingValid && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && foundationValid && Array.isArray(message.theme.overrides) && message.theme.overrides.every(isSafeOverride) && message.theme.overrides.every((override) => semanticOverrideMappings.has(`${override.targetId}\u0000${override.controlId}`)) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? '', override.mode ?? 'light'].join('\u0000'))).size === message.theme.overrides.length && Array.isArray(message.theme.rawOverrides) && message.theme.rawOverrides.every(isSafeRawOverride) && new Set(message.theme.rawOverrides.map((override) => override.selector)).size === message.theme.rawOverrides.length && message.theme.customCss === '' && (message.theme.branding === undefined || isSafeBranding(message.theme.branding)) && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && projectionValid;
+              return accepted;
+         };
+          const projectionMatchesCanonicalFoundation = (projection, foundations) => {
+              const expectedMappings = [...canonicalFoundationMappings.values()].filter((entry) => {
+                  const palette = /^palette\.([^.]+)\./.exec(entry.id)?.[1];
+-                 if (palette) return foundations.explicitPaths.some((path) => path === `palettes.${palette}.base` || path.startsWith(`palettes.${palette}.overrides.`));
++                  if (palette) return foundations.explicitPaths.some((path) => path === `palettes.${palette}.base` || path.startsWith(`palettes.${palette}.overrides.`) || (projection.mode === 'dark' && (path === `palettes.${palette}.dark.base` || path.startsWith(`palettes.${palette}.dark.overrides.`))));
+                  const modePath = /^(surface|border|text)\.(.+)$/.exec(entry.id);
+                  if (modePath) {
+                      const collection = modePath[1] === 'surface' ? 'surfaces' : modePath[1] === 'border' ? 'borders' : 'text';
+@@ -287,14 +289,30 @@
+                 candidate.id === expected.id && candidate.mapping === expected.mapping && candidate.property === expected.property && sameArray(candidate.selectors, expected.selectors) && candidate.variable === expected.variable && candidate.value === expected.value,
+             ));
+         };
++        // Match the canonical encoded-sRGB generator; derived shade caches are not authority.
++        const generatedPaletteShade = (base, shade) => {
++            if (shade === 500) return base.toLowerCase();
++            const fraction = shade < 500 ? shade / 1000 : (shade - 500) / 500;
++            const target = shade < 500 ? 255 : 0;
++            const channels = base.slice(1, 7).match(/.{2}/g).map((part) => {
++                const channel = parseInt(part, 16);
++                return Math.round(channel + (target - channel) * fraction).toString(16).padStart(2, '0');
++            });
++            return `#${channels.join('')}${base.slice(7).toLowerCase()}`;
++        };
+         const foundationValue = (foundations, id, mode) => {
+             if (id === 'density' || id === 'radius' || id === 'borderWidth' || id === 'shadow') return foundations[id];
+             const paletteBase = /^palette\.([^.]+)\.base$/.exec(id);
+-            if (paletteBase) return foundations.palettes[paletteBase[1]].base;
++             if (paletteBase) return mode === 'dark' ? foundations.palettes[paletteBase[1]].dark?.base ?? foundations.palettes[paletteBase[1]].base : foundations.palettes[paletteBase[1]].base;
+             const paletteShade = /^palette\.([^.]+)\.shades\.(\d+)$/.exec(id);
+             if (paletteShade) {
+                 const palette = foundations.palettes[paletteShade[1]];
+-                return palette.overrides[paletteShade[2]] ?? palette.shades[paletteShade[2]] ?? palette.base;
++                 const shade = Number(paletteShade[2]);
++                 if (mode === 'dark') {
++                     if (palette.dark?.overrides?.[shade] !== undefined) return palette.dark.overrides[shade].toLowerCase();
++                     if (palette.dark?.base !== undefined) return generatedPaletteShade(palette.dark.base, shade);
++                 }
++                 return palette.overrides[shade]?.toLowerCase() ?? generatedPaletteShade(palette.base, shade);
+             }
+             const modeValue = /^(surface|border|text)\.(.+)$/.exec(id);
+              if (modeValue) {
+@@ -361,16 +379,22 @@
+                 else if (candidate.property === 'shadow') rules.push(`${selectors} { box-shadow: ${shadowValues[candidate.value]}; }`);
+             }
+               const semanticOverrides = [...message.theme.overrides].sort((left, right) => [left.targetId, left.controlId, left.scope, left.componentId ?? '', left.variantId ?? '', left.stateId ?? ''].join('\u0000').localeCompare([right.targetId, right.controlId, right.scope, right.componentId ?? '', right.variantId ?? '', right.stateId ?? ''].join('\u0000')));
+-              for (const override of semanticOverrides) {
+-                  const mapping = semanticOverrideMappings.get(`${override.targetId}\u0000${override.controlId}`);
+-                  if (!mapping || typeof override.value !== 'string') return false;
++               for (const override of semanticOverrides) {
++                   if ((override.mode ?? 'light') !== message.activeMode && !(message.activeMode === 'dark' && override.mode === undefined)) continue;
++                   const mapping = semanticOverrideMappings.get(`${override.targetId}\u0000${override.controlId}`);
++                   if (!mapping) return false;
+                    const baseSelector = override.scope === 'global' ? (mapping.globalSelector ?? mapping.selector) : override.scope === 'component' ? (mapping.componentSelector ?? mapping.selector) : mapping.selector;
+                     const definition = controlDefinitions.get(`${override.targetId}\u0000${override.controlId}`);
+                     if (override.scope === 'state' && (!definition?.states.includes(override.stateId) || (override.stateId !== 'default' && !supportedPseudoStates.includes(override.stateId)))) return false;
+                     const selector = override.scope === 'state' && override.stateId !== 'default' ? `${baseSelector}:${override.stateId}` : baseSelector;
+-                  rules.push(`${selector} { ${mapping.property}: ${override.value} !important; }`);
+-              }
+-             const rawOverrideRules = [...message.theme.rawOverrides].sort((left, right) => left.selector.localeCompare(right.selector)).map((override) => `${override.selector} { ${Object.entries(override.properties).sort(([left], [right]) => left.localeCompare(right)).map(([property, value]) => `${property}: ${value};`).join(' ')} }`);
++                    const value = message.activeMode === 'dark' ? (override.darkValue ?? override.value) : override.value;
++                    if (typeof value !== 'string') continue;
++                   rules.push(`${selector} { ${mapping.property}: ${value} !important; }`);
++               }
++              const rawOverrideRules = [...message.theme.rawOverrides].sort((left, right) => left.selector.localeCompare(right.selector)).flatMap((override) => {
++                  const properties = message.activeMode === 'dark' ? { ...override.properties, ...(override.darkProperties ?? {}) } : override.properties;
++                  return Object.keys(properties).length ? [`${override.selector} { ${Object.entries(properties).sort(([left], [right]) => left.localeCompare(right)).map(([property, value]) => `${property}: ${value};`).join(' ')} }`] : [];
++              });
+              rules.push(...rawOverrideRules);
+             const iconConfiguration = message.theme.icons ?? { pack: 'default', overrides: {} };
+             const preset = iconPresets[iconConfiguration.pack];
+--- a/e2e/color-picker-acceptance-boundaries.spec.ts
++++ b/e2e/color-picker-acceptance-boundaries.spec.ts
+@@ -7,7 +7,7 @@
+   test('supports custom alpha, invalid draft recovery, and native compatibility', async ({ page }) => {
+     await page.goto(baseUrl)
+     const input = page.locator('#primary-palette-base')
+-    await page.getByRole('button', { name: 'Primary', exact: true }).click()
++    await page.getByRole('button', { name: /^primary /i }).click()
+     await page.locator('#primary-palette-base-picker').fill('#123456')
+     await expect(input).toHaveValue('#123456')
+     await expect.poll(async () => (await readCanonical(page)).foundations.palettes.primary.base).toBe('#123456')
+--- a/e2e/color-picker-acceptance-fields.spec.ts
++++ b/e2e/color-picker-acceptance-fields.spec.ts
+@@ -16,7 +16,7 @@
+     await expect.poll(() => frame.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--ftb-primary').trim())).toBe('#101828')
+     navigations.length = 0
+     const baseBefore = await readCanonical(page)
+-    await page.getByRole('button', { name: 'Primary', exact: true }).click()
++    await page.getByRole('button', { name: /^primary /i }).click()
+     await openChooser(page, 'primary palette base'); await chooseToken(page, 'red 500 #fb2c36')
+     await expect(page.locator('#primary-palette-base')).toHaveValue('#fb2c36')
+     await expect.poll(async () => (await readCanonical(page)).foundations.palettes.primary.base).toBe('#fb2c36')
+@@ -31,7 +31,7 @@
+ 
+   test('selects a shade, undoes/redoes it, and reset restores the generated ramp', async ({ page }) => {
+     await page.goto(baseUrl); const frame = await setPreviewRoute(page, '/demo/admin/showcase')
+-    await page.getByRole('button', { name: 'Primary', exact: true }).click()
++    await page.getByRole('button', { name: /^primary /i }).click()
+     const input = page.locator('#primary-shade-900')
+     await expect(input).toHaveValue('')
+     await expect(page.locator('[data-palette-status="primary-shade-900"]')).toContainText('generated')
+--- a/e2e/color-picker-acceptance-inventory.spec.ts
++++ b/e2e/color-picker-acceptance-inventory.spec.ts
+@@ -24,6 +24,8 @@
+   test('offers chooser only for raw color properties and projects to the existing iframe', async ({ page }) => {
+     await page.goto(baseUrl); const frame = await setPreviewRoute(page, '/demo/admin/showcase')
+     await page.getByRole('button', { name: 'Inspector' }).click(); await frame.locator('.fi-section:visible').first().click()
++    await page.getByRole('textbox', { name: 'Raw element selector' }).fill('.fi-section')
++    await expect(page.getByRole('textbox', { name: 'Raw element selector' })).toHaveValue('.fi-section')
+     for (const property of ['color', 'background-color', 'border-color']) await expect(page.getByRole('button', { name: `Choose Raw ${property} from Tailwind palette` })).toBeVisible()
+     await expect(page.getByRole('button', { name: 'Choose Raw border-radius from Tailwind palette' })).toHaveCount(0)
+     await openChooser(page, 'Raw background-color'); await chooseToken(page)
+@@ -37,14 +39,14 @@
+ 
+   test('persists after reload and reset returns the original canonical value', async ({ page }) => {
+     await page.goto(baseUrl); let input = page.locator('#primary-palette-base'); const baseline = await readCanonical(page); const baselineProjection = await page.frame({ url: /\/demo\/admin/ })!.evaluate(() => document.getElementById('ftb-managed-theme')?.textContent ?? '')
+-    await page.getByRole('button', { name: 'Primary', exact: true }).click(); await openChooser(page, 'primary palette base'); await chooseToken(page)
++    await page.getByRole('button', { name: /^primary /i }).click(); await openChooser(page, 'primary palette base'); await chooseToken(page)
+     await expect.poll(async () => (await readCanonical(page)).foundations.palettes.primary.base).toBe('#101828')
+-    await page.reload(); await page.getByRole('button', { name: 'Primary', exact: true }).click(); input = page.locator('#primary-palette-base'); await expect(input).toHaveValue('#101828')
++    await page.reload(); await page.getByRole('button', { name: /^primary /i }).click(); input = page.locator('#primary-palette-base'); await expect(input).toHaveValue('#101828')
+     await page.getByRole('button', { name: 'Reset primary palette base' }).click(); await expect(input).toHaveValue(baseline.foundations.palettes.primary.base)
+     await expect(page.locator('[data-palette-status="primary-base"]')).toContainText('inherited')
+     await expect.poll(async () => (await readCanonical(page)).foundations.palettes.primary.base).toBe(baseline.foundations.palettes.primary.base)
+     await expect.poll(() => page.frame({ url: /\/demo\/admin/ })!.evaluate(() => document.getElementById('ftb-managed-theme')?.textContent ?? '')).toBe(baselineProjection)
+-    await page.reload(); await page.getByRole('button', { name: 'Primary', exact: true }).click(); input = page.locator('#primary-palette-base')
++    await page.reload(); await page.getByRole('button', { name: /^primary /i }).click(); input = page.locator('#primary-palette-base')
+     await expect(input).toHaveValue(baseline.foundations.palettes.primary.base); await expect(page.locator('[data-palette-status="primary-base"]')).toContainText('inherited')
+     await expect.poll(() => page.frame({ url: /\/demo\/admin/ })!.evaluate(() => document.getElementById('ftb-managed-theme')?.textContent ?? '')).toBe(baselineProjection)
+   })
+--- a/e2e/color-picker-acceptance.helpers.ts
++++ b/e2e/color-picker-acceptance.helpers.ts
+@@ -17,8 +17,9 @@
+ })
+ 
+ export async function openChooser(page: Page, label: string): Promise<void> {
+-  await page.getByRole('button', { name: `Choose ${label} from Tailwind palette` }).click()
+-  await expect(page.getByRole('dialog', { name: `${label} color choices` })).toBeVisible()
++  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
++  await page.getByRole('button', { name: new RegExp(`^Choose ${escaped}(?: (?:light|dark))? from Tailwind palette$`, 'i') }).click()
++  await expect(page.getByRole('dialog', { name: new RegExp(`^${escaped}(?: (?:light|dark))? color choices$`, 'i') })).toBeVisible()
+ }
+ 
+ export async function chooseToken(page: Page, token = 'gray 900 #101828'): Promise<void> {
+--- a/e2e/theme-foundations.spec.ts
++++ b/e2e/theme-foundations.spec.ts
+@@ -39,6 +39,13 @@
+   await expect(header).toHaveAttribute("aria-expanded", "true");
+ };
+ 
++const exportJson = async (page: Page) => {
++  await page.locator('summary[aria-label="Export actions"]').click();
++  const downloadPromise = page.waitForEvent("download");
++  await page.getByRole("button", { name: "Export theme JSON" }).click();
++  return downloadPromise;
++};
++
+ test.describe("foundation preview integration", () => {
+   test.skip(
+     process.env.COMPOSE_E2E !== "1",
+@@ -120,9 +127,7 @@
+     await sidebarSurface.fill("var(--sky-950)")
+     await expect.poll(() => computedColorPixel(frame!, ".fi-sidebar")).toEqual(await colorPixel(frame!, "oklch(29.3% 0.066 243.157)"))
+     await expect.poll(async () => (await readActiveTheme(page)).foundations.surfaces.sidebar.light).toBe("var(--sky-950)")
+-    const downloadPromise = page.waitForEvent("download")
+-    await page.getByRole("button", { name: "Export theme JSON" }).click()
+-    const download = await downloadPromise
++    const download = await exportJson(page)
+     const exported = JSON.parse(await readFile((await download.path())!, "utf8"))
+     expect(exported.foundations.surfaces.sidebar.light).toBe("var(--sky-950)")
+     await page.getByRole("button", { name: "Reset sidebar surface" }).click()
+@@ -565,7 +570,7 @@
+   });
+ 
+   test("covers every foundation control through rendered native showcase elements", async ({ page }) => {
+-    test.setTimeout(120_000);
++    test.setTimeout(240_000);
+     const navigationRequests: string[] = [];
+     const mutationRequests: string[] = [];
+     page.on("request", (request) => {
+@@ -884,7 +889,7 @@
+     expect(previewFrame).toBeTruthy();
+     const paletteNames = ["primary", "success", "warning", "danger", "info", "gray"];
+     const shades = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
+-    const primaryHeader = page.getByRole("button", { name: "Primary", exact: true });
++    const primaryHeader = page.getByRole("button", { name: /^primary /i });
+ 
+     for (const palette of paletteNames) {
+       await expect(page.locator(`[data-palette-header="${palette}"]`)).toBeVisible();
+@@ -977,9 +982,7 @@
+     await page.locator("#primary-shade-500").fill("#123456");
+     await expect.poll(async () => (await readActiveTheme(page)).foundations.palettes.primary.overrides[500]).toBe("#123456");
+ 
+-    const downloadPromise = page.waitForEvent("download");
+-    await page.getByRole("button", { name: "Export theme JSON" }).click();
+-    const download = await downloadPromise;
++    const download = await exportJson(page);
+     expect(download.suggestedFilename()).toBe("filament-theme.json");
+     const exported = JSON.parse(await readFile((await download.path())! , "utf8")) as typeof validFoundations & {
+       schemaVersion: number;
+@@ -987,7 +990,7 @@
+       foundations: typeof validFoundations;
+     };
+ 
+-    expect(exported.schemaVersion).toBe(4);
++    expect(exported.schemaVersion).toBe(6);
+     expect(exported.colors.primary).toBe("#0f766e");
+     expect(exported.foundations.palettes.primary.base).toBe("#0f766e");
+     expect(exported.foundations.palettes.primary.shades[500]).toBe("#123456");
+--- a/builder/src/__tests__/mode-isolation-domain.spec.ts
++++ b/builder/src/__tests__/mode-isolation-domain.spec.ts
+@@ -0,0 +1,199 @@
++import { describe, expect, it } from 'vitest'
++import { ref } from 'vue'
++import { createDefaultCurrentThemeState } from '@/utils/foundation-defaults'
++import { createThemeRegistry } from '@/registry/theme-registry'
++import { useThemeRawActions } from '@/composables/use-theme-raw-actions'
++import { useThemeOverrideActions } from '@/composables/use-theme-override-actions'
++import { useThemePaletteActions } from '@/composables/use-theme-palette-actions'
++import { ALL_RAW_VISUAL_PROPERTIES, type RawVisualProperty } from '@/models/raw-overrides.model'
++import { PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
++import type { ThemeStateV5 } from '@/models/theme.model'
++import { exportVanillaCss } from '@/utils/vanilla-css-export'
++import { validateRawElementOverride } from '@/utils/raw-override-validation'
++import { validateFoundationState } from '@/utils/foundation-validation'
++import { renderSemanticOverrides } from '@/utils/vanilla-css-export-semantic-overrides'
++import { renderRawOverrides } from '@/utils/vanilla-css-export-raw-overrides'
++import { renderFoundations, renderDarkFoundations } from '@/utils/vanilla-css-export-foundations'
++
++const registry = createThemeRegistry()
++const state = () => ref(createDefaultCurrentThemeState() as ThemeStateV5)
++
++describe('mode isolation domain actions', () => {
++  it.each(ALL_RAW_VISUAL_PROPERTIES)('isolates raw %s per mode', (property) => {
++    const theme = state()
++    const actions = useThemeRawActions({ theme, registry })
++    const value = rawValue(property)
++    actions.setRawOverride('.fi-sidebar-item-label', property, value, 'light')
++    actions.setRawOverride('.fi-sidebar-item-label', property, darkValue(property), 'dark')
++    const override = theme.value.rawOverrides[0]!
++    expect(override.properties[property]).toBe(value)
++    expect(override.darkProperties?.[property]).toBe(darkValue(property))
++    expect(Object.keys(override.properties)).toEqual([property])
++    expect(Object.keys(override.darkProperties ?? {})).toEqual([property])
++  })
++
++  it('keeps semantic scopes and state variants independent', () => {
++    const theme = state()
++    const actions = useThemeOverrideActions({ theme, registry })
++    const contexts = [
++      { scope: 'global' as const },
++      { scope: 'component' as const, componentId: 'button' },
++      { scope: 'variant' as const, componentId: 'button', variantId: 'primary' },
++      { scope: 'state' as const, componentId: 'button', variantId: 'primary', stateId: 'hover' },
++    ]
++    for (const context of contexts) {
++      actions.setOverride({ targetId: 'button.primary', controlId: 'background', ...context, value: '#123456', mode: 'light' })
++      actions.setOverride({ targetId: 'button.primary', controlId: 'background', ...context, value: '#abcdef', mode: 'dark' })
++      const { scope: _scope, ...requestContext } = context
++      expect(actions.resolve({ targetId: 'button.primary', controlId: 'background', ...requestContext, mode: 'light' })).toMatchObject({ value: '#123456' })
++      expect(actions.resolve({ targetId: 'button.primary', controlId: 'background', ...requestContext, mode: 'dark' })).toMatchObject({ value: '#abcdef' })
++    }
++  })
++
++  it('supports every palette base and shade in both modes without freezing light values', () => {
++    const theme = state()
++    const actions = useThemePaletteActions({ theme, registry })
++    for (const [index, name] of PALETTE_NAMES.entries()) {
++      actions.setPaletteBase(name, `#${String(index + 1).repeat(6)}`, 'light')
++      actions.setPaletteBase(name, `#${String(index + 2).repeat(6)}`, 'dark')
++      for (const shade of PALETTE_SHADES) actions.setPaletteShadeOverride(name, shade, `#${String((index + 3) % 10).repeat(6)}`, 'dark')
++      expect(theme.value.foundations.palettes[name].base).toBe(`#${String(index + 1).repeat(6)}`)
++      expect(theme.value.foundations.palettes[name].dark?.base).toBe(`#${String(index + 2).repeat(6)}`)
++      expect(Object.keys(theme.value.foundations.palettes[name].dark?.overrides ?? {})).toHaveLength(PALETTE_SHADES.length)
++    }
++  })
++
++  it('resolves sparse dark palette overlays from the latest light palette for every family and shade', () => {
++    const theme = state()
++    const actions = useThemePaletteActions({ theme, registry })
++    for (const name of PALETTE_NAMES) {
++      actions.setPaletteShadeOverride(name, 50, '#111111', 'dark')
++      actions.setPaletteShadeOverride(name, 100, '#222222', 'light')
++      expect(theme.value.foundations.palettes[name].dark?.overrides?.[50]).toBe('#111111')
++      expect(theme.value.foundations.palettes[name].dark?.overrides?.[100]).toBeUndefined()
++      expect(theme.value.foundations.palettes[name].dark?.shades?.[100]).toBeUndefined()
++    }
++    const projected = theme.value.foundations.palettes.primary
++    expect(projected.shades[100]).toBe('#222222')
++    expect(projected.dark?.overrides?.[50]).toBe('#111111')
++    actions.resetPaletteShade('primary', 50, 'dark')
++    expect(theme.value.foundations.palettes.primary.dark?.overrides?.[50]).toBeUndefined()
++  })
++
++  it('exports root-safe mode-scoped foundation variables', () => {
++    const theme = createDefaultCurrentThemeState()
++    theme.foundations.explicitPaths = ['palettes.primary.base', 'palettes.primary.dark.base']
++    const light = renderFoundations(theme, 'light')
++    const dark = renderDarkFoundations(theme)
++    expect(light).toContain(':where(html:not(.dark)) { --ftb-primary')
++    expect(dark).toContain(':where(html.dark) { --ftb-primary')
++    expect(dark).not.toContain('.dark {')
++  })
++
++  it('resets dark values back to current light inheritance', () => {
++    const theme = state()
++    const actions = useThemeRawActions({ theme, registry })
++    actions.setRawOverride('.fi-input', 'color', '#123456', 'light')
++    actions.setRawOverride('.fi-input', 'color', '#abcdef', 'dark')
++    actions.resetRawProperty('.fi-input', 'color', 'dark')
++    expect(theme.value.rawOverrides[0]?.darkProperties).toBeUndefined()
++    actions.setRawOverride('.fi-input', 'color', '#654321', 'light')
++    expect(theme.value.rawOverrides[0]?.properties.color).toBe('#654321')
++  })
++
++  it('resets semantic dark only without changing light and keeps explicit equal dark values', () => {
++    const theme = state()
++    const actions = useThemeOverrideActions({ theme, registry })
++    actions.setOverride({ targetId: 'button.primary', controlId: 'background', scope: 'global', value: '#123456', mode: 'light' })
++    actions.setOverride({ targetId: 'button.primary', controlId: 'background', scope: 'global', value: '#123456', mode: 'dark' })
++    actions.resetOverride({ targetId: 'button.primary', controlId: 'background', mode: 'dark' })
++    expect(theme.value.overrides[0]?.value).toBe('#123456')
++    expect(theme.value.overrides[0]?.darkValue).toBeUndefined()
++    actions.setOverride({ targetId: 'button.primary', controlId: 'background', scope: 'global', value: '#abcdef', mode: 'dark' })
++    actions.resetOverride({ targetId: 'button.primary', controlId: 'background', mode: 'light' })
++    expect(theme.value.overrides[0]?.value).toBeUndefined()
++    expect(theme.value.overrides[0]?.darkValue).toBe('#abcdef')
++  })
++
++  it('keeps dark-only semantic edits from creating a light value', () => {
++    const theme = state()
++    const actions = useThemeOverrideActions({ theme, registry })
++    actions.setOverride({ targetId: 'button.primary', controlId: 'background', scope: 'global', value: '#abcdef', mode: 'dark' })
++    expect(theme.value.overrides[0]?.value).toBeUndefined()
++    expect(theme.value.overrides[0]?.darkValue).toBe('#abcdef')
++  })
++
++  it('renames and resets raw overrides per active mode', () => {
++    const theme = state()
++    const actions = useThemeRawActions({ theme, registry })
++    actions.setRawOverride('.fi-old', 'color', '#111111', 'light')
++    actions.setRawOverride('.fi-old', 'color', '#222222', 'dark')
++    expect(actions.renameRawOverride('.fi-old', '.fi-new')).toBe(true)
++    expect(theme.value.rawOverrides[0]?.darkProperties?.color).toBe('#222222')
++    actions.resetRawOverride('.fi-new', 'dark')
++    expect(theme.value.rawOverrides[0]?.properties.color).toBe('#111111')
++    expect(theme.value.rawOverrides[0]?.darkProperties).toBeUndefined()
++  })
++
++  it('validates and exports schema-v6 padding', () => {
++    const theme = createDefaultCurrentThemeState()
++    theme.padding = [{ scope: 'component', targetId: 'forms.input', edges: { top: '8px' } }]
++    expect(validateFoundationState(theme).valid).toBe(true)
++    const errors: string[] = []
++    expect(renderSemanticOverrides(theme, errors)).toContain('padding-top: 8px')
++    expect(errors).toEqual([])
++  })
++
++  it('rejects malformed schema-v6 padding during import validation', () => {
++    const theme = createDefaultCurrentThemeState() as unknown as Record<string, unknown>
++    theme.padding = [{ scope: 'component', targetId: 'forms.input', edges: { top: 8 } }]
++    expect(validateFoundationState(theme).valid).toBe(false)
++  })
++
++  it('exports mode-exclusive raw and semantic CSS guards', () => {
++    const theme = createDefaultCurrentThemeState()
++    theme.overrides = [{ targetId: 'button.primary', controlId: 'background', scope: 'state', stateId: 'hover', value: '#111111', darkValue: '#222222' }]
++    theme.rawOverrides = [{ selector: '.fi-sidebar-item.fi-active .fi-sidebar-item-label', properties: { color: '#111111' }, darkProperties: { color: '#222222' } }]
++    const errors: string[] = []
++    const css = `${renderSemanticOverrides(theme, errors)}\n${renderRawOverrides(theme, errors)}`
++    expect(css).toContain(':where(html:not(.dark))')
++    expect(css).toContain(':where(html.dark)')
++  })
++
++  it('emits light values as dark fallbacks until a dark overlay exists', () => {
++    const theme = createDefaultCurrentThemeState()
++    theme.overrides = [{ targetId: 'button.primary', controlId: 'background', scope: 'global', value: '#123456' }]
++    theme.rawOverrides = [{ selector: '.fi-sidebar-item-label', properties: { color: '#123456' } }]
++    const errors: string[] = []
++    const css = `${renderSemanticOverrides(theme, errors)}\n${renderRawOverrides(theme, errors)}`
++    expect(css).toContain(':where(html.dark) .fi-btn { background-color: #123456 !important; }')
++    expect(css).toContain(':where(html.dark) .fi-sidebar-item-label {')
++    expect(css).toContain('color: #123456;')
++  })
++
++  it('exports mode overlays with generated dark scoping', () => {
++    const theme = createDefaultCurrentThemeState()
++    theme.overrides = [{ targetId: 'button.primary', controlId: 'background', scope: 'global', value: '#123456', darkValue: '#abcdef' }]
++    theme.rawOverrides = [{ selector: '.fi-sidebar-item-label', properties: { color: '#123456' }, darkProperties: { color: '#abcdef' } }]
++    const result = exportVanillaCss(theme)
++    expect(result.errors).toEqual([])
++    expect(result.css).toContain(':where(html:not(.dark)) .fi-btn { background-color: #123456 !important; }')
++    expect(result.css).toContain(':where(html.dark) .fi-btn { background-color: #abcdef !important; }')
++    expect(result.css).toContain(':where(html.dark) .fi-sidebar-item-label {')
++  })
++
++  it('rejects malformed mode payloads and unsafe CSS mode selectors', () => {
++    expect(validateRawElementOverride({ selector: '.dark .fi-btn', properties: { color: '#123456' } }).valid).toBe(false)
++    expect(validateRawElementOverride({ selector: '.fi-btn', properties: {}, darkProperties: { color: '#123456' } }).valid).toBe(true)
++    const theme = createDefaultCurrentThemeState()
++    theme.foundations.palettes.primary.dark = { base: '#123456' }
++    theme.foundations.explicitPaths.push('palettes.primary.dark.base', 'palettes.primary.dark.base')
++    expect(validateFoundationState(theme)).toMatchObject({ valid: false, code: 'invalid-value' })
++  })
++})
++
++function rawValue(property: RawVisualProperty): string {
++  return property === 'color' || property.endsWith('color') ? '#123456' : property === 'opacity' ? '0.5' : property === 'font-weight' ? '600' : property === 'line-height' ? '1.5' : property === 'font-family' ? 'Inter' : property === 'box-shadow' ? '0 1px 2px #123456' : property === 'text-decoration' ? 'underline' : property === 'border-style' ? 'solid' : property === 'text-align' ? 'center' : property === 'white-space' ? 'nowrap' : property === 'padding' || property === 'margin' ? '1px 2px' : '1px'
++}
++
++function darkValue(property: RawVisualProperty): string { return property === 'opacity' ? '0.75' : property === 'font-weight' ? '700' : property === 'color' || property.endsWith('color') ? '#abcdef' : rawValue(property) }
+--- a/demo/tests/Feature/Mcp/ThemeRelayValidationV6Test.php
++++ b/demo/tests/Feature/Mcp/ThemeRelayValidationV6Test.php
+@@ -0,0 +1,47 @@
++<?php
++
++declare(strict_types=1);
++
++namespace Tests\Feature\Mcp;
++
++use App\Mcp\ThemeRelay\OperationResultValidator;
++use App\Mcp\ThemeRelay\RelayImportPreviewValidator;
++use Tests\TestCase;
++
++final class ThemeRelayValidationV6Test extends TestCase
++{
++    public function test_v6_export_and_import_preview_envelopes_are_accepted(): void
++    {
++        $json = json_encode([
++            'schemaVersion' => 6,
++            'overrides' => [['targetId' => 'buttons', 'controlId' => 'background', 'scope' => 'component', 'value' => '#111111', 'darkValue' => '#222222', 'mode' => 'dark']],
++        ]);
++        self::assertIsString($json);
++        self::assertTrue(OperationResultValidator::valid('export', [
++            'version' => 1, 'filename' => 'filament-theme.json', 'schemaVersion' => 6, 'json' => $json,
++        ]));
++        self::assertTrue(RelayImportPreviewValidator::valid([
++            'sourceVersion' => 6, 'targetVersion' => 6, 'migrationPath' => [6], 'displayName' => 'Example',
++            'summary' => ['Mode-aware v6 theme'], 'payloadDigest' => hash('sha256', $json), 'byteLength' => strlen($json),
++        ]));
++    }
++
++    public function test_envelopes_reject_malformed_versions_and_invalid_mode_values(): void
++    {
++        self::assertFalse(OperationResultValidator::valid('export', [
++            'version' => 1, 'filename' => 'filament-theme.json', 'schemaVersion' => 7, 'json' => '{}',
++        ]));
++        self::assertFalse(RelayImportPreviewValidator::valid([
++            'sourceVersion' => 6, 'targetVersion' => 6, 'migrationPath' => [6, 'dark'], 'displayName' => 'Example',
++            'summary' => [], 'payloadDigest' => str_repeat('a', 64), 'byteLength' => 2,
++        ]));
++    }
++
++    public function test_relay_origin_and_authentication_guards_reject_untrusted_requests(): void
++    {
++        config(['local-theme-relay.enabled' => true, 'local-theme-relay.origin' => 'http://localhost:8000', 'local-theme-relay.host' => 'localhost:8000']);
++        $this->withHeader('Host', 'localhost:8000')->withHeader('Origin', 'https://evil.example')
++            ->postJson('/local-theme/relay/pairings', ['version' => 1, 'pairingId' => str_repeat('a', 64)])
++            ->assertForbidden();
++    }
++}
+--- a/e2e/all-properties-mode-isolation.spec.ts
++++ b/e2e/all-properties-mode-isolation.spec.ts
+@@ -0,0 +1,88 @@
++import { expect, test } from '@playwright/test'
++import { authenticate, readCanonical, setPreviewRoute } from './color-picker-acceptance.helpers'
++
++const baseUrl = process.env.COMPOSE_BASE_URL ?? 'http://127.0.0.1:4175'
++test.skip(process.env.COMPOSE_E2E !== '1', 'Requires the canonical Compose stack')
++
++test('mode-specific theme values survive reset/history/reload and exported CSS applies to light and dark roots', async ({ page }) => {
++  await authenticate(page)
++  await page.evaluate(() => {
++    for (const key of Object.keys(localStorage)) if (key.startsWith('ftb-theme')) localStorage.removeItem(key)
++  })
++  await page.goto(baseUrl)
++  const frame = page.frameLocator('iframe[title="Filament preview"]')
++
++  await page.locator('[data-palette-header="primary"]').click()
++  await page.locator('#primary-palette-base').fill('#123456')
++  await page.locator('#primary-shade-500').fill('#234567')
++  await page.getByRole('button', { name: 'Dark mode' }).click()
++  await page.locator('#primary-palette-base').fill('#654321')
++  await page.locator('#primary-shade-500').fill('#765432')
++  await expect.poll(async () => (await readCanonical(page)).foundations.palettes.primary.dark?.base).toBe('#654321')
++  await expect.poll(() => frame.locator('html').evaluate((root) => getComputedStyle(root).getPropertyValue('--ftb-primary').trim())).toBe('#654321')
++  await expect.poll(() => frame.locator('html').evaluate((root) => getComputedStyle(root).getPropertyValue('--primary-500').trim())).toBe('#765432')
++  await page.getByRole('button', { name: 'Light mode' }).click()
++  await expect.poll(() => frame.locator('html').evaluate((root) => getComputedStyle(root).getPropertyValue('--ftb-primary').trim())).toBe('#123456')
++
++  await page.getByRole('button', { name: 'Inspector' }).click()
++  const selected = frame.locator('.fi-sidebar-item.fi-active .fi-sidebar-item-label').first()
++  await selected.evaluate((node) => (node as HTMLElement).click())
++  await page.getByRole('button', { name: 'Selected' }).click()
++  await page.getByLabel('Raw color', { exact: true }).fill('#119944')
++  await page.getByRole('button', { name: 'Dark mode' }).click()
++  await page.getByLabel('Raw color', { exact: true }).fill('#994411')
++  await expect.poll(async () => (await readCanonical(page)).rawOverrides.some((item: { darkProperties?: Record<string, string> }) => item.darkProperties?.color === '#994411')).toBe(true)
++  await expect.poll(() => selected.evaluate((node) => getComputedStyle(node).color)).toBe('rgb(153, 68, 17)')
++  await page.getByRole('button', { name: 'Reset raw color' }).click()
++  await page.getByRole('button', { name: 'Undo' }).click()
++  await expect.poll(() => selected.evaluate((node) => getComputedStyle(node).color)).toBe('rgb(153, 68, 17)')
++  await page.getByRole('button', { name: 'Light mode' }).click()
++  await expect.poll(() => selected.evaluate((node) => getComputedStyle(node).color)).toBe('rgb(17, 153, 68)')
++  await expect.poll(async () => (await readCanonical(page)).foundations.palettes.primary.base).toBe('#123456')
++  await page.reload()
++
++  await setPreviewRoute(page, '/demo/admin/forms-showcase')
++  await page.getByRole('tab', { name: 'Components' }).click()
++  await page.locator('#product-name-global-background').fill('#cc2233')
++  await page.getByRole('button', { name: 'Dark mode' }).click()
++  await page.locator('#product-name-global-background').fill('#2233cc')
++  const productInput = page.frameLocator('iframe[title="Filament preview"]').locator('.fi-fo-text-input .fi-input').first()
++  await expect.poll(() => productInput.evaluate((node) => getComputedStyle(node).backgroundColor)).toBe('rgb(34, 51, 204)')
++  await page.getByRole('button', { name: 'Light mode' }).click()
++  await expect.poll(() => productInput.evaluate((node) => getComputedStyle(node).backgroundColor)).toBe('rgb(204, 34, 51)')
++  await page.getByRole('tab', { name: 'Foundations' }).click()
++  await page.getByLabel('Text primary light', { exact: true }).fill('#102030')
++  await page.getByLabel('page surface light', { exact: true }).fill('#eeddcc')
++  await page.getByRole('button', { name: 'Dark mode' }).click()
++  await page.getByLabel('Text primary dark', { exact: true }).fill('#e0d0c0')
++  await page.getByLabel('page surface dark', { exact: true }).fill('#302010')
++
++  const exportMenu = page.locator('summary[aria-label="Export actions"]')
++  await exportMenu.click()
++  const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download vanilla CSS' }).click()])
++  const stream = await download.createReadStream()
++  let css = ''
++  for await (const chunk of stream ?? []) css += chunk.toString()
++
++  const isolated = await page.context().newPage()
++  await isolated.setContent('<html><body><main class="fi-main"><nav class="fi-sidebar"><a class="fi-sidebar-item fi-active"><span class="fi-sidebar-item-label">Active</span></a></nav><section class="fi-fo-text-input"><input class="fi-input"></section></main></body></html>')
++  await isolated.addStyleTag({ content: css })
++  const root = isolated.locator('html')
++  const exportedLabel = isolated.locator('.fi-sidebar-item-label')
++  await expect.poll(() => root.evaluate((node) => getComputedStyle(node).getPropertyValue('--ftb-primary').trim())).toBe('#123456')
++  await expect.poll(() => root.evaluate((node) => getComputedStyle(node).getPropertyValue('--primary-500').trim())).toBe('#234567')
++  await expect(exportedLabel).toHaveCSS('color', 'rgb(17, 153, 68)')
++  await expect(isolated.locator('body')).toHaveCSS('background-color', 'rgb(238, 221, 204)')
++  await expect(isolated.locator('body')).toHaveCSS('color', 'rgb(16, 32, 48)')
++  await root.evaluate((node) => node.classList.add('dark'))
++  await expect.poll(() => root.evaluate((node) => getComputedStyle(node).getPropertyValue('--ftb-primary').trim())).toBe('#654321')
++  await expect.poll(() => root.evaluate((node) => getComputedStyle(node).getPropertyValue('--primary-500').trim())).toBe('#765432')
++  await expect.poll(() => isolated.locator('.fi-input').evaluate((node) => getComputedStyle(node).backgroundColor)).toBe('rgb(34, 51, 204)')
++  await expect(exportedLabel).toHaveCSS('color', 'rgb(153, 68, 17)')
++  await expect(isolated.locator('body')).toHaveCSS('background-color', 'rgb(48, 32, 16)')
++  await expect(isolated.locator('body')).toHaveCSS('color', 'rgb(224, 208, 192)')
++  await root.evaluate((node) => node.classList.remove('dark'))
++  await expect(isolated.locator('.fi-input')).toHaveCSS('background-color', 'rgb(204, 34, 51)')
++  await expect(isolated.locator('body')).toHaveCSS('background-color', 'rgb(238, 221, 204)')
++  await isolated.close()
++})
+--- a/e2e/dark-first-palette.spec.ts
++++ b/e2e/dark-first-palette.spec.ts
+@@ -0,0 +1,23 @@
++import { expect, test } from '@playwright/test'
++import { authenticate, baseUrl } from './color-picker-acceptance.helpers'
++
++test.skip(process.env.COMPOSE_E2E !== '1', 'Requires the canonical Compose stack')
++
++test('a dark-first primary edit does not block switching back to untouched light mode', async ({ page }) => {
++  await authenticate(page)
++  await page.evaluate(() => localStorage.clear())
++  await page.goto(baseUrl)
++  const root = page.frameLocator('iframe[title="Filament preview"]').locator('html')
++  await expect(root).toBeVisible()
++  const lightPrimary = await page.getByLabel('Primary color text', { exact: true }).inputValue()
++  await page.getByRole('button', { name: 'Dark mode' }).click()
++  await page.getByLabel('Primary color text', { exact: true }).fill('#654321')
++  await expect(root).toHaveClass(/dark/)
++  await expect.poll(() => root.evaluate((node) => getComputedStyle(node).getPropertyValue('--ftb-primary').trim())).toBe('#654321')
++  await page.getByRole('button', { name: 'Light mode' }).click()
++  await expect(root).not.toHaveClass(/dark/)
++  await expect(page.getByLabel('Primary color text', { exact: true })).toHaveValue(lightPrimary)
++  await page.getByRole('button', { name: 'Dark mode' }).click()
++  await expect(root).toHaveClass(/dark/)
++  await expect(page.getByLabel('Primary color text', { exact: true })).toHaveValue('#654321')
++})
+--- a/e2e/palette-cache-parity.spec.ts
++++ b/e2e/palette-cache-parity.spec.ts
+@@ -0,0 +1,54 @@
++import { expect, test } from '@playwright/test'
++import { authenticate, baseUrl } from './color-picker-acceptance.helpers'
++
++test.skip(process.env.COMPOSE_E2E !== '1', 'Requires the canonical Compose stack')
++
++for (const explicitDarkBase of [false, true]) {
++  test(`preview ignores stale palette caches with explicit dark base ${explicitDarkBase}`, async ({ page }) => {
++    await authenticate(page)
++    await page.evaluate(() => localStorage.clear())
++    await page.goto(baseUrl)
++    const preview = page.frameLocator('iframe[title="Filament preview"]')
++    await expect(preview.locator('html')).toBeVisible()
++    await preview.locator('html').evaluate(() => {
++      const capture = { message: null as unknown, accepted: 0 }
++      Object.assign(window, { paletteTestCapture: capture })
++      window.addEventListener('message', (event) => {
++        if (event.data?.type === 'ftb:theme:update') capture.message = structuredClone(event.data)
++      })
++      window.addEventListener('ftb:preview-message-accepted', () => capture.accepted++)
++    })
++    await page.getByLabel('Primary color text', { exact: true }).fill('#123456')
++    await page.getByRole('button', { name: 'Dark mode' }).click()
++    if (explicitDarkBase) await page.getByLabel('Primary color text', { exact: true }).fill('#654321')
++    await expect(preview.locator('html')).toHaveClass(/dark/)
++    const expected = explicitDarkBase ? '#654321' : '#123456'
++    await expect.poll(() => preview.locator('html').evaluate((node) => getComputedStyle(node).getPropertyValue('--primary-500').trim())).toBe(expected)
++    const payload = await preview.locator('html').evaluate(() => {
++      return (window as unknown as { paletteTestCapture: { message: Record<string, unknown> } }).paletteTestCapture.message
++    })
++    const send = async (forgedProjection: boolean) => {
++      await preview.locator('html').evaluate(() => {
++        (window as unknown as { paletteTestCapture: { accepted: number } }).paletteTestCapture.accepted = 0
++      })
++      await page.evaluate(({ message, forge }) => {
++        const altered = structuredClone(message) as {
++          theme: { foundations: { palettes: { primary: { dark?: { base?: string; shades?: Record<string, string> } } } } }
++          projection: { mappings: Array<{ id: string; value: string }> }
++        }
++        const palette = altered.theme.foundations.palettes.primary
++        palette.dark = { ...palette.dark, shades: { ...palette.dark?.shades, 500: '#ff00ff' } }
++        if (forge) altered.projection.mappings.find((entry) => entry.id === 'palette.primary.shades.500')!.value = '#ff00ff'
++        document.querySelector<HTMLIFrameElement>('iframe[title="Filament preview"]')!.contentWindow!.postMessage(altered, location.origin)
++      }, { message: payload, forge: forgedProjection })
++    }
++    await send(false)
++    await expect.poll(() => preview.locator('html').evaluate(() => (window as unknown as { paletteTestCapture: { accepted: number } }).paletteTestCapture.accepted)).toBe(1)
++    await expect.poll(() => preview.locator('html').evaluate((node) => getComputedStyle(node).getPropertyValue('--primary-500').trim())).toBe(expected)
++    await send(true)
++    // A subsequent valid message provides a barrier after the forged message.
++    await page.getByLabel('Primary color text', { exact: true }).fill('#112233')
++    await expect.poll(() => preview.locator('html').evaluate((node) => getComputedStyle(node).getPropertyValue('--primary-500').trim())).toBe('#112233')
++    await expect.poll(() => preview.locator('html').evaluate(() => (window as unknown as { paletteTestCapture: { accepted: number } }).paletteTestCapture.accepted)).toBe(1)
++  })
++}
+--- a/e2e/raw-sidebar-mode-isolation.spec.ts
++++ b/e2e/raw-sidebar-mode-isolation.spec.ts
+@@ -0,0 +1,35 @@
++import { expect, test } from '@playwright/test'
++
++const baseUrl = process.env.COMPOSE_BASE_URL ?? 'http://127.0.0.1:4175'
++
++test.skip(process.env.COMPOSE_E2E !== '1', 'Requires the canonical Compose stack')
++
++test('raw sidebar color keeps light and dark values isolated', async ({ page }) => {
++  await page.addInitScript(() => localStorage.removeItem('ftb-theme'))
++  await page.setViewportSize({ width: 1600, height: 1200 })
++  await page.goto(baseUrl)
++
++  const frame = page.frameLocator('iframe[title="Filament preview"]')
++  const label = frame.locator('.fi-sidebar-item.fi-active .fi-sidebar-item-label').first()
++  await expect(label).toBeVisible()
++
++  await page.getByRole('button', { name: 'Inspector' }).click()
++  await label.click()
++  await expect(page.getByLabel('Raw element selector')).toHaveValue('.fi-sidebar-item-label')
++
++  await page.getByLabel('Raw color', { exact: true }).fill('#123456')
++  await expect.poll(() => label.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(18, 52, 86)')
++
++  await page.getByRole('button', { name: 'Dark mode' }).click()
++  await expect(frame.locator('html')).toHaveClass(/dark/)
++  await expect(page.getByLabel('Raw color', { exact: true })).toHaveValue('#123456')
++  await expect.poll(() => label.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(18, 52, 86)')
++
++  await page.getByLabel('Raw color', { exact: true }).fill('#abcdef')
++  await expect.poll(() => label.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(171, 205, 239)')
++
++  await page.getByRole('button', { name: 'Light mode' }).click()
++  await expect(frame.locator('html')).not.toHaveClass(/dark/)
++  await expect(page.getByLabel('Raw color', { exact: true })).toHaveValue('#123456')
++  await expect.poll(() => label.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(18, 52, 86)')
++})

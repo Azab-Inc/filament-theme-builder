@@ -1,0 +1,255 @@
+--- a/builder/src/components/FoundationsPaletteControls.vue
++++ b/builder/src/components/FoundationsPaletteControls.vue
+@@ -5,8 +5,9 @@
+ import type { PaletteName, PaletteShade } from '@/models/foundations.model'
+ import type { FoundationsPaletteControlsEmits } from './foundations-palette-controls-emits.model'
+ import type { FoundationsPaletteControlsProps } from './foundations-palette-controls-props.model'
++import type { ThemeMode } from '@/models/foundations.model'
+ 
+-const props = defineProps<FoundationsPaletteControlsProps>()
++const props = defineProps<FoundationsPaletteControlsProps & { activeMode?: ThemeMode }>()
+ const emit = defineEmits<FoundationsPaletteControlsEmits>()
+ const openPalette = ref<PaletteName | null>(null)
+ const { resetKeys, resetField } = useColorFieldResets()
+@@ -29,13 +30,13 @@
+     <legend>Color palettes</legend>
+     <section v-for="name in paletteNames" :key="name" class="palette-accordion__item">
+       <h3 class="palette-accordion__heading">
+-        <button :id="`${name}-palette-header`" type="button" class="palette-accordion__header" :aria-label="`${name[0]?.toUpperCase()}${name.slice(1)}`"
++        <button :id="`${name}-palette-header`" type="button" class="palette-accordion__header"
+           :data-palette-header="name" :aria-expanded="openPalette === name"
+           :aria-controls="`${name}-palette-panel`" @click="togglePalette(name)">
+           <span class="palette-accordion__marker" :style="{ backgroundColor: palettes[name].base }" aria-hidden="true"></span>
+           <span class="palette-accordion__name">{{ name }}</span>
+           <span class="palette-accordion__base">{{ palettes[name].base }}</span>
+-          <span class="palette-accordion__ramp" aria-label="Generated shade ramp">
++          <span class="palette-accordion__ramp" aria-hidden="true">
+             <span v-for="shade in paletteShades" :key="shade" :style="{ backgroundColor: palettes[name].shades[shade] }" :title="`Shade ${shade}`"></span>
+           </span>
+           <span class="palette-accordion__summary">{{ Object.keys(palettes[name].overrides).length }} edited / {{ paletteShades.length - Object.keys(palettes[name].overrides).length }} generated</span>
+@@ -43,14 +44,14 @@
+       </h3>
+       <div v-if="openPalette === name" :id="`${name}-palette-panel`" class="palette-accordion__panel" :data-palette-panel="name" role="region" :aria-labelledby="`${name}-palette-header`">
+         <div class="palette-accordion__base-editor">
+-          <ColorField :id="`${name}-palette-base`" :label="`${name} palette base`" :visible-label="`${name} palette base`" :text-label="`${name} palette base text`" :native-label="`${name} palette base color picker`" :native-id="`${name}-palette-base-picker`" :value="palettes[name].base" :effective-value="palettes[name].base" profile="hex68" :context-key="`${props.contextKey ?? ''}:${name}:base`" :status-id="`${name}-base-status`" :reset-key="resetKeys[`${name}:base`]" @input="setPaletteBase(name, $event)" />
++           <ColorField :id="`${name}-palette-base`" :label="`${name} palette base ${props.activeMode ?? 'light'}`" :visible-label="`${name} palette base`" :text-label="`${name} palette base text`" :native-label="`${name} palette base color picker`" :native-id="`${name}-palette-base-picker`" :value="palettes[name].base" :effective-value="palettes[name].base" profile="hex68" :context-key="`${props.contextKey ?? ''}:${props.activeMode ?? 'light'}:${name}:base`" :status-id="`${name}-base-status`" :reset-key="resetKeys[`${name}:base`]" @input="setPaletteBase(name, $event)" />
+           <span :id="`${name}-base-status`" :data-palette-status="`${name}-base`" role="status">{{ statusFor(`palettes.${name}.base`) }}</span>
+           <button type="button" :aria-label="`Reset ${name} palette base`" @click="resetBase(name)">Reset base</button>
+         </div>
+         <div class="palette-accordion__shade-grid">
+           <div v-for="shade in paletteShades" :key="`${name}-${shade}`" class="palette-accordion__shade">
+             <span class="palette-accordion__shade-marker" :style="{ backgroundColor: palettes[name].shades[shade] }" aria-hidden="true"></span>
+-            <ColorField :id="`${name}-shade-${shade}`" :label="`${name} shade ${shade} override`" :text-label="`${name} shade ${shade} override`" :visible-label="String(shade)" :value="palettes[name].overrides[shade] ?? ''" :effective-value="palettes[name].shades[shade] ?? ''" profile="hex68" :context-key="`${props.contextKey ?? ''}:${name}:${shade}`" :status-id="`${name}-shade-status-${shade}`" :reset-key="resetKeys[`${name}:${shade}`]" @input="setPaletteShade(name, shade, $event)" />
++             <ColorField :id="`${name}-shade-${shade}`" :label="`${name} shade ${shade} override ${props.activeMode ?? 'light'}`" :text-label="`${name} shade ${shade} override`" :visible-label="String(shade)" :value="palettes[name].overrides[shade] ?? ''" :effective-value="palettes[name].shades[shade] ?? ''" profile="hex68" :context-key="`${props.contextKey ?? ''}:${props.activeMode ?? 'light'}:${name}:${shade}`" :status-id="`${name}-shade-status-${shade}`" :reset-key="resetKeys[`${name}:${shade}`]" @input="setPaletteShade(name, shade, $event)" />
+             <span :id="`${name}-shade-status-${shade}`" :data-palette-status="`${name}-shade-${shade}`" role="status">{{ statusFor(`palettes.${name}.shades.${shade}`) }}</span>
+             <button type="button" :aria-label="`Reset ${name} shade ${shade}`" @click="resetShade(name, shade)">Reset</button>
+           </div>
+--- a/e2e/ftb-008-raw-inspector.spec.ts
++++ b/e2e/ftb-008-raw-inspector.spec.ts
+@@ -1,6 +1,12 @@
+ import { expect, test } from '@playwright/test'
+ 
+ const baseUrl = process.env.COMPOSE_BASE_URL ?? 'http://127.0.0.1:4175'
++const nearestSectionSelector = '.fi-section-content.fi-grid.fi-sc.fi-sc-has-gap'
++
++async function openExportMenu(page: import('@playwright/test').Page) {
++  const summary = page.locator('summary[aria-label="Export actions"]')
++  if (!(await summary.evaluate((element) => element.parentElement?.hasAttribute('open')))) await summary.click()
++}
+ 
+ test.skip(process.env.COMPOSE_E2E !== '1', 'Requires a running Compose stack')
+ test.use({ acceptDownloads: true })
+@@ -19,13 +25,13 @@
+     page.on('request', (request) => {
+       if (request.method() !== 'GET') requests.push(request.method())
+     })
+-    const target = frame.locator('.fi-section:visible').first()
++    const target = frame.locator(`${nearestSectionSelector}:visible`).first()
+     const beforeUrl = await page.getByTitle('Filament preview').getAttribute('src')
+ 
+     await page.getByRole('button', { name: 'Inspector' }).click()
+     await target.click()
+     await expect(page.locator('[data-advanced-inspector]')).toBeVisible()
+-    await expect(page.getByLabel('Raw element selector')).toHaveValue('.fi-section')
++    await expect(page.getByLabel('Raw element selector')).toHaveValue(nearestSectionSelector)
+ 
+     await page.locator('#raw-background-color').fill('#0f766e')
+     await expect.poll(() => target.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(/15, 118, 110|rgb\(15, 118, 110\)/)
+@@ -41,13 +47,14 @@
+   test('shows a fragile warning for an editable compound selector and exports raw CSS', async ({ page }) => {
+     const frame = page.frameLocator('iframe[title="Filament preview"]')
+     await page.getByRole('button', { name: 'Inspector' }).click()
+-    await frame.locator('.fi-section:visible').first().click()
+-    await expect(page.getByLabel('Raw element selector')).toHaveValue('.fi-section')
++    await frame.locator(`${nearestSectionSelector}:visible`).first().click()
++    await expect(page.getByLabel('Raw element selector')).toHaveValue(nearestSectionSelector)
+ 
+     await page.getByLabel('Raw element selector').fill('.fi-section .fi-btn')
+     await expect(page.locator('[data-selector-warning]')).toContainText(/fragile|multiple classes/i)
+     await page.locator('#raw-border-radius').fill('0.75rem')
+ 
++    await openExportMenu(page)
+     await page.getByRole('button', { name: 'Download vanilla CSS' }).click()
+     await expect(page.getByRole('status', { name: /export/i })).toContainText(/download started/i)
+   })
+@@ -58,6 +65,7 @@
+     await frame.locator('.fi-section:visible').first().click()
+     await page.locator('#raw-background-color').fill('#0f766e')
+ 
++    await openExportMenu(page)
+     const [download] = await Promise.all([
+       page.waitForEvent('download'),
+       page.getByRole('button', { name: 'Download vanilla CSS' }).click(),
+@@ -68,7 +76,7 @@
+ 
+     expect(download.suggestedFilename()).toBe('theme.css')
+     expect(css).toContain('/* Generated with Filament Theme Builder */')
+-    expect(css).toContain('.fi-section {')
++    expect(css).toContain(`${nearestSectionSelector} {`)
+     expect(css).toContain('background-color: #0f766e;')
+     expect(css.indexOf('/* Foundations */')).toBeLessThan(css.indexOf('/* Semantic overrides */'))
+     expect(css.indexOf('/* Semantic overrides */')).toBeLessThan(css.indexOf('/* Advanced raw-element overrides */'))
+@@ -82,6 +90,7 @@
+       })
+     })
+ 
++    await openExportMenu(page)
+     await page.getByRole('button', { name: 'Copy vanilla CSS' }).click()
+ 
+     await expect.poll(() => page.evaluate(() => (window as Window & { __ftbCopied?: string }).__ftbCopied ?? '')).toContain('/* Generated with Filament Theme Builder */')
+@@ -99,6 +108,7 @@
+       background: getComputedStyle(element).backgroundColor,
+       primary: getComputedStyle(element.ownerDocument.querySelector('.fi-color-primary')!).color,
+     }))
++    await openExportMenu(page)
+     const [download] = await Promise.all([
+       page.waitForEvent('download'),
+       page.getByRole('button', { name: 'Download vanilla CSS' }).click(),
+--- a/e2e/ftb-021-local-themes.spec.ts
++++ b/e2e/ftb-021-local-themes.spec.ts
+@@ -1,6 +1,8 @@
+ import { expect, test, type Page } from '@playwright/test'
+ 
+ async function openManager(page: Page) {
++  const tools = page.locator('[data-toolbar-menu]').filter({ has: page.locator('button[aria-label="Manage themes"]') })
++  if (!(await tools.getByRole('button', { name: 'Manage themes' }).isVisible())) await tools.locator('summary').click()
+   await page.getByRole('button', { name: 'Manage themes' }).click()
+   const dialog = page.getByRole('dialog', { name: 'Manage themes' })
+   await expect(dialog).toBeVisible()
+@@ -9,8 +11,11 @@
+ 
+ async function renameTheme(page: Page, currentName: string, nextName: string) {
+   await themeRow(page, currentName).getByRole('button', { name: `Rename ${currentName}` }).click()
+-  await page.getByRole('textbox', { name: 'Rename theme name' }).fill(nextName)
++  const input = page.getByRole('textbox', { name: 'Rename theme name' })
++  await expect(input).toBeFocused()
++  await input.fill(nextName)
+   await page.getByRole('button', { name: 'Save theme name' }).click()
++  await expect(themeRow(page, nextName).getByRole('button', { name: `Rename ${nextName}` })).toBeFocused()
+ }
+ 
+ function themeRow(page: Page, name: string) {
+@@ -46,6 +51,8 @@
+     await themeRow(page, 'Theme A copy').getByRole('button', { name: 'Delete Theme A copy' }).click()
+     const confirmation = page.getByRole('alertdialog', { name: 'Delete Theme A copy?' })
+     await expect(confirmation).toBeVisible()
++    await expect(confirmation).toHaveAttribute('aria-describedby', 'local-theme-delete-warning')
++    await expect(page.locator('#local-theme-delete-warning')).toHaveText('This action cannot be undone.')
+     await confirmation.getByRole('button', { name: 'Confirm delete Theme A copy' }).click()
+     await expect(confirmation).toBeHidden()
+ 
+@@ -110,7 +117,7 @@
+     await page.getByRole('button', { name: 'Delete Untitled' }).click()
+     const confirmation = page.getByRole('alertdialog', { name: 'Delete Untitled?' })
+     await expect(confirmation).toBeVisible()
+-    await expect(page.getByRole('button', { name: 'Confirm delete Untitled' })).toBeFocused()
++    await expect(page.getByRole('button', { name: 'Cancel delete' })).toBeFocused()
+     await page.keyboard.press('Escape')
+     await expect(confirmation).toBeHidden()
+     await expect(page.getByRole('button', { name: 'Delete Untitled' })).toBeVisible()
+--- a/e2e/ftb-022-browser-relay-import.spec.ts
++++ b/e2e/ftb-022-browser-relay-import.spec.ts
+@@ -4,10 +4,11 @@
+ 
+ test.skip(process.env.COMPOSE_E2E !== '1', 'Browser relay imports require the same-origin Compose gateway.')
+ 
+-async function openImportPreview(page: Page) {
++async function openImportPreview(page: Page, options: { authorizationFails?: boolean } = {}) {
+   await page.addInitScript(() => { if (window.top === window) localStorage.clear() })
+-  const relay = await installBrowserRelayRoutes(page)
++  const relay = await installBrowserRelayRoutes(page, options)
+   await page.goto(builderBaseUrl)
++  await page.getByText('Tools', { exact: true }).click()
+   await page.getByRole('button', { name: 'Pair local client' }).click()
+   await page.getByRole('button', { name: 'Approve pairing' }).click()
+   await expect(page.getByRole('dialog', { name: 'Import preview' })).toBeVisible()
+@@ -21,6 +22,7 @@
+   await expect(page.getByRole('dialog', { name: 'Import preview' })).toContainText('1 → 2 → 3 → 4')
+   await page.getByRole('button', { name: 'Cancel import' }).click()
+   await expect(page.getByRole('dialog', { name: 'Import preview' })).toHaveCount(0)
++  await expect(page.locator('[data-toolbar-menu]').nth(1).locator('summary')).toBeFocused()
+   await expect(page.locator('[data-active-theme-name]')).toHaveText(activeBefore ?? '')
+   expect(await page.locator('[data-local-theme-row]').count()).toBe(countBefore)
+   expect(relay.receipts).toBe(1); expect(relay.previews).toBe(1); expect(relay.authorizations).toBe(0)
+@@ -40,14 +42,30 @@
+   expect(relay.results.at(-1)).toMatchObject({ version: 1, grantId: 'c'.repeat(64), recordId: `import-${'a'.repeat(64)}` })
+ })
+ 
+-test('browser relay import rejects a stale local revision before apply and mutation', async ({ page }) => {
++test('browser relay import isolates the preview until the user cancels or confirms', async ({ page }) => {
+   const relay = await openImportPreview(page)
+-  const countBefore = await page.locator('[data-local-theme-row]').count()
+-  await page.locator('#toolbar-primary-color').fill('#0f766e')
+-  await page.getByRole('button', { name: 'Confirm import' }).click()
+-  await expect(page.getByRole('alert')).toContainText(/stale/i)
++  const initialColor = await page.locator('#toolbar-primary-color').inputValue()
++  await page.keyboard.press('Tab')
++  await expect(page.getByRole('dialog', { name: 'Import preview' })).toBeVisible()
++  await expect(page.locator('#toolbar-primary-color')).toHaveValue(initialColor)
++  await page.mouse.click(8, 8)
++  await expect(page.getByRole('dialog', { name: 'Import preview' })).toBeHidden()
++  await expect.poll(() => relay.results.length).toBe(1)
+   expect(relay.authorizations).toBe(0)
+   expect(relay.invalidBodies).toBe(0)
+-  expect(relay.results.at(-1)).toMatchObject({ errorCategory: 'stale_revision' })
+-  expect(await page.locator('[data-local-theme-row]').count()).toBe(countBefore)
++  expect(relay.results.at(-1)).toMatchObject({ errorCategory: 'operation_failed' })
++})
++
++test('failed relay confirmation keeps the modal open and focuses its retryable error', async ({ page }) => {
++  const relay = await openImportPreview(page, { authorizationFails: true })
++  const before = await page.locator('[data-local-theme-row]').count()
++  await page.getByRole('button', { name: 'Confirm import' }).click()
++  const dialog = page.getByRole('dialog', { name: 'Import preview' })
++  const error = dialog.getByRole('alert')
++  await expect(dialog).toBeVisible()
++  await expect(error).toContainText('Relay authorization failed')
++  await expect(error).toBeFocused()
++  expect(await page.locator('[data-local-theme-row]').count()).toBe(before)
++  expect(relay.authorizations).toBe(1)
++  expect(relay.results).toHaveLength(0)
+ })
+--- a/e2e/support/browser-relay-routes.ts
++++ b/e2e/support/browser-relay-routes.ts
+@@ -2,7 +2,7 @@
+ import type { Page, Request } from '@playwright/test'
+ 
+ export type BrowserRelayRouteEvidence = { receipts: number; previews: number; authorizations: number; results: Record<string, unknown>[]; invalidBodies: number }
+-export async function installBrowserRelayRoutes(page: Page): Promise<BrowserRelayRouteEvidence> {
++export async function installBrowserRelayRoutes(page: Page, options: { authorizationFails?: boolean } = {}): Promise<BrowserRelayRouteEvidence> {
+   const rawJson = '{"schemaVersion":1,"colors":{"primary":"#123456"}}'
+   const digest = createHash('sha256').update(rawJson, 'utf8').digest('hex')
+   const operationId = 'a'.repeat(64); const claimId = 'b'.repeat(64); let polls = 0
+@@ -30,7 +30,11 @@
+     if (path.endsWith('/payload')) return route.fulfill({ json: { version: 1, operationId, payload: rawJson, filename: 'relay-v1.json', proposedName: 'Relay v1', digest, byteLength: Buffer.byteLength(rawJson) } })
+     if (path.endsWith('/receipt')) { checkBody(request, ['version', 'digest', 'received']); evidence.receipts += 1; return route.fulfill({ json: { version: 1, status: 'received' } }) }
+     if (path.endsWith('/preview')) { checkBody(request, ['version', 'preview']); evidence.previews += 1; return route.fulfill({ json: { version: 1, status: 'pending', digest } }) }
+-    if (path.endsWith('/authorize-apply')) { checkBody(request, ['version', 'digest', 'revision', 'displayName']); evidence.authorizations += 1; return route.fulfill({ json: { version: 1, status: 'pending', grantId: 'c'.repeat(64), grantExpiresAt: Math.floor(Date.now() / 1_000) + 4 } }) }
++    if (path.endsWith('/authorize-apply')) {
++      checkBody(request, ['version', 'digest', 'revision', 'displayName']); evidence.authorizations += 1
++      if (options.authorizationFails) return route.fulfill({ status: 503, json: { error: 'temporary_failure' } })
++      return route.fulfill({ json: { version: 1, status: 'pending', grantId: 'c'.repeat(64), grantExpiresAt: Math.floor(Date.now() / 1_000) + 4 } })
++    }
+     if (path.endsWith('/result') && request.method() === 'POST') { const result = request.postDataJSON() as Record<string, unknown>; checkBody(request, result.errorCategory ? ['version', 'errorCategory'] : ['version', 'grantId', 'recordId', 'digest']); evidence.results.push(result); return route.fulfill({ json: { version: 1, status: result.errorCategory ? 'rejected' : 'approved' } }) }
+     return route.fulfill({ status: 404, json: { error: 'not_found' } })
+   })

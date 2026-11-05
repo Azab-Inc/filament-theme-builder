@@ -1,0 +1,10 @@
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@import "./styles/editor-shell.css";
+@import "./styles/editor-navigation.css";
+@import "./styles/editor-responsive.css";
+@import "./styles/editor-mobile.css";
+@import "./styles/inspect-prototype.css";
+@import "./styles/theme-prototype.css";
+@import "./styles/color-field.css";
+@import "./styles/dashboard-first-editor.css";

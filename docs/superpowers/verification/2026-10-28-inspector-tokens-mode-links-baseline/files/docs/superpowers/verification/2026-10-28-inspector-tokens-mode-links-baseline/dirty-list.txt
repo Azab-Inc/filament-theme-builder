@@ -1,0 +1,172 @@
+ M .gitignore
+ M builder/index.html
+ M builder/src/App.vue
+ M builder/src/__tests__/BrandingSettingsPanel.spec.ts
+ M builder/src/__tests__/ColorField.spec.ts
+ M builder/src/__tests__/CustomColorPanel.native.spec.ts
+ M builder/src/__tests__/FoundationsPaletteControls.spec.ts
+ M builder/src/__tests__/LocalThemeManager.spec.ts
+ M builder/src/__tests__/local-theme-storage.spec.ts
+ M builder/src/__tests__/padding-store.spec.ts
+ M builder/src/__tests__/preview-theme-state-effects.spec.ts
+ M builder/src/__tests__/pure-service-migration.spec.ts
+ M builder/src/__tests__/theme-import-migrations.spec.ts
+ M builder/src/__tests__/theme-import-service.spec.ts
+ M builder/src/__tests__/theme-import-ui.spec.ts
+ M builder/src/__tests__/theme-relay-client.spec.ts
+ M builder/src/__tests__/theme-relay-operations.spec.ts
+ M builder/src/__tests__/theme-relay-preview.spec.ts
+ M builder/src/__tests__/theme-serialization-canonical.spec.ts
+ M builder/src/__tests__/theme-serialization-round-trip.spec.ts
+ M builder/src/__tests__/theme-state-defaults-raw.spec.ts
+ M builder/src/__tests__/theme-state-migrations.spec.ts
+ M builder/src/__tests__/theme-state-overrides.spec.ts
+ M builder/src/app.css
+ M builder/src/components/AdvancedRawInspector.vue
+ M builder/src/components/BrandingSettingsPanel.vue
+ M builder/src/components/ColorField.vue
+ M builder/src/components/ColorPopover.vue
+ M builder/src/components/CustomColorPanel.vue
+ M builder/src/components/EditorNavigation.vue
+ M builder/src/components/EditorSections.vue
+ M builder/src/components/EditorWorkspace.vue
+ M builder/src/components/FoundationsLayoutControls.vue
+ M builder/src/components/FoundationsPaletteControls.vue
+ M builder/src/components/FoundationsTypographyControls.vue
+ M builder/src/components/IconPackConfigurationPanel.vue
+ M builder/src/components/LocalThemeDialog.vue
+ M builder/src/components/LocalThemeManager.vue
+ M builder/src/components/PaddingEdgeEditor.vue
+ M builder/src/components/PaddingValueField.vue
+ M builder/src/components/SemanticComponentControls.vue
+ M builder/src/components/TailwindColorPanel.vue
+ M builder/src/components/ThemeImportDialog.vue
+ M builder/src/components/ToolbarMenu.vue
+ M builder/src/composables/use-builder-actions.ts
+ M builder/src/composables/use-builder-foundations.ts
+ M builder/src/composables/use-theme-foundation-actions.ts
+ M builder/src/composables/use-theme-override-actions.ts
+ M builder/src/composables/use-theme-palette-actions.ts
+ M builder/src/composables/use-theme-raw-actions.ts
+ M builder/src/composables/use-theme-relay.ts
+ M builder/src/dtos/theme-relay.dto.ts
+ M builder/src/models/foundations.model.ts
+ M builder/src/models/raw-overrides.model.ts
+ M builder/src/models/theme-import.model.ts
+ M builder/src/models/theme.model.ts
+ M builder/src/utils/foundation-collections-validation.util.ts
+ M builder/src/utils/foundation-defaults.ts
+ M builder/src/utils/foundation-override-validation.util.ts
+ M builder/src/utils/foundation-projection.ts
+ M builder/src/utils/foundation-provenance.ts
+ M builder/src/utils/foundation-record-validation.util.ts
+ M builder/src/utils/foundation-state-validation.util.ts
+ M builder/src/utils/foundation-validation-constants.util.ts
+ M builder/src/utils/local-theme-recovery.ts
+ M builder/src/utils/local-theme-storage.ts
+ M builder/src/utils/raw-override-validation.ts
+ M builder/src/utils/resolve-request-validation.ts
+ M builder/src/utils/theme-import-migrations.ts
+ M builder/src/utils/theme-import-preview.ts
+ M builder/src/utils/theme-import-service.ts
+ M builder/src/utils/theme-import-validation.ts
+ M builder/src/utils/theme-override-validation.ts
+ M builder/src/utils/theme-resolver.ts
+ M builder/src/utils/theme-serialization.ts
+ M builder/src/utils/theme-store-normalization.ts
+ M builder/src/utils/theme-store-palettes.ts
+ M builder/src/utils/theme-store-serialization.ts
+ M builder/src/utils/vanilla-css-export-foundations.ts
+ M builder/src/utils/vanilla-css-export-raw-overrides.ts
+ M builder/src/utils/vanilla-css-export-semantic-overrides.ts
+ M demo/app/Mcp/ThemeRelay/OperationResultValidator.php
+ M demo/app/Mcp/ThemeRelay/RelayImportPreviewValidator.php
+ M demo/resources/views/filament/preview-bridge.blade.php
+ M demo/tests/Feature/FilamentPanelTest.php
+ M e2e/color-picker-acceptance-boundaries.spec.ts
+ M e2e/color-picker-acceptance-fields.spec.ts
+ M e2e/color-picker-acceptance-inventory.spec.ts
+ M e2e/color-picker-acceptance.helpers.ts
+ M e2e/editor-toolbar.spec.ts
+ M e2e/ftb-007-bridge.spec.ts
+ M e2e/ftb-007-inspector.spec.ts
+ M e2e/ftb-008-raw-inspector.spec.ts
+ M e2e/ftb-021-local-themes.spec.ts
+ M e2e/ftb-022-browser-relay-import.spec.ts
+ M e2e/local-theme-manager.spec.ts
+ M e2e/support/browser-relay-routes.ts
+ M e2e/theme-foundations.spec.ts
+?? artifacts/
+?? builder/src/__tests__/AdvancedRawInspector.accessibility.spec.ts
+?? builder/src/__tests__/PaddingEdgeEditor.accessibility.spec.ts
+?? builder/src/__tests__/mode-isolation-domain.spec.ts
+?? builder/src/components/BrandingAssetField.vue
+?? builder/src/components/BuilderVisualPrototype.vue
+?? builder/src/components/DashboardPrototype.vue
+?? builder/src/components/DashboardPrototypeControls.vue
+?? builder/src/components/DashboardPrototypeField.vue
+?? builder/src/components/DashboardPrototypeToolbar.vue
+?? builder/src/components/GuidelinesActions.vue
+?? builder/src/components/GuidelinesKeyboard.vue
+?? builder/src/components/GuidelinesMobile.vue
+?? builder/src/components/GuidelinesNavigation.vue
+?? builder/src/components/GuidelinesPrototype.vue
+?? builder/src/components/GuidelinesPrototypeSwitcher.vue
+?? builder/src/components/GuidelinesSampleDashboard.vue
+?? builder/src/components/GuidelinesTokens.vue
+?? builder/src/components/VisualPrototypeEditor.vue
+?? builder/src/components/VisualPrototypeFoundationGroups.vue
+?? builder/src/components/VisualPrototypeHeader.vue
+?? builder/src/components/VisualPrototypeNavigation.vue
+?? builder/src/components/VisualPrototypePalette.vue
+?? builder/src/components/VisualPrototypePaletteList.vue
+?? builder/src/components/VisualPrototypePreview.vue
+?? builder/src/components/VisualPrototypeSection.vue
+?? builder/src/components/VisualPrototypeSwitcher.vue
+?? builder/src/components/VisualPrototypeVariantA.vue
+?? builder/src/components/VisualPrototypeVariantB.vue
+?? builder/src/components/VisualPrototypeVariantC.vue
+?? builder/src/components/branding-asset-field.model.ts
+?? builder/src/composables/use-guidelines-prototype.ts
+?? builder/src/composables/use-visual-prototype.ts
+?? builder/src/models/guidelines-prototype.model.ts
+?? builder/src/models/visual-prototype.model.ts
+?? builder/src/stores/dashboard-prototype.ts
+?? builder/src/styles/dashboard-first-editor.css
+?? builder/src/styles/dashboard-prototype.css
+?? builder/src/styles/guidelines-prototype.css
+?? builder/src/styles/visual-prototype.css
+?? demo/tests/Feature/Mcp/ThemeRelayValidationV6Test.php
+?? docs/research/2026-10-23-dashboard-first-brief.md
+?? docs/research/2026-10-23-dashboard-first-evidence.md
+?? docs/research/2026-10-23-dashboard-first.md
+?? docs/research/2026-10-23-editor-guidelines-brief.md
+?? docs/research/2026-10-23-editor-guidelines-evidence.md
+?? docs/research/2026-10-23-editor-guidelines-progress.md
+?? docs/research/2026-10-23-editor-guidelines.md
+?? docs/research/editor-guidelines/
+?? docs/superpowers/plans/2026-10-12-live-foundation-projection.md
+?? docs/superpowers/plans/2026-10-14-ftb-007-inspector.md
+?? docs/superpowers/plans/2026-10-15-app-shell-split.md
+?? docs/superpowers/progress/2026-10-25-inspector-element-coverage.md
+?? docs/superpowers/progress/2026-10-26-all-properties-mode-isolation.md
+?? docs/superpowers/progress/2026-10-26-builder-accessibility.md
+?? docs/superpowers/progress/2026-10-28-inspector-tokens-mode-links.md
+?? docs/superpowers/verification/2026-10-25-inspector-element-coverage.md
+?? docs/superpowers/verification/2026-10-26-all-properties-mode-isolation.md
+?? docs/superpowers/verification/2026-10-26-all-properties-mode-isolation.shared-baseline-mixed-review.diff
+?? docs/superpowers/verification/2026-10-26-all-properties-mode-isolation.task-only.diff
+?? docs/superpowers/verification/2026-10-26-builder-accessibility.md
+?? docs/superpowers/verification/2026-10-28-inspector-tokens-mode-links-baseline/
+?? docs/verification/2026-10-24-dashboard-style-brief.md
+?? docs/verification/2026-10-24-dashboard-style-evidence.md
+?? docs/verification/2026-10-24-dashboard-style-progress.md
+?? docs/verification/dashboard-style/
+?? e2e/all-properties-mode-isolation.spec.ts
+?? e2e/dark-first-palette.spec.ts
+?? e2e/dashboard-first-prototype.spec.ts
+?? e2e/dashboard-style.spec.ts
+?? e2e/editor-guidelines-prototype-responsive.spec.ts
+?? e2e/editor-guidelines-prototype.spec.ts
+?? e2e/palette-cache-parity.spec.ts
+?? e2e/raw-sidebar-mode-isolation.spec.ts

@@ -1,0 +1,61 @@
+import { expect, test } from '@playwright/test'
+
+test.describe('FTB-021 local theme manager', () => {
+  test('saves the active theme and creates a selected theme with default Filament styles', async ({ page }) => {
+    await page.goto('/')
+    await page.locator('#toolbar-primary-color').fill('#0f766e')
+
+    await page.getByText('Tools', { exact: true }).click()
+    await page.getByRole('button', { name: 'Manage themes' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Manage themes' })
+    const themes = dialog.getByRole('list', { name: 'Local themes' }).getByRole('listitem')
+    await expect(themes).toHaveCount(1)
+    await dialog.getByRole('button', { name: 'Save theme' }).click()
+    await expect(themes).toHaveCount(1)
+
+    await page.getByRole('button', { name: 'Create theme' }).click()
+    await expect(themes).toHaveCount(2)
+    await expect(themes.nth(1)).toHaveAttribute('aria-current', 'true')
+    await expect(page.locator('#toolbar-primary-color')).toHaveValue('#6366f1')
+
+    await themes.nth(0).getByRole('button', { name: 'Open Untitled' }).click()
+    await expect(page.getByLabel('Active theme')).toHaveText('Untitled')
+    await expect(page.locator('#toolbar-primary-color')).toHaveValue('#0f766e')
+  })
+
+  test('closes theme manager only when pointer down and up both land on the backdrop', async ({ page }) => {
+    await page.goto('/')
+    await page.getByText('Tools', { exact: true }).click()
+    const trigger = page.getByRole('button', { name: 'Manage themes' })
+    await trigger.click()
+    const dialog = page.getByRole('dialog', { name: 'Manage themes' })
+    await expect(dialog).toBeVisible()
+    const closeButton = dialog.getByRole('button', { name: 'Close theme manager' })
+    const closeBox = await closeButton.boundingBox()
+    if (!closeBox) throw new Error('Manage themes close button is not visible')
+    await page.mouse.move(closeBox.x + closeBox.width / 2, closeBox.y + closeBox.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(8, 8)
+    await page.mouse.up()
+    await expect(dialog).toBeVisible()
+    await page.mouse.click(8, 8)
+    await expect(dialog).toBeHidden()
+    await expect(trigger).toBeFocused()
+  })
+
+  test('keeps manager dialog within a narrow viewport and restores focus on Escape', async ({ page }) => {
+    await page.setViewportSize({ width: 420, height: 800 })
+    await page.goto('/')
+    await page.getByText('Tools', { exact: true }).click()
+    const trigger = page.getByRole('button', { name: 'Manage themes' })
+    await trigger.click()
+    const dialog = page.getByRole('dialog', { name: 'Manage themes' })
+    const box = await dialog.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.x).toBeGreaterThanOrEqual(0)
+    expect(box!.x + box!.width).toBeLessThanOrEqual(420)
+    await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
+    await expect(trigger).toBeFocused()
+  })
+})
