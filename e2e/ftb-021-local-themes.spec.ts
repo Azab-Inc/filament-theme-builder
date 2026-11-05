@@ -1,6 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
 
 async function openManager(page: Page) {
+  const tools = page.locator('[data-toolbar-menu]').filter({ has: page.locator('button[aria-label="Manage themes"]') })
+  if (!(await tools.getByRole('button', { name: 'Manage themes' }).isVisible())) await tools.locator('summary').click()
   await page.getByRole('button', { name: 'Manage themes' }).click()
   const dialog = page.getByRole('dialog', { name: 'Manage themes' })
   await expect(dialog).toBeVisible()
@@ -9,8 +11,11 @@ async function openManager(page: Page) {
 
 async function renameTheme(page: Page, currentName: string, nextName: string) {
   await themeRow(page, currentName).getByRole('button', { name: `Rename ${currentName}` }).click()
-  await page.getByRole('textbox', { name: 'Rename theme name' }).fill(nextName)
+  const input = page.getByRole('textbox', { name: 'Rename theme name' })
+  await expect(input).toBeFocused()
+  await input.fill(nextName)
   await page.getByRole('button', { name: 'Save theme name' }).click()
+  await expect(themeRow(page, nextName).getByRole('button', { name: `Rename ${nextName}` })).toBeFocused()
 }
 
 function themeRow(page: Page, name: string) {
@@ -46,6 +51,8 @@ test.describe('FTB-021 local themes', () => {
     await themeRow(page, 'Theme A copy').getByRole('button', { name: 'Delete Theme A copy' }).click()
     const confirmation = page.getByRole('alertdialog', { name: 'Delete Theme A copy?' })
     await expect(confirmation).toBeVisible()
+    await expect(confirmation).toHaveAttribute('aria-describedby', 'local-theme-delete-warning')
+    await expect(page.locator('#local-theme-delete-warning')).toHaveText('This action cannot be undone.')
     await confirmation.getByRole('button', { name: 'Confirm delete Theme A copy' }).click()
     await expect(confirmation).toBeHidden()
 
@@ -110,7 +117,7 @@ test.describe('FTB-021 local themes', () => {
     await page.getByRole('button', { name: 'Delete Untitled' }).click()
     const confirmation = page.getByRole('alertdialog', { name: 'Delete Untitled?' })
     await expect(confirmation).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Confirm delete Untitled' })).toBeFocused()
+    await expect(page.getByRole('button', { name: 'Cancel delete' })).toBeFocused()
     await page.keyboard.press('Escape')
     await expect(confirmation).toBeHidden()
     await expect(page.getByRole('button', { name: 'Delete Untitled' })).toBeVisible()

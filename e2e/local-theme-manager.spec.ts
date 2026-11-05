@@ -5,11 +5,12 @@ test.describe('FTB-021 local theme manager', () => {
     await page.goto('/')
     await page.locator('#toolbar-primary-color').fill('#0f766e')
 
+    await page.getByText('Tools', { exact: true }).click()
     await page.getByRole('button', { name: 'Manage themes' }).click()
     const dialog = page.getByRole('dialog', { name: 'Manage themes' })
     const themes = dialog.getByRole('list', { name: 'Local themes' }).getByRole('listitem')
     await expect(themes).toHaveCount(1)
-    await page.getByRole('button', { name: 'Save theme' }).click()
+    await dialog.getByRole('button', { name: 'Save theme' }).click()
     await expect(themes).toHaveCount(1)
 
     await page.getByRole('button', { name: 'Create theme' }).click()
@@ -22,28 +23,39 @@ test.describe('FTB-021 local theme manager', () => {
     await expect(page.locator('#toolbar-primary-color')).toHaveValue('#0f766e')
   })
 
-  test('opens accessibly, restores focus on Escape, and renames a theme', async ({ page }) => {
+  test('closes theme manager only when pointer down and up both land on the backdrop', async ({ page }) => {
     await page.goto('/')
-
+    await page.getByText('Tools', { exact: true }).click()
     const trigger = page.getByRole('button', { name: 'Manage themes' })
-    await expect(trigger).toBeVisible()
     await trigger.click()
-
     const dialog = page.getByRole('dialog', { name: 'Manage themes' })
     await expect(dialog).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Create theme' })).toBeFocused()
+    const closeButton = dialog.getByRole('button', { name: 'Close theme manager' })
+    const closeBox = await closeButton.boundingBox()
+    if (!closeBox) throw new Error('Manage themes close button is not visible')
+    await page.mouse.move(closeBox.x + closeBox.width / 2, closeBox.y + closeBox.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(8, 8)
+    await page.mouse.up()
+    await expect(dialog).toBeVisible()
+    await page.mouse.click(8, 8)
+    await expect(dialog).toBeHidden()
+    await expect(trigger).toBeFocused()
+  })
 
+  test('keeps manager dialog within a narrow viewport and restores focus on Escape', async ({ page }) => {
+    await page.setViewportSize({ width: 420, height: 800 })
+    await page.goto('/')
+    await page.getByText('Tools', { exact: true }).click()
+    const trigger = page.getByRole('button', { name: 'Manage themes' })
+    await trigger.click()
+    const dialog = page.getByRole('dialog', { name: 'Manage themes' })
+    const box = await dialog.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.x).toBeGreaterThanOrEqual(0)
+    expect(box!.x + box!.width).toBeLessThanOrEqual(420)
     await page.keyboard.press('Escape')
     await expect(dialog).toBeHidden()
     await expect(trigger).toBeFocused()
-
-    await trigger.click()
-    await page.getByRole('button', { name: 'Rename Untitled' }).click()
-    const name = page.getByRole('textbox', { name: 'Rename theme name' })
-    await name.fill('Playwright Theme')
-    await page.getByRole('button', { name: 'Save theme name' }).click()
-
-    await expect(page.getByLabel('Active theme')).toHaveText('Playwright Theme')
-    await expect(page.getByRole('dialog', { name: 'Manage themes' })).toBeVisible()
   })
 })

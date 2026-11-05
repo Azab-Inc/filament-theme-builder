@@ -21,14 +21,14 @@ function link(): void { return }
 <template>
   <div class="grid gap-2" data-padding-edge-editor>
     <span v-if="isMixed" role="status">Mixed</span>
-    <p v-if="error" role="alert">{{ error }} Enter a value such as 54px.</p>
+    <p v-if="error" :id="`padding-${contextKey}-error`" role="alert">{{ error }} Enter a value such as 54px.</p>
     <button v-if="!props.linked" type="button" aria-label="Link all edges" @click="link">Link all edges</button>
     <div v-if="props.linked" class="grid gap-1">
       <label :for="`padding-${props.contextKey}-linked`">{{ props.contextLabel }} · all edges</label>
-      <PaddingValueField :id="`padding-${props.contextKey}-linked`" :ariaLabel="`${props.contextLabel} linked padding`" :value="displayValue" @update:value="error = null; updateLinked($event)" />
+      <PaddingValueField :id="`padding-${props.contextKey}-linked`" :ariaLabel="`${props.contextLabel} linked padding`" :value="displayValue" :invalid="Boolean(error)" :error-id="`padding-${props.contextKey}-error`" @update:value="error = null; updateLinked($event)" />
     </div>
     <div v-else class="grid grid-cols-2 gap-1">
-        <label v-for="edge in edgeNames" :key="edge" :for="`padding-${props.contextKey}-${edge}`">{{ props.contextLabel }} · {{ edge }} <PaddingValueField :id="`padding-${props.contextKey}-${edge}`" :ariaLabel="`${props.contextLabel} ${edge} padding`" :value="props.edges[edge]" @update:value="setEdge(edge, $event)" /></label>
+        <label v-for="edge in edgeNames" :key="edge" :for="`padding-${props.contextKey}-${edge}`">{{ props.contextLabel }} · {{ edge }} <PaddingValueField :id="`padding-${props.contextKey}-${edge}`" :ariaLabel="`${props.contextLabel} ${edge} padding`" :value="props.edges[edge]" :invalid="Boolean(error)" :error-id="`padding-${props.contextKey}-error`" @update:value="setEdge(edge, $event)" /></label>
     </div>
   </div>
 </template>

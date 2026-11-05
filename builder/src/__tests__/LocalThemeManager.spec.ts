@@ -87,11 +87,36 @@ describe('LocalThemeManager', () => {
 
     const confirmation = wrapper.get('[role="alertdialog"]')
     expect(confirmation.attributes('aria-modal')).toBe('true')
+    expect(focus).toHaveBeenCalled()
+    expect((wrapper.get('[aria-label="Cancel delete"]').element as HTMLButtonElement).disabled).toBe(false)
     expect((wrapper.get('[aria-label="Confirm delete Marketing"]').element as HTMLButtonElement).disabled).toBe(false)
     expect((wrapper.get('[aria-label="Open Marketing"]').element as HTMLButtonElement).disabled).toBe(true)
     expect((wrapper.get('[aria-label="Create theme"]').element as HTMLButtonElement).disabled).toBe(true)
     expect((wrapper.get('[aria-label="Save theme"]').element as HTMLButtonElement).disabled).toBe(true)
     expect(focus).toHaveBeenCalled()
+  })
+
+  it('returns focus to the delete trigger when confirmation is cancelled', async () => {
+    const wrapper = mountManager()
+    const trigger = wrapper.get('[aria-label="Delete Marketing"]')
+    const focus = vi.spyOn(trigger.element as HTMLButtonElement, 'focus')
+    await wrapper.get('[aria-label="Manage themes"]').trigger('click')
+    await trigger.trigger('click')
+    await wrapper.get('[aria-label="Cancel delete"]').trigger('click')
+    await wrapper.vm.$nextTick()
+
+    expect(focus).toHaveBeenCalled()
+    expect(wrapper.emitted('delete')).toBeUndefined()
+  })
+
+  it('closes only for pointer down and up on the backdrop', async () => {
+    const wrapper = mountManager()
+    await wrapper.get('[aria-label="Manage themes"]').trigger('click')
+    const dialog = wrapper.get('dialog')
+    dialog.element.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    dialog.element.dispatchEvent(new Event('pointerup', { bubbles: true }))
+
+    expect(dialog.attributes('open')).toBeUndefined()
   })
 
   it('announces storage errors without disabling editor controls', async () => {

@@ -13,13 +13,13 @@ defineEmits<IconPackConfigurationPanelEmits>()
     <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
       <legend>IconPackConfiguration</legend>
       <label for="icon-pack">Icon pack</label>
-      <select id="icon-pack" aria-label="Icon pack" :value="configuration.pack" @change="$emit('changePack', ($event.target as HTMLSelectElement).value as IconPackName)">
+      <select id="icon-pack" name="icon-pack" autocomplete="off" aria-label="Icon pack" :value="configuration.pack" @change="$emit('changePack', ($event.target as HTMLSelectElement).value as IconPackName)">
         <option v-for="pack in packNames" :key="pack" :value="pack">{{ pack }}</option>
       </select>
       <button type="button" aria-label="Reset icon configuration" @click="$emit('resetConfiguration')">Reset icon configuration</button>
       <div v-for="key in resourceKeys" :key="key" class="icon-control-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
         <label :for="`${key}-semantic-icon`">{{ key.charAt(0).toUpperCase() + key.slice(1) }} semantic icon override</label>
-        <select :id="`${key}-semantic-icon`" :aria-label="`${key.charAt(0).toUpperCase() + key.slice(1)} semantic icon override`" :value="configuration.overrides[key] ?? ''" @change="$emit('changeOverride', { key, value: ($event.target as HTMLSelectElement).value })">
+        <select :id="`${key}-semantic-icon`" :name="`${key}-semantic-icon`" autocomplete="off" :aria-label="`${key.charAt(0).toUpperCase() + key.slice(1)} semantic icon override`" :value="configuration.overrides[key] ?? ''" @change="$emit('changeOverride', { key, value: ($event.target as HTMLSelectElement).value })">
           <option value="">Inherited from pack ({{ previews[key] }})</option>
           <option v-for="icon in iconOptions" :key="icon" :value="icon">{{ icon }}</option>
         </select>

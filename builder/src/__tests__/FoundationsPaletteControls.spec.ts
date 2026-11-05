@@ -36,4 +36,10 @@ describe('FoundationsPaletteControls actions', () => {
     expect(shadeStatus.text()).toBe('generated')
     wrapper.unmount()
   })
+
+  it('hides the generated shade ramp from assistive technology because its values are summaries', () => {
+    const wrapper = mountPaletteControls()
+    expect(wrapper.get('[data-palette-header="primary"] .palette-accordion__ramp').attributes('aria-hidden')).toBe('true')
+    wrapper.unmount()
+  })
 })

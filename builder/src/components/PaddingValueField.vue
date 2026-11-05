@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue'
 import { PADDING_UNITS } from '@/models/padding-registry.model'
 
-const props = defineProps<{ value: string | null; id: string; ariaLabel: string }>()
+const props = defineProps<{ value: string | null; id: string; ariaLabel: string; invalid?: boolean; errorId?: string }>()
 const emit = defineEmits<{ 'update:value': [value: string] }>()
 const number = ref('')
 const unit = ref('px')
@@ -21,8 +21,8 @@ watch(() => props.value, (next) => { if (next !== lastEmitted) readValue(next) }
 
 <template>
   <span class="inline-flex gap-1">
-    <input :id="id" :aria-label="ariaLabel" type="number" min="0" step="any" :value="number" inputmode="decimal" @input="number = ($event.target as HTMLInputElement).value; emitValue()" />
-    <select :aria-label="`${ariaLabel} unit`" :value="unit" @change="unit = ($event.target as HTMLSelectElement).value; emitValue()">
+    <input :id="id" :name="`${id}-value`" :aria-label="ariaLabel" :aria-invalid="invalid ? 'true' : undefined" :aria-describedby="invalid ? errorId : undefined" autocomplete="off" type="number" min="0" step="any" :value="number" inputmode="decimal" @input="number = ($event.target as HTMLInputElement).value; emitValue()" />
+    <select :name="`${id}-unit`" :aria-label="`${ariaLabel} unit`" :aria-invalid="invalid ? 'true' : undefined" :aria-describedby="invalid ? errorId : undefined" :value="unit" @change="unit = ($event.target as HTMLSelectElement).value; emitValue()">
       <option v-for="option in PADDING_UNITS" :key="option" :value="option">{{ option }}</option>
     </select>
   </span>

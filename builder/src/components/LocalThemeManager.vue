@@ -28,7 +28,7 @@ function restoreFocus(): void {
 </script>
 
 <template>
-  <div data-local-theme-manager>
+  <div data-local-theme-manager @click.stop>
     <button ref="opener" type="button" aria-label="Manage themes" @click="openManager">Manage themes</button>
     <span aria-label="Active theme" data-active-theme-name>{{ activeThemeId ? themes.find(({ id }) => id === activeThemeId)?.name : '' }}</span>
     <p v-if="storageError" role="status" aria-live="polite" data-local-theme-storage-status>{{ storageError }}</p>

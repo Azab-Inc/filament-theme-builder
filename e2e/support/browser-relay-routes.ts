@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import type { Page, Request } from '@playwright/test'
 
 export type BrowserRelayRouteEvidence = { receipts: number; previews: number; authorizations: number; results: Record<string, unknown>[]; invalidBodies: number }
-export async function installBrowserRelayRoutes(page: Page): Promise<BrowserRelayRouteEvidence> {
+export async function installBrowserRelayRoutes(page: Page, options: { authorizationFails?: boolean } = {}): Promise<BrowserRelayRouteEvidence> {
   const rawJson = '{"schemaVersion":1,"colors":{"primary":"#123456"}}'
   const digest = createHash('sha256').update(rawJson, 'utf8').digest('hex')
   const operationId = 'a'.repeat(64); const claimId = 'b'.repeat(64); let polls = 0
@@ -30,7 +30,11 @@ export async function installBrowserRelayRoutes(page: Page): Promise<BrowserRela
     if (path.endsWith('/payload')) return route.fulfill({ json: { version: 1, operationId, payload: rawJson, filename: 'relay-v1.json', proposedName: 'Relay v1', digest, byteLength: Buffer.byteLength(rawJson) } })
     if (path.endsWith('/receipt')) { checkBody(request, ['version', 'digest', 'received']); evidence.receipts += 1; return route.fulfill({ json: { version: 1, status: 'received' } }) }
     if (path.endsWith('/preview')) { checkBody(request, ['version', 'preview']); evidence.previews += 1; return route.fulfill({ json: { version: 1, status: 'pending', digest } }) }
-    if (path.endsWith('/authorize-apply')) { checkBody(request, ['version', 'digest', 'revision', 'displayName']); evidence.authorizations += 1; return route.fulfill({ json: { version: 1, status: 'pending', grantId: 'c'.repeat(64), grantExpiresAt: Math.floor(Date.now() / 1_000) + 4 } }) }
+    if (path.endsWith('/authorize-apply')) {
+      checkBody(request, ['version', 'digest', 'revision', 'displayName']); evidence.authorizations += 1
+      if (options.authorizationFails) return route.fulfill({ status: 503, json: { error: 'temporary_failure' } })
+      return route.fulfill({ json: { version: 1, status: 'pending', grantId: 'c'.repeat(64), grantExpiresAt: Math.floor(Date.now() / 1_000) + 4 } })
+    }
     if (path.endsWith('/result') && request.method() === 'POST') { const result = request.postDataJSON() as Record<string, unknown>; checkBody(request, result.errorCategory ? ['version', 'errorCategory'] : ['version', 'grantId', 'recordId', 'digest']); evidence.results.push(result); return route.fulfill({ json: { version: 1, status: result.errorCategory ? 'rejected' : 'approved' } }) }
     return route.fulfill({ status: 404, json: { error: 'not_found' } })
   })

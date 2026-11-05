@@ -16,7 +16,7 @@ const shadowOptions = ['none', 'sm', 'md', 'lg', 'xl'] as const
     <legend>Layout foundations</legend>
     <div class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
       <label for="density">Density</label>
-      <select id="density" :value="density" @change="emit('set-density', ($event.target as HTMLSelectElement).value as typeof density)">
+      <select id="density" name="density" autocomplete="off" :value="density" @change="emit('set-density', ($event.target as HTMLSelectElement).value as typeof density)">
         <option value="compact">Compact</option>
         <option value="default">Default</option>
         <option value="spacious">Spacious</option>
@@ -31,13 +31,13 @@ const shadowOptions = ['none', 'sm', 'md', 'lg', 'xl'] as const
     </div>
     <div v-for="key in spacingNames" :key="key" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
       <label :for="`spacing-${key.replace('.', '-')}`">Spacing {{ key }}</label>
-      <input :id="`spacing-${key.replace('.', '-')}`" type="number" min="0" max="256" :aria-label="`Spacing ${key}`" :value="spacing[key]" @input="emit('set-number-foundation', { path: `spacing.${key}`, event: $event })" />
+      <input :id="`spacing-${key.replace('.', '-')}`" :name="`spacing-${key.replace('.', '-')}`" autocomplete="off" type="number" min="0" max="256" :aria-label="`Spacing ${key}`" :value="spacing[key]" @input="emit('set-number-foundation', { path: `spacing.${key}`, event: $event })" />
       <span role="status" aria-live="polite">{{ statusFor(`spacing.${key}`) }}</span>
       <button type="button" :aria-label="`Reset spacing ${key}`" @click="emit('reset', `spacing.${key}`)">Reset</button>
     </div>
     <div class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
       <label for="radius">Radius</label>
-      <select id="radius" :value="radius" @change="emit('set-select-foundation', { path: 'radius', event: $event })">
+      <select id="radius" name="radius" autocomplete="off" :value="radius" @change="emit('set-select-foundation', { path: 'radius', event: $event })">
         <option v-for="value in radiusOptions" :key="value" :value="value">{{ value }}</option>
       </select>
       <span role="status" aria-live="polite">{{ statusFor('radius') }}</span>
@@ -45,13 +45,13 @@ const shadowOptions = ['none', 'sm', 'md', 'lg', 'xl'] as const
     </div>
     <div class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
       <label for="border-width">Border width</label>
-      <input id="border-width" type="number" min="0" max="8" :value="borderWidth" @input="emit('set-number-foundation', { path: 'borderWidth', event: $event })" />
+      <input id="border-width" name="border-width" autocomplete="off" type="number" min="0" max="8" :value="borderWidth" @input="emit('set-number-foundation', { path: 'borderWidth', event: $event })" />
       <span role="status" aria-live="polite">{{ statusFor('borderWidth') }}</span>
       <button type="button" aria-label="Reset border width" @click="emit('reset', 'borderWidth')">Reset</button>
     </div>
     <div class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
       <label for="shadow">Shadow</label>
-      <select id="shadow" :value="shadow" @change="emit('set-select-foundation', { path: 'shadow', event: $event })">
+      <select id="shadow" name="shadow" autocomplete="off" :value="shadow" @change="emit('set-select-foundation', { path: 'shadow', event: $event })">
         <option v-for="value in shadowOptions" :key="value" :value="value">{{ value }}</option>
       </select>
       <span role="status" aria-live="polite">{{ statusFor('shadow') }}</span>

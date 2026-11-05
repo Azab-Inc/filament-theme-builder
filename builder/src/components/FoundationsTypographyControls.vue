@@ -22,6 +22,8 @@ function fontSelection(name: FoundationTypographyName): string {
       <label :for="`${name}-font-kind`">{{ name }} font type</label>
       <select
         :id="`${name}-font-kind`"
+        :name="`${name}-font-kind`"
+        autocomplete="off"
         :aria-label="`${name} font type`"
         :value="fontSelection(name)"
         @change="emit('set-font-choice', { name, event: $event })"
@@ -37,6 +39,9 @@ function fontSelection(name: FoundationTypographyName): string {
       <label :for="`${name}-font-name`">{{ name }} font name</label>
       <input
         :id="`${name}-font-name`"
+        :name="`${name}-font-name`"
+        autocomplete="off"
+        spellcheck="false"
         type="text"
         :aria-label="`${name} font name`"
         :value="typography[name].name"

@@ -20,6 +20,8 @@ describe('BrandingSettingsPanel', () => {
     ])
     expect(wrapper.get('[aria-label="Upload light logo"]').attributes('accept')).toBe('image/jpeg,image/png,image/webp')
     expect(wrapper.get('[role="alert"]').text()).toBe('Upload rejected')
+    expect(wrapper.get('#brand-light-logo-file').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('#brand-light-logo-file').attributes('aria-describedby')).toBe('brand-light-logo-error')
     expect(wrapper.get('#brand-content-width option').text()).toBe('sm')
     expect(wrapper.get('#brand-sidebar option').text()).toBe('Collapsible')
 
