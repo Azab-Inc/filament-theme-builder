@@ -17,6 +17,7 @@
 - Urgent hierarchical padding design: [FTB-054](#ftb-054) / [GitHub #54](https://github.com/Azab-Inc/filament-theme-builder/issues/54).
 - Chat-driven follow-ups: [FTB-057](#ftb-057), [FTB-058](#ftb-058), [FTB-059](#ftb-059), and [FTB-060](#ftb-060).
 - Transparent color picker option: [FTB-061](#ftb-061) / [GitHub #61](https://github.com/Azab-Inc/filament-theme-builder/issues/61).
+- Per-setting reset to Filament defaults: [FTB-062](#ftb-062) / [GitHub #64](https://github.com/Azab-Inc/filament-theme-builder/issues/64).
 
 ## Dependency map
 
@@ -1790,3 +1791,32 @@ Add an explicit no-color / transparent choice to every color picker, so users ca
 - [ ] Create and run a failing Playwright CLI test before implementation and verify the completed behavior in the real Filament preview, including a transparent background and reset/inheritance.
 
 **Related:** FTB-051, FTB-057, FTB-058, FTB-022. Follow the repository demo-first gate and existing project guidance.
+
+---
+
+<a id="ftb-062"></a>
+
+## FTB-062 — Add per-setting reset to Filament defaults
+
+**Status:** ready-for-agent. **GitHub:** [#64](https://github.com/Azab-Inc/filament-theme-builder/issues/64).
+
+### What to build
+
+Provide a Reset control next to every editable setting, including color pickers, selectors, typography, spacing and other values. Reset restores the affected setting to its Filament default, without changing unrelated settings. For example, resetting the input background in dark mode restores the native dark input background and leaves the light value untouched.
+
+### Acceptance criteria
+
+- [ ] Inventory every editable setting, including foundations, semantic controls, Inspector/raw overrides, variants and states; provide a visible, keyboard-accessible Reset next to each individual control, including next to Choose color.
+- [ ] Reset restores the verified native Filament default for that setting and context. Where a setting has no applicable Filament default, define and communicate its appropriate default behavior explicitly rather than silently guessing.
+- [ ] Light and dark resets are independent. Resetting dark restores the native dark default even if dark would otherwise inherit a customized light value; the light value is unchanged. Verify the reverse direction as applicable.
+- [ ] Reconcile the existing inheritance-based reset contract in SPECS.md and related design documents with this explicitly requested default-restoring behavior; preserve a distinct way to resume inheritance where needed and make the difference clear.
+- [ ] Reset affects only the selected value and context, including nested targets and state variants; preserve unrelated edits and respect applicable value locks and explicit mode links.
+- [ ] Preview reflects the restored default; autosave/reload, local themes, undo/redo, JSON import/export and applicable CSS exports preserve and reproduce the correct result. Existing themes migrate without unintended visual changes.
+- [ ] Expose the capability through purpose-built MCP discovery/read/preview/confirm/apply using shared validation and authorization, apply-time revalidation and the capability inventory; verify an actual AI-client flow.
+
+### Verification
+
+- [ ] Use TDD with meaningful failing tests before implementation covering inventory, defaults versus inheritance, context and mode isolation, persistence, history, export and MCP authorization.
+- [ ] Create and run a failing Playwright CLI test before implementation. In the real Filament preview, customize light and dark input backgrounds, reset dark, assert the native dark default and unchanged light value, then verify history and reload.
+
+**Related:** FTB-005, FTB-006, FTB-007, FTB-008, FTB-022, FTB-052, FTB-054, FTB-058 and FTB-061. Follow the repository demo-first gate and existing project guidance.
