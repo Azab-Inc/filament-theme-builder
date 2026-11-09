@@ -1820,3 +1820,29 @@ Provide a Reset control next to every editable setting, including color pickers,
 - [ ] Create and run a failing Playwright CLI test before implementation. In the real Filament preview, customize light and dark input backgrounds, reset dark, assert the native dark default and unchanged light value, then verify history and reload.
 
 **Related:** FTB-005, FTB-006, FTB-007, FTB-008, FTB-022, FTB-052, FTB-054, FTB-058 and FTB-061. Follow the repository demo-first gate and existing project guidance.
+
+---
+
+<a id="ftb-063"></a>
+
+## FTB-063 — Select table badges with the Inspector
+
+**Status:** done. **GitHub:** [#65](https://github.com/Azab-Inc/filament-theme-builder/issues/65).
+
+### Problem
+
+Hovering or clicking a status badge in the dashboard Inspector selected its containing table cell rather than the badge text.
+
+### Acceptance criteria
+
+- [x] Hovering and clicking a dashboard status badge highlights and selects the badge.
+- [x] Inspector exposes a badge selector, while the surrounding table cell remains separately selectable.
+- [x] Existing Inspector and bridge interactions continue to work.
+
+### Completion and verification
+
+Fixed in commit `96e3715`: the preview bridge prioritizes badge targets before promoting table descendants to cells.
+
+The Playwright regression first failed on the missing badge hover highlight before the fix. On the settled change, `COMPOSE_E2E=1 npx playwright test e2e/ftb-007-inspector.spec.ts e2e/inspector-badge.spec.ts` passed 13 tests. Focused bridge, outline, table-row and badge checks passed 6 tests. `git diff --check` passed.
+
+Related: FTB-007 and FTB-008. This fix does not close those broader tickets.
