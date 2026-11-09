@@ -463,6 +463,8 @@
         const inspectorTarget = (node) => {
             if (!(node instanceof Element)) return null;
             if (node.closest('script, style, link, meta, head, #ftb-preview-bridge, #ftb-inspector-style')) return null;
+            const badge = node.closest('.fi-badge');
+            if (badge) return badge;
             const tableCell = node.closest('.fi-ta-header-cell, .fi-ta-cell');
             if (tableCell) return tableCell;
             const interactiveAncestor = node.closest('button, a, [role="button"]');
