@@ -115,6 +115,52 @@
   white-space: nowrap;
 }
 
+.preview-shell .preview-shell__header-controls.toolbar-strip {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .5rem 0;
+}
+.toolbar-strip .toolbar-cluster { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; }
+.toolbar-icon-segments .toolbar-cluster { gap: 4px; }
+.preview-shell .toolbar-strip > .toolbar-edit {
+  flex: 1 1 auto;
+  gap: .75rem;
+  padding: .375rem .625rem;
+  background: #e6f2ee;
+  border: 1px solid #dce5e2;
+  border-radius: .35rem;
+}
+.toolbar-strip .toolbar-mode { display: flex; gap: .1875rem; }
+.toolbar-icon { display: inline-block; flex: 0 0 auto; vertical-align: -.125em; }
+.preview-shell .toolbar-strip button:has(> .toolbar-icon) { display: inline-flex; align-items: center; gap: .375rem; }
+.toolbar-mode-segments { display: flex; padding: .125rem; border: 1px solid #cbd9d5; border-radius: .35rem; background: #fff; }
+.preview-shell .toolbar-strip .toolbar-mode-segments button { border: 0; background: transparent; }
+.preview-shell .toolbar-strip .toolbar-mode-segments button[aria-pressed="true"] { background: #315b53; color: #fff; }
+.toolbar-switch-track { display: inline-flex; align-items: center; width: 2rem; height: 1.125rem; padding: .125rem; border-radius: 1rem; background: #cbd9d5; }
+.toolbar-switch-thumb { width: .875rem; height: .875rem; border-radius: 50%; background: #fff; }
+[aria-checked="true"] > .toolbar-switch-track { background: #315b53; }
+[aria-checked="true"] .toolbar-switch-thumb { transform: translateX(.875rem); }
+.preview-shell .toolbar-strip > .toolbar-align-compact { align-items: center; gap: 1rem; }
+.toolbar-align-compact .color-field__text-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.toolbar-align-compact .color-field { display: flex; align-items: center; }
+.toolbar-align-compact .toolbar-mode { align-items: center; padding-left: 1rem; border-left: 1px solid #cbd9d5; }
+.preview-shell .toolbar-strip .toolbar-mode button[aria-pressed="true"] {
+  background: #315b53;
+  color: #fff;
+  border-color: #315b53;
+}
+
 .preview-shell__header h1 {
   margin: 0;
   font-size: 1rem;

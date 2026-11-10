@@ -61,7 +61,7 @@ function resetOnClose(): void {
 </script>
 
 <template>
-  <dialog aria-labelledby="local-theme-dialog-title" @close="resetOnClose" @keydown.esc.prevent="handleEscape" @pointerdown="pointerDown" @pointerup="pointerUp">
+  <dialog class="local-theme-dialog" data-toolbar-menu-modal aria-labelledby="local-theme-dialog-title" @close="resetOnClose" @keydown.esc.prevent="handleEscape" @pointerdown="pointerDown" @pointerup="pointerUp">
     <h2 id="local-theme-dialog-title" :inert="Boolean(deleting)">Manage themes</h2>
     <p v-if="storageError" :inert="Boolean(deleting)" role="status" aria-live="polite" data-local-theme-storage-status>{{ storageError }}</p>
     <button type="button" aria-label="Save theme" :disabled="Boolean(deleting)" :inert="Boolean(deleting)" @click="emit('save')">Save theme</button>

@@ -18,6 +18,7 @@
 - Chat-driven follow-ups: [FTB-057](#ftb-057), [FTB-058](#ftb-058), [FTB-059](#ftb-059), and [FTB-060](#ftb-060).
 - Transparent color picker option: [FTB-061](#ftb-061) / [GitHub #61](https://github.com/Azab-Inc/filament-theme-builder/issues/61).
 - Per-setting reset to Filament defaults: [FTB-062](#ftb-062) / [GitHub #64](https://github.com/Azab-Inc/filament-theme-builder/issues/64).
+- Builder keyboard shortcuts and command modal: [FTB-064](#ftb-064) / [GitHub #66](https://github.com/Azab-Inc/filament-theme-builder/issues/66).
 
 ## Dependency map
 
@@ -1820,6 +1821,35 @@ Provide a Reset control next to every editable setting, including color pickers,
 - [ ] Create and run a failing Playwright CLI test before implementation. In the real Filament preview, customize light and dark input backgrounds, reset dark, assert the native dark default and unchanged light value, then verify history and reload.
 
 **Related:** FTB-005, FTB-006, FTB-007, FTB-008, FTB-022, FTB-052, FTB-054, FTB-058 and FTB-061. Follow the repository demo-first gate and existing project guidance.
+
+---
+
+<a id="ftb-064"></a>
+
+## FTB-064 — Add builder keyboard shortcuts and command modal
+
+**Status:** ready-for-agent. **GitHub:** [#66](https://github.com/Azab-Inc/filament-theme-builder/issues/66).
+
+### What to build
+
+Add direct keyboard shortcuts for the builder toolbar, its Export and Tools dropdown items, and every editor sidebar section. Ctrl+/ opens a modal listing all available commands and their actual shortcuts; provide the equivalent Cmd+/ on macOS. Choose sensible, conflict-aware default combinations for individual commands.
+
+### Acceptance criteria
+
+- [ ] Inventory the current toolbar, Export and Tools dropdowns, and sidebar sections at implementation time; every actionable item has a direct shortcut and an entry in the modal. Include Save theme; the primary color input, native picker and Choose color; the primary mode-link control; Light and Dark; Undo, Redo and Inspector; all six current export/copy actions; Manage themes, theme import and local client pairing actions; and Foundations, Components, Branding, Icons and conditional Inspector sections. Include any additional actions present in those surfaces when implemented.
+- [ ] Each shortcut invokes the same action as its existing control. For controls requiring a value, selection, confirmation or multi-step interaction, focus the relevant control or open its existing workflow rather than inventing a value or bypassing confirmation. Context-dependent or disabled actions remain unavailable when the original control is unavailable, including pairing approval and Inspector selection.
+- [ ] Ctrl+/ (Cmd+/ on macOS) opens a clearly labelled, keyboard-accessible modal that lists the complete command inventory, descriptive names, platform-appropriate actual bindings and availability. Commands and shortcuts remain synchronized from a single authoritative inventory; the modal can be dismissed with Escape, manages focus and restores focus on close.
+- [ ] Use distinct, discoverable defaults that avoid browser/OS and existing Filament shortcut conflicts as far as practical; preserve Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z for undo/redo. Document any unavoidable platform or browser limitations truthfully. Shortcuts do not trigger unexpectedly while typing in inputs, textareas, selects or contenteditable elements, during composition, or when a dialog/control owns the keystroke; define and test the modal-opening behavior in those contexts.
+- [ ] Shortcuts behave consistently with the existing controls in both editor navigation layouts, respect active and unavailable states, and preserve theme values, light/dark isolation, undo/redo, existing preview/Inspector behavior and existing authorization/confirmation flows. Account for focus in the embedded preview and document any browser or iframe limits rather than claiming unsupported global handling.
+- [ ] Maintain the MCP capability inventory: shortcut and modal presentation do not create privileged mutations or bypass existing purpose-built tools. Any newly exposed underlying product capability must use shared services, validation, authorization, preview/confirmation and apply-time revalidation, with meaningful authorization tests and actual AI-client verification as applicable.
+
+### Verification
+
+- [ ] Follow TDD: write and run focused failing regression tests first, then test the command inventory, shortcut mapping, contextual availability, editable/composition guards, lifecycle cleanup and existing action parity.
+- [ ] Create and run failing Playwright CLI coverage before implementation, then verify Ctrl+/ and Cmd+/ handling, modal keyboard/focus behavior, representative direct shortcuts from every toolbar/dropdown/sidebar group, both navigation layouts, editable-field isolation, preview focus behavior and existing confirmation/disabled states against the real builder and Filament preview. Verify the complete inventory and direct binding coverage through automated tests.
+- [ ] Run the applicable builder type-check, unit tests and production build; report actual browser/platform coverage and any limitations.
+
+**Related:** FTB-003, FTB-007, FTB-008, FTB-021, FTB-022, FTB-050 and the editor keyboard-wayfinding research. Follow the repository demo-first gate and existing project guidance.
 
 ---
 

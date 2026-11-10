@@ -1,0 +1,41 @@
+.local-theme-dialog {
+  box-sizing: border-box;
+  width: min(640px, calc(100vw - 32px));
+  max-height: min(720px, calc(100dvh - 48px));
+  margin: auto;
+  overflow: auto;
+  padding: 24px;
+  border: 1px solid #cbd9d5;
+  border-radius: 8px;
+  background: #fff;
+  color: #20272e;
+  font: 13px/1.5 ui-sans-serif, system-ui, sans-serif;
+  box-shadow: 0 24px 64px #17352d33;
+}
+.local-theme-dialog::backdrop { background: #20272e66; }
+.local-theme-dialog h2 { margin: 0 0 20px; color: #1f3b36; font-size: 20px; }
+.local-theme-dialog ul { display: grid; gap: 12px; list-style: none; margin: 20px 0; padding: 0; }
+.local-theme-dialog li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 0; border-bottom: 1px solid #dce5e2; }
+.local-theme-dialog li > strong { flex: 1 1 60%; overflow-wrap: anywhere; font-size: 14px; }
+.local-theme-dialog li > span { padding: 2px 8px; border-radius: 4px; color: #1f3b36; background: #e6f2ee; font-size: 12px; }
+.preview-shell .toolbar-menu__panel .local-theme-dialog button {
+  display: inline-flex;
+  justify-content: center;
+  width: auto;
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid #cbd9d5;
+  border-radius: 4px;
+  background: #fff;
+  color: #315b53;
+  font: inherit;
+}
+.preview-shell .toolbar-menu__panel .local-theme-dialog button:hover { background: #e6f2ee; border-color: #315b53; }
+.preview-shell .toolbar-menu__panel .local-theme-dialog > button[aria-label="Save theme"] { background: #315b53; border-color: #315b53; color: #fff; margin-right: 8px; }
+.preview-shell .toolbar-menu__panel .local-theme-dialog button:disabled { opacity: .5; cursor: not-allowed; }
+.local-theme-dialog :is(button, input):focus-visible { outline: 3px solid #e2a832; outline-offset: 2px; }
+.local-theme-dialog label { display: grid; flex: 1 1 100%; gap: 4px; font-weight: 600; }
+.local-theme-dialog input { box-sizing: border-box; width: 100%; min-height: 36px; padding: 6px 10px; border: 1px solid #cbd9d5; border-radius: 4px; color: #20272e; background: #f3f5f4; font: inherit; }
+.local-theme-dialog [role="alertdialog"] { position: absolute; inset: 0; display: grid; align-content: center; justify-items: start; gap: 12px; padding: 24px; background: #fff; color: #20272e; }
+.local-theme-dialog [role="alertdialog"] h3 { margin: 0; font-size: 18px; }
+@media (max-width: 480px) { .local-theme-dialog { padding: 16px; } }

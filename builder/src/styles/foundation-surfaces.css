@@ -1,0 +1,13 @@
+.surface-layout { min-width: 0; border: 0; padding: 0; }
+.surface-layout legend { font-weight: 700; color: #1f3b36; margin-bottom: 12px; }
+.surface-layout__groups { display: grid; gap: 17px; }
+.surface-layout__heading { margin: 0; padding: 8px; font-size: 13px; font-weight: 700; background: #e6f2ee; color: #1f3b36; }
+.surface-layout__rows { display: grid; }
+.surface-layout__row { min-width: 0; padding: 10.2px 4px; border-bottom: 1px solid #dce5e2; }
+.surface-layout .color-field { display: grid; gap: 8px; min-width: 0; }
+.surface-layout .color-field__text-label { font-weight: 600; }
+.surface-layout .color-field__controls { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 4px; min-width: 0; }
+.surface-layout .color-field__text { width: 100%; min-width: 0; }
+.surface-layout .color-field__trigger { grid-column: 1 / -1; width: 100%; }
+.surface-layout .color-field__token-select { grid-column: 1 / -1; width: 100%; min-width: 0; }
+.surface-layout__meta { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 12px; }

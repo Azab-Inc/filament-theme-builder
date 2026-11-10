@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 2,
+  "title": "Design System: Filament Theme Builder",
+  "extensions": {
+    "shadows": [],
+    "motion": [
+      {
+        "name": "standard",
+        "value": "background-color 0.15s ease, border-color 0.15s ease",
+        "purpose": "Quiet state transitions on compact controls."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "639px"
+      }
+    ]
+  },
+  "narrative": {
+    "northStar": "The Filament Control Room",
+    "overview": "The builder is a calm and precise control room for making visual decisions. It places a focused editing surface beside a realistic preview, using layered pale surfaces and quiet borders to keep attention on the theme rather than on decoration.",
+    "keyCharacteristics": [
+      "Layered white work areas over a pale green-gray shell.",
+      "Muted Filament teal for active and actionable states.",
+      "Compact, expert-oriented controls with clear focus treatment."
+    ],
+    "rules": [
+      {
+        "name": "The Rare Accent Rule",
+        "body": "Filament teal should identify action and active state, not become a decorative fill across the whole workspace.",
+        "section": "colors"
+      },
+      {
+        "name": "The Border-First Rule",
+        "body": "Use a clear structural divider before adding visual elevation.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep the editor and preview visibly connected through shared surfaces and border rhythm.",
+      "Do use Filament teal to make active and actionable states easy to scan.",
+      "Do preserve keyboard focus visibility with the amber outline.",
+      "Do let responsive layout move the preview above the controls on narrow screens."
+    ],
+    "donts": [
+      "Don't add gradients, oversized hero treatments, or ornamental dashboard cards.",
+      "Don't replace clear borders with shadows as the default depth cue.",
+      "Don't make the accent color compete with the editable theme preview."
+    ]
+  }
+}

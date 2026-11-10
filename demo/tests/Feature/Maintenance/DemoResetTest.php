@@ -70,6 +70,20 @@ class DemoResetTest extends TestCase
         $this->assertFileDoesNotExist($this->uploads.'/temporary-upload.pdf');
     }
 
+    public function test_existing_database_connection_can_write_after_reset(): void
+    {
+        $snapshot = base_path('database/demo-snapshot.sqlite');
+        copy($snapshot, $this->database);
+        Config::set('maintenance.demo_snapshot_path', $snapshot);
+
+        $connection = new \PDO('sqlite:'.$this->database);
+        $connection->query('select count(*) from sessions')->fetchColumn();
+
+        $this->artisan('demo:reset')->assertExitCode(0);
+
+        $this->assertNotFalse($connection->exec('update sessions set last_activity = last_activity'));
+    }
+
     public function test_repeated_reset_is_deterministic_and_does_not_touch_persistent_shares(): void
     {
         $committedSnapshot = base_path('database/demo-snapshot.sqlite');

@@ -5,6 +5,8 @@ import ThemePairingControl from '@/components/ThemePairingControl.vue'
 import ColorField from '@/components/ColorField.vue'
 import ModeValueLink from './ModeValueLink.vue'
 import ToolbarMenu from '@/components/ToolbarMenu.vue'
+import ToolbarIcon from '@/components/ToolbarIcon.vue'
+import ToolbarModeToggle from '@/components/ToolbarModeToggle.vue'
 import { useThemeRelayImportHandoff } from '@/composables/use-theme-relay-import-handoff'
 import type { LocalThemeRecord } from '@/models/local-theme.model'
 import type { ThemeMode } from '@/models/foundations.model'
@@ -60,31 +62,11 @@ function updatePrimaryColor(event: Event): void {
       <h1>Filament Theme Builder</h1>
       <p data-demo-notice>Preview demo data is temporary.</p>
     </div>
-    <div class="preview-shell__header-controls" data-editor-header-controls>
-      <button type="button" class="toolbar-primary-action" aria-label="Save theme" @click="emit('save')">Save theme</button>
-      <ColorField id="toolbar-primary-color" label="Primary color" visible-label="Primary color" text-label="Primary color text" :value="primaryColor" :effective-value="primaryColor" profile="hex6" :context-key="activeThemeId" native-label="Primary color" :native-primary="true" @input="updatePrimaryColor" />
-      <div role="group" aria-label="Preview mode" class="inline-flex">
-        <ModeValueLink :target="{ kind: 'palette-base', name: 'primary' }" />
-        <button type="button" aria-label="Light mode" :aria-pressed="activeMode === 'light'" @click="emit('set-mode', 'light')">Light</button>
-        <button type="button" aria-label="Dark mode" :aria-pressed="activeMode === 'dark'" @click="emit('set-mode', 'dark')">Dark</button>
-      </div>
-      <ToolbarMenu label="Export" ariaLabel="Export actions">
-        <button type="button" aria-label="Export theme JSON" @click="emit('exportCanonicalJson')">Export JSON</button>
-        <button type="button" aria-label="Copy vanilla CSS" @click="emit('copyVanillaThemeCss')">Copy CSS</button>
-        <button type="button" aria-label="Download vanilla CSS" @click="emit('exportVanillaThemeCss')">Download CSS</button>
-        <button type="button" aria-label="Export PanelProvider icon config" @click="emit('exportIconPhp')">Export icon PHP</button>
-        <button type="button" aria-label="Export panel branding JSON" @click="emit('exportBrandingJson')">Export branding JSON</button>
-        <button type="button" aria-label="Export PanelProvider branding config" @click="emit('exportBrandingPhp')">Export branding PHP</button>
-      </ToolbarMenu>
-      <button type="button" aria-label="Undo" :disabled="!canUndo" @click="emit('undo')">Undo</button>
-      <button type="button" aria-label="Redo" :disabled="!canRedo" @click="emit('redo')">Redo</button>
-      <button type="button" aria-label="Inspector" :aria-pressed="inspectorEnabled" @click="emit('toggleInspector')">Inspector</button>
-      <ToolbarMenu label="Tools" ariaLabel="Theme tools">
-        <LocalThemeManager :themes="themes" :active-theme-id="activeThemeId" :storage-error="storageError" @save="emit('save')" @create="emit('create')" @open="emit('open', $event)" @rename="relayRename" @duplicate="emit('duplicate', $event)" @delete="emit('delete', $event)" @close="emit('close')" />
-        <div class="toolbar-import"><ThemeImportDialog ref="importDialog" /></div>
-        <ThemePairingControl :on-import-payload="receiveRelayImport" />
-      </ToolbarMenu>
-    </div>
+        <div class="preview-shell__header-controls toolbar-strip toolbar-icon-segments" data-editor-header-controls>
+          <div class="toolbar-cluster toolbar-edit toolbar-align-compact"><ColorField id="toolbar-color-segments" label="Primary color" visible-label="Primary color" text-label="Primary color text" :value="primaryColor" :effective-value="primaryColor" profile="hex6" :context-key="activeThemeId" native-label="Primary color" :native-primary="true" @input="updatePrimaryColor" /><div class="toolbar-mode"><ModeValueLink :target="{ kind: 'palette-base', name: 'primary' }" /><ToolbarModeToggle :mode="activeMode" variant="segmented" @change="emit('set-mode', $event)" /></div></div>
+          <div class="toolbar-cluster toolbar-history"><button type="button" aria-label="Undo" :disabled="!canUndo" @click="emit('undo')"><ToolbarIcon name="undo" /><span>Undo</span></button><button type="button" aria-label="Redo" :disabled="!canRedo" @click="emit('redo')"><ToolbarIcon name="redo" /><span>Redo</span></button><button type="button" aria-label="Inspector" :aria-pressed="inspectorEnabled" @click="emit('toggleInspector')"><ToolbarIcon name="inspector" />Inspector</button></div>
+          <div class="toolbar-cluster toolbar-delivery"><ToolbarMenu label="Tools" ariaLabel="Theme tools"><LocalThemeManager :themes="themes" :active-theme-id="activeThemeId" :storage-error="storageError" @save="emit('save')" @create="emit('create')" @open="emit('open', $event)" @rename="relayRename" @duplicate="emit('duplicate', $event)" @delete="emit('delete', $event)" @close="emit('close')" /><div class="toolbar-import"><ThemeImportDialog /></div><ThemePairingControl :on-import-payload="receiveRelayImport" /></ToolbarMenu><ToolbarMenu label="Export" ariaLabel="Export actions"><button type="button" aria-label="Export theme JSON" @click="emit('exportCanonicalJson')">Export JSON</button><button type="button" aria-label="Copy vanilla CSS" @click="emit('copyVanillaThemeCss')">Copy CSS</button><button type="button" aria-label="Download vanilla CSS" @click="emit('exportVanillaThemeCss')">Download CSS</button><button type="button" aria-label="Export PanelProvider icon config" @click="emit('exportIconPhp')">Export icon PHP</button><button type="button" aria-label="Export panel branding JSON" @click="emit('exportBrandingJson')">Export branding JSON</button><button type="button" aria-label="Export PanelProvider branding config" @click="emit('exportBrandingPhp')">Export branding PHP</button></ToolbarMenu><button type="button" class="toolbar-primary-action" aria-label="Save theme" @click="emit('save')"><ToolbarIcon name="save" />Save theme</button></div>
+        </div>
   </header>
   <p v-if="exportStatus" role="status" aria-label="Export status" aria-live="polite" data-export-status>{{ exportStatus }}</p>
   <p role="status" aria-label="Inspector status" aria-live="polite" data-inspector-status>{{ inspectorStatus }}</p>

@@ -7,4 +7,7 @@
 @import "./styles/inspect-prototype.css";
 @import "./styles/theme-prototype.css";
 @import "./styles/color-field.css";
+@import "./styles/foundation-surfaces.css";
+@import "./styles/foundation-controls.css";
+@import "./styles/local-theme-dialog.css";
 @import "./styles/dashboard-first-editor.css";

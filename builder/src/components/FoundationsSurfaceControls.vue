@@ -1,56 +1,42 @@
 <script setup lang="ts">
-import { useColorFieldResets } from '@/composables/use-color-field-resets'
+import { computed } from 'vue'
 import ColorField from '@/components/ColorField.vue'
-import type { FoundationsSurfaceControlsEmits } from '@/dtos/foundations-surface-controls-emits.dto'
-import type { FoundationsSurfaceControlsProps } from '@/dtos/foundations-surface-controls-props.dto'
 import { useThemeStore } from '@/stores/theme'
+import { useColorFieldResets } from '@/composables/use-color-field-resets'
+import type { FoundationsSurfaceControlsProps } from '@/dtos/foundations-surface-controls-props.dto'
+import type { FoundationsSurfaceControlsEmits } from '@/dtos/foundations-surface-controls-emits.dto'
 
 const props = defineProps<FoundationsSurfaceControlsProps>()
 const emit = defineEmits<FoundationsSurfaceControlsEmits>()
 const themeStore = useThemeStore()
 const { resetKeys, resetField } = useColorFieldResets()
+const groups = computed(() => [
+  { key: 'surfaces', title: 'Surfaces', names: props.surfaceNames, values: props.surfaces, effective: props.effectiveFoundation?.surfaces },
+  { key: 'borders', title: 'Borders', names: props.borderNames, values: props.borders, effective: props.effectiveFoundation?.borders },
+  { key: 'text', title: 'Text', names: props.textNames, values: props.text, effective: props.effectiveFoundation?.text },
+].map(group => ({ ...group, rows: Object.entries(group.values).filter(([name]) => group.names.some(item => item === name)).map(([name, value]) => ({
+  name, value, path: `${group.key}.${name}`,
+  effective: Object.entries(group.effective ?? {}).find(([key]) => key === name)?.[1] ?? value,
+  id: group.key === 'surfaces' ? `${name}-surface` : `${group.key === 'borders' ? 'border' : 'text'}-${name}-${props.activeMode}`,
+  label: group.key === 'surfaces' ? `${name} surface ${props.activeMode}` : `${group.key === 'borders' ? 'border' : 'text'} ${name} ${props.activeMode}`,
+})) })))
 function reset(path: string): void { resetField(path); emit('reset', path) }
-function modeLink(path: string, _value: string) { return themeStore.bindingForModeTarget({ kind: 'foundation', path }, props.activeMode) }
 </script>
 
 <template>
-  <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
+  <fieldset class="surface-layout">
     <legend>Surfaces, borders, text, and modes</legend>
-    <div v-for="name in surfaceNames" :key="name" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
-      <ColorField :id="`${name}-surface`" :label="`${name} surface ${activeMode}`" :value="surfaces[name]" :effective-value="effectiveFoundation?.surfaces[name] ?? surfaces[name]" profile="foundation" :context-key="`${contextKey ?? ''}:${activeMode}`" :status-id="`surface-${name}-status`" :error-id="`surface-${name}-error`" :error="foundationError(`surfaces.${name}.${activeMode}`)" external-error :reset-key="resetKeys[`surfaces.${name}.${activeMode}`]" :user-token-options="userTokenOptions" :mode-link="modeLink(`surfaces.${name}`, surfaces[name])" @input="emit('set-mode-value', { path: `surfaces.${name}`, event: $event })" />
-      <span :id="`surface-${name}-status`" role="status" aria-live="polite">{{ statusFor(`surfaces.${name}`) }}</span>
-      <span v-if="foundationError(`surfaces.${name}.${activeMode}`)" :id="`surface-${name}-error`" :data-foundation-error="`surfaces.${name}.${activeMode}`" role="alert">{{ foundationError(`surfaces.${name}.${activeMode}`) }}</span>
-      <button
-        type="button"
-        :aria-label="`Reset ${name} surface`"
-        @click="reset(`surfaces.${name}.${activeMode}`)"
-      >
-        Reset
-      </button>
-    </div>
-    <div v-for="name in borderNames" :key="name" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
-      <ColorField :id="`border-${name}-${activeMode}`" :label="`border ${name} ${activeMode}`" :visible-label="`border ${name} ${activeMode}`" :text-label="`Border ${name} ${activeMode}`" :value="borders[name]" :effective-value="effectiveFoundation?.borders[name] ?? borders[name]" profile="foundation" :context-key="`${contextKey ?? ''}:${activeMode}`" :status-id="`border-${name}-status`" :error-id="`border-${name}-error`" :error="foundationError(`borders.${name}.${activeMode}`)" external-error :reset-key="resetKeys[`borders.${name}.${activeMode}`]" :user-token-options="userTokenOptions" :mode-link="modeLink(`borders.${name}`, borders[name])" @input="emit('set-mode-value', { path: `borders.${name}`, event: $event })" />
-      <span :id="`border-${name}-status`" role="status" aria-live="polite">{{ statusFor(`borders.${name}`) }}</span>
-      <span v-if="foundationError(`borders.${name}.${activeMode}`)" :id="`border-${name}-error`" :data-foundation-error="`borders.${name}.${activeMode}`" role="alert">{{ foundationError(`borders.${name}.${activeMode}`) }}</span>
-      <button
-        type="button"
-        :aria-label="`Reset border ${name} ${activeMode}`"
-        @click="reset(`borders.${name}.${activeMode}`)"
-      >
-        Reset
-      </button>
-    </div>
-    <div v-for="name in textNames" :key="name" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
-      <ColorField :id="`text-${name}-${activeMode}`" :label="`text ${name} ${activeMode}`" :visible-label="`text ${name} ${activeMode}`" :text-label="`Text ${name} ${activeMode}`" :value="text[name]" :effective-value="effectiveFoundation?.text[name] ?? text[name]" profile="foundation" :context-key="`${contextKey ?? ''}:${activeMode}`" :status-id="`text-${name}-status`" :error-id="`text-${name}-error`" :error="foundationError(`text.${name}.${activeMode}`)" external-error :reset-key="resetKeys[`text.${name}.${activeMode}`]" :user-token-options="userTokenOptions" :mode-link="modeLink(`text.${name}`, text[name])" @input="emit('set-mode-value', { path: `text.${name}`, event: $event })" />
-      <span :id="`text-${name}-status`" role="status" aria-live="polite">{{ statusFor(`text.${name}`) }}</span>
-      <span v-if="foundationError(`text.${name}.${activeMode}`)" :id="`text-${name}-error`" :data-foundation-error="`text.${name}.${activeMode}`" role="alert">{{ foundationError(`text.${name}.${activeMode}`) }}</span>
-      <button
-        type="button"
-        :aria-label="`Reset text ${name} ${activeMode}`"
-        @click="reset(`text.${name}.${activeMode}`)"
-      >
-        Reset
-      </button>
+    <div class="surface-layout__groups">
+      <section v-for="group in groups" :key="group.key" class="surface-layout__group">
+        <h3 class="surface-layout__heading">{{ group.title }}</h3>
+        <div class="surface-layout__rows">
+          <div v-for="row in group.rows" :key="row.path" class="surface-layout__row">
+            <ColorField :id="row.id" :label="row.label" :visible-label="row.label" :value="row.value" :effective-value="row.effective" profile="foundation" :context-key="`${contextKey ?? ''}:${activeMode}`" :status-id="`${row.id}-status`" :error-id="`${row.id}-error`" :error="foundationError(`${row.path}.${activeMode}`)" external-error :reset-key="resetKeys[`${row.path}.${activeMode}`]" :user-token-options="userTokenOptions" :mode-link="themeStore.bindingForModeTarget({ kind: 'foundation', path: row.path }, activeMode)" @input="emit('set-mode-value', { path: row.path, event: $event })" />
+            <div class="surface-layout__meta"><span :id="`${row.id}-status`" role="status" aria-live="polite">{{ statusFor(row.path) }}</span><button type="button" :aria-label="`Reset ${row.label}`" @click="reset(`${row.path}.${activeMode}`)">Reset</button></div>
+            <span v-if="foundationError(`${row.path}.${activeMode}`)" :id="`${row.id}-error`" :data-foundation-error="`${row.path}.${activeMode}`" role="alert">{{ foundationError(`${row.path}.${activeMode}`) }}</span>
+          </div>
+        </div>
+      </section>
     </div>
   </fieldset>
 </template>
