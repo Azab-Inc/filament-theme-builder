@@ -33,7 +33,7 @@ describe('App typography and density', () => {
       'text primary light',
       'text muted light',
       'text disabled light',
-      'page surface',
+      'page surface light',
       'body font',
       'radius',
       'border width',

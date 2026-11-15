@@ -35,8 +35,8 @@ function resetShade(name: PaletteName, shade: PaletteShade): void { resetField(`
     <section v-for="name in paletteNames" :key="name" class="palette-accordion__item">
       <h3 class="palette-accordion__heading">
         <button :id="`${name}-palette-header`" type="button" class="palette-accordion__header"
-          :data-palette-header="name" :aria-expanded="openPalette === name"
-          :aria-controls="`${name}-palette-panel`" @click="togglePalette(name)">
+           :data-palette-header="name" :aria-expanded="openPalette === name"
+           :aria-controls="openPalette === name ? `${name}-palette-panel` : undefined" @click="togglePalette(name)">
           <span class="palette-accordion__marker" :style="{ backgroundColor: palettes[name].base }" aria-hidden="true"></span>
           <span class="palette-accordion__name">{{ name }}</span>
           <span class="palette-accordion__base">{{ palettes[name].base }}</span>

@@ -20,7 +20,11 @@ describe('PreviewFrame', () => {
 
     const workspace = wrapper.get('[data-editor-workspace]')
     const iframe = wrapper.get('iframe')
-    expect(Array.from(workspace.element.children).map((element) => element.tagName)).toEqual(['SECTION', 'IFRAME'])
+    expect(Array.from(workspace.element.children).map((element) => element.tagName)).toEqual(['SECTION', 'BUTTON', 'IFRAME'])
+    expect(wrapper.get('[role="separator"]').attributes()).toMatchObject({
+      'aria-label': 'Resize editor and preview',
+      'aria-orientation': 'vertical',
+    })
     expect(workspace.element.firstElementChild).toBe(wrapper.get('[data-editor-panel]').element)
     expect(iframe.attributes()).toMatchObject({
       src: '/demo/admin?theme=preview',

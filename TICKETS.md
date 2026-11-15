@@ -19,6 +19,7 @@
 - Transparent color picker option: [FTB-061](#ftb-061) / [GitHub #61](https://github.com/Azab-Inc/filament-theme-builder/issues/61).
 - Per-setting reset to Filament defaults: [FTB-062](#ftb-062) / [GitHub #64](https://github.com/Azab-Inc/filament-theme-builder/issues/64).
 - Builder keyboard shortcuts and command modal: [FTB-064](#ftb-064) / [GitHub #66](https://github.com/Azab-Inc/filament-theme-builder/issues/66).
+- Editor and demo preview resize handle: [FTB-065](#ftb-065) / [GitHub #67](https://github.com/Azab-Inc/filament-theme-builder/issues/67).
 
 ## Dependency map
 
@@ -63,6 +64,45 @@ from `docs/phase-2/PRD.md`; the implementation tickets are FTB-042 through
 FTB-049. The package identity/namespace/Composer coordinates remain an
 explicit release blocker and must not be invented in these tickets.
 ```
+
+---
+
+<a id="ftb-065"></a>
+
+## FTB-065 — Resize the editor and demo preview with a divider handle
+
+**Status:** done
+
+**GitHub:** [#67](https://github.com/Azab-Inc/filament-theme-builder/issues/67)
+
+### What to build
+
+Add a draggable vertical resize handle at the boundary between the builder editor sidebar and the embedded demo preview, at the position marked by the red line in the request screenshot. Resizing redistributes the available horizontal space between the editor and preview.
+
+### Acceptance criteria
+
+- [x] A discoverable handle sits on the editor/preview boundary; dragging left or right immediately changes both pane widths while retaining the overall available width.
+- [x] The editor and preview remain usable at reasonable minimum widths; resizing is constrained to the available viewport and works across supported viewport sizes and both editor navigation layouts.
+- [x] The handle is keyboard-operable, visibly focusable and exposes an accessible name, separator semantics, orientation and current/minimum/maximum values. Pointer and touch interactions work reliably, including when dragging across the embedded preview.
+- [x] Resizing preserves the current editor and demo state, theme values, mode isolation, undo/redo and Inspector/preview interactions; the preview responds to its new available width.
+- [x] Define and document the initial width, resizing bounds and behavior when the viewport changes; do not introduce unrequested theme/export changes.
+- [x] Update the MCP capability inventory: expose any new product capability through appropriately authorized shared services with preview/confirmation and revalidation where applicable, and verify authorization and an actual AI client. Document if resizing is solely ephemeral presentation and how the inventory accounts for it.
+
+### Verification
+
+- [x] Follow TDD: write and run focused failing regression tests before implementing, then verify resizing, bounds, keyboard behavior and relevant state preservation.
+- [x] Create and run a failing Playwright CLI test before implementation; verify dragging in both directions, crossing the embedded preview, keyboard operation, viewport constraints, both editor navigation layouts and continued editor/preview functionality against the real application.
+- [x] Run applicable builder checks and document actual verification results.
+
+### Completion and verification
+
+Implemented an accessible pointer/touch/keyboard divider with 280px pane minimums, viewport reclamping and in-memory presentation state. The MCP inventory documents the UI-only ephemeral exception and responsive sizing contract; no domain mutation or MCP authorization/client flow was introduced.
+
+Verification on the integrated working tree based on `94be5cd`: from `builder/`, `npm run type-check` passed and `npm run test:unit -- --run` passed (144 files, 665 tests). From the repository root, `docker compose -f compose.dev.yaml exec -T builder-vite npm run build` passed. `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/ftb-065-editor-resize.spec.ts --reporter=line` passed (5 tests); the same command targeting `e2e/ftb-050-editor-layout.spec.ts` passed (10 tests). `git diff --check` passed. Browser coverage includes real Chromium touch across the iframe, both navigation layouts, bounds, keyboard ARIA endpoints, viewport reclamping, and continued mode/history/Inspector behavior.
+
+Failing-first evidence is the initial Playwright run failing because the divider was absent; the supplementary focused unit tests were added afterward. Existing unit-suite assertion drift and dangling closed-panel ARIA references were repaired before the final green run. Pre-existing unrelated working-tree edits were retained and excluded from the implementation commit.
+
+**Related:** FTB-019 responsive preview, FTB-050 editor navigation modes. Follow the repository demo-first gate and existing project guidance.
 
 ---
 

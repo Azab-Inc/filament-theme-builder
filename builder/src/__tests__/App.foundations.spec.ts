@@ -80,18 +80,18 @@ describe('App foundations', () => {
   it('inherits light text into dark mode until dark text is explicitly edited', async () => {
     localStorage.clear()
     const wrapper = mount(App, { global: { plugins: [createPinia()] } })
-    const lightText = wrapper.get('input[aria-label="Text primary light"]')
+    const lightText = wrapper.get('input[aria-label="text primary light"]')
 
     await lightText.setValue('#123456')
     await wrapper.get('header button[aria-label="Dark mode"]').trigger('click')
 
-    expect(wrapper.get('input[aria-label="Text primary dark"]').element).toHaveProperty('value', '#123456')
+    expect(wrapper.get('input[aria-label="text primary dark"]').element).toHaveProperty('value', '#123456')
 
-    await wrapper.get('input[aria-label="Text primary dark"]').setValue('#abcdef')
+    await wrapper.get('input[aria-label="text primary dark"]').setValue('#abcdef')
     await wrapper.get('header button[aria-label="Light mode"]').trigger('click')
-    expect(wrapper.get('input[aria-label="Text primary light"]').element).toHaveProperty('value', '#123456')
+    expect(wrapper.get('input[aria-label="text primary light"]').element).toHaveProperty('value', '#123456')
     await wrapper.get('header button[aria-label="Dark mode"]').trigger('click')
-    expect(wrapper.get('input[aria-label="Text primary dark"]').element).toHaveProperty('value', '#abcdef')
+    expect(wrapper.get('input[aria-label="text primary dark"]').element).toHaveProperty('value', '#abcdef')
   })
 
   it('places the mode switcher in the top toolbar', () => {
@@ -111,7 +111,7 @@ describe('App foundations', () => {
     expect(sidebar.attributes('aria-invalid')).toBe('true')
     expect(page.attributes('aria-invalid')).toBe('true')
 
-    await wrapper.get('button[aria-label="Reset sidebar surface"]').trigger('click')
+    await wrapper.get('button[aria-label="Reset sidebar surface light"]').trigger('click')
 
     expect(wrapper.find('[data-foundation-error="surfaces.sidebar.light"]').exists()).toBe(false)
     expect(sidebar.attributes('aria-invalid')).toBeUndefined()

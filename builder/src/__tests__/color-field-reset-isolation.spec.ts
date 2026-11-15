@@ -12,10 +12,10 @@ describe('color adapter identity and reset isolation', () => {
       ...modeColorProps(), foundationError: path => path === 'surfaces.page.light' ? 'Invalid color' : undefined,
     } })
     expect(wrapper.findAll('label[for="page-surface"]')).toHaveLength(1)
-    expect(wrapper.findAll('#surface-page-error')).toHaveLength(1)
+    expect(wrapper.findAll('#page-surface-error')).toHaveLength(1)
     await wrapper.get('#page-surface').setValue('#invalid-page')
     await wrapper.get('#sidebar-surface').setValue('#invalid-sidebar')
-    await wrapper.get('[aria-label="Reset page surface"]').trigger('click')
+    await wrapper.get('[aria-label="Reset page surface light"]').trigger('click')
     expect((wrapper.get('#page-surface').element as HTMLInputElement).value).toBe('var(--gray-50)')
     expect((wrapper.get('#sidebar-surface').element as HTMLInputElement).value).toBe('#invalid-sidebar')
     wrapper.unmount()

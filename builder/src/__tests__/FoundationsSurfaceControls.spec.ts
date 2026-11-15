@@ -48,8 +48,8 @@ describe('FoundationsSurfaceControls', () => {
     ])
     expect(wrapper.get('#page-surface').attributes('aria-invalid')).toBe('true')
     expect(wrapper.get('[data-foundation-error="surfaces.page.light"]').text()).toBe('Invalid color')
-    expect(wrapper.get('#surface-page-status').text()).toBe('explicit')
-    expect(wrapper.find('[aria-label="Reset page surface"]').exists()).toBe(true)
+    expect(wrapper.get('#page-surface-status').text()).toBe('explicit')
+    expect(wrapper.find('[aria-label="Reset page surface light"]').exists()).toBe(true)
 
     await wrapper.get('[aria-label="Reset border default light"]').trigger('click')
 

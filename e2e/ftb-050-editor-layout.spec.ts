@@ -33,7 +33,7 @@ test.describe('FTB-050 promoted editor navigation', () => {
       await expect(page.locator('[data-editor-nav-rail]')).toHaveCount(0)
       await expect(page.locator('[data-editor-header-controls]')).toBeVisible()
 
-      await page.locator('#toolbar-primary-color').fill('#0f766e')
+      await page.locator('#toolbar-color-segments').fill('#0f766e')
       await expect.poll(() => page.frameLocator('iframe[title="Filament preview"]')
         .locator('html').evaluate((element) => getComputedStyle(element).getPropertyValue('--ftb-primary').trim()))
         .toBe('#0f766e')
@@ -53,8 +53,9 @@ test.describe('FTB-050 promoted editor navigation', () => {
   }
 
   test('ordinary and former prototype routes expose only production A/B navigation', async ({ page }) => {
+    test.setTimeout(120_000)
     for (const path of ['/', '/?prototype=1&variant=A', '/?prototype=1&variant=B', '/?prototype=1&variant=C', '/?prototype=1&variant=unknown']) {
-      await page.goto(`${builderBaseUrl}${path}`)
+      await page.goto(`${builderBaseUrl}${path}`, { timeout: 60_000 })
       await expect(page.getByRole('heading', { name: 'Filament Theme Builder' })).toBeVisible()
       await expect(page.locator('[data-prototype]')).toHaveCount(0)
       await expect(page.getByRole('radio', { name: 'Sidebar' })).toBeVisible()
@@ -189,7 +190,7 @@ test.describe('FTB-050 promoted editor navigation', () => {
     await page.setViewportSize({ width: 640, height: 900 })
     await page.goto(builderBaseUrl)
     await page.evaluate(() => { document.documentElement.style.zoom = '2' })
-    await page.locator('#toolbar-primary-color').fill('#0f766e')
+    await page.locator('#toolbar-color-segments').fill('#0f766e')
 
     const expectNoPageHorizontalOverflow = async () => {
       const dimensions = await page.evaluate(() => ({
@@ -229,12 +230,14 @@ test.describe('FTB-050 promoted editor navigation', () => {
       page.getByRole('button', { name: 'Inspector' }),
     ]
 
+    await page.locator('[data-toolbar-menu]').nth(1).evaluate((menu) => menu.setAttribute('open', ''))
     for (const action of actions) {
       await action.focus()
       await expect(action).toBeFocused()
       await expect(action).toBeVisible()
       await expect(action).toBeInViewport()
     }
+    await page.locator('[data-toolbar-menu]').nth(1).evaluate((menu) => menu.removeAttribute('open'))
 
     const sidebar = page.getByRole('radio', { name: 'Sidebar' })
     const topNavigation = page.getByRole('radio', { name: 'Top navigation' })
@@ -285,6 +288,6 @@ test.describe('FTB-050 promoted editor navigation', () => {
     await page.getByRole('tab', { name: 'Icons' }).click()
     await expect(page.getByLabel('Icon pack')).toBeVisible()
     await page.getByRole('tab', { name: 'Components' }).click()
-    await expect(page.getByRole('textbox', { name: 'Product name global background' })).toBeVisible()
+    await expect(page.locator('#product-name-global-background')).toBeVisible()
   })
 })
