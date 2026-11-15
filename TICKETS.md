@@ -96,6 +96,8 @@ Add a draggable vertical resize handle at the boundary between the builder edito
 
 ### Completion and verification
 
+Implementation commit: `022c391` (`Feature: resize editor and preview with accessible divider`).
+
 Implemented an accessible pointer/touch/keyboard divider with 280px pane minimums, viewport reclamping and in-memory presentation state. The MCP inventory documents the UI-only ephemeral exception and responsive sizing contract; no domain mutation or MCP authorization/client flow was introduced.
 
 Verification on the integrated working tree based on `94be5cd`: from `builder/`, `npm run type-check` passed and `npm run test:unit -- --run` passed (144 files, 665 tests). From the repository root, `docker compose -f compose.dev.yaml exec -T builder-vite npm run build` passed. `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/ftb-065-editor-resize.spec.ts --reporter=line` passed (5 tests); the same command targeting `e2e/ftb-050-editor-layout.spec.ts` passed (10 tests). `git diff --check` passed. Browser coverage includes real Chromium touch across the iframe, both navigation layouts, bounds, keyboard ARIA endpoints, viewport reclamping, and continued mode/history/Inspector behavior.
