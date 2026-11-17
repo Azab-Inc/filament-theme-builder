@@ -55,6 +55,28 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
 
   })
 
+  test('exposes typed controls instead of free-text inputs for every raw property', async ({ page }) => {
+    const frame = page.frameLocator('iframe[title="Filament preview"]')
+    await page.getByRole('button', { name: 'Inspector' }).click()
+    await frame.locator('.fi-section:visible').first().dispatchEvent('click')
+    await chooseSectionSurface(page)
+
+    const enumerated = ['font-weight', 'text-decoration', 'border-style', 'text-align', 'white-space', 'box-shadow', 'font-family']
+    for (const property of enumerated) await expect(page.locator(`#raw-${property}`)).toHaveJSProperty('tagName', 'SELECT')
+
+    for (const property of ['border-width', 'border-radius', 'opacity', 'padding', 'margin', 'font-size', 'line-height', 'letter-spacing']) {
+      await expect(page.locator(`#raw-${property}`)).toHaveAttribute('type', 'number')
+    }
+    await expect(page.locator('#raw-border-radius-unit')).toHaveJSProperty('tagName', 'SELECT')
+
+    const textInputs = await page.locator('[data-advanced-inspector] .raw-property-row').evaluateAll((rows) =>
+      rows
+        .filter((row) => !row.querySelector('#raw-color, #raw-background-color, #raw-border-color'))
+        .flatMap((row) => [...row.querySelectorAll('input[type="text"]')]).length,
+    )
+    expect(textInputs).toBe(0)
+  })
+
   test('shows a fragile warning for an editable compound selector and exports raw CSS', async ({ page }) => {
     const frame = page.frameLocator('iframe[title="Filament preview"]')
     await page.getByRole('button', { name: 'Inspector' }).click()
@@ -64,7 +86,8 @@ test.describe('FTB-008 raw Inspector and FTB-004 CSS export', () => {
 
     await page.getByLabel('Raw element selector').fill('.fi-section .fi-btn')
     await expect(page.locator('[data-selector-warning]')).toContainText(/fragile|multiple classes/i)
-    await page.locator('#raw-border-radius').fill('0.75rem')
+    await page.locator('#raw-border-radius').fill('0.75')
+    await page.locator('#raw-border-radius-unit').selectOption('rem')
 
     await openExportMenu(page)
     await page.getByRole('button', { name: 'Download vanilla CSS' }).click()

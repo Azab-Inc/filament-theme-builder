@@ -1,3 +1,4 @@
+import type { FoundationFontChoiceOption } from '@/models/foundation-font-choice-option.model'
 import type { RawSelectorProposal, RawVisualProperty } from '@/models/raw-overrides.model'
 
 export type AdvancedRawInspectorProps = {
@@ -8,5 +9,6 @@ export type AdvancedRawInspectorProps = {
   propertyValue: (property: RawVisualProperty) => string
   visible: boolean
   activeThemeId?: string
+  fontChoices?: ReadonlyArray<FoundationFontChoiceOption>
   state?: import('@/utils/raw-inspector-state').InspectorVisualState
 }

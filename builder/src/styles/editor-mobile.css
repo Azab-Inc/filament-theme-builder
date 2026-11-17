@@ -9,6 +9,22 @@
   align-items: center;
 }
 
+.raw-spacing-field {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.raw-spacing-field select {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+}
+
+.raw-spacing-field > * {
+  min-width: 0;
+}
+
 @media (max-width: 767px) {
   .preview-shell__header {
     grid-template-columns: minmax(0, 1fr);
