@@ -16,7 +16,7 @@
 .preview-shell .editor-resize-handle { order: 1; position: relative; z-index: 2; min-width: .75rem; border: 0; border-left: 1px solid #dce5e2; border-right: 1px solid #dce5e2; background: #f7faf9; cursor: col-resize; touch-action: none; }
 .preview-shell .editor-resize-handle::before { content: ''; position: absolute; inset: 0 .2rem; border-radius: .25rem; background: transparent; }
 .preview-shell .editor-resize-handle:hover::before, .preview-shell .editor-resize-handle:focus-visible::before, .preview-shell .editor-resize-handle.is-dragging::before { background: #d8ebe5; }
-.preview-shell .editor-resize-handle span { position: absolute; inset: 50% .25rem auto; height: 2rem; transform: translateY(-50%); border-top: 2px dotted #6f9389; border-bottom: 2px dotted #6f9389; }
+.preview-shell .editor-resize-handle span { position: absolute; top: 50%; left: 50%; width: 4px; height: 40px; transform: translate(-50%, -50%); border-radius: 2px; background: #315b53; }
 .preview-shell .editor-panel { overflow: hidden; }
 .preview-shell .editor-content { min-width: 0; min-height: 0; padding: .5rem .6rem; scrollbar-width: thin; }
 .preview-shell .editor-navigation-toggle { gap: .25rem; margin: 0; padding: .35rem; border: 0; border-bottom: 1px solid #e6eeeb; background: #fbfdfc; }
