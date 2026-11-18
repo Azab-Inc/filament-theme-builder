@@ -19,6 +19,16 @@ const evidence = (candidateSelectors: string[]): InspectorTargetEvidence => ({
   semanticBreadcrumb: 'Button / Primary',
 })
 describe('raw Inspector overrides', () => {
+  it('supports the twelve physical raw border properties with explicit zero and none', () => {
+    const properties = ['border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width', 'border-top-style', 'border-right-style', 'border-bottom-style', 'border-left-style']
+    expect(properties.every((property) => ALL_RAW_VISUAL_PROPERTIES.includes(property as never))).toBe(true)
+    expect(validateRawElementOverride({ selector: '.fi-input-wrp', properties: { 'border-top-width': '0', 'border-bottom-style': 'none', 'border-left-color': 'user.color.accent' } }).valid).toBe(true)
+  })
+  it('projects raw physical borders on ring-backed semantic selectors without stealing focus rings', () => {
+    const css = renderRawOverrides({ ...createDefaultCurrentThemeState(), rawOverrides: [{ selector: '.fi-input-wrp', properties: { 'border-top-width': '2px' } }] }, [])
+    expect(css).toContain('.fi-input-wrp:not(:focus):not(:focus-within):not(:focus-visible)')
+    expect(css).toContain('--tw-ring-shadow: 0 0 #0000;')
+  })
   it('keeps the bridge property allowlist in parity with the TypeScript allowlist', () => {
     const bridge = readFileSync(`${process.cwd()}/../demo/resources/views/filament/preview-bridge.blade.php`, 'utf8')
 
@@ -33,8 +43,8 @@ describe('raw Inspector overrides', () => {
     expect(validateRawSelector('.fi-btn:hover').valid).toBe(true)
     expect(validateRawSelector('.fi-input:focus').valid).toBe(true)
     expect(validateRawSelector('.fi-btn:active').valid).toBe(false)
-    expect(bridge).not.toContain('focus-visible')
-    expect(bridge).not.toContain('focus-within')
+    expect(bridge).toContain('focus-visible')
+    expect(bridge).toContain('focus-within')
   })
   it('prefers a single stable Filament class over a compound or structural candidate', () => {
     expect(proposeRawSelector(evidence(['.fi-btn > span', '.fi-btn.fi-color-primary', '.fi-btn']), registry)).toEqual({

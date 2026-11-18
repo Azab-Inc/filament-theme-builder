@@ -69,7 +69,7 @@ export function initializeLocalThemeStorage(storage: Storage, defaultState: Them
       return failedLocalThemeLoad(migrateToCurrent(defaultState), 'Partial local theme storage detected; existing records were preserved')
     }
     const bytes = storage.getItem(LEGACY)
-  let state: ThemeStateCurrent = defaultState.schemaVersion === 7 ? defaultState : migrateToCurrent(defaultState)
+  let state: ThemeStateCurrent = defaultState.schemaVersion === 8 ? defaultState : migrateToCurrent(defaultState)
     let legacyError: string | null = null
     let migratedLegacy = false
     if (bytes !== null && !preferDefaultState) {
@@ -78,7 +78,7 @@ export function initializeLocalThemeStorage(storage: Storage, defaultState: Them
       else {
         const legacyValidation = parsed.schemaVersion <= 2 ? deserializeTheme(parsed, createThemeRegistry()) : { valid: true }
         if (!legacyValidation.valid) legacyError = 'Legacy theme is invalid'
-          try { if (!legacyError) { const migrated = migrateState(parsed); state = migrated.schemaVersion === 7 ? migrated : migrateToCurrent(migrated) } } catch {
+          try { if (!legacyError) { const migrated = migrateState(parsed); state = migrated.schemaVersion === 8 ? migrated : migrateToCurrent(migrated) } } catch {
           const recovered = recoverLegacyState(parsed)
           if (recovered) state = recovered
           else legacyError = 'Legacy theme migration failed'

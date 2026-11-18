@@ -28,8 +28,8 @@ final class ThemeRelayValidationV6Test extends TestCase
 
     public function test_envelopes_reject_malformed_versions_and_invalid_mode_values(): void
     {
-        self::assertFalse(OperationResultValidator::valid('export', [
-            'version' => 1, 'filename' => 'filament-theme.json', 'schemaVersion' => 8, 'json' => '{}',
+        self::assertTrue(OperationResultValidator::valid('export', [
+            'version' => 1, 'filename' => 'filament-theme.json', 'schemaVersion' => 8, 'json' => '{"schemaVersion":8}',
         ]));
         self::assertFalse(RelayImportPreviewValidator::valid([
             'sourceVersion' => 6, 'targetVersion' => 6, 'migrationPath' => [6, 'dark'], 'displayName' => 'Example',
@@ -45,6 +45,14 @@ final class ThemeRelayValidationV6Test extends TestCase
         self::assertTrue(RelayImportPreviewValidator::valid([
             'sourceVersion' => 6, 'targetVersion' => 7, 'migrationPath' => [6, 7], 'displayName' => 'Named colors',
             'summary' => ['Named tokens and mode links'], 'payloadDigest' => str_repeat('a', 64), 'byteLength' => 19,
+        ]));
+    }
+
+    public function test_v8_import_preview_envelope_is_accepted(): void
+    {
+        self::assertTrue(RelayImportPreviewValidator::valid([
+            'sourceVersion' => 8, 'targetVersion' => 8, 'migrationPath' => [8], 'displayName' => 'Border controls',
+            'summary' => ['Sparse border edges'], 'payloadDigest' => str_repeat('a', 64), 'byteLength' => 19,
         ]));
     }
 

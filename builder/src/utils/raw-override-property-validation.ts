@@ -17,8 +17,16 @@ export function isSafePropertyValue(property: RawVisualProperty, value: unknown)
     case 'color':
     case 'background-color':
     case 'border-color':
+    case 'border-top-color':
+    case 'border-right-color':
+    case 'border-bottom-color':
+    case 'border-left-color':
       return colorPattern.test(value) || parseUserTokenReference(value) !== null || isBuiltinPaletteReference(value)
     case 'border-width':
+    case 'border-top-width':
+    case 'border-right-width':
+    case 'border-bottom-width':
+    case 'border-left-width':
     case 'border-radius':
     case 'font-size':
     case 'letter-spacing':
@@ -41,6 +49,10 @@ export function isSafePropertyValue(property: RawVisualProperty, value: unknown)
     case 'text-decoration':
       return /^(?:none|underline|overline|line-through)$/.test(value)
     case 'border-style':
+    case 'border-top-style':
+    case 'border-right-style':
+    case 'border-bottom-style':
+    case 'border-left-style':
       return /^(?:none|solid|dashed|dotted|double)$/.test(value)
     case 'text-align':
       return /^(?:left|right|center|justify|start|end)$/.test(value)

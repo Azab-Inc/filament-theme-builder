@@ -1,11 +1,12 @@
 import type { FilamentRegistry } from '@/models/theme-registry.model'
 import type { MigrationFailure, MigrationResult, ImportVersion } from '@/models/theme-import.model'
-import type { ThemeState, ThemeStateV1, ThemeStateV2, ThemeStateV3, ThemeStateV4, ThemeStateV5, ThemeStateV6, ThemeStateV7 } from '@/models/theme.model'
+import type { ThemeState, ThemeStateV1, ThemeStateV2, ThemeStateV3, ThemeStateV4, ThemeStateV5, ThemeStateV6, ThemeStateV7, ThemeStateV8 } from '@/models/theme.model'
 import { createDefaultThemeState } from '@/utils/foundation-defaults'
 import { validateFoundationState } from '@/utils/foundation-validation'
 import { validateThemeState } from '@/utils/theme-validation'
 import { rebuildPalette } from '@/utils/theme-store-palettes'
 import { normalizeModeLinkIdentities } from '@/utils/normalize-mode-links'
+import { migrateThemeToV8 } from '@/utils/theme-schema-v8'
 
 export function migrateVersionedTheme(value: ThemeState, registry?: FilamentRegistry): MigrationResult {
   try {
@@ -20,18 +21,22 @@ export function migrateVersionedTheme(value: ThemeState, registry?: FilamentRegi
     if (current.schemaVersion === 3) { current = toV4(current); const edge = validateEdge(current, registry); if (!edge.ok) return edge; migrationPath.push(4); decisions.push('Created empty raw override collection') }
      if (current.schemaVersion === 4) { current = toV5(current); const edge = validateEdge(current, registry); if (!edge.ok) return edge; migrationPath.push(5); decisions.push('Created empty sparse padding collection') }
      if (current.schemaVersion === 5) { current = toV6(current); const edge = validateEdge(current, registry); if (!edge.ok) return edge; migrationPath.push(6); decisions.push('Added per-mode light/dark overlays') }
-     if (current.schemaVersion === 6) { current = toV7(current); const edge = validateEdge(current, registry); if (!edge.ok) return edge; migrationPath.push(7); decisions.push('Added validated user color tokens and mode links') }
-     if (current.schemaVersion === 7) current.modeLinks = normalizeModeLinkIdentities(current.modeLinks)
-     return { ok: true, state: structuredClone(current as ThemeStateV7), sourceVersion, migrationPath, decisions }
+      if (current.schemaVersion === 6) { current = toV7(current); const edge = validateEdge(current, registry); if (!edge.ok) return edge; migrationPath.push(7); decisions.push('Added validated user color tokens and mode links') }
+      if (current.schemaVersion === 7) { current = migrateThemeToV8(current); const edge = validateEdge(current, registry); if (!edge.ok) return edge; migrationPath.push(8); decisions.push('Added sparse border edge overrides') }
+       if (current.schemaVersion === 8) {
+         const { modeLinks: storedModeLinks, borderEdges: storedBorderEdges, ...canonicalOrder } = current as ThemeStateV8
+         current = { ...canonicalOrder, modeLinks: normalizeModeLinkIdentities(storedModeLinks), borderEdges: storedBorderEdges ?? [] }
+       }
+      return { ok: true, state: structuredClone(current as ThemeStateV8), sourceVersion, migrationPath, decisions }
   } catch (error) {
     return { ok: false, category: 'migration_failed', message: error instanceof Error ? error.message : 'Theme migration failed' }
   }
 }
 
-export function recoverVersionedTheme(value: ThemeStateV3 | ThemeStateV4 | ThemeStateV5 | ThemeStateV6 | ThemeStateV7): ThemeStateV7 {
-  if (value.schemaVersion === 7) return { ...structuredClone(value), modeLinks: normalizeModeLinkIdentities(value.modeLinks ?? {}) }
+export function recoverVersionedTheme(value: ThemeStateV3 | ThemeStateV4 | ThemeStateV5 | ThemeStateV6 | ThemeStateV7 | ThemeStateV8): ThemeStateV8 {
+  if (value.schemaVersion === 8) return { ...structuredClone(value), modeLinks: normalizeModeLinkIdentities(value.modeLinks ?? {}) }
   const result = migrateVersionedTheme(value)
-  return result.ok ? result.state : toV7(value.schemaVersion === 3 ? toV6(toV5(toV4(value))) : value as ThemeStateV6)
+  return result.ok ? result.state : migrateThemeToV8(toV7(value.schemaVersion === 3 ? toV6(toV5(toV4(value))) : value as ThemeStateV6))
 }
 
 function validateEdge(value: ThemeState, registry?: FilamentRegistry): MigrationFailure | { ok: true } {

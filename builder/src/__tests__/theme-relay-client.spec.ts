@@ -73,9 +73,9 @@ describe('browser relay client', () => {
       requests.push(new Request(new URL(input.toString(), location.origin), init))
       return String(input).includes('/bootstrap') ? ok(bootstrap) : ok({ version: 1, status: 'approved' })
     })
-    await createThemeRelayClient(pairing(), fetcher).publishExportResult('a'.repeat(64), '{"schemaVersion":7}')
+    await createThemeRelayClient(pairing(), fetcher).publishExportResult('a'.repeat(64), '{"schemaVersion":8}')
     const body = JSON.parse(await requests[requests.length - 1]!.text()) as Record<string, unknown>
-    expect(body.schemaVersion).toBe(7)
+    expect(body.schemaVersion).toBe(8)
   })
 
   it('normalizes server apply-grant seconds to the browser millisecond clock', async () => {

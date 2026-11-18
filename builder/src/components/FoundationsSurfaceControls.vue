@@ -5,6 +5,7 @@ import { useThemeStore } from '@/stores/theme'
 import { useColorFieldResets } from '@/composables/use-color-field-resets'
 import type { FoundationsSurfaceControlsProps } from '@/dtos/foundations-surface-controls-props.dto'
 import type { FoundationsSurfaceControlsEmits } from '@/dtos/foundations-surface-controls-emits.dto'
+import BorderEdgeControls from '@/components/BorderEdgeControls.vue'
 
 const props = defineProps<FoundationsSurfaceControlsProps>()
 const emit = defineEmits<FoundationsSurfaceControlsEmits>()
@@ -38,5 +39,6 @@ function reset(path: string): void { resetField(path); emit('reset', path) }
         </div>
       </section>
     </div>
+    <BorderEdgeControls target-id="table.header" :active-mode="props.activeMode" :target-options="[{ id: 'table.header', label: 'Table header' }, { id: 'table.container', label: 'Table container' }, { id: 'form.product-name', label: 'Input wrapper' }, { id: 'surface.section', label: 'Section' }, { id: 'surface.card', label: 'Card' }]" label="Border" />
   </fieldset>
 </template>

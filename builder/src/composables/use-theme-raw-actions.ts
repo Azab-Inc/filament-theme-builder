@@ -6,10 +6,15 @@ import { validateRawElementOverride } from '@/utils/raw-override-validation'
 
 export function useThemeRawActions({ theme, commit = (candidate) => { theme.value = candidate } }: ThemeStoreContext) {
   function setRawOverride(selector: string, property: RawVisualProperty, value: string, mode: ThemeMode = 'light'): void {
+    setRawOverrides(selector, [{ property, value }], mode)
+  }
+  function setRawOverrides(selector: string, changes: ReadonlyArray<{ property: RawVisualProperty; value: string }>, mode: ThemeMode = 'light'): void {
     const existing = theme.value.rawOverrides.find((override) => override.selector === selector)
     const candidate: RawElementOverride = { selector, properties: { ...(existing?.properties ?? {}) }, darkProperties: { ...(existing?.darkProperties ?? {}) } }
-    if (mode === 'dark') candidate.darkProperties![property] = value
-    else candidate.properties[property] = value
+    for (const { property, value } of changes) {
+      if (mode === 'dark') candidate.darkProperties![property] = value
+      else candidate.properties[property] = value
+    }
     if (!Object.keys(candidate.darkProperties ?? {}).length) delete candidate.darkProperties
     if (!validateRawElementOverride(candidate).valid) return
     const rawOverrides = theme.value.rawOverrides.filter((override) => override.selector !== selector)
@@ -18,13 +23,16 @@ export function useThemeRawActions({ theme, commit = (candidate) => { theme.valu
   }
 
   function resetRawProperty(selector: string, property: RawVisualProperty, mode: ThemeMode = 'light'): void {
+    resetRawProperties(selector, [property], mode)
+  }
+  function resetRawProperties(selector: string, propertiesToReset: ReadonlyArray<RawVisualProperty>, mode: ThemeMode = 'light'): void {
     const existing = theme.value.rawOverrides.find((override) => override.selector === selector)
     if (!existing) return
     const properties = { ...existing.properties }
     const darkProperties = { ...(existing.darkProperties ?? {}) }
     const selected = mode === 'dark' ? darkProperties : properties
-    if (!(property in selected)) return
-    delete selected[property]
+    if (!propertiesToReset.some((property) => property in selected)) return
+    for (const property of propertiesToReset) delete selected[property]
     const rawOverrides = theme.value.rawOverrides.filter((override) => override.selector !== selector)
       .concat(Object.keys(properties).length > 0 || Object.keys(darkProperties).length > 0 ? [{ selector, properties, ...(Object.keys(darkProperties).length ? { darkProperties } : {}) }] : [])
     commit({ ...cloneTheme(theme.value), rawOverrides })
@@ -58,5 +66,5 @@ export function useThemeRawActions({ theme, commit = (candidate) => { theme.valu
     return true
   }
 
-  return { setRawOverride, resetRawProperty, resetRawOverride, renameRawOverride }
+  return { setRawOverride, setRawOverrides, resetRawProperty, resetRawProperties, resetRawOverride, renameRawOverride }
 }

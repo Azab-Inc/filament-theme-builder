@@ -39,6 +39,7 @@ async function intent(page: Page, client: StdioMcpClient, args: Record<string, u
   expect(operation.operation_id).toMatch(/^[a-f0-9]{64}$/)
   const preview = page.getByRole('dialog', { name: 'Import preview' })
   await expect(preview).toBeVisible({ timeout: 20_000 })
+  await expect(preview.getByRole('button', { name: 'Confirm import' }).or(preview.getByRole('alert'))).toBeVisible({ timeout: 20_000 })
   if (await preview.getByRole('alert').count()) throw new Error(`Relay preview failed: ${await preview.getByRole('alert').innerText()}`)
   if (confirm) {
     await page.getByRole('button', { name: 'Confirm import' }).click()
@@ -70,6 +71,8 @@ test('MCP token operations use browser consent, domain actions, export, persiste
     const frame = page.frameLocator('iframe[title="Filament preview"]')
     await intent(page, client, { pairing_id: pairingId, action: 'set', target: { kind: 'raw', selector: '.fi-sidebar', property: 'background-color' }, value: 'user.color.brandaccent' })
     await expect(frame.locator('.fi-sidebar')).toHaveCSS('background-color', 'rgb(18, 52, 86)')
+    await intent(page, client, { pairing_id: pairingId, action: 'set', target: { kind: 'raw', selector: '.fi-sidebar', property: 'border-top-color' }, value: 'user.color.brandaccent' })
+    await expect(frame.locator('.fi-sidebar')).toHaveCSS('border-top-color', 'rgb(18, 52, 86)')
 
     await intent(page, client, { pairing_id: pairingId, action: 'set', target: { kind: 'raw', selector: '.fi-sidebar', property: 'padding' }, value: '12px' })
     await expect(frame.locator('.fi-sidebar')).toHaveCSS('padding-top', '12px')
@@ -110,7 +113,7 @@ test('MCP token operations use browser consent, domain actions, export, persiste
 
     const stale = status(await client.call('local_theme_token_operation', { pairing_id: pairingId, action: 'set', target: { kind: 'raw', selector: '.fi-sidebar', property: 'opacity' }, value: '0.75' }))
     await expect(page.getByRole('dialog', { name: 'Import preview' })).toBeVisible({ timeout: 20_000 })
-    await page.locator('#toolbar-primary-color').fill('#0f766e')
+    await page.locator('#toolbar-color-segments').fill('#0f766e')
     await page.getByRole('button', { name: 'Confirm import' }).click()
     await expect(page.getByRole('alert')).toContainText(/stale/i)
     await expect.poll(async () => status(await client.call('local_theme_operation_status', { operation_id: stale.operation_id })).status).toBe('rejected')

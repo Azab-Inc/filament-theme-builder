@@ -10,6 +10,7 @@ import { useThemeRawActions } from '@/composables/use-theme-raw-actions'
 import { useThemeOverrideActions } from '@/composables/use-theme-override-actions'
 import { useThemeUserTokens } from '@/composables/use-theme-user-tokens'
 import { useThemeModeLinkActions } from '@/composables/use-theme-mode-link-actions'
+import { useThemeBorderActions } from '@/composables/use-theme-border-actions'
 import { validModeLinkTarget } from '@/utils/mode-link-target-validation'
 import { modeLinkTargetIdentity } from '@/models/mode-link-target.model'
 import { validateRawSelector } from '@/utils/raw-override-validation'
@@ -39,7 +40,7 @@ export function applyThemeRelayIntent(previous: ThemeStateCurrent, intent: Theme
   const context: ThemeStoreContext = { theme, registry, commit: (candidate) => { theme.value = candidate } }
   const foundation = useThemeFoundationActions(context); const palette = useThemePaletteActions(context)
   const raw = useThemeRawActions(context); const override = useThemeOverrideActions(context)
-  const tokens = useThemeUserTokens(context); const links = useThemeModeLinkActions(context)
+  const tokens = useThemeUserTokens(context); const links = useThemeModeLinkActions(context); const borders = useThemeBorderActions(context)
   const mode = intent.mode ?? 'light'; const target = intent.target
   if (intent.action === 'create-color' || intent.action === 'create-palette') {
     if (!isTokenTarget(target) || target.name.length === 0 || typeof intent.value !== 'string') throw new Error('invalid_intent')
@@ -56,11 +57,11 @@ export function applyThemeRelayIntent(previous: ThemeStateCurrent, intent: Theme
   if (!isModeTarget(target) || !validModeLinkTarget(target, registry)) throw new Error('invalid_target')
   const before = JSON.stringify(theme.value)
   if (intent.action === 'link') {
-    if (intent.value !== undefined) setTarget(target, intent.value, mode, foundation, palette, raw, override)
+    if (intent.value !== undefined) setTarget(target, intent.value, mode, foundation, palette, raw, override, borders)
     const result = links.linkModeTarget(target, mode, 'replace'); if (!result.ok) throw new Error(result.error ?? 'invalid_intent'); ensureChanged(before, theme.value); return cloneTheme(theme.value)
   }
   if (intent.action === 'unlink') { links.unlinkMode(modeLinkTargetIdentity(target)); ensureChanged(before, theme.value); return cloneTheme(theme.value) }
-  if (intent.action === 'reset') { resetTarget(theme.value, target, mode, foundation, palette, raw, override); ensureChanged(before, theme.value); return cloneTheme(theme.value) }
+  if (intent.action === 'reset') { resetTarget(theme.value, target, mode, foundation, palette, raw, override, borders); ensureChanged(before, theme.value); return cloneTheme(theme.value) }
   if (intent.value === undefined) throw new Error('missing_value')
   if (isTokenTarget(target)) {
     if (typeof intent.value !== 'string') throw new Error('invalid_value')
@@ -69,16 +70,20 @@ export function applyThemeRelayIntent(previous: ThemeStateCurrent, intent: Theme
     if (!result.ok) throw new Error(result.error)
     return cloneTheme(theme.value)
   }
-  setTarget(target, intent.value, mode, foundation, palette, raw, override)
+  setTarget(target, intent.value, mode, foundation, palette, raw, override, borders)
   ensureChanged(before, theme.value)
   return cloneTheme(theme.value)
 }
 
-function setTarget(target: ModeLinkTarget, value: ThemeValue, mode: 'light' | 'dark', foundation: ReturnType<typeof useThemeFoundationActions>, palette: ReturnType<typeof useThemePaletteActions>, raw: ReturnType<typeof useThemeRawActions>, override: ReturnType<typeof useThemeOverrideActions>): void {
+function setTarget(target: ModeLinkTarget, value: ThemeValue, mode: 'light' | 'dark', foundation: ReturnType<typeof useThemeFoundationActions>, palette: ReturnType<typeof useThemePaletteActions>, raw: ReturnType<typeof useThemeRawActions>, override: ReturnType<typeof useThemeOverrideActions>, borders: ReturnType<typeof useThemeBorderActions>): void {
   if (target.kind === 'raw') return raw.setRawOverride(target.selector, target.property, String(value), mode)
   if (target.kind === 'semantic') {
     const { kind: _kind, ...semantic } = target
     return override.setOverride({ ...semantic, value, ...(mode === 'dark' ? { mode: 'dark' as const } : {}) })
+  }
+  if (target.kind === 'semantic-border') {
+    const borderValue = target.property === 'width' && typeof value === 'string' && Number.isFinite(Number(value)) ? Number(value) : value
+    return borders.setBorderEdge({ ...target, controlId: 'border', value: borderValue, mode })
   }
   if (target.kind === 'foundation') return foundation.setFoundation(`${target.path}.${mode}`, value)
   if (target.kind === 'palette-base') return palette.setPaletteBase(target.name, String(value), mode)
@@ -86,11 +91,12 @@ function setTarget(target: ModeLinkTarget, value: ThemeValue, mode: 'light' | 'd
   throw new Error('unsupported_intent_target')
 }
 
-function resetTarget(state: ThemeStateCurrent, target: ModeLinkTarget, mode: 'light' | 'dark', foundation: ReturnType<typeof useThemeFoundationActions>, palette: ReturnType<typeof useThemePaletteActions>, raw: ReturnType<typeof useThemeRawActions>, override: ReturnType<typeof useThemeOverrideActions>): void {
+function resetTarget(state: ThemeStateCurrent, target: ModeLinkTarget, mode: 'light' | 'dark', foundation: ReturnType<typeof useThemeFoundationActions>, palette: ReturnType<typeof useThemePaletteActions>, raw: ReturnType<typeof useThemeRawActions>, override: ReturnType<typeof useThemeOverrideActions>, borders: ReturnType<typeof useThemeBorderActions>): void {
   const identity = modeLinkTargetIdentity(target)
   if (state.modeLinks?.[identity]?.linked) { resetModeLinkTarget(state, target); delete state.modeLinks[identity]; return }
   if (target.kind === 'raw') raw.resetRawProperty(target.selector, target.property, mode)
   else if (target.kind === 'semantic') override.resetOverride({ ...target, mode })
+  else if (target.kind === 'semantic-border') borders.resetBorderEdge({ ...target, controlId: 'border', mode })
   else if (target.kind === 'foundation') foundation.resetFoundation(`${target.path}.${mode}`)
   else if (target.kind === 'palette-base') foundation.resetFoundation(`palettes.${target.name}.${mode === 'dark' ? 'dark.' : ''}base`)
   else if (target.kind === 'palette-shade') palette.resetPaletteShade(target.name, target.shade, mode)

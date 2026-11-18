@@ -39,8 +39,16 @@ final class LocalThemeTokenOperation extends LocalThemeTool
             $action = $this->boundedString($input['action'] ?? null, 16);
             if ($action === 'discover') {
                 return [
-                    'target_kinds' => ['semantic', 'raw', 'foundation', 'palette-base', 'palette-shade', 'user-color', 'user-palette-base', 'user-palette-shade'],
+                    'target_kinds' => ['semantic', 'semantic-border', 'raw', 'foundation', 'palette-base', 'palette-shade', 'user-color', 'user-palette-base', 'user-palette-shade'],
                     'actions' => ['read', 'preview', 'set', 'reset', 'link', 'unlink', 'create-color', 'create-palette', 'update', 'remove'],
+                    'border_targets' => [
+                        ['id' => 'table.header', 'selectors' => ['.fi-ta-header'], 'sides' => ['top', 'right', 'bottom', 'left'], 'properties' => ['width', 'color', 'style'], 'units' => ['width' => 'px', 'color' => 'css-color', 'style' => ['none', 'solid', 'dashed', 'dotted', 'double']], 'ring_backed' => false],
+                        ['id' => 'table.container', 'selectors' => ['.fi-ta-ctn'], 'sides' => ['top', 'right', 'bottom', 'left'], 'properties' => ['width', 'color', 'style'], 'units' => ['width' => 'px', 'color' => 'css-color', 'style' => ['none', 'solid', 'dashed', 'dotted', 'double']], 'ring_backed' => true],
+                        ['id' => 'form.product-name', 'selectors' => ['.fi-input-wrp'], 'sides' => ['top', 'right', 'bottom', 'left'], 'properties' => ['width', 'color', 'style'], 'units' => ['width' => 'px', 'color' => 'css-color', 'style' => ['none', 'solid', 'dashed', 'dotted', 'double']], 'ring_backed' => true],
+                        ['id' => 'surface.section', 'selectors' => ['.fi-section'], 'sides' => ['top', 'right', 'bottom', 'left'], 'properties' => ['width', 'color', 'style'], 'units' => ['width' => 'px', 'color' => 'css-color', 'style' => ['none', 'solid', 'dashed', 'dotted', 'double']], 'ring_backed' => true],
+                        ['id' => 'surface.card', 'selectors' => ['.fi-ta-ctn'], 'sides' => ['top', 'right', 'bottom', 'left'], 'properties' => ['width', 'color', 'style'], 'units' => ['width' => 'px', 'color' => 'css-color', 'style' => ['none', 'solid', 'dashed', 'dotted', 'double']], 'ring_backed' => true],
+                    ],
+                    'border_read_fields' => ['targetId', 'edge', 'property', 'scope', 'effectiveValues', 'provenance', 'explicit'],
                     'read_boundary' => 'local_theme_export',
                     'mutation_boundary' => 'browser_theme_intent_preview_revision_grant',
                 ];

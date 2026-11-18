@@ -78,6 +78,14 @@ Behavior-preserving refactor of the builder's own chrome against [builder/src/st
 
 Spec: [Builder Stylesheet Tailwind Compliance](./docs/superpowers/specs/2026-11-18-builder-stylesheet-tailwind-compliance-design.md); plan: [implementation](./docs/superpowers/plans/2026-11-18-builder-stylesheet-tailwind-compliance.md).
 
+## 7. Border-side controls
+
+Added 2026-11-18 after verifying that current border controls had no top/right/bottom/left selection. [FTB-084](./TICKETS.md#ftb-084) / [#88](https://github.com/Azab-Inc/filament-theme-builder/issues/88) is the umbrella; both slices now have uncommitted implementations and all three records are Open / Testing in project #30. The full-unit gate remains blocked by concurrent stylesheet token naming; see [verification](./docs/verification/ftb-084-border-sides.md). [Spec](./docs/superpowers/specs/2026-11-18-border-side-controls-design.md), [issue index](./ISSUES.md).
+
+1. [FTB-085](./TICKETS.md#ftb-085) / [#87](https://github.com/Azab-Inc/filament-theme-builder/issues/87) — Verify existing FTB-006/022 evidence; inventory native border-bearing targets and coordinate FTB-071. Settle the schema/migration and precedence contract, then deliver semantic controls with preview, persistence/export and MCP verification. Recommended within builder/coverage foundations before FTB-039; unrelated chart work is not a prerequisite.
+2. [FTB-086](./TICKETS.md#ftb-086) / [#86](https://github.com/Azab-Inc/filament-theme-builder/issues/86) — After FTB-085, extend raw Inspector using its shared edge semantics. Verify existing FTB-008/022/058 integration and coordinate FTB-052/062 guards/reset without treating their unimplemented features as present.
+3. Close FTB-084 only after both vertical slices meet all acceptance and actual verification requirements. Do not treat this documentation task as feature implementation or gate completion.
+
 ## Execution rules
 
 Use each ticket's acceptance criteria as authoritative, preserve light/dark isolation, use TDD and applicable real Compose Playwright coverage, and maintain MCP discovery, authorization, confirmation and actual-client verification where required. Keep CSS-addressable chart appearance separate from renderer-backed chart types and series palettes; the latter require generated PHP/config and mode-sync integration, not CSS-only claims. Recheck live issue state and local evidence before starting or closing; this snapshot does not supersede tracker policy.

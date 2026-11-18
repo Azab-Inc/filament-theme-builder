@@ -45,6 +45,10 @@ abstract class LocalThemeStatusTool extends LocalThemeTool
                     $value = json_decode($json, true);
                     if (is_array($value)) {
                         unset($value['version']);
+                        if (is_string($value['json'] ?? null)) {
+                            $export = json_decode($value['json'], true);
+                            if (is_array($export) && is_array($export['border_read'] ?? null)) $value['border_read'] = $export['border_read'];
+                        }
                         $result['result'] = $value;
                     }
                 }

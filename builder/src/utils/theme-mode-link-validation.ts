@@ -8,7 +8,7 @@ import { KNOWN_EXPLICIT_PATHS } from '@/utils/foundation-validation-constants.ut
 import { readStoredModeLinkValue, legacyModeLinkTarget } from '@/utils/mode-link-stored-values'
 import type { ThemeStateCurrent } from '@/models/theme.model'
 
-const identityPattern = /^(?:foundation\.(?:surfaces|borders|text)\.[a-z-]+|user\.color\.[a-z][a-z0-9-]{0,31}|palette\.(?:primary|success|warning|danger|info|gray)\.(?:base|shade\.(?:50|100|200|300|400|500|600|700|800|900|950))|raw\|[^|]{1,160}\|[a-z-]+|semantic\|[a-z0-9.-]{1,120})$/
+const identityPattern = /^(?:foundation\.(?:surfaces|borders|text)\.[a-z-]+|user\.color\.[a-z][a-z0-9-]{0,31}|palette\.(?:primary|success|warning|danger|info|gray)\.(?:base|shade\.(?:50|100|200|300|400|500|600|700|800|900|950))|raw\|[^|]{1,160}\|[a-z-]+|semantic\|[a-z0-9.-]{1,120}|semantic-border\|[^|]{1,2000})$/
 
 export function validateModeLinks(value: unknown, tokens: UserTokens | undefined, state?: ThemeStateCurrent): string | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return 'Mode links must be an object.'

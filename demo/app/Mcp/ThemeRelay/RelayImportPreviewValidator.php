@@ -20,8 +20,8 @@ final class RelayImportPreviewValidator
 
             return $item;
         }, $allowed), true)
-            && in_array($preview['sourceVersion'], [1, 2, 3, 4, 5, 6, 7], true)
-            && in_array($preview['targetVersion'], [4, 5, 6, 7], true) && is_array($preview['migrationPath'])
+            && in_array($preview['sourceVersion'], [1, 2, 3, 4, 5, 6, 7, 8], true)
+            && in_array($preview['targetVersion'], [4, 5, 6, 7, 8], true) && is_array($preview['migrationPath'])
            && array_filter($preview['migrationPath'], static fn (mixed $version): bool => ! is_int($version)) === []
            && is_string($preview['displayName']) && mb_strlen($preview['displayName']) <= 120
            && is_array($preview['summary']) && count($preview['summary']) <= 32

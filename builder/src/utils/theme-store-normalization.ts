@@ -39,7 +39,7 @@ export function isVersionFour(value: unknown): value is ThemeStateV4 {
 }
 
 export function isCurrentVersionFive(value: unknown): value is ThemeStateCurrent {
-  return isRecord(value) && (value.schemaVersion === 5 || value.schemaVersion === 6 || value.schemaVersion === 7) && Array.isArray(value.rawOverrides) && Array.isArray(value.padding)
+  return isRecord(value) && (value.schemaVersion === 5 || value.schemaVersion === 6 || value.schemaVersion === 7 || value.schemaVersion === 8) && Array.isArray(value.rawOverrides) && Array.isArray(value.padding)
 }
 
 export function isLegacyVersionThree(value: unknown): value is ThemeStateV3 {

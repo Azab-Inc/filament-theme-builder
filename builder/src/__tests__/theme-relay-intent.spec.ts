@@ -19,6 +19,16 @@ describe('canonical relay token intents', () => {
     expect(final.rawOverrides[0]?.darkProperties?.color).toBe('#abcdef')
   })
 
+  it('applies and resets semantic border intents through the shared mutation boundary', () => {
+    const registry = createThemeRegistry()
+    const target = { kind: 'semantic-border' as const, targetId: 'table.container', edge: 'bottom' as const, property: 'width' as const, scope: 'global' as const }
+    const set = applyThemeRelayIntent(createDefaultCurrentThemeState(), { schemaVersion: 1, kind: 'theme-intent', action: 'set', target, mode: 'dark', value: 0 }, registry)
+    expect(set.borderEdges[0]).toMatchObject({ darkValue: 0 })
+    expect(set.borderEdges[0]?.value).toBeUndefined()
+    const reset = applyThemeRelayIntent(set, { schemaVersion: 1, kind: 'theme-intent', action: 'reset', target, mode: 'dark' }, registry)
+    expect(reset.borderEdges).toEqual([])
+  })
+
   it('applies transparent through the same semantic, foundation, and raw relay validators', () => {
     const registry = createThemeRegistry(); const initial = createDefaultCurrentThemeState()
     const semantic = applyThemeRelayIntent(initial, { schemaVersion: 1, kind: 'theme-intent', action: 'set', target: { kind: 'semantic', targetId: 'form.product-name', controlId: 'background', scope: 'global' }, mode: 'light', value: 'transparent' }, registry)

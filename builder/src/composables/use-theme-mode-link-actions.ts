@@ -35,7 +35,7 @@ export function useThemeModeLinkActions(context: ThemeStoreContext) {
   function bindingForModeTarget(target: ModeLinkTarget, activeMode: ThemeMode): ModeLinkBinding {
     const identity = modeLinkTargetIdentity(target)
     const value = readModeLinkTarget(context.theme.value, target, activeMode, context.registry)
-    const label = target.kind === 'raw' ? `${target.property} (${target.selector})` : target.kind === 'semantic' ? `${target.targetId} ${target.controlId} ${target.scope} ${target.stateId ?? ''}` : target.kind === 'foundation' ? target.path : `${target.name} ${target.kind}${'shade' in target ? ` ${target.shade}` : ''}`
+    const label = target.kind === 'raw' ? `${target.property} (${target.selector})` : target.kind === 'semantic' ? `${target.targetId} ${target.controlId} ${target.scope} ${target.stateId ?? ''}` : target.kind === 'semantic-border' ? `${target.targetId} border ${target.edge} ${target.property}` : target.kind === 'foundation' ? target.path : `${target.name} ${target.kind}${'shade' in target ? ` ${target.shade}` : ''}`
     return { identity, label, linked: isModeLinked(identity), disabled: value === undefined || value === '', toggle: () => toggleModeTargetInteractive(target, activeMode) }
   }
   return { isModeLinked, unlinkMode, linkModeTarget, toggleModeTargetInteractive, bindingForModeTarget }

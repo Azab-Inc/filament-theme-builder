@@ -3,8 +3,9 @@ import { createPinia, setActivePinia } from 'pinia'
 import { useThemeStore } from '@/stores/theme'
 import { useThemeImport } from '@/composables/use-theme-import'
 import { digestBytes } from '@/utils/theme-import-bytes'
+import { createDefaultCurrentThemeState } from '@/utils/foundation-defaults'
 
-const json = '{"schemaVersion":1,"colors":{"primary":"#123456"}}'
+const json = JSON.stringify(createDefaultCurrentThemeState())
 beforeEach(() => { localStorage.clear(); setActivePinia(createPinia()) })
 
 describe('relay import confirmation', () => {
@@ -29,10 +30,11 @@ describe('relay import confirmation', () => {
   it('commits a fresh theme once and retries a lost acknowledgement idempotently', async () => {
     const store = useThemeStore(); const model = useThemeImport(store); const relay = relayStub()
     relay.publishImportResult.mockRejectedValueOnce(new Error('lost acknowledgement'))
+    store.createTheme()
     await model.receiveRelayPayload(await payload(), relay as never)
-    expect(store.themes).toHaveLength(1)
+    expect(store.themes).toHaveLength(2)
     expect(await model.confirm()).toMatchObject({ ok: false })
-    expect(store.activeThemeName).toBe('Relay theme'); expect(store.themes).toHaveLength(2)
+    expect(store.activeThemeName).toBe('Relay theme'); expect(store.themes).toHaveLength(3)
     model.cancel(); expect(model.state.open).toBe(true)
     expect(await model.confirm()).toMatchObject({ ok: true })
     expect(store.themes.filter((theme) => theme.id === `import-${'c'.repeat(64)}`)).toHaveLength(1)
@@ -40,7 +42,8 @@ describe('relay import confirmation', () => {
   })
 
   it('rejects a duplicate confirmation while the first apply authorization is pending', async () => {
-    const model = useThemeImport(useThemeStore()); const relay = relayStub()
+    const store = useThemeStore(); const model = useThemeImport(store); const relay = relayStub()
+    store.createTheme()
     let release!: (grant: Awaited<ReturnType<typeof relay.authorizeApply>>) => void
     relay.authorizeApply.mockImplementationOnce(() => new Promise((resolve) => { release = resolve }))
     await model.receiveRelayPayload(await payload(), relay as never)
@@ -48,6 +51,7 @@ describe('relay import confirmation', () => {
     expect(relay.authorizeApply).toHaveBeenCalledOnce()
     const [operationId, digest, revision, displayName] = relay.authorizeApply.mock.calls[0]!
     release({ version: 1, status: 'pending', grantId: 'f'.repeat(64), grantExpiresAt: Date.now() + 4_000, operationId, digest, revision, displayName })
+    await new Promise((resolve) => setTimeout(resolve, 0))
     expect(await first).toMatchObject({ ok: true })
   })
 

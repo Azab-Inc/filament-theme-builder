@@ -176,8 +176,8 @@ domain, resources, and relationship workflows.
   JPEG/PNG and submissions are not persisted. The FTB-006 semantic
   registry/inheritance remains partial for native themability, with the Product
   name text input as the single verified editable target. `form.product-name`
-  maps `.fi-fo-text-input .fi-input` to `background-color`; Global → Component
-  → Variant → State (focus) inheritance, reset-to-inherit, forged-scope
+  maps `.fi-input-wrp` to `background-color`; Global → Component → State
+  (focus-within) inheritance, reset-to-inherit, forged-scope
   rejection, and foundation preservation are covered by the builder unit tests
   and the Compose Playwright forms acceptance test. The registry also covers
   every visually distinct Filament 5.9 vendor/runtime surface with a distinct
@@ -215,8 +215,8 @@ TagsInput roots from the installed Filament vendor source.
 Selectors were verified against the running demo's Filament `v5.9.0` markup by
 role/label/context assertions in `e2e/demo-showcase.spec.ts`; registry and
 lookup evidence are in `builder/src/__tests__/theme-registry.spec.ts`. These
-production form entries are selector-only coverage: they intentionally expose
-empty controls, variants, and states because no native Filament theme control
+  production form entries are selector-only coverage: they intentionally expose
+  empty controls and only verified states because no native Filament theme control
 mapping has been proven. Resolver/reset/parent-change behavior uses the
 separate `form.test.fixture` in `builder/src/__tests__/theme-resolver.spec.ts`;
 that deterministic fixture remains test-only; the Product name target is the
@@ -236,6 +236,18 @@ forced-state controls are claimed.
   Compact/Default/Spacious changes are measured on the native Products,
   Orders, and Inventory fixtures in `e2e/theme-foundations.spec.ts` without
   reloads or non-GET requests. No global Filament density variable is claimed.
+- **FTB-085/086 border ownership:** the verified border catalog is limited to
+  `table.header` → `.fi-ta-header`, `table.container` → `.fi-ta-ctn`,
+  `form.product-name` → `.fi-input-wrp`, `surface.section` → `.fi-section`,
+  and `surface.card` → `.fi-ta-ctn`. The product-name target supports the
+  global wrapper, component `form` wrapper, hover wrapper, and focus wrapper
+  `:focus-within` state; no variant selector is advertised because the running
+  fixture exposes no verified variant class. Physical border rules remain active
+  during focus; ring suppression is emitted separately. Raw dark-only values
+  inherit only when a light value exists. Actual computed ownership evidence is
+  in `e2e/ftb-085-border-side-controls.spec.ts`; MCP discovery/read evidence is
+  in `e2e/ftb-085-border-mcp.spec.ts`. Tailwind export parity remains pending
+  fresh-fixture evidence and is not claimed complete.
 - **FTB-013 infolists:** `InfolistsShowcase` provides `CustomerProfileInfolist`,
   `OrderDetailsInfolist`, and `ProductDetailsInfolist` as named schemas on the
   existing showcase page (not separate CRUD pages). Native entry

@@ -84,7 +84,7 @@ function isThemeStateShape(value: unknown): value is ThemeState {
 }
 
 function isCanonicalThemeStateShape(value: unknown): value is ThemeState {
-  return isRecord(value) && (value.schemaVersion === 3 || value.schemaVersion === 4 || value.schemaVersion === 5 || value.schemaVersion === 6 || value.schemaVersion === 7) && isRecord(value.colors) && typeof value.colors.primary === 'string' && isRecord(value.foundations)
+  return isRecord(value) && (value.schemaVersion === 3 || value.schemaVersion === 4 || value.schemaVersion === 5 || value.schemaVersion === 6 || value.schemaVersion === 7 || value.schemaVersion === 8) && isRecord(value.colors) && typeof value.colors.primary === 'string' && isRecord(value.foundations)
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

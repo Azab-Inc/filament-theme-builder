@@ -9,6 +9,7 @@ const keys: Record<ImportVersion, string[]> = {
   5: ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding', 'padding'],
   6: ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding', 'padding'],
   7: ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding', 'padding', 'modeLinks'],
+  8: ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding', 'padding', 'modeLinks', 'borderEdges'],
 }
 
 export function validateImportDocument(value: unknown): ValidationResult {
@@ -16,7 +17,7 @@ export function validateImportDocument(value: unknown): ValidationResult {
   if ('theme' in value && !('schemaVersion' in value)) return { valid: false, category: 'invalid_schema_shape', message: 'Theme import envelope is not supported' }
   if (!('schemaVersion' in value)) return { valid: false, category: 'missing_schema_version', message: 'Theme import schemaVersion is required' }
   const version = value.schemaVersion
-   if (version !== 1 && version !== 2 && version !== 3 && version !== 4 && version !== 5 && version !== 6 && version !== 7) return { valid: false, category: 'unsupported_schema_version', message: 'Unsupported theme schema version' }
+   if (version !== 1 && version !== 2 && version !== 3 && version !== 4 && version !== 5 && version !== 6 && version !== 7 && version !== 8) return { valid: false, category: 'unsupported_schema_version', message: 'Unsupported theme schema version' }
   const allowed = new Set(keys[version])
   if (Object.keys(value).some((key) => !allowed.has(key))) return { valid: false, category: 'invalid_schema_shape', message: 'Theme import contains unknown fields' }
   return { valid: true, version }

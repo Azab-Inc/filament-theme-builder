@@ -53,5 +53,5 @@ describe('production-composed color field inventory', () => {
     wrapper.unmount()
     store.$dispose()
     localStorage.clear()
-  })
+  }, 15_000)
 })

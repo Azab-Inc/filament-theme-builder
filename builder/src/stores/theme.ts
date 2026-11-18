@@ -21,6 +21,7 @@ import { useThemeModeLinkActions } from '@/composables/use-theme-mode-link-actio
 import { applyModeLinks } from '@/utils/apply-mode-links'
 import { validateFoundationState } from '@/utils/foundation-validation'
 import { useThemeRelayIntentApplication } from '@/composables/use-theme-relay-intent-application'
+import { useThemeBorderActions } from '@/composables/use-theme-border-actions'
 
 const storageKey = 'ftb-theme'
 const recoveryStorageKey = 'ftb-theme-legacy-recovery'
@@ -83,7 +84,7 @@ export const useThemeStore = defineStore('theme', () => {
     activeThemeName: computed(() => localPersistence.themes.value.find(({ id }) => id === localPersistence.activeThemeId.value)?.name ?? ''),
     storageError: computed(() => localPersistence.storageError.value), canUndo: history.canUndo, canRedo: history.canRedo,
     ...useThemeFoundationActions(context), ...useThemePaletteActions(context), ...overrideActions,
-    ...useThemePaddingActions(context), ...rawActions,
+    ...useThemePaddingActions(context), ...rawActions, ...useThemeBorderActions(context),
     ...useThemeIconBrandingActions(context), ...useThemeUserTokens(context), ...modeLinkActions, applyRelayIntent,
     ...useThemeProjection(context),
     ...recovery,

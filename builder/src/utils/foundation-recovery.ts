@@ -19,12 +19,13 @@ export function restoreLegacyTheme(value: unknown): ThemeStateCurrent | null {
   const foundations = { ...mergeLegacyFoundations(defaults.foundations, legacy.foundations), userTokens: defaults.foundations.userTokens! }
   const rawOverrides = validateRawOverrides(legacy.rawOverrides).valid ? structuredClone(legacy.rawOverrides) : []
   const restored: ThemeStateCurrent = {
-    schemaVersion: 7,
+    schemaVersion: 8,
     colors: { primary: foundations.palettes.primary.base },
     foundations,
     overrides: Array.isArray(legacy.overrides) ? structuredClone(legacy.overrides) as ThemeOverride[] : [],
     rawOverrides,
     padding: [],
+    borderEdges: [],
     customCss: typeof legacy.customCss === 'string' ? legacy.customCss : '',
     icons: defaults.icons,
     branding: defaults.branding,

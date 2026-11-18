@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createDefaultThemeState } from '@/utils/foundation-defaults'
+import { createDefaultCurrentThemeState, createDefaultThemeState } from '@/utils/foundation-defaults'
 import { exportVanillaCss } from '@/utils/vanilla-css-export'
 
 describe('vanilla CSS semantic overrides', () => {
@@ -48,7 +48,7 @@ describe('vanilla CSS semantic overrides', () => {
   })
 
   it('preserves global, component, and variant selector specificity', () => {
-    const theme = createDefaultThemeState()
+    const theme = createDefaultCurrentThemeState()
     theme.overrides = [
       { targetId: 'button.primary', controlId: 'background', scope: 'global', value: '#111111' },
       { targetId: 'button.primary', controlId: 'background', scope: 'component', componentId: 'button', value: '#222222' },
@@ -85,5 +85,38 @@ describe('vanilla CSS semantic overrides', () => {
 
     expect(css).toContain('.fi-fo-text-input .fi-input { padding-top: 8px !important; padding-right: 0 !important; }')
     expect(css).not.toContain('.fi-ta-cell {')
+  })
+
+  it('exports sparse border edges with the same light/dark physical projection as preview', () => {
+    const theme = createDefaultCurrentThemeState()
+    theme.borderEdges = [
+      { targetId: 'table.container', controlId: 'border', edge: 'bottom', property: 'width', scope: 'global', value: 2, darkValue: 4 },
+      { targetId: 'table.container', controlId: 'border', edge: 'bottom', property: 'color', scope: 'global', value: '#123456' },
+    ]
+    const { css, errors } = exportVanillaCss(theme)
+    expect(errors).toEqual([])
+    expect(css).toContain(':where(html:not(.dark)) .fi-ta-ctn {')
+    expect(css).toContain('border-bottom-width: 2px !important')
+    expect(css).toContain(':where(html.dark) .fi-ta-ctn {')
+    expect(css).toContain('border-bottom-width: 4px !important')
+    expect(css).toContain('border-bottom-color: #123456 !important')
+  })
+
+  it('exports a fresh fixture with fully explicit physical border parity', () => {
+    const theme = createDefaultCurrentThemeState()
+    theme.borderEdges = [
+      { targetId: 'table.container', controlId: 'border', edge: 'top', property: 'width', scope: 'global', value: 1, darkValue: 2 },
+      { targetId: 'table.container', controlId: 'border', edge: 'right', property: 'style', scope: 'global', value: 'dashed', darkValue: 'dashed' },
+      { targetId: 'table.container', controlId: 'border', edge: 'bottom', property: 'style', scope: 'global', value: 'none' },
+      { targetId: 'table.container', controlId: 'border', edge: 'left', property: 'color', scope: 'global', value: '#123456', darkValue: '#654321' },
+    ]
+    const { css, errors } = exportVanillaCss(theme)
+    expect(errors).toEqual([])
+    expect(css).toContain('border-top-width: 1px !important')
+    expect(css).toContain('border-top-width: 2px !important')
+    expect(css).toContain('border-right-style: dashed !important')
+    expect(css).toContain('border-bottom-style: none !important')
+    expect(css).toContain('border-left-color: #123456 !important')
+    expect(css).toContain('border-left-color: #654321 !important')
   })
 })

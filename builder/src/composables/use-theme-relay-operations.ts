@@ -2,6 +2,7 @@ import type { OperationNoticeDto } from '@/dtos/theme-relay.dto'
 import type { useThemeStore } from '@/stores/theme'
 import type { BrowserPayload, BrowserRelay } from '@/composables/use-theme-relay'
 import { serializeCanonicalTheme } from '@/utils/theme-serialization'
+import { readThemeBorders } from '@/utils/theme-border-read'
 
 type ThemeStore = ReturnType<typeof useThemeStore>
 type ImportHandoff = (payload: BrowserPayload, relay: BrowserRelay) => Promise<void>
@@ -24,7 +25,8 @@ export async function handleRelayNotices(notices: OperationNoticeDto[], relay: B
 async function publishExport(notice: OperationNoticeDto, relay: BrowserRelay, store: ThemeStore): Promise<void> {
   const state = notice.themeId ? store.getThemeState(notice.themeId) : null
   if (!state || state.customCss.trim()) { await relay.reject(notice.operationId, 'theme_unavailable'); return }
-  const json = JSON.stringify(serializeCanonicalTheme(state))
+  const canonical = serializeCanonicalTheme(state)
+  const json = JSON.stringify({ ...canonical, border_read: readThemeBorders(state) })
   if (new TextEncoder().encode(json).byteLength > 1_048_576) { await relay.reject(notice.operationId, 'theme_unavailable'); return }
   await relay.publishExportResult(notice.operationId, json)
 }

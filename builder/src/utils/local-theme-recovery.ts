@@ -47,7 +47,7 @@ function readJson(value: string | null): unknown {
   try { return value === null ? null : JSON.parse(value) as unknown } catch { return null }
 }
 
-function needsMigration(value: unknown): boolean { return isRecord(value) && value.schemaVersion !== 7 }
+function needsMigration(value: unknown): boolean { return isRecord(value) && value.schemaVersion !== 8 }
 function needsHistoryMigration(value: unknown): boolean { return isRecord(value) && Array.isArray(value.snapshots) && value.snapshots.some(needsMigration) }
 function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value) }
 

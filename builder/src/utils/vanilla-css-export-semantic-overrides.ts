@@ -4,6 +4,7 @@ import { SUPPORTED_PSEUDO_STATES } from '@/models/theme-registry.model'
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { projectPadding } from '@/utils/padding-projection'
 import { userTokenCssValue } from '@/utils/user-token-css'
+import { projectBorderEdges } from '@/utils/border-edge-projection'
 
 const semanticMappings = new Map<string, SemanticMapping>([
   ['button.primary\u0000background', { selector: '.fi-btn.fi-color-primary', globalSelector: '.fi-btn', componentSelector: '.fi-btn', property: 'background-color' }],
@@ -31,7 +32,8 @@ export function renderSemanticOverrides(theme: ThemeStateInput, errors: string[]
       catch (error) { errors.push(error instanceof Error ? error.message : 'Unsupported semantic override'); return [] }
      }).filter(Boolean).join('\n')
      const padding = theme.schemaVersion >= 5 ? renderPadding(theme as unknown as import('@/models/theme.model').ThemeStateCurrent, errors) : ''
-  return [semantic, padding].filter(Boolean).join('\n')
+   const border = theme.schemaVersion >= 8 ? (['light', 'dark'] as const).flatMap((mode) => projectBorderEdges(theme as import('@/models/theme.model').ThemeStateCurrent, mode).map((rule) => `${rule.selector} { ${Object.entries(rule.declarations).map(([property, value]) => `${property}: ${value} !important;`).join(' ')} }`)).join('\n') : ''
+   return [semantic, padding, border].filter(Boolean).join('\n')
 }
 
 function modeSelector(mode: 'light' | 'dark', selector: string): string {

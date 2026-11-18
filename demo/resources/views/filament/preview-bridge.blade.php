@@ -197,17 +197,17 @@
             && (branding.brandTypography.kind !== 'custom' || branding.brandTypography.name === branding.brandTypography.family)
             && ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl', 'full'].includes(branding.contentWidth)
             && ['collapsible', 'fully-collapsible', 'top-navigation'].includes(branding.sidebar);
-        const rawVisualProperties = ['color', 'background-color', 'border-color', 'border-width', 'border-radius', 'box-shadow', 'opacity', 'padding', 'margin', 'font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'text-decoration', 'border-style', 'text-align', 'white-space'];
+        const rawVisualProperties = ['color', 'background-color', 'border-color', 'border-width', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width', 'border-top-style', 'border-right-style', 'border-bottom-style', 'border-left-style', 'border-radius', 'box-shadow', 'opacity', 'padding', 'margin', 'font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'text-decoration', 'border-style', 'text-align', 'white-space'];
         const rawSelectorPattern = /^(?:\.fi-[A-Za-z0-9_-]+)(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus))?(?:\s+\.fi-[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus))?)*$/;
         const rawValuePattern = /[;{}<>]|\/\*|\*\/|url\s*\(|@(?:import|supports|media|layer|font-face)|expression\s*\(|javascript\s*:/i;
         const columnSelectorPattern = /^\.fi-ta :is\(\.fi-ta-header-cell, \.fi-ta-cell\):nth-child\(([1-9]|[12]\d|3[0-2])\)$/;
         const isSafeRawSelector = (value) => typeof value === 'string' && (rawSelectorPattern.test(value) || columnSelectorPattern.test(value)) && !/\.fi-ta-(?:header-cell|cell)-[^\s]+\.(?!fi-)/.test(value);
         const isSafeRawPropertyValue = (property, value, tokens) => {
             if (typeof value !== 'string' || value.length === 0 || value.length > 300 || rawValuePattern.test(value)) return false;
-            if (['color', 'background-color', 'border-color'].includes(property) && /^var\(--ftb-palette-(?:primary|success|warning|danger|info|gray)-(?:50|100|200|300|400|500|600|700|800|900|950)\)$/.test(value)) return true;
-            if (['color', 'background-color', 'border-color'].includes(property) && value.startsWith('user.')) return resolveUserToken(value, tokens, 'light') !== null;
-            if (['color', 'background-color', 'border-color'].includes(property)) return /^(?:#[\da-f]{3,8}|(?:rgb|hsl|hwb|lab|lch|oklab|oklch)a?\([^;{}()]+\)|transparent|var\(--(?:color-)?(?:primary|success|warning|danger|info|gray)(?:-(?:50|100|200|300|400|500|600|700|800|900|950))?\))$/i.test(value);
-            if (['border-width', 'border-radius', 'font-size', 'letter-spacing'].includes(property)) return /^(?:0|(?:0|[1-9]\d{0,3})(?:\.\d+)?(?:px|rem|em|ex|ch|lh|rlh|vw|vh|vmin|vmax|%)?)$/i.test(value);
+            if (['color', 'background-color', 'border-color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color'].includes(property) && /^var\(--ftb-palette-(?:primary|success|warning|danger|info|gray)-(?:50|100|200|300|400|500|600|700|800|900|950)\)$/.test(value)) return true;
+            if (['color', 'background-color', 'border-color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color'].includes(property) && value.startsWith('user.')) return resolveUserToken(value, tokens, 'light') !== null;
+            if (['color', 'background-color', 'border-color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color'].includes(property)) return /^(?:#[\da-f]{3,8}|(?:rgb|hsl|hwb|lab|lch|oklab|oklch)a?\([^;{}()]+\)|transparent|var\(--(?:color-)?(?:primary|success|warning|danger|info|gray)(?:-(?:50|100|200|300|400|500|600|700|800|900|950))?\))$/i.test(value);
+            if (['border-width', 'border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width', 'border-radius', 'font-size', 'letter-spacing'].includes(property)) return /^(?:0|(?:0|[1-9]\d{0,3})(?:\.\d+)?(?:px|rem|em|ex|ch|lh|rlh|vw|vh|vmin|vmax|%)?)$/i.test(value);
             if (['padding', 'margin'].includes(property)) return /^(?:0|(?:0|[1-9]\d{0,3})(?:\.\d+)?(?:px|rem|em|ex|ch|lh|rlh|vw|vh|vmin|vmax|%)?)(?:\s+(?:0|(?:0|[1-9]\d{0,3})(?:\.\d+)?(?:px|rem|em|ex|ch|lh|rlh|vw|vh|vmin|vmax|%)?)){0,3}$/i.test(value);
             if (property === 'opacity') return /^\d+(?:\.\d+)?$/.test(value) && Number(value) >= 0 && Number(value) <= 1;
             if (property === 'font-family') return /^(?:[A-Za-z][A-Za-z0-9 _.-]{0,63})(?:\s*,\s*(?:[A-Za-z][A-Za-z0-9 _.-]{0,63}))*$/.test(value);
@@ -215,7 +215,7 @@
             if (property === 'line-height') return /^(?:normal|(?:0|\d+(?:\.\d+)?)(?:px|rem|em|%)?)$/.test(value);
             if (property === 'box-shadow') return /^(?:none|(?:inset\s+)?(?:0|-?\d+(?:\.\d+)?(?:px|rem|em))(?:\s+(?:0|-?\d+(?:\.\d+)?(?:px|rem|em))){1,3}(?:\s+(?:#[\da-f]{3,8}|rgba?\([^;{}()]+\)|transparent))?)$/i.test(value);
             if (property === 'text-decoration') return /^(?:none|underline|overline|line-through)$/.test(value);
-            if (property === 'border-style') return /^(?:none|solid|dashed|dotted|double)$/.test(value);
+            if (['border-style', 'border-top-style', 'border-right-style', 'border-bottom-style', 'border-left-style'].includes(property)) return /^(?:none|solid|dashed|dotted|double)$/.test(value);
             if (property === 'text-align') return /^(?:left|right|center|justify|start|end)$/.test(value);
             if (property === 'white-space') return /^(?:normal|nowrap|pre|pre-wrap|pre-line|break-spaces)$/.test(value);
             return false;
@@ -235,6 +235,27 @@
                 const selectors = rule.stateId ? (target.stateSelectors[rule.stateId] ?? []) : rule.variantId ? (target.variantSelectors[rule.variantId] ?? []) : target.selectors;
                 if (!selectors.includes(rule.selector) || Object.keys(rule).some((key) => !['targetId', 'selector', 'declarations', 'sourceContext', 'variantId', 'stateId'].includes(key)) || !isRecord(rule.declarations) || !isRecord(rule.sourceContext) || Object.keys(rule.declarations).length === 0) return false;
                 return Object.entries(rule.declarations).every(([edge, value]) => ['top', 'right', 'bottom', 'left'].includes(edge) && isSafePaddingValue(value) && hasExplicitPaddingEdge(theme, target, rule, edge));
+            });
+        };
+        const borderTargetSelectors = new Map([
+            ['table.header', ['.fi-ta-header']],
+            ['table.container', ['.fi-ta-ctn']],
+            ['form.product-name', ['.fi-input-wrp']],
+            ['surface.section', ['.fi-section']],
+            ['surface.card', ['.fi-ta-ctn']],
+        ]);
+        const ringBackedRawSelectors = new Set(['.fi-input-wrp', '.fi-section', '.fi-ta-ctn']);
+        const physicalRawBorderProperties = new Set(['border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'border-top-style', 'border-right-style', 'border-bottom-style', 'border-left-style']);
+        const borderProperties = new Set(['border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'border-top-style', 'border-right-style', 'border-bottom-style', 'border-left-style', '--tw-ring-shadow']);
+        const isSafeBorderValue = (property, value) => typeof value === 'string' && value.length <= 300 && !/[;{}<>]/.test(value) && (property === '--tw-ring-shadow' ? value === '0 0 #0000' : /^(?:0(?:px)?|[1-9]\d{0,3}(?:\.\d+)?px|#[\da-f]{3,8}|transparent|none|solid|dashed|dotted|double|var\(--[a-z\d-]+\)|color-mix\(in oklab, .+\))$/i.test(value));
+        const isAcceptedBorderSelector = (selectors, selector) => selectors.includes(selector) || selectors.some((base) => selector === `${base}:hover` || (base === '.fi-input-wrp' && selector === `${base}:focus-within`));
+        const isAcceptedBorderProjection = (projection, activeMode) => {
+            if (!isRecord(projection) || projection.schemaVersion !== 1 || projection.mode !== activeMode || !Array.isArray(projection.rules)) return false;
+            return projection.rules.every((rule) => {
+                const selectors = borderTargetSelectors.get(rule?.targetId);
+                if (!selectors || !isRecord(rule) || typeof rule.selector !== 'string' || !isRecord(rule.declarations) || Object.keys(rule).some((key) => !['targetId', 'selector', 'declarations'].includes(key))) return false;
+                const base = rule.selector.replace(/:not\(:focus\):not\(:focus-within\):not\(:focus-visible\)$/, '').replace(/^:where\(html(?:\.dark|:not\(\.dark\))\) /, '');
+                return isAcceptedBorderSelector(selectors, base) && Object.keys(rule.declarations).every((property) => borderProperties.has(property)) && Object.entries(rule.declarations).every(([property, value]) => isSafeBorderValue(property, value));
             });
         };
         const isValidPaddingContext = (target, rule) => {
@@ -269,9 +290,10 @@
             return keys.length > 0 && Object.keys(record).length === keys.length && keys.every((key) => Object.prototype.hasOwnProperty.call(record, key)) && isPaddingContextApplicable(paddingTargets.get(record.targetId) ?? { targetKind: 'leaf', sectionId: record.sectionId }, context);
         };
         const isAcceptedTheme = (message) => {
-             if (!isRecord(message) || message.type !== 'ftb:theme:update' || message.schemaVersion !== 1 || !['light', 'dark'].includes(message.activeMode) || !isRecord(message.projection) || message.activeMode !== message.projection.mode || !isRecord(message.theme) || ![5, 6, 7].includes(message.theme.schemaVersion) || !isAcceptedPaddingProjection(message.paddingProjection, message.theme)) return false;
-             const hasSupportedKeys = exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'padding'], ['icons', 'branding', 'modeLinks']);
-             if (message.theme.schemaVersion === 7 && (!isRecord(message.theme.modeLinks) || !message.theme.foundations?.userTokens)) return false;
+             if (!isRecord(message) || message.type !== 'ftb:theme:update' || message.schemaVersion !== 1 || !['light', 'dark'].includes(message.activeMode) || !isRecord(message.projection) || message.activeMode !== message.projection.mode || !isRecord(message.theme) || ![5, 6, 7, 8].includes(message.theme.schemaVersion) || !isAcceptedPaddingProjection(message.paddingProjection, message.theme) || !isAcceptedBorderProjection(message.borderProjection, message.activeMode)) return false;
+              const hasSupportedKeys = exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'padding'], ['icons', 'branding', 'modeLinks', 'borderEdges']);
+              if ((message.theme.schemaVersion === 7 || message.theme.schemaVersion === 8) && (!isRecord(message.theme.modeLinks) || !message.theme.foundations?.userTokens)) return false;
+              if (message.theme.schemaVersion === 8 && (!Array.isArray(message.theme.borderEdges) || new Set(message.theme.borderEdges.map((edge) => [edge.targetId, edge.edge, edge.property, edge.scope, edge.componentId ?? '', edge.variantId ?? '', edge.stateId ?? ''].join('\u0000'))).size !== message.theme.borderEdges.length)) return false;
              const paddingValid = Array.isArray(message.theme.padding) && message.theme.padding.every(isSafePaddingRecord) && new Set(message.theme.padding.map(paddingIdentity)).size === message.theme.padding.length;
              const foundationValid = isFoundationRecord(message.theme.foundations);
              const projectionValid = foundationValid && isAcceptedProjection(message.projection, message.theme.foundations);
@@ -365,7 +387,8 @@
              const tokens = message.theme.foundations.userTokens;
              for (const [name, pair] of Object.entries(tokens?.colors ?? {})) rules.push(`:root { --ftb-user-color-${name}: ${pair[message.activeMode] ?? pair.light}; }`);
              for (const [name, palette] of Object.entries(tokens?.palettes ?? {})) for (const [shade, pair] of Object.entries(palette.shades)) rules.push(`:root { --ftb-user-palette-${name}-${shade}: ${pair[message.activeMode] ?? pair.light}; }`);
-             for (const rule of message.paddingProjection.rules) rules.push(`${rule.selector} { ${Object.entries(rule.declarations).map(([edge, value]) => `padding-${edge}: ${value} !important;`).join(' ')} }`);
+              for (const rule of message.paddingProjection.rules) rules.push(`${rule.selector} { ${Object.entries(rule.declarations).map(([edge, value]) => `padding-${edge}: ${value} !important;`).join(' ')} }`);
+              for (const rule of message.borderProjection.rules) rules.push(`${rule.selector} { ${Object.entries(rule.declarations).map(([property, value]) => `${property}: ${value} !important;`).join(' ')} }`);
             for (const candidate of message.projection.mappings) {
                 const selectors = candidate.selectors.join(',');
                 const runtimeValue = candidate.property === 'color' ? (resolveColorReference(candidate.value) ?? candidate.value) : candidate.value;
@@ -415,7 +438,12 @@
                   return Number(leftIcon) - Number(rightIcon) || left.selector.localeCompare(right.selector);
               }).flatMap((override) => {
                    const properties = message.activeMode === 'dark' ? { ...override.properties, ...(override.darkProperties ?? {}) } : override.properties;
-                    return Object.keys(properties).length ? expandRawSelector(override.selector).map((selector) => `${selector} { ${Object.entries(properties).sort(([left], [right]) => left.localeCompare(right)).map(([property, value]) => `${property}: ${resolveUserToken(value, tokens, message.activeMode)};`).join(' ')} }`) : [];
+                     return Object.keys(properties).length ? expandRawSelector(override.selector).map((selector) => {
+                         const ringBacked = ringBackedRawSelectors.has(selector) && Object.keys(properties).some((property) => physicalRawBorderProperties.has(property));
+                         const projectedSelector = ringBacked ? `${selector}:not(:focus):not(:focus-within):not(:focus-visible)` : selector;
+                         const declarations = Object.entries(properties).sort(([left], [right]) => left.localeCompare(right)).map(([property, value]) => `${property}: ${resolveUserToken(value, tokens, message.activeMode)};`).join(' ');
+                         return `${projectedSelector} { ${declarations}${ringBacked ? ' --tw-ring-shadow: 0 0 #0000;' : ''} }`;
+                     }) : [];
               });
              rules.push(...rawOverrideRules);
             const iconConfiguration = message.theme.icons ?? { pack: 'default', overrides: {} };

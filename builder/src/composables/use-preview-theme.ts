@@ -3,6 +3,7 @@ import { onMounted, ref, toRaw, watch } from 'vue'
 import type { UsePreviewThemeOptions } from '@/models/use-preview-theme-options.model'
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { projectPadding } from '@/utils/padding-projection'
+import { projectBorderEdges } from '@/utils/border-edge-projection'
 
 const registry = createThemeRegistry()
 
@@ -27,7 +28,8 @@ export function usePreviewTheme({
         activeMode: activeMode.value,
          theme: structuredClone(JSON.parse(JSON.stringify(toRaw(theme.theme)))),
          projection: theme.previewFoundation(activeMode.value),
-         paddingProjection: projectPadding(theme.theme as unknown as import('@/models/theme.model').ThemeStateCurrent, registry),
+          paddingProjection: projectPadding(theme.theme as unknown as import('@/models/theme.model').ThemeStateCurrent, registry),
+          borderProjection: { schemaVersion: 1, mode: activeMode.value, rules: projectBorderEdges(theme.theme as unknown as import('@/models/theme.model').ThemeStateCurrent, activeMode.value) },
       },
       targetOrigin,
     )

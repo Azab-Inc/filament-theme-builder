@@ -24,6 +24,8 @@
 - Filament component/variant coverage: [FTB-070](#ftb-070) / [GitHub #72](https://github.com/Azab-Inc/filament-theme-builder/issues/72), split into [FTB-071](#ftb-071) / [#73](https://github.com/Azab-Inc/filament-theme-builder/issues/73), [FTB-072](#ftb-072) / [#74](https://github.com/Azab-Inc/filament-theme-builder/issues/74), [FTB-073](#ftb-073) / [#75](https://github.com/Azab-Inc/filament-theme-builder/issues/75), [FTB-074](#ftb-074) / [#76](https://github.com/Azab-Inc/filament-theme-builder/issues/76), and [FTB-075](#ftb-075) / [#77](https://github.com/Azab-Inc/filament-theme-builder/issues/77). Specs: [coverage inventory](./docs/superpowers/specs/2026-11-18-filament-component-variant-coverage-design.md) and [chart theming](./docs/superpowers/specs/2026-11-18-chart-widget-theming-design.md).
 - Builder stylesheet compliance: [FTB-076](#ftb-076) / [GitHub #78](https://github.com/Azab-Inc/filament-theme-builder/issues/78), split into [FTB-077](#ftb-077) / [#79](https://github.com/Azab-Inc/filament-theme-builder/issues/79), [FTB-078](#ftb-078) / [#80](https://github.com/Azab-Inc/filament-theme-builder/issues/80), [FTB-079](#ftb-079) / [#81](https://github.com/Azab-Inc/filament-theme-builder/issues/81), [FTB-080](#ftb-080) / [#82](https://github.com/Azab-Inc/filament-theme-builder/issues/82), [FTB-081](#ftb-081) / [#83](https://github.com/Azab-Inc/filament-theme-builder/issues/83), [FTB-082](#ftb-082) / [#84](https://github.com/Azab-Inc/filament-theme-builder/issues/84), and [FTB-083](#ftb-083) / [#85](https://github.com/Azab-Inc/filament-theme-builder/issues/85). Spec: [stylesheet compliance](./docs/superpowers/specs/2026-11-18-builder-stylesheet-tailwind-compliance-design.md); plan: [implementation](./docs/superpowers/plans/2026-11-18-builder-stylesheet-tailwind-compliance.md).
 
+- Border-side controls: [FTB-084](#ftb-084) / [GitHub #88](https://github.com/Azab-Inc/filament-theme-builder/issues/88), delivered by [FTB-085](#ftb-085) / [#87](https://github.com/Azab-Inc/filament-theme-builder/issues/87) then [FTB-086](#ftb-086) / [#86](https://github.com/Azab-Inc/filament-theme-builder/issues/86). [Spec](./docs/superpowers/specs/2026-11-18-border-side-controls-design.md), [issue index](./ISSUES.md).
+
 ## Dependency map
 
 Demo-showcase delivery order (prose delivery order (not hard dependency blockers)): **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015 → FTB-016 → FTB-017 → FTB-018**. The dependency map below remains the source of hard blockers. The demo-complete gate is satisfied by current Compose evidence: FTB-009A/B/010, FTB-011, FTB-013, FTB-014, FTB-015, FTB-016, FTB-017, and FTB-018 are done; FTB-012 remains partial solely for theme-density integration and is explicitly not a blocker. Operational FTB-027 and FTB-028 are done, with FTB-028's full-suite documentation-mount gap recorded in its report. Phase 1 owns the branded existing dashboard shell, four commerce widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and representative badges. FTB-015 owns the Showcase navigation/index, search/profile/authentication/tenant surfaces and must integrate (not duplicate) Phase 1 widgets/navigation. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
@@ -72,6 +74,83 @@ from `docs/phase-2/PRD.md`; the implementation tickets are FTB-042 through
 FTB-049. The package identity/namespace/Composer coordinates remain an
 explicit release blocker and must not be invented in these tickets.
 ```
+
+---
+
+<a id="ftb-084"></a>
+
+## FTB-084 — Add border-side controls for top, right, bottom and left (umbrella)
+
+**Status:** testing (implementation present; full-unit gate blocked). **GitHub:** [#88](https://github.com/Azab-Inc/filament-theme-builder/issues/88), Open. **Project #30:** Testing.
+**Blocked by:** FTB-085 and FTB-086 completion. **Spec:** [Border Side Controls](./docs/superpowers/specs/2026-11-18-border-side-controls-design.md).
+
+### Problem and outcome
+
+Checked on `dev`, 2026-11-18: the real Compose builder exposes default/strong border colors and a single foundation width; Components' separate-edge controls are padding only. The raw property inventory allows aggregate border color/width/style and radius, with no side properties; validation also rejects multi-value border-width shorthand. No existing tracked border-side feature was found.
+
+Provide discoverable All sides / Top / Right / Bottom / Left border editing on verified border-bearing targets and raw Inspector elements. Support bottom-only, left-only, mixed and no-border cases, immediate real preview, predictable inheritance/reset, mode isolation, persistence, and export parity. Physical sides stay physical in RTL. Border radius is separate.
+
+### Acceptance criteria
+
+- [ ] Complete FTB-085 semantic border controls and FTB-086 raw Inspector support; retain each slice's full verification evidence.
+- [ ] Distinguish inherited/native edges, explicit zero/none and mixed values; changing one side preserves siblings. All sides deliberately edits four sides as one history action; selecting a side alone does not mutate the theme.
+- [ ] Existing themes and their native edge defaults remain unchanged until explicitly edited; specify migration and precedence before implementation.
+- [ ] Light changes inherit into dark until an explicit dark edit; reset, variants/states, mode links, undo/redo, JSON and CSS preserve independent mode/edge values.
+- [ ] All advertised border targets have verified Filament selectors/fixtures and computed-style browser evidence, including a ring/box-shadow-backed control where applicable; unsupported targets are identified rather than falsely advertised.
+- [ ] MCP discovery/read/preview/confirmed-apply uses the same validated services as UI, with authorization, stale-state revalidation and actual AI-client evidence; update the capability inventory.
+- [ ] Follow failing-first unit/integration and Playwright CLI tests, existing demo gate and applicable builder checks. Close only after both vertical slices pass.
+
+**Related:** FTB-006/008/022, FTB-052/054/058/062/070/071. Existing project gates remain authoritative.
+
+**2026-11-18 implementation checkpoint:** Both slices are implemented as uncommitted work on `dev`; acceptance is not signed off. Integrated Compose browser/MCP: 17 passed; affected PHP: 21 passed / 150 assertions; type-check and Compose production build passed. Full builder units: 719 passed / 1 failed in the concurrent stylesheet-compliance work (276 forbidden generated `--builder-*` names). The authorized assertion correction preserves the naming rule and does not rename tokens. Issues stay open. See [verification and limitations](./docs/verification/ftb-084-border-sides.md); no feature commit or independent reviewer re-approval is claimed.
+
+---
+
+<a id="ftb-085"></a>
+
+## FTB-085 — Add semantic border-side controls with preview and export parity
+
+**Status:** testing (implementation present; full-unit gate blocked). **GitHub:** [#87](https://github.com/Azab-Inc/filament-theme-builder/issues/87), Open. **Project #30:** Testing. See the [shared verification checkpoint](./docs/verification/ftb-084-border-sides.md).
+**Readiness:** Verify FTB-006/022 foundation evidence; coordinate FTB-071 inventory before editing shared seams. Do not wait for unrelated chart work or waive repository gates.
+**Parent:** [FTB-084](#ftb-084). **Spec:** [Border Side Controls](./docs/superpowers/specs/2026-11-18-border-side-controls-design.md).
+
+### What to build
+
+Semantic border-side editing as a usable vertical slice: verified target inventory, Components/semantic Inspector controls, shared validated state, immediate preview, persistence/export and MCP parity.
+
+### Acceptance criteria
+
+- [ ] Before implementation, inventory real border-bearing selectors, wrapper/pseudo-element/ring behavior, supported variants/states and native defaults. Finalize canonical edge fields, limits, backward-compatible migration and shorthand/longhand precedence in the spec. Reuse existing theme/resolution boundaries; do not copy padding storage or invent selectors/defaults.
+- [ ] Provide discoverable All sides, Top, Right, Bottom and Left selection with a clear active-side indicator and keyboard-accessible labels; side selection alone is presentation. Expose width including zero plus existing border color/style behavior needed for visible borders. Untouched styles/colors inherit; never silently create a border via an unrelated edit.
+- [ ] One-side edits preserve sibling edges; All sides explicitly edits four sides as one undo step. Mixed values are honest; resetting one side removes only that override. Show native/inherited/explicit provenance; preserve native asymmetric borders on old themes.
+- [ ] Demonstrate bottom-only, left-only, asymmetric and none on verified real Filament surfaces. Preserve physical sides in RTL; keep radius and shadow/ring controls distinct.
+- [ ] Preserve Global → Component → Variant → State inheritance where supported and light-to-dark inheritance until explicit dark override. Verify reset, undo/redo, reload, mode links and any existing value guards.
+- [ ] JSON import/export roundtrips edges and modes; minimal CSS emits explicit deviations, fully explicit CSS resolves supported edges correctly, and supported Tailwind export retains equivalent semantics. Use deterministic longhand ordering so broader border rules cannot re-enable disabled edges.
+- [ ] Purpose-built MCP discovery/read/preview/confirmed-apply shares validation/resolution/mutation services with UI; authorization, rejected unsafe inputs, stale confirmation and actual AI-client transport are verified and inventoried.
+- [ ] Write/run failing-first focused tests and a Playwright CLI test before production changes. Assert actual computed four-edge widths/styles/colors in Compose, keyboard and narrow viewport behavior, variants/states, inheritance, modes, reset/history, persistence and export in a fresh preview. Run applicable builder type-check, unit and build checks; report commands/results.
+
+---
+
+<a id="ftb-086"></a>
+
+## FTB-086 — Add per-side border properties to raw Inspector
+
+**Status:** testing (implementation present; full-unit gate blocked). **Prerequisite:** [FTB-085](#ftb-085)'s shared edge contract is implemented; both slices remain open until verification is complete. **GitHub:** [#86](https://github.com/Azab-Inc/filament-theme-builder/issues/86), Open. **Project #30:** Testing. See the [shared verification checkpoint](./docs/verification/ftb-084-border-sides.md).
+**Parent:** [FTB-084](#ftb-084). **Spec:** [Border Side Controls](./docs/superpowers/specs/2026-11-18-border-side-controls-design.md).
+
+### What to build
+
+Extend raw Inspector border editing to individual physical edges using FTB-085's settled edge semantics and shared validation/projection seams. Deliver UI, persistence/export and MCP as one vertical slice. Coordinate FTB-052/062 where value guards/reset semantics overlap. Preserve the demo-first gate and unrelated worktree changes.
+
+### Acceptance criteria
+
+- [ ] Add safe top/right/bottom/left border width, color and style properties to the authoritative raw-property inventory and all dependent UI/DTO/validation, bridge, import, mode-link, token, preview/export and MCP allowlists. Reuse shared border validation; reject unsafe declarations, unsupported values and selectors through existing rules.
+- [ ] Raw Inspector exposes All sides / Top / Right / Bottom / Left without requiring typed CSS. Selecting a side does not write state; editing one property affects only that edge/property. Color references retain existing native-picker/token behavior.
+- [ ] Existing aggregate raw border properties remain backward compatible. Specify deterministic aggregate/edge precedence independent of edit/serialization order; clearing an edge restores the applicable inherited aggregate/native value. Explicit zero or none is not mistaken for missing data. A group edit is one history action.
+- [ ] Top-only, bottom-only, left-only, right-only, mixed and none work against real picked elements; the active selector, mode and state remain scoped. Semantic overrides and raw precedence remain consistent, with sibling targets/edges and unrelated radius/shadow untouched.
+- [ ] Verify inherited light-to-dark values and independent dark overrides, reset, undo/redo, mode links, autosave/reload and versioned JSON roundtrips. Both minimal and fully explicit CSS and supported Tailwind output match actual preview without shorthand re-enabling edges.
+- [ ] Update MCP raw capability discovery/read/preview/confirmed-apply and inventory through the same services; prove authorization, invalid input rejection, stale-state revalidation and an actual AI-client edge edit.
+- [ ] Write/run failing-first unit/integration and Playwright CLI tests before implementation. Verify picked real Filament computed edge styles, keyboard/narrow layout, colors/tokens, modes/states/history, reload/import and exported CSS in a fresh preview; run applicable builder checks and report commands/results.
 
 ---
 

@@ -101,6 +101,17 @@ describe('mode isolation domain actions', () => {
     expect(theme.value.rawOverrides[0]?.properties.color).toBe('#654321')
   })
 
+  it('resets multiple raw properties in one commit', () => {
+    const theme = state()
+    let commits = 0
+    const actions = useThemeRawActions({ theme, registry, commit: (candidate) => { commits += 1; theme.value = candidate } })
+    actions.setRawOverrides('.fi-input', [{ property: 'border-top-width', value: '2px' }, { property: 'border-right-width', value: '2px' }])
+    commits = 0
+    actions.resetRawProperties('.fi-input', ['border-top-width', 'border-right-width'])
+    expect(commits).toBe(1)
+    expect(theme.value.rawOverrides).toEqual([])
+  })
+
   it('resets semantic dark only without changing light and keeps explicit equal dark values', () => {
     const theme = state()
     const actions = useThemeOverrideActions({ theme, registry })
@@ -193,7 +204,7 @@ describe('mode isolation domain actions', () => {
 })
 
 function rawValue(property: RawVisualProperty): string {
-  return property === 'color' || property.endsWith('color') ? '#123456' : property === 'opacity' ? '0.5' : property === 'font-weight' ? '600' : property === 'line-height' ? '1.5' : property === 'font-family' ? 'Inter' : property === 'box-shadow' ? '0 1px 2px #123456' : property === 'text-decoration' ? 'underline' : property === 'border-style' ? 'solid' : property === 'text-align' ? 'center' : property === 'white-space' ? 'nowrap' : property === 'padding' || property === 'margin' ? '1px 2px' : '1px'
+  return property === 'color' || property.endsWith('color') ? '#123456' : property === 'opacity' ? '0.5' : property === 'font-weight' ? '600' : property === 'line-height' ? '1.5' : property === 'font-family' ? 'Inter' : property === 'box-shadow' ? '0 1px 2px #123456' : property === 'text-decoration' ? 'underline' : property.endsWith('style') ? 'solid' : property === 'text-align' ? 'center' : property === 'white-space' ? 'nowrap' : property === 'padding' || property === 'margin' ? '1px 2px' : '1px'
 }
 
 function darkValue(property: RawVisualProperty): string { return property === 'opacity' ? '0.75' : property === 'font-weight' ? '700' : property === 'color' || property.endsWith('color') ? '#abcdef' : rawValue(property) }

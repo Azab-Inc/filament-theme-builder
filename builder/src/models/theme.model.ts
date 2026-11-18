@@ -45,10 +45,11 @@ export type ThemeStateV7 = Omit<ThemeStateV6, 'schemaVersion'> & {
   foundations: Omit<ThemeStateV6['foundations'], 'userTokens'> & { userTokens: import('@/models/user-tokens.model').UserTokens }
   modeLinks: import('@/models/theme-mode-link.model').ModeLinkMap
 }
-export type ThemeStateCurrent = ThemeStateV7
-export type ThemeStateInput = ThemeStateV4 | ThemeStateV5 | ThemeStateV6 | ThemeStateV7
+export type ThemeStateV8 = Omit<ThemeStateV7, 'schemaVersion'> & { schemaVersion: 8; borderEdges: import('@/models/border-edge.model').BorderEdgeOverride[] }
+export type ThemeStateCurrent = ThemeStateV8
+export type ThemeStateInput = ThemeStateV4 | ThemeStateV5 | ThemeStateV6 | ThemeStateV7 | ThemeStateV8
 
-export type ThemeState = ThemeStateV1 | ThemeStateV2 | ThemeStateV3 | ThemeStateV4 | ThemeStateV5 | ThemeStateV6 | ThemeStateV7
+export type ThemeState = ThemeStateV1 | ThemeStateV2 | ThemeStateV3 | ThemeStateV4 | ThemeStateV5 | ThemeStateV6 | ThemeStateV7 | ThemeStateV8
 
 export function migrateThemeState(state: ThemeState): ThemeStateCurrent {
   const result = migrateVersionedTheme(state, createThemeRegistry())

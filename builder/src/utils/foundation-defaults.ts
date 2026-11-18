@@ -64,7 +64,7 @@ export function createDefaultThemeState(): FoundationStateV4 {
 }
 
 export function createDefaultCurrentThemeState(): ThemeStateCurrent {
-  return { ...createDefaultThemeState(), schemaVersion: 7, padding: [], foundations: { ...createDefaultThemeState().foundations, userTokens: { palettes: {}, colors: {} } }, modeLinks: {} }
+  return { ...createDefaultThemeState(), schemaVersion: 8, padding: [], borderEdges: [], foundations: { ...createDefaultThemeState().foundations, userTokens: { palettes: {}, colors: {} } }, modeLinks: {} }
 }
 
 export function densityPreset(value: Density): DensityPreset {

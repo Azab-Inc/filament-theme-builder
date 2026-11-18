@@ -11,6 +11,7 @@ import { markExplicitPath, resolveModeValue } from '@/utils/foundation-provenanc
 import { validateThemeOverride } from '@/utils/theme-override-validation'
 import { validateResolveRequest } from '@/utils/resolve-request-validation'
 import { validModeLinkTarget } from '@/utils/mode-link-target-validation'
+import { borderEdgeIdentity, validateBorderEdge } from '@/utils/border-edge-validation'
 
 export function readModeLinkTarget(state: ThemeStateCurrent, target: ModeLinkTarget, mode: ThemeMode, registry: FilamentRegistry): ThemeValue | undefined {
   if (!validModeLinkTarget(target, registry)) return undefined
@@ -22,6 +23,10 @@ export function readModeLinkTarget(state: ThemeStateCurrent, target: ModeLinkTar
     const colors = { primary: mode === 'dark' ? state.foundations.palettes.primary.dark?.base ?? state.colors.primary : state.colors.primary }
     const resolved = resolveThemeValue({ schemaVersion: 2, colors, overrides: state.overrides }, registry, request)
     return resolved.status === 'resolved' ? resolved.value : undefined
+  }
+  if (target.kind === 'semantic-border') {
+    const row = state.borderEdges.find((item) => borderEdgeIdentity(item) === borderEdgeIdentity({ ...target, controlId: 'border' }))
+    return mode === 'dark' ? row?.darkValue ?? row?.value : row?.value
   }
   if (target.kind === 'foundation') { const [group, name] = target.path.split('.'); const item = group && name ? (state.foundations[group as 'surfaces' | 'borders' | 'text'] as Record<string, {light:string;dark:string}>)[name] : undefined; return item ? resolveModeValue<string>(state.foundations, item, group!, name!, mode) : undefined }
   if (target.kind === 'user-color') { const item = state.foundations.userTokens?.colors[target.name]; return mode === 'dark' ? item?.dark ?? item?.light : item?.light }
@@ -37,6 +42,7 @@ export function writeModeLinkTarget(state: ThemeStateCurrent, target: ModeLinkTa
   if (!validModeLinkTarget(target, registry)) return false
   if (target.kind === 'raw') return typeof value === 'string' && writeRaw(state, target, value)
   if (target.kind === 'semantic') return writeSemantic(state, target, value, registry)
+  if (target.kind === 'semantic-border') return writeSemanticBorder(state, target, value, registry)
   if (typeof value !== 'string' || value.length === 0) return false
   if (target.kind === 'foundation') { const [group, name] = target.path.split('.'); const item = group && name ? (state.foundations[group as 'surfaces' | 'borders' | 'text'] as Record<string, {light:string;dark:string}>)[name] : undefined; if (!item) return false; item.light = value; item.dark = value; markExplicitPath(state.foundations, `${target.path}.light`); markExplicitPath(state.foundations, `${target.path}.dark`); return true }
   if (target.kind === 'user-color') { const item = state.foundations.userTokens?.colors[target.name]; if (!item) return false; item.light = String(value); item.dark = String(value); return true }
@@ -69,6 +75,16 @@ function writeSemantic(state: ThemeStateCurrent, target: Extract<ModeLinkTarget,
 
 function sameSemantic(row: ThemeStateCurrent['overrides'][number], target: Extract<ModeLinkTarget,{kind:'semantic'}>): boolean {
   return row.targetId === target.targetId && row.controlId === target.controlId && row.scope === target.scope && row.componentId === target.componentId && row.variantId === target.variantId && row.stateId === target.stateId
+}
+
+function writeSemanticBorder(state: ThemeStateCurrent, target: Extract<ModeLinkTarget, { kind: 'semantic-border' }>, value: ThemeValue, registry: FilamentRegistry): boolean {
+  const base = { targetId: target.targetId, controlId: 'border' as const, edge: target.edge, property: target.property, scope: target.scope, ...(target.componentId ? { componentId: target.componentId } : {}), ...(target.variantId ? { variantId: target.variantId } : {}), ...(target.stateId ? { stateId: target.stateId } : {}) }
+  const row = state.borderEdges.find((item) => borderEdgeIdentity(item) === borderEdgeIdentity(base))
+  const next = { ...(row ?? {}), ...base, value, darkValue: value }
+  if (!validateBorderEdge(next, registry).valid) return false
+  if (row) Object.assign(row, next)
+  else state.borderEdges.push(next)
+  return true
 }
 
 function writeBuiltinPalette(state: ThemeStateCurrent, target: Extract<ModeLinkTarget,{kind:'palette-base'|'palette-shade'}>, value: string): boolean {

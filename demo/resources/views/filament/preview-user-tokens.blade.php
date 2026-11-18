@@ -20,6 +20,7 @@
         const storedLinkValues = (theme, target) => {
             if (target.kind === 'raw') { const row = theme.rawOverrides.find((item) => item.selector === target.selector); return [row?.properties?.[target.property], row?.darkProperties?.[target.property]]; }
             if (target.kind === 'semantic') { const row = theme.overrides.find((item) => ['targetId', 'controlId', 'scope', 'componentId', 'variantId', 'stateId'].every((key) => item[key] === target[key])); return [row?.value, row?.darkValue]; }
+            if (target.kind === 'semantic-border') { const row = theme.borderEdges?.find((item) => ['targetId', 'edge', 'property', 'scope', 'componentId', 'variantId', 'stateId'].every((key) => item[key] === target[key])); return [row?.value, row?.darkValue]; }
             let pair;
             if (target.kind === 'foundation' && typeof target.path === 'string') { const [group, name] = target.path.split('.'); pair = theme.foundations[group]?.[name]; }
             if (target.kind === 'user-color') pair = theme.foundations.userTokens?.colors?.[target.name];
@@ -33,7 +34,7 @@
             if (!isRecord(link) || !exactKeys(link, ['identity', 'value', 'linked'], ['target']) || link.identity !== key || key.length > 2048 || link.linked !== true || !['string', 'number', 'boolean'].includes(typeof link.value)) return false;
             const target = link.target ?? (key.startsWith('foundation.') ? { kind: 'foundation', path: key.slice('foundation.'.length) } : key.startsWith('user.color.') ? { kind: 'user-color', name: key.slice('user.color.'.length) } : null);
             if (!isRecord(target)) return false;
-            const expectedIdentity = target.kind === 'foundation' ? `foundation.${target.path}` : target.kind === 'user-color' ? `user.color.${target.name}` : `target:${JSON.stringify(Object.fromEntries(Object.keys(target).sort().map((name) => [name, target[name]])))}`;
+            const expectedIdentity = target.kind === 'foundation' ? `foundation.${target.path}` : target.kind === 'user-color' ? `user.color.${target.name}` : target.kind === 'semantic-border' ? `semantic-border|${JSON.stringify(Object.fromEntries(Object.keys(target).sort().map((name) => [name, target[name]])))}` : `target:${JSON.stringify(Object.fromEntries(Object.keys(target).sort().map((name) => [name, target[name]])))}`;
             const legacy = ['foundation', 'user-color'].includes(target.kind) ? expectedIdentity : `target:${JSON.stringify(target)}`;
             if ((key !== expectedIdentity && key !== legacy) || seen.has(expectedIdentity)) return false;
             seen.add(expectedIdentity);
@@ -51,5 +52,6 @@
                 const definition = controlDefinitions.get(`${override.targetId}\u0000${override.controlId}`);
                 return Object.keys(override).every((key) => ['targetId', 'controlId', 'scope', 'componentId', 'variantId', 'stateId'].includes(key)) && definition && validateOverrideScope(override, definition);
             }
+            if (target.kind === 'semantic-border') return exactKeys(target, ['kind', 'targetId', 'edge', 'property', 'scope', 'componentId', 'variantId', 'stateId']) && ['top', 'right', 'bottom', 'left'].includes(target.edge) && ['width', 'color', 'style'].includes(target.property) && ['global', 'component', 'variant', 'state'].includes(target.scope);
             return false;
         }); };
