@@ -1,29 +1,99 @@
-.db-root { position:fixed; inset:0; z-index:1; display:flex; flex-direction:column; overflow:hidden; color:#20272e; background:#f2f5f4; font:13px/1.45 ui-sans-serif,system-ui,sans-serif; }
-.db-root * { box-sizing:border-box; }
-.db-toolbar { flex:0 0 60px; display:flex; align-items:center; gap:16px; padding:0 20px; border-bottom:1px solid #dbe3e1; background:#fff; }
-.db-toolbar span,.db-dock-head span,.db-source { color:#66737a; font-size:11px; }
-.db-toolbar button { margin-left:auto; border:1px solid #b7ccc6; border-radius:6px; padding:8px 12px; background:#fff; color:#245f57; cursor:pointer; }
-.db-toolbar button:hover,.db-reset:hover,.db-clear:hover { background:#edf6f3; }
-.db-toolbar button:focus-visible,.db-dock button:focus-visible,.db-dock input:focus-visible,.db-dock select:focus-visible,.db-export button:focus-visible { outline:3px solid #e7ad35; outline-offset:2px; }
-.db-export { flex:0 0 auto; display:flex; align-items:center; gap:12px; padding:10px 20px; border-bottom:1px solid #cbdad6; background:#edf6f3; }
-.db-export span { color:#66737a; }
-.db-export button,.db-dock button { border:1px solid #d3dfdc; border-radius:5px; padding:7px 9px; background:#fff; cursor:pointer; }
-.db-layout { display:flex; flex:1 1 auto; min-height:0; }
-.db-dock { flex:0 0 340px; min-height:0; overflow:auto; padding:18px; border-right:1px solid #dbe3e1; background:#fff; }
-.db-dock-head { display:grid; gap:3px; margin-bottom:16px; }
-.db-dock label { display:grid; gap:6px; margin:14px 0; font-weight:650; }
-.db-search { margin-bottom:4px!important; }
-.db-dock input,.db-dock select { width:100%; min-height:38px; border:1px solid #c2d0cc; border-radius:6px; padding:8px; background:#fff; font:inherit; }
-.db-dock nav { display:flex; gap:5px; margin:10px 0 22px; }
-.db-dock nav button[aria-current=page] { border-color:#8db8ad; background:#e7f2ef; color:#205e55; font-weight:700; }
-.db-dock h2 { margin:0; font-size:16px; }
-.db-clear { margin-bottom:8px; }
-.db-empty { color:#66737a; }
-.db-field { position:relative; display:grid; gap:6px; margin:18px 0; padding-bottom:12px; border-bottom:1px solid #edf1f0; }
-.db-field > label { margin:0; }
-.db-field .db-reset { justify-self:start; font-size:11px; }
-.db-error { margin:0; color:#a52b2b; }
-.db-preview-region { flex:1 1 auto; min-width:0; min-height:0; overflow:hidden; background:#253137; }
-.db-preview-region iframe { width:100%; height:100%; display:block; border:0; background:#fff; }
-@media (max-width:900px) { .db-dock { flex-basis:300px; } }
-@media (max-width:650px) { .db-toolbar { flex-basis:54px; padding:0 12px; gap:8px; } .db-toolbar span { display:none; } .db-export { flex-wrap:wrap; padding:8px 12px; } .db-layout { flex-direction:column; } .db-preview-region { order:0; flex:0 0 48%; min-height:280px; } .db-dock { order:1; flex:1 1 auto; flex-basis:auto; border-right:0; border-top:1px solid #dbe3e1; padding:14px; padding-bottom:calc(14px + env(safe-area-inset-bottom)); } }
+@reference "../app.css";
+
+.db-root {
+  @apply fixed [inset:0] [z-index:1] flex flex-col overflow-hidden [color:var(--dashboard-root-text)] [background:var(--dashboard-root-surface)] [font:13px/1.45_ui-sans-serif,system-ui,sans-serif];
+}
+.db-root * {
+  @apply box-border;
+}
+.db-toolbar {
+  @apply [flex:0_0_60px] flex items-center [gap:16px] [padding:0_20px] [border-bottom:var(--dashboard-toolbar-border)] [background:var(--color-builder-theme-dialog-local-theme-dialog-accent)];
+}
+.db-toolbar span,.db-dock-head span,.db-source {
+  @apply [color:var(--dashboard-source-text)] [font-size:11px];
+}
+.db-toolbar button {
+  @apply [margin-left:auto] [border:var(--dashboard-toolbar-button-border)] [border-radius:6px] [padding:8px_12px] [background:var(--color-builder-theme-dialog-local-theme-dialog-accent)] [color:var(--dashboard-toolbar-button-text)] cursor-pointer;
+}
+.db-toolbar button:hover,.db-reset:hover,.db-clear:hover {
+  @apply [background:var(--dashboard-clear-hover-surface)];
+}
+.db-toolbar button:focus-visible,.db-dock button:focus-visible,.db-dock input:focus-visible,.db-dock select:focus-visible,.db-export button:focus-visible {
+  @apply [outline:var(--dashboard-export-button-focus-visible-focus)] [outline-offset:2px];
+}
+.db-export {
+  @apply [flex:0_0_auto] flex items-center [gap:12px] [padding:10px_20px] [border-bottom:var(--dashboard-export-border)] [background:var(--dashboard-clear-hover-surface)];
+}
+.db-export span {
+  @apply [color:var(--dashboard-source-text)];
+}
+.db-export button,.db-dock button {
+  @apply [border:var(--dashboard-dock-button-border)] [border-radius:5px] [padding:7px_9px] [background:var(--color-builder-theme-dialog-local-theme-dialog-accent)] cursor-pointer;
+}
+.db-layout {
+  @apply flex [flex:1_1_auto] min-h-0;
+}
+.db-dock {
+  @apply [flex:0_0_340px] min-h-0 overflow-auto [padding:18px] [border-right:var(--dashboard-dock-border)] [background:var(--color-builder-theme-dialog-local-theme-dialog-accent)];
+}
+.db-dock-head {
+  @apply grid [gap:3px] [margin-bottom:16px];
+}
+.db-dock label {
+  @apply grid [gap:6px] [margin:14px_0] [font-weight:650];
+}
+.db-search {
+  @apply [margin-bottom:4px];
+}
+.db-dock input,.db-dock select {
+  @apply w-full [min-height:38px] [border:var(--dashboard-dock-select-border)] [border-radius:6px] [padding:8px] [background:var(--color-builder-theme-dialog-local-theme-dialog-accent)] [font:inherit];
+}
+.db-dock nav {
+  @apply flex [gap:5px] [margin:10px_0_22px];
+}
+.db-dock nav button[aria-current=page] {
+  @apply [border-color:var(--dashboard-dock-nav-button-current-border)] [background:var(--dashboard-dock-nav-button-current-surface)] [color:var(--dashboard-dock-nav-button-current-text)] font-bold;
+}
+.db-dock h2 {
+  @apply m-0 [font-size:16px];
+}
+.db-clear {
+  @apply [margin-bottom:8px];
+}
+.db-empty {
+  @apply [color:var(--dashboard-source-text)];
+}
+.db-field {
+  @apply relative grid [gap:6px] [margin:18px_0] [padding-bottom:12px] [border-bottom:var(--dashboard-border)];
+}
+.db-field > label {
+  @apply m-0;
+}
+.db-field .db-reset {
+  @apply [justify-self:start] [font-size:11px];
+}
+.db-error {
+  @apply m-0 [color:var(--dashboard-error-text)];
+}
+.db-preview-region {
+  @apply [flex:1_1_auto] min-w-0 min-h-0 overflow-hidden [background:var(--dashboard-preview-region-surface)];
+}
+.db-preview-region iframe {
+  @apply w-full h-full block border-0 [background:var(--color-builder-theme-dialog-local-theme-dialog-accent)];
+}
+@media (max-width:900px) { .db-dock {
+  @apply [flex-basis:300px];
+} }
+@media (max-width:650px) { .db-toolbar {
+  @apply [flex-basis:54px] [padding:0_12px] [gap:8px];
+} .db-toolbar span {
+  @apply [display:none];
+} .db-export {
+  @apply flex-wrap [padding:8px_12px];
+} .db-layout {
+  @apply flex-col;
+} .db-preview-region {
+  @apply [order:0] [flex:0_0_48%] [min-height:280px];
+} .db-dock {
+  @apply [order:1] [flex:1_1_auto] [flex-basis:auto] [border-right:0] [border-top:var(--dashboard-dock-border-2)] [padding:14px] [padding-bottom:calc(14px_+_env(safe-area-inset-bottom))];
+} }

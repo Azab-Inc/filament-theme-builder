@@ -26,7 +26,10 @@ describe('builder CSS entrypoint', () => {
     expect(imports).toContain('./styles/editor-navigation.css')
     expect(imports).toContain('./styles/editor-responsive.css')
     expect(imports).toContain('./styles/editor-mobile.css')
-    expect(imports).toContain('./styles/dashboard-first-editor.css')
+    expect(imports).toContain('./styles/tokens.css')
+    expect(imports).toContain('./styles/dashboard-editor-layout.css')
+    expect(imports).toContain('./styles/dashboard-editor-controls.css')
+    expect(imports).toContain('./styles/dashboard-editor-responsive.css')
     expect(new Set(imports).size).toBe(imports.length)
     expect(cssSource.match(/@import\s+["']tailwindcss\/[^"']+["']/g)).toEqual([
       '@import "tailwindcss/theme.css"',

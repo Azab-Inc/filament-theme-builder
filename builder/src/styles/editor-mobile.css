@@ -1,67 +1,55 @@
 
 .advanced-inspector {
-  min-width: 0;
-  overflow: auto;
-  padding: 0 1rem 1rem;
+  @apply min-w-0 overflow-auto [padding:0_1rem_1rem];
 }
 
 .raw-property-row {
-  align-items: center;
+  @apply items-center;
 }
 
 .raw-spacing-field {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
-  gap: 0.25rem;
-  min-width: 0;
+  @apply grid [grid-template-columns:repeat(2,_minmax(0,_1fr))_auto] [gap:0.25rem] min-w-0;
 }
 
 .raw-spacing-field select {
-  grid-column: 3;
-  grid-row: 1 / span 2;
+  @apply [grid-column:3] [grid-row:1_/_span_2];
 }
 
 .raw-spacing-field > * {
-  min-width: 0;
+  @apply min-w-0;
 }
 
 @media (max-width: 767px) {
   .preview-shell__header {
-    grid-template-columns: minmax(0, 1fr);
-    padding-inline: 0.5rem;
-  }
+  @apply [grid-template-columns:minmax(0,_1fr)] [padding-inline:0.5rem];
+}
 
   .preview-shell__header-copy {
-    min-width: 0;
-  }
+  @apply min-w-0;
+}
 
   .preview-shell__header-controls {
-    flex-wrap: nowrap;
-    max-width: 100%;
-  }
+  @apply flex-nowrap max-w-full;
+}
 
   .editor-workspace {
-    gap: 0.5rem;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    padding-inline: 0.5rem;
-  }
+  @apply [gap:0.5rem] [grid-template-columns:minmax(0,_1fr)_minmax(0,_1fr)] [padding-inline:0.5rem];
+}
 
   .editor-panel:has(.editor-nav-rail) {
-    grid-template-columns: minmax(5rem, 30%) minmax(0, 1fr);
-  }
+  @apply [grid-template-columns:minmax(5rem,_30%)_minmax(0,_1fr)];
+}
 
   .editor-panel:has(.editor-nav-rail) .editor-nav-rail {
-    width: auto;
-  }
+  @apply [width:auto];
+}
 
   .editor-nav-rail {
-    padding-right: 0.25rem;
-  }
+  @apply [padding-right:0.25rem];
+}
 
   .editor-nav-rail button,
   .editor-tabs button {
-    font-size: 0.75rem;
-    overflow-wrap: anywhere;
-    padding-inline: 0.35rem;
-  }
+  @apply [font-size:0.75rem] [overflow-wrap:anywhere] [padding-inline:0.35rem];
+}
 }

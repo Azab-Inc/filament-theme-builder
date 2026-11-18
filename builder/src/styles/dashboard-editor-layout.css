@@ -1,0 +1,220 @@
+
+.preview-shell {
+  @apply fixed [inset:0] flex min-w-0 flex-col overflow-hidden [background:var(--color-builder-theme-dialog-local-theme-dialog-input-surface)] [color:var(--color-builder-theme-dialog-local-theme-dialog-text)] [font:13px/1.45_ui-sans-serif,_system-ui,_sans-serif];
+}
+.preview-shell *,
+.preview-shell *::before,
+.preview-shell *::after {
+  @apply box-border;
+}
+.preview-shell .preview-shell__header {
+  @apply [flex:0_0_auto] items-center [min-height:3.25rem] [padding:0.45rem_0.75rem] [border-bottom:var(--color-builder-surfaces-surface-layout-row-border)] [background:var(--color-builder-theme-dialog-local-theme-dialog-surface)];
+}
+.preview-shell .preview-shell__header-copy {
+  @apply min-w-0;
+}
+.preview-shell .preview-shell__header h1 {
+  @apply [color:var(--color-builder-surfaces-surface-layout-legend-text)] [font-size:1rem] font-bold [letter-spacing:-0.01em];
+}
+.preview-shell .preview-shell__header p {
+  @apply [color:var(--dashboard-editor-layout-header-p-text)] [font-size:0.75rem];
+}
+.preview-shell .preview-shell__header-controls {
+  @apply flex-nowrap [gap:0.3rem] overflow-x-auto [padding:0.15rem_0] [scrollbar-width:thin];
+}
+.preview-shell .preview-shell__header-controls > * {
+  @apply [flex:0_0_auto];
+}
+.preview-shell .preview-shell__header-controls button {
+  @apply [border:var(--color-builder-theme-dialog-local-theme-dialog-border)] [border-radius:0.35rem] [background:var(--color-builder-theme-dialog-local-theme-dialog-surface)] [color:var(--color-builder-theme-dialog-toolbar-menu-panel-local-the-text-2)] [font:inherit] [min-height:1.9rem] [padding:0.25rem_0.5rem] whitespace-nowrap;
+}
+.preview-shell .preview-shell__header-controls button:hover {
+  @apply [border-color:var(--dashboard-editor-layout-header-control-border)] [background:var(--dashboard-editor-layout-header-control-surface)];
+}
+.preview-shell > [role='status'],
+.preview-shell > .legacy-recovery {
+  @apply [flex:0_0_auto] m-0 [padding:0.15rem_0.75rem] [font-size:0.75rem];
+}
+.preview-shell .editor-workspace {
+  @apply grid [flex:1_1_auto] [grid-template-columns:var(--editor-pane-width,_clamp(22rem,_26vw,_24rem))_0.75rem_minmax(0,_1fr)] min-h-0 min-w-0 gap-0 p-0;
+}
+.preview-shell .editor-workspace > .editor-panel {
+  @apply [order:0] min-h-0 min-w-0 [border-right:var(--dashboard-editor-layout-editor-workspace-editor-pane-border-2)] [background:var(--color-builder-theme-dialog-local-theme-dialog-surface)];
+}
+.preview-shell .editor-workspace > .preview-shell__frame {
+  @apply [order:2] min-w-0 min-h-0 w-full [background:var(--color-builder-theme-dialog-local-theme-dialog-surface)];
+}
+.preview-shell .editor-resize-handle {
+  @apply [order:1] relative [z-index:2] [min-width:0.75rem] border-0 [border-left:var(--dashboard-editor-layout-editor-resize-handle-border)] [border-right:var(--dashboard-editor-layout-editor-workspace-editor-pane-border-2)] [background:var(--dashboard-editor-layout-editor-resize-handle-surface)] [cursor:col-resize] [touch-action:none];
+}
+.preview-shell .editor-resize-handle::before {
+  @apply [content:''] absolute [inset:0_0.2rem] [border-radius:0.25rem] bg-transparent;
+}
+.preview-shell .editor-resize-handle:hover::before,
+.preview-shell .editor-resize-handle:focus-visible::before,
+.preview-shell .editor-resize-handle.is-dragging::before {
+  @apply [background:var(--dashboard-editor-layout-editor-resize-handle-is-drag-surface)];
+}
+.preview-shell .editor-resize-handle span {
+  @apply absolute [top:50%] [left:50%] [width:4px] [height:40px] [transform:translate(-50%,_-50%)] [border-radius:2px] [background:var(--color-builder-theme-dialog-toolbar-menu-panel-local-the-surface)];
+}
+.preview-shell .editor-panel {
+  @apply overflow-hidden;
+}
+.preview-shell .editor-content {
+  @apply [container:inline-size] min-w-0 min-h-0 [padding:0.5rem_0.6rem] [scrollbar-width:thin];
+}
+.preview-shell .editor-navigation-toggle {
+  @apply [gap:0.25rem] m-0 [padding:0.35rem] border-0 [border-bottom:var(--dashboard-editor-layout-editor-navigation-toggle-border)] [background:var(--dashboard-editor-layout-editor-navigation-toggle-surface)];
+}
+.preview-shell .editor-nav-rail {
+  @apply [width:auto] min-w-0 [padding:0.3rem] [background:var(--dashboard-editor-layout-editor-resize-handle-surface)];
+}
+.preview-shell .editor-nav-rail button,
+.preview-shell .editor-tabs button {
+  @apply max-w-full [border-radius:0.35rem] [color:var(--dashboard-editor-layout-editor-tabs-button-text)] [font:inherit] [overflow-wrap:anywhere] [padding:0.3rem_0.35rem];
+}
+.preview-shell .editor-nav-rail button[aria-selected='true'],
+.preview-shell .editor-tabs button[aria-selected='true'] {
+  @apply [border-color:var(--dashboard-editor-layout-editor-tabs-button-sele-border)] [background:var(--color-builder-surfaces-surface-layout-heading-surface)] [color:var(--dashboard-editor-layout-editor-tabs-button-sele-text)] font-bold;
+}
+.preview-shell button,
+.preview-shell input,
+.preview-shell select,
+.preview-shell textarea {
+  @apply max-w-full min-w-0 [font:inherit];
+}
+.preview-shell button {
+  @apply [overflow-wrap:anywhere];
+}
+.preview-shell input,
+.preview-shell select,
+.preview-shell textarea {
+  @apply w-full;
+}
+.preview-shell :is(label, legend, p, h2, h3, h4) {
+  @apply max-w-full [overflow-wrap:anywhere];
+}
+.preview-shell .color-field__controls {
+  @apply grid [grid-template-columns:auto_minmax(0,_1fr)_auto] [gap:0.3rem] min-w-0 max-w-full;
+}
+.preview-shell .color-field__native {
+  @apply [width:2rem];
+}
+.preview-shell .color-field__trigger {
+  @apply min-w-0 max-w-full [padding:0.25rem_0.35rem] [font:inherit] [overflow-wrap:anywhere];
+}
+.preview-shell input[type='file'] {
+  @apply min-w-0 max-w-full [font-size:0.7rem];
+}
+.preview-shell :is(button, input, select, textarea):focus-visible {
+  @apply [outline:var(--color-builder-theme-dialog-input-focus-visible-focus)] [outline-offset:2px];
+}
+.preview-shell :is(.foundations, .branding, .icons, .component-controls, .advanced-inspector) {
+  @apply min-w-0 max-w-full [padding:0_0_0.6rem];
+}
+.preview-shell
+  :is(.foundations, .branding, .icons, .component-controls, .advanced-inspector)
+  > fieldset {
+  @apply min-w-0 max-w-full [padding:0.6rem];
+}
+.preview-shell :is([data-editor-section], fieldset, [data-padding-target]) {
+  @apply min-w-0;
+}
+.preview-shell :is(.foundation-row, .component-control-row, .icon-control-row, .raw-property-row) {
+  @apply [grid-template-columns:minmax(0,_1fr)_minmax(0,_1.15fr)_minmax(0,_auto)_minmax(0,_auto)] min-w-0;
+}
+.preview-shell
+  :is(.foundation-row, .component-control-row, .icon-control-row, .raw-property-row)
+  > * {
+  @apply min-w-0 max-w-full;
+}
+.preview-shell
+  :is(.foundation-row, .component-control-row, .icon-control-row, .raw-property-row)
+  label {
+  @apply [overflow-wrap:anywhere];
+}
+.preview-shell :is([data-padding-target], [data-padding-target] > div) {
+  @apply min-w-0 max-w-full;
+}
+.preview-shell [data-padding-target] > div:nth-child(2) {
+  @apply [grid-template-columns:repeat(2,_minmax(0,_1fr))] [overflow-wrap:anywhere];
+}
+.preview-shell [data-padding-target] .inline-flex {
+  @apply inline-flex min-w-0 max-w-full items-center;
+}
+.preview-shell [data-padding-target] .inline-flex input {
+  @apply [width:4rem] min-w-0;
+}
+.preview-shell [data-padding-target] .inline-flex select {
+  @apply [width:3.2rem] min-w-0;
+}
+.preview-shell [data-padding-target] label {
+  @apply min-w-0 [overflow-wrap:anywhere];
+}
+.preview-shell :is(.palette-accordion__item, .palette-accordion__panel) {
+  @apply min-w-0 max-w-full;
+}
+.preview-shell :is(.palette-accordion__header, .palette-accordion__panel) {
+  @apply [overflow-wrap:anywhere];
+}
+.preview-shell :is(.palette-accordion__summary, [role='status']) {
+  @apply [overflow-wrap:anywhere] [font-size:0.75rem];
+}
+@container (max-width: 28rem) {
+  .preview-shell
+    :is(.foundation-row, .component-control-row, .icon-control-row, .raw-property-row) {
+  @apply [grid-template-columns:minmax(0,_1fr)_auto_auto];
+}
+  .preview-shell
+    :is(.foundation-row, .component-control-row, .icon-control-row, .raw-property-row)
+    > label {
+  @apply [grid-column:1_/_-1] [overflow-wrap:normal];
+}
+}
+@media (min-width: 1024px) {
+  .preview-shell .editor-workspace {
+  @apply [grid-template-columns:var(--editor-pane-width,_clamp(30rem,_32vw,_36rem))_.75rem_minmax(0,_1fr)];
+}
+}
+@media (min-width: 640px) and (max-width: 767px) {
+  .preview-shell .editor-workspace {
+  @apply [grid-template-columns:var(--editor-pane-width,_minmax(20rem,_42%))_0.75rem_minmax(0,_1fr)];
+}
+}
+@media (max-width: 639px) {
+  .preview-shell .preview-shell__header {
+  @apply items-center [grid-template-columns:minmax(0,_1fr)] [padding:0.35rem_0.5rem];
+}
+  .preview-shell .preview-shell__header-copy {
+  @apply flex [align-items:baseline] justify-between [gap:0.4rem];
+}
+  .preview-shell .preview-shell__header-controls {
+  @apply flex-nowrap;
+}
+  .preview-shell .editor-workspace {
+  @apply flex flex-col overflow-hidden;
+}
+  .preview-shell .editor-workspace > .preview-shell__frame {
+  @apply [order:0] [flex:0_0_46%] [min-height:280px] w-full;
+}
+  .preview-shell .editor-workspace > .editor-panel {
+  @apply [order:1] [flex:1_1_auto] w-full [border-right:0] [border-top:var(--dashboard-editor-layout-editor-workspace-editor-pane-border)];
+}
+  .preview-shell .editor-resize-handle {
+  @apply [display:none];
+}
+  .preview-shell .editor-panel:has(.editor-nav-rail) {
+  @apply [grid-template-columns:6rem_minmax(0,_1fr)];
+}
+  .preview-shell .editor-nav-rail {
+  @apply [width:auto];
+}
+  .preview-shell .editor-content {
+  @apply overflow-auto;
+}
+  .preview-shell
+    :is(.foundation-row, .component-control-row, .icon-control-row, .raw-property-row) {
+  @apply [grid-template-columns:minmax(0,_1fr)_minmax(0,_1fr)];
+}
+}
