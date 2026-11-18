@@ -338,6 +338,7 @@
             return undefined;
         };
         const radiusValues = { none: '0px', sm: '0.125rem', md: '0.375rem', lg: '0.5rem', xl: '0.75rem', full: '9999px' };
+        const radiusVariableRule = (value) => `:root { --radius-xs: ${value}; --radius-sm: ${value}; --radius-md: ${value}; --radius-lg: ${value}; --radius-xl: ${value}; --radius-2xl: ${value}; --radius-3xl: ${value}; --radius-4xl: ${value}; }`;
         const shadowValues = { none: 'none', sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)', md: '0 4px 6px -1px rgb(0 0 0 / 0.1)', lg: '0 10px 15px -3px rgb(0 0 0 / 0.1)', xl: '0 20px 25px -5px rgb(0 0 0 / 0.1)' };
         const cssValue = (value) => typeof value === 'number' ? `${value}px` : value;
         const updateTheme = (message) => {
@@ -386,7 +387,7 @@
                     const row = { compact: '12px', default: '16px', spacious: '20px' }[candidate.value];
                     const headerCell = { compact: '10px', default: '14px', spacious: '18px' }[candidate.value];
                     rules.push(`${table} .fi-ta-header { padding-block: ${density[1]} !important; } ${table} .fi-ta-header-cell { padding-block: ${headerCell} !important; } ${table} .fi-ta-text, ${table} .fi-ta-icon, ${table} .fi-ta-image, ${table} .fi-ta-cell.fi-ta-selection-cell { padding-block: ${row} !important; }`);
-                } else if (candidate.property === 'radius') rules.push(`${selectors} { border-radius: ${radiusValues[candidate.value]}; }`);
+                } else if (candidate.property === 'radius') { rules.push(`${selectors} { border-radius: ${radiusValues[candidate.value]}; }`); rules.push(radiusVariableRule(radiusValues[candidate.value])); }
                 else if (candidate.property === 'borderWidth') rules.push(`${selectors} { border-width: ${candidate.value}px; }`);
                 else if (candidate.property === 'shadow') rules.push(`${selectors} { box-shadow: ${shadowValues[candidate.value]}; }`);
             }
@@ -544,7 +545,8 @@
                 const selector = `.${classes[classes.length - 1]}`;
                 if (!surfaces.some((surface) => surface.selector === selector)) surfaces.push({ label: `Surface: ${selector}`, selector });
             }
-            return { candidateSelectors: uniqueSelectors, classNames: uniqueClasses, targetSelector: targetSelector ?? null, surfaces, ...(targetScope ? { targetScope } : {}), ...(semanticBreadcrumb ? { semanticBreadcrumb } : {}) };
+            const identity = typeof target.id === 'string' && /^[A-Za-z][A-Za-z0-9_.-]{0,199}$/.test(target.id) ? target.id : null;
+            return { candidateSelectors: uniqueSelectors, classNames: uniqueClasses, targetSelector: targetSelector ?? null, surfaces, ...(identity ? { targetId: identity } : {}), ...(targetScope ? { targetScope } : {}), ...(semanticBreadcrumb ? { semanticBreadcrumb } : {}) };
         };
         const ensureInspectorStyle = () => {
             let style = document.getElementById(inspectorStyleId);

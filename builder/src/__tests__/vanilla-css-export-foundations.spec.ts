@@ -23,6 +23,19 @@ describe('minimal vanilla CSS export', () => {
     expect(css).not.toContain('/* default')
   })
 
+  it('projects radius through Filament radius variables so every rounded component follows the foundation', () => {
+    const theme = createDefaultThemeState()
+    theme.foundations.radius = 'none'
+    theme.foundations.explicitPaths = ['radius']
+
+    const { css } = exportVanillaCss(theme)
+
+    expect(css).toContain('--radius-sm: 0px')
+    expect(css).toContain('--radius-md: 0px')
+    expect(css).toContain('--radius-lg: 0px')
+    expect(css).toContain('--radius-xl: 0px')
+  })
+
   it('does not emit unedited foundations', () => {
     const theme = createDefaultThemeState()
 

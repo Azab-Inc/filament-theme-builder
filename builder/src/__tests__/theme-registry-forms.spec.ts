@@ -52,7 +52,7 @@ describe('theme registry forms', () => {
 
   it('registers only the Product name input as an editable production form target', () => {
     const entries = createThemeRegistry().entries
-    expect(entries.find((entry) => entry.id === 'form.product-name')).toMatchObject({ family: 'form', selectors: ['.fi-fo-text-input .fi-input'], variants: ['default'], states: ['focus'], controls: [{ id: 'background', valueType: 'color' }] })
+    expect(entries.find((entry) => entry.id === 'form.product-name')).toMatchObject({ family: 'form', selectors: ['.fi-fo-text-input .fi-input'], requiredTargetId: 'form.product_name', variants: ['default'], states: ['focus'], controls: [{ id: 'background', valueType: 'color' }] })
     expect(entries.filter((entry) => entry.controls.length > 0).map((entry) => entry.id)).toEqual(['button.primary', 'button.secondary', 'form.product-name', 'global.primary'])
   })
 })

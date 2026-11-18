@@ -59,7 +59,11 @@ function renderProjection(projection: FoundationProjection, mode: ThemeMode = 'l
       rules.push(`${scoped} { ${property}: ${value}; }`)
     } else if (mapping.property === 'fontFamily') rules.push(`${scoped} { font-family: ${quoteFamily(String(mapping.value))}; }`)
     else if (mapping.property === 'spacing') rules.push(`${scoped} { padding-block: ${value}px; }`)
-    else if (mapping.property === 'radius') rules.push(`${scoped} { border-radius: ${radiusValue(String(mapping.value))}; }`)
+    else if (mapping.property === 'radius') {
+      const radius = radiusValue(String(mapping.value))
+      rules.push(`${scoped} { border-radius: ${radius}; }`)
+      rules.push(`${guard} { ${radiusVariableDeclarations(String(mapping.value))} }`)
+    }
     else if (mapping.property === 'borderWidth') rules.push(`${scoped} { border-width: ${value}px; }`)
     else if (mapping.property === 'shadow') rules.push(`${scoped} { box-shadow: ${shadowValue(String(mapping.value))}; }`)
   }
@@ -67,6 +71,11 @@ function renderProjection(projection: FoundationProjection, mode: ThemeMode = 'l
 }
 
 function quoteFamily(value: string): string { return value.includes(',') ? value : `"${value.split('"').join('\\"')}"` }
-function radiusValue(value: string): string { return ({ none: '0px', sm: '0.125rem', md: '0.375rem', lg: '0.5rem', xl: '0.75rem', full: '9999px' } as Record<string, string>)[value] ?? value }
+const radiusValues: Record<string, string> = { none: '0px', sm: '0.125rem', md: '0.375rem', lg: '0.5rem', xl: '0.75rem', full: '9999px' }
+function radiusValue(value: string): string { return radiusValues[value] ?? value }
+function radiusVariableDeclarations(value: string): string {
+  const radius = radiusValue(value)
+  return `--radius-xs: ${radius}; --radius-sm: ${radius}; --radius-md: ${radius}; --radius-lg: ${radius}; --radius-xl: ${radius}; --radius-2xl: ${radius}; --radius-3xl: ${radius}; --radius-4xl: ${radius};`
+}
 function shadowValue(value: string): string { return ({ none: 'none', sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)', md: '0 4px 6px -1px rgb(0 0 0 / 0.1)', lg: '0 10px 15px -3px rgb(0 0 0 / 0.1)', xl: '0 20px 25px -5px rgb(0 0 0 / 0.1)' } as Record<string, string>)[value] ?? value }
 function scopeSelectors(selectors: readonly string[] | undefined, guard: string): string { return (selectors ?? []).map((selector) => `${guard} ${selector}`).join(', ') }

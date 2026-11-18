@@ -83,6 +83,7 @@ describe('raw Inspector overrides', () => {
         '.fi-fo-text-input',
       ],
       classNames: ['fi-input', 'fi-fo-text-input'],
+      targetId: 'form.product_name',
       targetSelector: '.fi-input',
     }, registry)).toMatchObject({ selector: '.fi-fo-text-input .fi-input', quality: 'fragile' })
   })

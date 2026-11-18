@@ -42,7 +42,7 @@ describe('App Inspector accessibility', () => {
         data: {
           type: 'ftb:inspector:select',
           protocolVersion: 1,
-          target: { candidateSelectors: ['.fi-fo-text-input .fi-input'], classNames: ['fi-input'] },
+          target: { candidateSelectors: ['.fi-fo-text-input .fi-input'], classNames: ['fi-input'], targetId: 'form.product_name' },
         },
       })
       window.dispatchEvent(event)

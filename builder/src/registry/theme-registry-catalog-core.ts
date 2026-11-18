@@ -52,6 +52,7 @@ const productNameInput: RegistryEntry = {
   label: 'Product name input',
   family: 'form',
   selectors: ['.fi-fo-text-input .fi-input'],
+  requiredTargetId: 'form.product_name',
   controls: [
     {
       id: 'background',

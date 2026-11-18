@@ -8,6 +8,10 @@ export function isEditableInspectorTarget(entry: RegistryEntry): boolean {
   return editableTargetIds.has(entry.id) && entry.controls.length > 0
 }
 
+function identifiesSameTarget(entry: RegistryEntry, evidence: InspectorTargetEvidence): boolean {
+  return entry.requiredTargetId === undefined || entry.requiredTargetId === evidence.targetId
+}
+
 export function findSameTargetRegistryMatches(registry: FilamentRegistry, evidence: InspectorTargetEvidence) {
   if (!evidence.targetSelector) return []
   const targetClasses: string[] = evidence.targetSelector.match(selectorClassPattern) ?? []
@@ -25,7 +29,7 @@ export function findSameTargetRegistryMatches(registry: FilamentRegistry, eviden
   }
   for (const selector of evidence.candidateSelectors) {
     if (selector === evidence.targetSelector || !identifiesTarget(selector)) continue
-    const entry = registry.entries.find((candidate) => candidate.selectors.includes(selector))
+    const entry = registry.entries.find((candidate) => candidate.selectors.includes(selector) && identifiesSameTarget(candidate, evidence))
     if (entry) addMatch({ selector, entry })
   }
   return matches

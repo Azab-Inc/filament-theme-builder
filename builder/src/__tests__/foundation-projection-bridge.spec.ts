@@ -32,4 +32,16 @@ describe('foundation projection bridge contracts', () => {
     expect(bridge).toContain('canonicalFoundationMappings.size')
     expect(bridge).toContain('expectedMappings.length')
   })
+
+  it('projects the global radius foundation through Filament theme radius variables', () => {
+    const bridge = readFileSync(
+      resolve(repositoryRoot, 'demo/resources/views/filament/preview-bridge.blade.php'),
+      'utf8',
+    )
+
+    for (const variable of ['--radius-sm', '--radius-md', '--radius-lg', '--radius-xl']) {
+      expect(bridge).toContain(variable)
+    }
+    expect(bridge).toContain('radiusVariableRule')
+  })
 })

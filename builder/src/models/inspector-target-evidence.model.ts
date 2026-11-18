@@ -1,6 +1,7 @@
 export type InspectorTargetEvidence = {
   candidateSelectors: string[]
   classNames: string[]
+  targetId?: string
   targetSelector?: string | null
   semanticBreadcrumb?: string
   componentId?: string

@@ -18,8 +18,9 @@ export const INSPECTOR_PROTOCOL_VERSION = 1 as const
 const pseudoStatesPattern = SUPPORTED_PSEUDO_STATES.join('|')
 const selectorPattern = new RegExp(`^(?:\\.fi-[A-Za-z0-9_-]+)(?:\\.[A-Za-z0-9_-]+)*(?::(?:${pseudoStatesPattern}))?(?:\\s+\\.fi-[A-Za-z0-9_-]+(?:\\.[A-Za-z0-9_-]+)*(?::(?:${pseudoStatesPattern}))?)*$`)
 const classPattern = /^fi-[A-Za-z0-9_-]+$/
+const targetIdPattern = /^[A-Za-z][A-Za-z0-9_.-]{0,199}$/
 const breadcrumbPattern = /^[^<>]{1,200}$/
-const allowedTargetKeys = ['candidateSelectors', 'classNames', 'targetSelector', 'semanticBreadcrumb', 'componentId', 'variantId', 'stateId', 'targetScope', 'surfaces'] as const
+const allowedTargetKeys = ['candidateSelectors', 'classNames', 'targetId', 'targetSelector', 'semanticBreadcrumb', 'componentId', 'variantId', 'stateId', 'targetScope', 'surfaces'] as const
 
 export function isInspectorCommand(value: unknown): value is InspectorCommand {
   if (!isRecord(value) || value.protocolVersion !== INSPECTOR_PROTOCOL_VERSION) return false
@@ -42,6 +43,7 @@ export function isInspectorTargetEvidence(value: unknown): value is InspectorTar
   if (value.candidateSelectors.some((selector) => typeof selector !== 'string' || !selectorPattern.test(selector))) return false
   if (value.classNames.some((className) => typeof className !== 'string' || !classPattern.test(className))) return false
   if (value.targetSelector !== undefined && value.targetSelector !== null && (typeof value.targetSelector !== 'string' || !selectorPattern.test(value.targetSelector) || !value.candidateSelectors.includes(value.targetSelector))) return false
+  if (value.targetId !== undefined && (typeof value.targetId !== 'string' || !targetIdPattern.test(value.targetId))) return false
   for (const key of ['componentId', 'variantId', 'stateId'] as const) {
     if (value[key] !== undefined && (typeof value[key] !== 'string' || !classPattern.test(value[key]))) return false
   }
@@ -51,9 +53,10 @@ export function isInspectorTargetEvidence(value: unknown): value is InspectorTar
 }
 
 export function resolveInspectorTarget(registry: FilamentRegistry, evidence: InspectorTargetEvidence): InspectorResolution {
+  const matchesTarget = (entry: FilamentRegistry['entries'][number]) => entry.requiredTargetId === undefined || entry.requiredTargetId === evidence.targetId
   if (evidence.targetSelector === null) return { status: 'no-match', breadcrumb: evidence.semanticBreadcrumb ?? 'Detected preview element' }
   if (evidence.targetSelector) {
-    const targetEntry = registry.entries.find((entry) => entry.selectors.includes(evidence.targetSelector!))
+    const targetEntry = registry.entries.find((entry) => entry.selectors.includes(evidence.targetSelector!) && matchesTarget(entry))
     const sameTargetMatches = findSameTargetRegistryMatches(registry, evidence)
     const editableMatch = findEditableSameTargetMatch(registry, evidence)
     if (editableMatch) return { status: 'editable', entry: editableMatch.entry, editorTarget: editableMatch.entry.id, breadcrumb: editableMatch.entry.label }
@@ -69,7 +72,7 @@ export function resolveInspectorTarget(registry: FilamentRegistry, evidence: Ins
       : { status: 'no-match', breadcrumb: evidence.semanticBreadcrumb ?? 'Detected preview element' }
   }
   for (const selector of evidence.candidateSelectors) {
-    const result = registry.entries.find((entry) => entry.selectors.includes(selector))
+    const result = registry.entries.find((entry) => entry.selectors.includes(selector) && matchesTarget(entry))
     if (!result) continue
     if (isEditableInspectorTarget(result)) {
       return { status: 'editable', entry: result, editorTarget: result.id, breadcrumb: result.label }

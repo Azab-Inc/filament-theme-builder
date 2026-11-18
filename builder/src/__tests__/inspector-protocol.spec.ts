@@ -13,6 +13,7 @@ const registry = createThemeRegistry()
 const evidence = (overrides: Partial<InspectorTargetEvidence> = {}): InspectorTargetEvidence => ({
   candidateSelectors: ['.fi-fo-text-input .fi-input'],
   classNames: ['fi-input'],
+  targetId: 'form.product_name',
   ...overrides,
 })
 
@@ -39,6 +40,11 @@ describe('inspector protocol', () => {
       type: 'ftb:inspector:select',
       protocolVersion: INSPECTOR_PROTOCOL_VERSION,
       target: evidence({ semanticBreadcrumb: '<script>alert(1)</script>' }),
+    })).toBe(false)
+    expect(isInspectorEvent({
+      type: 'ftb:inspector:select',
+      protocolVersion: INSPECTOR_PROTOCOL_VERSION,
+      target: evidence({ targetId: 'form.product_name" onmouseover="alert(1)' }),
     })).toBe(false)
     expect(isInspectorEvent({ type: 'ftb:inspector:clear', protocolVersion: INSPECTOR_PROTOCOL_VERSION })).toBe(true)
   })
@@ -72,6 +78,26 @@ describe('inspector protocol', () => {
       ],
       classNames: ['fi-input', 'fi-fo-text-input'],
     })).status).toBe('editable')
+  })
+
+  it('does not map an ordinary text input to Product name just because it shares text-input classes', () => {
+    const result = resolveInspectorTarget(registry, evidence({
+      targetId: 'form.name',
+      targetSelector: '.fi-input',
+      candidateSelectors: [
+        '.fi-input',
+        '.fi-input-wrp-content-ctn .fi-input',
+        '.fi-fo-text-input .fi-input',
+        '.fi-input-wrp .fi-input',
+        '.fi-fo-field-content-col .fi-input',
+        '.fi-fo-field .fi-input',
+      ],
+      classNames: ['fi-input', 'fi-input-wrp-content-ctn', 'fi-fo-text-input', 'fi-input-wrp'],
+    }))
+
+    expect(result).not.toHaveProperty('editorTarget')
+    expect(result).not.toMatchObject({ entry: { id: 'form.product-name' } })
+    expect(result.status).not.toBe('editable')
   })
 
   it('does not map a global-search input to product name from the target class alone', () => {

@@ -28,6 +28,7 @@ export type RegistryEntry = {
   variants: readonly string[]
   states: readonly string[]
   filamentCompatibility: string
+  requiredTargetId?: string
   paddingTargets?: readonly RegistryPaddingTarget[]
 }
 
