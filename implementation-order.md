@@ -1,6 +1,8 @@
 # Remaining implementation order
 
-Snapshot: GitHub open issues and [`TICKETS.md`](./TICKETS.md), checked 2026-11-01 on `dev`. This is a recommended sequence, not a change to ticket scope, priority, blockers, or release gates. Each FTB link below opens the local ticket; the corresponding GitHub issue is `https://github.com/Azab-Inc/filament-theme-builder/issues/<number>`. Verify current tracker status, the ticket body, evidence, and the worktree before starting a slice.
+Snapshot: GitHub open issues and [`TICKETS.md`](./TICKETS.md), checked 2026-11-18 on `dev`. This is a recommended sequence, not a change to ticket scope, priority, blockers, or release gates. Each FTB link below opens the local ticket; the corresponding GitHub issue is `https://github.com/Azab-Inc/filament-theme-builder/issues/<number>`. Verify current tracker status, the ticket body, evidence, and the worktree before starting a slice.
+
+**2026-11-18 update:** Added the Filament component/variant coverage epic [FTB-070](./TICKETS.md#ftb-070) and slices [FTB-071](./TICKETS.md#ftb-071)–[FTB-075](./TICKETS.md#ftb-075), filed as GitHub [#72](https://github.com/Azab-Inc/filament-theme-builder/issues/72)–[#77](https://github.com/Azab-Inc/filament-theme-builder/issues/77) and tracked in project #30 as Backlog. They are backed by the [component/variant coverage spec](./docs/superpowers/specs/2026-11-18-filament-component-variant-coverage-design.md) and [chart theming spec](./docs/superpowers/specs/2026-11-18-chart-widget-theming-design.md), committed in `f8cf70c`. These slices are recommended before FTB-039 but do not change any recorded blocker list or replace FTB-039's closure criteria.
 
 ## First: reconcile existing work
 
@@ -32,6 +34,7 @@ The following are recommended in order within each dependency chain; independent
 8. [FTB-031](./TICKETS.md#ftb-031) — Accessibility contrast guidance. Related: FTB-005; needed for Alpha.
 9. [FTB-032](./TICKETS.md#ftb-032) — Public coverage manifest and view. Related: FTB-006; needed by FTB-037/039.
 10. [FTB-041](./TICKETS.md#ftb-041) — Resource navigation badge colors; independently actionable, coordinate sidebar work with FTB-059.
+11. [FTB-070](./TICKETS.md#ftb-070) — Filament component/variant coverage umbrella. Recommended child order: [FTB-071](./TICKETS.md#ftb-071) inventory and variant editing seams → [FTB-072](./TICKETS.md#ftb-072) chart CSS appearance → [FTB-073](./TICKETS.md#ftb-073) series palettes and chart types → [FTB-074](./TICKETS.md#ftb-074) variants/fixtures and structured Inspector targets; [FTB-075](./TICKETS.md#ftb-075) export follows FTB-073 and coordinates with FTB-024/025/026. Charts are first because canvas rendering exposes the selector gap most clearly; non-chart family controls remain follow-up scope. FTB-071 metadata feeds the FTB-032 manifest, but FTB-039 remains the final coverage closure.
 
 ## 3. Export, sharing, and operations
 
@@ -48,7 +51,7 @@ The following are recommended in order within each dependency chain; independent
 1. [FTB-033](./TICKETS.md#ftb-033) — Playwright and visual regression after its listed Inspector/showcase prerequisites, including FTB-012, FTB-019 and FTB-026. Confirm the ticket-specific FTB-012 requirement rather than treating the demo-first exception as a blanket waiver.
 2. [FTB-034](./TICKETS.md#ftb-034) — Jenkins pipeline after FTB-033 and FTB-035.
 3. [FTB-038](./TICKETS.md#ftb-038) — Public Alpha after its documented export, reset, sharing, accessibility, test, deployment, analytics and documentation prerequisites: FTB-026, 028, 030, 031, 033–037.
-4. [FTB-039](./TICKETS.md#ftb-039) — Complete Filament coverage after the listed showcase tickets, FTB-032 and FTB-033; close remaining partials with evidence.
+4. [FTB-039](./TICKETS.md#ftb-039) — Complete Filament coverage after the listed showcase tickets, FTB-032 and FTB-033; finish the FTB-070–FTB-075 slices first where they cover the chart/component gaps, then close remaining partials with evidence. FTB-070 does not replace this ticket's acceptance criteria.
 5. [FTB-040](./TICKETS.md#ftb-040) — Cut 1.0 only after FTB-038 and FTB-039 and the release acceptance criteria are satisfied.
 
 ## 5. Phase 2: Composer integration
@@ -64,4 +67,4 @@ All Phase 2 tickets require FTB-040 **and all approved Phase 1 requirements**, i
 
 ## Execution rules
 
-Use each ticket's acceptance criteria as authoritative, preserve light/dark isolation, use TDD and applicable real Compose Playwright coverage, and maintain MCP discovery, authorization, confirmation and actual-client verification where required. Recheck live issue state and local evidence before starting or closing; this snapshot does not supersede tracker policy.
+Use each ticket's acceptance criteria as authoritative, preserve light/dark isolation, use TDD and applicable real Compose Playwright coverage, and maintain MCP discovery, authorization, confirmation and actual-client verification where required. Keep CSS-addressable chart appearance separate from renderer-backed chart types and series palettes; the latter require generated PHP/config and mode-sync integration, not CSS-only claims. Recheck live issue state and local evidence before starting or closing; this snapshot does not supersede tracker policy.
