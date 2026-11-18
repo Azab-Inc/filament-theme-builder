@@ -22,6 +22,7 @@
 - Editor and demo preview resize handle: [FTB-065](#ftb-065) / [GitHub #67](https://github.com/Azab-Inc/filament-theme-builder/issues/67).
 - Builder onboarding tour: [FTB-066](#ftb-066) / [GitHub #68](https://github.com/Azab-Inc/filament-theme-builder/issues/68), split into [FTB-067](#ftb-067), [FTB-068](#ftb-068), and [FTB-069](#ftb-069).
 - Filament component/variant coverage: [FTB-070](#ftb-070) / [GitHub #72](https://github.com/Azab-Inc/filament-theme-builder/issues/72), split into [FTB-071](#ftb-071) / [#73](https://github.com/Azab-Inc/filament-theme-builder/issues/73), [FTB-072](#ftb-072) / [#74](https://github.com/Azab-Inc/filament-theme-builder/issues/74), [FTB-073](#ftb-073) / [#75](https://github.com/Azab-Inc/filament-theme-builder/issues/75), [FTB-074](#ftb-074) / [#76](https://github.com/Azab-Inc/filament-theme-builder/issues/76), and [FTB-075](#ftb-075) / [#77](https://github.com/Azab-Inc/filament-theme-builder/issues/77). Specs: [coverage inventory](./docs/superpowers/specs/2026-11-18-filament-component-variant-coverage-design.md) and [chart theming](./docs/superpowers/specs/2026-11-18-chart-widget-theming-design.md).
+- Builder stylesheet compliance: [FTB-076](#ftb-076) / [GitHub #78](https://github.com/Azab-Inc/filament-theme-builder/issues/78), split into [FTB-077](#ftb-077) / [#79](https://github.com/Azab-Inc/filament-theme-builder/issues/79), [FTB-078](#ftb-078) / [#80](https://github.com/Azab-Inc/filament-theme-builder/issues/80), [FTB-079](#ftb-079) / [#81](https://github.com/Azab-Inc/filament-theme-builder/issues/81), [FTB-080](#ftb-080) / [#82](https://github.com/Azab-Inc/filament-theme-builder/issues/82), [FTB-081](#ftb-081) / [#83](https://github.com/Azab-Inc/filament-theme-builder/issues/83), [FTB-082](#ftb-082) / [#84](https://github.com/Azab-Inc/filament-theme-builder/issues/84), and [FTB-083](#ftb-083) / [#85](https://github.com/Azab-Inc/filament-theme-builder/issues/85). Spec: [stylesheet compliance](./docs/superpowers/specs/2026-11-18-builder-stylesheet-tailwind-compliance-design.md); plan: [implementation](./docs/superpowers/plans/2026-11-18-builder-stylesheet-tailwind-compliance.md).
 
 ## Dependency map
 
@@ -58,6 +59,11 @@ Runtime + persistence + tests feed FTB-034 Jenkins and FTB-035 production.
 All public-alpha prerequisites feed FTB-038.
 Complete first-party coverage feeds FTB-039, then FTB-040.
 FTB-041 is independent and can start immediately.
+
+Builder stylesheet compliance (FTB-076 umbrella closes only when all slices pass):
+FTB-077 ── FTB-078 ──┬── FTB-079 ── FTB-081 ── FTB-083
+                     ├── FTB-080 ── FTB-081
+                     └── FTB-082 ── FTB-083
 
 Phase 2 is release-blocked until all approved Phase 1 requirements and FTB-040
 are complete. The eight Phase 2 slices below are vertical implementation
@@ -2255,3 +2261,347 @@ Extend the export handoff with chart-specific outputs: the CSS already generated
 - [ ] Document any limitation that remains, including third-party chart plugins and per-scale options.
 
 **Related:** FTB-004, FTB-022, FTB-024, FTB-026, FTB-073.
+
+---
+
+<a id="ftb-076"></a>
+
+## FTB-076 — Bring builder stylesheets into the Tailwind v4 token standard (umbrella)
+
+**Scope slug:** `builder-stylesheet-tailwind-compliance`
+
+**Priority:** normal refactor; blocks consistent builder theming
+
+**Status:** ready-for-agent
+
+**Blocked by:** None. Slices [FTB-077](#ftb-077) through [FTB-083](#ftb-083) must all be done before this ticket can close. This is a behavior-preserving builder refactor; it does not change demo coverage, export output, or relax any repository gate.
+
+**Spec:** [Builder Stylesheet Tailwind Compliance](./docs/superpowers/specs/2026-11-18-builder-stylesheet-tailwind-compliance-design.md)
+**Plan:** [Implementation plan](./docs/superpowers/plans/2026-11-18-builder-stylesheet-tailwind-compliance.md)
+**GitHub:** [#78](https://github.com/Azab-Inc/filament-theme-builder/issues/78)
+
+### What to build
+
+Make every stylesheet under `builder/src/styles` comply with [builder/src/styles/AGENTS.md](./builder/src/styles/AGENTS.md): one central token source, Tailwind v4 `@apply` for all selector styling, native CSS nesting, no scattered literals, no avoidable duplication, and preserved behavior/specificity. Split the two oversized stylesheets and prove visual parity in the real application.
+
+This umbrella owns the standard, the final audit, and the evidence index. Implementation is delivered through the seven slices below.
+
+### Acceptance criteria
+
+- [ ] `builder/src/styles/tokens.css` is the only file declaring `@theme` and is imported first by `app.css`.
+- [ ] Every selector rule in the 14 governed stylesheets uses `@apply`; raw declarations remain only inside `@theme`, `@utility`, custom-property definitions, and the documented `@layer base` block.
+- [ ] No hex, `rgb()`, `oklch()`, named-color, or reusable dimension literal appears outside `tokens.css`.
+- [ ] Descendants, states, and modifiers use native nesting; no block exceeds three levels.
+- [ ] No `!important` survives outside the documented `prefers-reduced-motion` allowlist.
+- [ ] `dashboard-first-editor.css` and `visual-prototype.css` are split per the spec with import order and cascade preserved.
+- [ ] Component-imported stylesheets that use `@apply` declare `@reference "../app.css";`.
+- [ ] The compliance guard, type-check, full unit suite, and production build pass from `builder/`.
+- [ ] Export golden tests are unchanged and pass for both vanilla and Tailwind `@apply` strategies.
+- [ ] Computed-style assertions and five-mode, two-width screenshots match the pre-change baseline.
+- [ ] The Filament demo iframe receives no builder stylesheet rules.
+
+### Verification
+
+- [ ] Write the compliance guard first and record its expected failing run before conversion work.
+- [ ] Run `npm run test:unit -- --run`, `npm run type-check`, and `npm run build` from `builder/` on the settled change.
+- [ ] Run Playwright computed-style assertions and capture default, `?inspect=1`, `?visual-prototype=1`, `?dashboard-prototype=1`, and `?guidelines-prototype=1` at 1440px and 390px; compare with `docs/verification/ftb-076-stylesheet-compliance/baseline/`.
+- [ ] For each slice, capture the exact failing assertion/obtained value before the fix.
+- [ ] Record command, cwd, result, tested revision, and working-tree state once in the evidence README.
+- [ ] Obtain one independent read-only review; resolve blocking findings only.
+
+### Slices
+
+| Ticket | Scope |
+| --- | --- |
+| [FTB-077](#ftb-077) | Baseline capture and Prettier un-minification |
+| [FTB-078](#ftb-078) | Token foundation, utilities, base block, compliance guard |
+| [FTB-079](#ftb-079) | `editor-shell`, `editor-navigation`, `editor-responsive`, `editor-mobile` |
+| [FTB-080](#ftb-080) | `color-field`, `foundation-surfaces`, `foundation-controls`, `local-theme-dialog` |
+| [FTB-081](#ftb-081) | `dashboard-first-editor` split and conversion |
+| [FTB-082](#ftb-082) | `inspect`, `theme`, `dashboard`, and `guidelines` prototypes |
+| [FTB-083](#ftb-083) | `visual-prototype` split and conversion |
+
+**Related:** [FTB-053](#ftb-053) (builder structural refactor), [FTB-050](#ftb-050) (editor layout), [FTB-033](#ftb-033) (visual regression).
+
+---
+
+<a id="ftb-077"></a>
+
+## FTB-077 — Capture stylesheet baselines and un-minify the prototype sheets
+
+**Scope slug:** `builder-stylesheet-baseline`
+
+**Priority:** normal DX
+
+**Status:** ready-for-agent
+
+**Blocked by:** None
+**Parent:** [FTB-076](#ftb-076)
+**Spec:** [Stylesheet compliance](./docs/superpowers/specs/2026-11-18-builder-stylesheet-tailwind-compliance-design.md#11-verification-contract)
+**GitHub:** [#79](https://github.com/Azab-Inc/filament-theme-builder/issues/79)
+
+### What to build
+
+Establish the visual and computed-style baseline every later slice compares against, and format the two minified stylesheets so their conversion diffs are reviewable. `theme-prototype.css` is three physical lines and `inspect-prototype.css` is twelve; neither can be responsibly reviewed or converted in that state.
+
+### Acceptance criteria
+
+- [ ] Baseline screenshots exist for the default builder and `?inspect=1`, `?visual-prototype=1`, `?dashboard-prototype=1`, `?guidelines-prototype=1` at 1440px and 390px.
+- [ ] Baseline computed values are recorded for the sentinels in the spec: root, header/toolbar, primary button, current nav item, input, focused control, popover/dialog, and pane grid.
+- [ ] `theme-prototype.css` and `inspect-prototype.css` are formatted with the repository Prettier configuration.
+- [ ] Formatting is committed alone as `Autogen: format minified builder prototype stylesheets`.
+- [ ] Formatted files produce no visual change against the captured baseline.
+- [ ] Evidence lives under `docs/verification/ftb-076-stylesheet-compliance/` with commands, revision, and file list.
+
+### Verification
+
+- [ ] Create and run the Playwright baseline script before any formatting; record its passing output.
+- [ ] Run `npx prettier --write` only on the two named files from `builder/`.
+- [ ] Re-run the same capture and compare; report any pixel difference instead of accepting it.
+- [ ] Run `git diff --check` and confirm no selector or declaration changed semantically.
+
+**Related:** [FTB-033](#ftb-033), [FTB-076](#ftb-076).
+
+---
+
+<a id="ftb-078"></a>
+
+## FTB-078 — Add builder style tokens, utilities, and the compliance guard
+
+**Scope slug:** `builder-style-token-foundation`
+
+**Priority:** high (unblocks every conversion slice)
+
+**Status:** ready-for-agent
+
+**Blocked by:** [FTB-077](#ftb-077)
+**Parent:** [FTB-076](#ftb-076)
+**Spec:** [Tokens](./docs/superpowers/specs/2026-11-18-builder-stylesheet-tailwind-compliance-design.md#5-token-architecture), [utilities](./docs/superpowers/specs/2026-11-18-builder-stylesheet-tailwind-compliance-design.md#6-utility-catalog-and-exception-policy), [guard](./docs/superpowers/specs/2026-11-18-builder-stylesheet-tailwind-compliance-design.md#10-compliance-guard)
+**GitHub:** [#80](https://github.com/Azab-Inc/filament-theme-builder/issues/80)
+
+### What to build
+
+Create the single token and utility source the remaining slices consume, and a permanent guard that fails when the directory drifts from the documented standard. The guard must be written first so its failure is real evidence of the starting state.
+
+### Acceptance criteria
+
+- [ ] `builder/src/styles/tokens.css` declares `@theme` color groups for builder chrome and each prototype family, derived from existing values, plus radii, shadows, sizing, and type steps actually used.
+- [ ] Distinct focus colors remain distinct: `--color-builder-focus`, `--color-focus-indigo`, `--color-focus-gold`, `--color-focus-brand`.
+- [ ] `@utility` definitions exist only where built-ins cannot express the rule: `scrollbar-thin`, `bg-checkerboard`, `pb-safe`, `font-inherit`, `popover-shell`, `dialog-shell`, and the four focus-ring utilities.
+- [ ] One documented `@layer base` block provides the `box-sizing` and form-inheritance behavior that Preflight would otherwise supply.
+- [ ] `app.css` imports `tokens.css` before every `./styles/*` component stylesheet and stays at or below 100 lines.
+- [ ] `stylesheet-compliance.spec.ts` enforces literal, raw-declaration, `!important`, `@theme`, `@reference`, and import-order rules with actionable file/line output.
+- [ ] The guard allowlists only `@media (prefers-reduced-motion: reduce)` for `!important` and documents that decision in a test comment.
+- [ ] `css-entrypoint.spec.ts` is updated for `tokens.css` without weakening its existing assertions.
+- [ ] Light/dark ownership of Filament tokens is untouched and no component stylesheet needs a dark-specific value.
+
+### Verification
+
+- [ ] Run the guard before implementation and record the expected failure counts per file.
+- [ ] Write focused unit tests for token/utility presence and for each guard rule, including a passing fixture and a failing fixture.
+- [ ] Run the focused guards, `npm run type-check`, and `npm run build`; unknown `@apply` utilities must fail the build rather than being silently skipped.
+- [ ] Confirm `tokens.css` itself passes the literal rule and that every token is referenced by at least one rule or documented for a named slice.
+
+**Related:** [FTB-079](#ftb-079), [FTB-080](#ftb-080), [FTB-081](#ftb-081), [FTB-082](#ftb-082), [FTB-083](#ftb-083).
+
+---
+
+<a id="ftb-079"></a>
+
+## FTB-079 — Convert editor chrome stylesheets to tokens and @apply
+
+**Scope slug:** `builder-editor-chrome-styles`
+
+**Priority:** normal
+
+**Status:** ready-for-agent
+
+**Blocked by:** [FTB-078](#ftb-078)
+**Parent:** [FTB-076](#ftb-076)
+**Spec:** [Cascade contract](./docs/superpowers/specs/2026-11-18-builder-stylesheet-tailwind-compliance-design.md#7-cascade-and-specificity-contract)
+**GitHub:** [#81](https://github.com/Azab-Inc/filament-theme-builder/issues/81)
+
+### What to build
+
+Convert `editor-shell.css`, `editor-navigation.css`, `editor-responsive.css`, and `editor-mobile.css` from flat literal CSS to nested `@apply` rules backed by `tokens.css`, without moving rules or changing computed output.
+
+### Acceptance criteria
+
+- [ ] All four files use native nesting; repeated full selectors are folded under their parent.
+- [ ] All color, radius, shadow, spacing, type, and z-index literals are replaced by tokens or built-in utilities.
+- [ ] Focus rings use the matching `focus-ring-*` utility and keep their existing width, color, and offset per surface.
+- [ ] The sr-only clip block becomes `sr-only`; `scrollbar-width: thin` becomes `scrollbar-thin`.
+- [ ] `[aria-checked="true"]` switch rules are scoped to their toolbar ancestor instead of matching arbitrary same-document markup.
+- [ ] Existing selected, hover, disabled, and focus-visible appearance and all responsive breakpoints are unchanged.
+- [ ] `:has(.editor-nav-rail)` grid behavior and mobile overrides are preserved.
+- [ ] No rule is moved between files and no rule is wrapped in a cascade layer.
+
+### Verification
+
+- [ ] Run the compliance guard for these files and record the failing-first output.
+- [ ] Run focused unit/component tests, `npm run type-check`, `npm run build`.
+- [ ] Create and run Playwright computed-style assertions for header, toolbar button, current nav item and tab, input/trigger, focus ring, and workspace columns at 1440px and 390px.
+- [ ] Compare screenshots with the FTB-077 baseline and report any difference.
+
+**Related:** [FTB-050](#ftb-050), [FTB-065](#ftb-065), [FTB-078](#ftb-078).
+
+---
+
+<a id="ftb-080"></a>
+
+## FTB-080 — Convert field, foundation, and dialog controls to tokens and @apply
+
+**Scope slug:** `builder-control-styles`
+
+**Priority:** normal
+
+**Status:** ready-for-agent
+
+**Blocked by:** [FTB-078](#ftb-078)
+**Parent:** [FTB-076](#ftb-076)
+**Spec:** [Utility catalog](./docs/superpowers/specs/2026-11-18-builder-stylesheet-tailwind-compliance-design.md#6-utility-catalog-and-exception-policy)
+**GitHub:** [#82](https://github.com/Azab-Inc/filament-theme-builder/issues/82)
+
+### What to build
+
+Convert `color-field.css`, `foundation-surfaces.css`, `foundation-controls.css`, and `local-theme-dialog.css`, including the color popover's checkerboard and sizing, the foundation control base, and the local theme dialog's backdrop and constrained dimensions.
+
+### Acceptance criteria
+
+- [ ] All four files use `@apply` and nesting; flat one-rule-per-line bundles become component blocks.
+- [ ] The transparent checkerboard uses `bg-checkerboard`; popover and dialog sizing use `popover-shell` and `dialog-shell`.
+- [ ] `::backdrop`, `[type="color"]`, `[aria-pressed]`, `[aria-selected]`, `:has()` layout overrides, and the scoped toolbar-button rule keep identical computed output.
+- [ ] Control height, radius, border, background, error color, and disabled opacity resolve from tokens or built-ins.
+- [ ] The only surviving `!important` is inside the reduced-motion media block and the guard accepts it.
+- [ ] The direct `.grid-cols-3` override is expressed through the utility layer without changing the rendered grid.
+- [ ] Micro typography (monospace stacks, caption sizes, transforms) is preserved through named type tokens rather than literals.
+
+### Verification
+
+- [ ] Run the compliance guard for these files and record the failing-first output.
+- [ ] Run focused units, type-check, and build.
+- [ ] Playwright: open the color popover, the transparent and custom panels, the local theme dialog, and a foundation panel; assert computed border, radius, shadow, outline, width, and backdrop color.
+- [ ] Verify the four surfaces at 1440px and 390px and compare with baseline screenshots.
+
+**Related:** [FTB-051](#ftb-051), [FTB-052](#ftb-052), [FTB-021](#ftb-021).
+
+---
+
+<a id="ftb-081"></a>
+
+## FTB-081 — Split and convert the dashboard-first editor stylesheet
+
+**Scope slug:** `builder-dashboard-editor-styles`
+
+**Priority:** normal
+
+**Status:** ready-for-agent
+
+**Blocked by:** [FTB-078](#ftb-078), [FTB-079](#ftb-079), [FTB-080](#ftb-080)
+**Parent:** [FTB-076](#ftb-076)
+**Spec:** [Split contract](./docs/superpowers/specs/2026-11-18-builder-stylesheet-tailwind-compliance-design.md#81-dashboard-first-editorcss-357-lines)
+**GitHub:** [#83](https://github.com/Azab-Inc/filament-theme-builder/issues/83)
+
+### What to build
+
+Split the 357-line, last-imported `dashboard-first-editor.css` into layout, controls, and responsive files, then convert each to nested `@apply` with tokens while preserving its override relationship to the `editor-*` sheets.
+
+### Acceptance criteria
+
+- [ ] `dashboard-editor-layout.css`, `dashboard-editor-controls.css`, and `dashboard-editor-responsive.css` replace the original, imported adjacently in that order at the end of `app.css`.
+- [ ] Declaration order, selector intent, and the overrides that depend on being imported last are preserved.
+- [ ] All literals are replaced by tokens or built-ins, including the resize handle, container query, nav buttons, fields, color-field overrides, and foundation rows.
+- [ ] `!important` layout overrides are removed by correcting selector context or order rather than by escalating specificity.
+- [ ] `css-entrypoint.spec.ts` asserts the three imports and still checks uniqueness and resolvability.
+- [ ] Container-query behavior, pane widths, resize handle interaction, and both navigation layouts are unchanged.
+- [ ] No rule is wrapped in a cascade layer and no sibling stylesheet changes precedence.
+
+### Verification
+
+- [ ] Run the guard and record the failing-first output, then pass.
+- [ ] Run units, type-check, build.
+- [ ] Playwright: assert pane grid columns, resize handle size/cursor, dashboard toolbar buttons, field sizing, nav current state, and foundation row grid at 1440px and 390px in both navigation layouts.
+- [ ] Compare screenshots with the baseline; confirm the resize interaction from FTB-065 still passes (`e2e/ftb-065-editor-resize.spec.ts`).
+
+**Related:** [FTB-065](#ftb-065), [FTB-050](#ftb-050), [FTB-079](#ftb-079), [FTB-080](#ftb-080).
+
+---
+
+<a id="ftb-082"></a>
+
+## FTB-082 — Convert legacy prototype stylesheets to tokens and @apply
+
+**Scope slug:** `builder-legacy-prototype-styles`
+
+**Priority:** normal
+
+**Status:** ready-for-agent
+
+**Blocked by:** [FTB-078](#ftb-078)
+**Parent:** [FTB-076](#ftb-076)
+**Spec:** [Prototype isolation](./docs/superpowers/specs/2026-11-18-builder-stylesheet-tailwind-compliance-design.md#9-prototype-isolation)
+**GitHub:** [#84](https://github.com/Azab-Inc/filament-theme-builder/issues/84)
+
+### What to build
+
+Convert `inspect-prototype.css`, `theme-prototype.css`, `dashboard-prototype.css`, and `guidelines-prototype.css`, preserving their intentionally different palettes while removing private token definitions and literals from points of use.
+
+### Acceptance criteria
+
+- [ ] Each prototype family resolves color, radius, shadow, and type values from its own token group in `tokens.css`; no local `--ink`/`--muted`/`--line`/`--paper` definitions remain.
+- [ ] `dashboard-prototype.css` and `guidelines-prototype.css` declare `@reference "../app.css";` and pass the guard's reference rule.
+- [ ] All rules use `@apply` with nesting; minified rule bundles are expanded into readable component blocks.
+- [ ] `.inspect, .prototype { margin: -8px }` is replaced by root-scoped behavior with the same rendered result.
+- [ ] Only identical switcher/focus/button geometry is consolidated through `@utility`; distinct colors, widths, and palettes remain distinct.
+- [ ] `!important` is limited to the reduced-motion allowlist.
+- [ ] Dev-only behavior, query-parameter selection, and the absence of production effect are unchanged.
+
+### Verification
+
+- [ ] Run the guard for these files and record the failing-first output.
+- [ ] Run units, type-check, build.
+- [ ] Playwright: visit `?inspect=1`, `?dashboard-prototype=1`, and `?guidelines-prototype=1` at 1440px and 390px; assert computed sentinels and compare screenshots with the baseline.
+- [ ] Confirm no rendered difference in the switcher pill, toolbar, dock, and sample surfaces.
+
+**Related:** [FTB-007](#ftb-007), [FTB-050](#ftb-050), [FTB-083](#ftb-083).
+
+---
+
+<a id="ftb-083"></a>
+
+## FTB-083 — Split and convert the visual prototype stylesheet
+
+**Scope slug:** `builder-visual-prototype-styles`
+
+**Priority:** normal
+
+**Status:** ready-for-agent
+
+**Blocked by:** [FTB-078](#ftb-078), [FTB-082](#ftb-082)
+**Parent:** [FTB-076](#ftb-076)
+**Spec:** [Split contract](./docs/superpowers/specs/2026-11-18-builder-stylesheet-tailwind-compliance-design.md#82-visual-prototypecss-706-lines)
+**GitHub:** [#85](https://github.com/Azab-Inc/filament-theme-builder/issues/85)
+
+### What to build
+
+Split the 706-line `visual-prototype.css` into shell, canvas, switcher, and details files behind a thin aggregator, then convert all four to nested `@apply` with `--color-visual-*` tokens. `BuilderVisualPrototype.vue` keeps a single stylesheet import.
+
+### Acceptance criteria
+
+- [ ] `visual-prototype-shell.css`, `visual-prototype-canvas.css`, `visual-prototype-switcher.css`, and `visual-prototype-details.css` exist; `visual-prototype.css` only `@import`s them in that order.
+- [ ] Every split file declares `@reference "../app.css";` and passes the guard.
+- [ ] All 706 lines use `@apply` and nesting, including the appended override block and mobile media queries.
+- [ ] The private `--vp-*` definitions move to the visual token group; `var(--vp-swatch)` and other runtime variables keep working.
+- [ ] The surviving `!important` and arbitrary `#0002`/rgba shadows are replaced by tokenized equivalents with identical computed output.
+- [ ] Dock, canvas, preview toolbar, switcher, section content, and foundation-group layouts are unchanged at desktop and mobile widths.
+- [ ] `BuilderVisualPrototype.vue` remains a single-import consumer and no Vue `<style>` block is introduced.
+
+### Verification
+
+- [ ] Run the guard for the four files and record the failing-first output.
+- [ ] Run units, type-check, build.
+- [ ] Playwright: visit `?visual-prototype=1` at 1440px and 390px; assert computed sentinels for root, dock, canvas, switcher, and shade rows, and compare screenshots with the baseline.
+- [ ] Confirm the aggregator order compiles and the visual mode still loads with no console errors.
+
+**Related:** [FTB-082](#ftb-082), [FTB-050](#ftb-050), [FTB-033](#ftb-033).
+

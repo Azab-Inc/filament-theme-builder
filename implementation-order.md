@@ -65,6 +65,19 @@ All Phase 2 tickets require FTB-040 **and all approved Phase 1 requirements**, i
 5. [FTB-047](./TICKETS.md#ftb-047) and [FTB-048](./TICKETS.md#ftb-048) — Shared panel state and local MCP parity after their documented FTB-044/045/046 prerequisites.
 6. [FTB-049](./TICKETS.md#ftb-049) — Consumer installation and release verification after FTB-042 through FTB-048 and package identity decisions.
 
+## 6. Builder stylesheet compliance
+
+Behavior-preserving refactor of the builder's own chrome against [builder/src/styles/AGENTS.md](./builder/src/styles/AGENTS.md). It does not change the exported user-theme format, Filament runtime surfaces, or any demo-first or Phase 2 gate, and it can run in parallel with feature work when the shared stylesheet files are not being written concurrently. Preserve unrelated dirty worktree changes in `builder/src/styles`.
+
+1. [FTB-077](./TICKETS.md#ftb-077) — Capture computed-style and screenshot baselines, then format the two minified prototype stylesheets in a standalone `Autogen:` commit.
+2. [FTB-078](./TICKETS.md#ftb-078) — Add `tokens.css`, the `@utility` catalog, the base reset block, and the permanent compliance guard.
+3. [FTB-079](./TICKETS.md#ftb-079), [FTB-080](./TICKETS.md#ftb-080), and [FTB-082](./TICKETS.md#ftb-082) — Convert editor chrome, control surfaces, and legacy prototype sheets; serialize writers that touch shared tokens.
+4. [FTB-081](./TICKETS.md#ftb-081) — Split and convert the dashboard-first editor stylesheet after the editor and control slices land.
+5. [FTB-083](./TICKETS.md#ftb-083) — Split and convert the visual prototype stylesheet after FTB-082.
+6. [FTB-076](./TICKETS.md#ftb-076) — Umbrella audit: full guard, units, type-check, build, export goldens, five-mode/two-width browser evidence, and one read-only review.
+
+Spec: [Builder Stylesheet Tailwind Compliance](./docs/superpowers/specs/2026-11-18-builder-stylesheet-tailwind-compliance-design.md); plan: [implementation](./docs/superpowers/plans/2026-11-18-builder-stylesheet-tailwind-compliance.md).
+
 ## Execution rules
 
 Use each ticket's acceptance criteria as authoritative, preserve light/dark isolation, use TDD and applicable real Compose Playwright coverage, and maintain MCP discovery, authorization, confirmation and actual-client verification where required. Keep CSS-addressable chart appearance separate from renderer-backed chart types and series palettes; the latter require generated PHP/config and mode-sync integration, not CSS-only claims. Recheck live issue state and local evidence before starting or closing; this snapshot does not supersede tracker policy.

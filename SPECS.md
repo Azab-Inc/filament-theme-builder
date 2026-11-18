@@ -28,6 +28,8 @@
 <a id="filament-component-variant-coverage"></a>
 **Filament component/variant coverage:** [Component and Variant Coverage](./docs/superpowers/specs/2026-11-18-filament-component-variant-coverage-design.md) and [Chart Widget Theming](./docs/superpowers/specs/2026-11-18-chart-widget-theming-design.md) ([FTB-070](./TICKETS.md#ftb-070) / [GitHub #72](https://github.com/Azab-Inc/filament-theme-builder/issues/72)). Charts are the first vertical slice; forms, tables, actions, notifications, schemas, support primitives, and panel surfaces follow the same verified-selector rule. Renderer-backed series colors and chart types are not CSS-addressable and require generated chart integration.
 
+**Builder stylesheet compliance:** [Builder Stylesheet Tailwind Compliance](./docs/superpowers/specs/2026-11-18-builder-stylesheet-tailwind-compliance-design.md) ([FTB-076](./TICKETS.md#ftb-076) / [GitHub #78](https://github.com/Azab-Inc/filament-theme-builder/issues/78)), with the [implementation plan](./docs/superpowers/plans/2026-11-18-builder-stylesheet-tailwind-compliance.md). This is a behavior-preserving refactor of the builder's own chrome; it does not change the exported user-theme format or any Filament runtime surface.
+
 This is the implementation contract. PRD.md defines the product problem and outcomes. TICKETS.md contains the executable vertical slices. Each section below links to the ticket or tickets that implement it.
 
 Remaining builder feature work follows the demo-complete gate recorded in root AGENTS.md and TICKETS.md. Those authoritative records already evidence completion of FTB-009A/B/010/011/013/014/015/016/017/018; the earlier blocked summary here was stale. FTB-012 remains partial only for theme-density integration and is not a blocker. This reconciliation does not complete or relax any prerequisite on behalf of padding work. Operational FTB-027 and FTB-028 retain their separate status and evidence; they are not substitutes for the demo gate.
@@ -716,3 +718,21 @@ Preview uses the existing iframe bridge without reloads, network mutations, or r
 Completion requires an exhaustive text-target coverage matrix across routes, overlays, states, and light/dark modes, linked to editor controls and real rendered/exported-color evidence. Automated coverage checks must fail for an uncovered in-scope text target. Newly discovered targets are added to the inventory and implemented within this feature; an unmapped/unsupported row remains an open acceptance gap, not a completed exclusion. Representative browser journeys supplement this matrix and do not replace full-inventory coverage.
 
 **Tickets:** [FTB-056](./TICKETS.md#ftb-056), [GitHub #56](https://github.com/Azab-Inc/filament-theme-builder/issues/56)
+
+<a id="builder-stylesheet-compliance"></a>
+## 46. Builder stylesheet compliance
+
+Every stylesheet under `builder/src/styles` follows [builder/src/styles/AGENTS.md](./builder/src/styles/AGENTS.md): Tailwind CSS v4 `@apply` for selector styling, one central token source, native nesting, no scattered literals, and preserved behavior, specificity, responsive states, and light/dark inheritance. The design and rollout are specified by [Builder Stylesheet Tailwind Compliance](./docs/superpowers/specs/2026-11-18-builder-stylesheet-tailwind-compliance-design.md) and its [implementation plan](./docs/superpowers/plans/2026-11-18-builder-stylesheet-tailwind-compliance.md).
+
+The contract:
+
+- `builder/src/styles/tokens.css` is the only `@theme` source and is imported first by `app.css`.
+- Raw declarations are confined to `@theme`, `@utility`, custom-property definitions, and one documented `@layer base` reset block. No Preflight is introduced.
+- Rules stay unlayered and in their existing import order; duplication is consolidated through `@utility`, not by relocating rules. `dashboard-first-editor.css` and `visual-prototype.css` split only as described in the design, with the original precedence preserved.
+- Component-imported stylesheets that use `@apply` declare `@reference "../app.css";`.
+- `!important` survives only in the documented `prefers-reduced-motion` allowlist.
+- The builder design system remains separate from the user-generated Filament theme and the embedded demo preview. No builder rule may reach into the demo iframe.
+- The exported user-theme format, registry, canonical theme state, and Filament runtime behavior are unchanged. Vanilla CSS remains the default export and Tailwind `@apply` remains a separate option.
+- A permanent compliance guard test, computed-style Playwright assertions, and a five-mode, two-width screenshot matrix provide regression evidence.
+
+**Tickets:** [FTB-076](./TICKETS.md#ftb-076), [FTB-077](./TICKETS.md#ftb-077), [FTB-078](./TICKETS.md#ftb-078), [FTB-079](./TICKETS.md#ftb-079), [FTB-080](./TICKETS.md#ftb-080), [FTB-081](./TICKETS.md#ftb-081), [FTB-082](./TICKETS.md#ftb-082), [FTB-083](./TICKETS.md#ftb-083)
