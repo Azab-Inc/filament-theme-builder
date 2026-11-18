@@ -85,6 +85,7 @@ Red-first note: the semantic browser test failed before its controls existed. Ra
 
 ## State and next action
 
+- Publication update: implementation and this checkpoint were saved in commit `4562f2e` on `dev`; the following HEAD/worktree observations describe the verification-time state before that commit. Issues #88/#87/#86 remain Open / Testing.
 - HEAD: `ee3e00203f5342dad8c56b4d063c59fa1747c9d6`
 - Worktree: uncommitted shared WIP; 127 changed/untracked paths reported by `git status --short`.
 - No helper, package, branch, or commit was added.

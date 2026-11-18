@@ -8,6 +8,10 @@
 
 **Phase 2 technical specification:** [docs/phase-2/SPECS.md](./docs/phase-2/SPECS.md)
 
+**Panel properties planning:** [FTB-087](./TICKETS.md#ftb-087) / [#89](https://github.com/Azab-Inc/filament-theme-builder/issues/89); initial [research inventory](./docs/research/2026-11-18-panel-properties.md), [FTB-088 top navigation](./TICKETS.md#ftb-088), [FTB-089–102 navigation/layout](./TICKETS.md#ftb-089), [FTB-103–127 runtime/authentication](./TICKETS.md#ftb-103), [FTB-128–157 tenancy/search/styling](./TICKETS.md#ftb-128), and [FTB-158–180 menus/notifications/auth routes/registrations](./TICKETS.md#ftb-158). Inventory and full specification remain incomplete.
+
+**Panel configuration phase decision:** Non-visual configuration is deferred to the Composer package (Phase 2); its exact issue list and gate are recorded at [FTB-087](./TICKETS.md#ftb-087). Visual configuration retains its existing phase. The umbrella spans both phases.
+
 **Deferred editor-layout design:** [Editor Layout Modes Promotion](./docs/superpowers/specs/2026-10-12-editor-layout-modes-promotion.md) ([FTB-050](./TICKETS.md#ftb-050), [GitHub #50](https://github.com/Azab-Inc/filament-theme-builder/issues/50)).
 
 **Deferred color-input design:** [Color Picker and Tailwind Palette Selection](./docs/superpowers/specs/2026-10-12-color-picker-tailwind-palette-selection.md) ([FTB-051](./TICKETS.md#ftb-051), [GitHub #51](https://github.com/Azab-Inc/filament-theme-builder/issues/51)).
@@ -31,7 +35,7 @@
 **Builder stylesheet compliance:** [Builder Stylesheet Tailwind Compliance](./docs/superpowers/specs/2026-11-18-builder-stylesheet-tailwind-compliance-design.md) ([FTB-076](./TICKETS.md#ftb-076) / [GitHub #78](https://github.com/Azab-Inc/filament-theme-builder/issues/78)), with the [implementation plan](./docs/superpowers/plans/2026-11-18-builder-stylesheet-tailwind-compliance.md). This is a behavior-preserving refactor of the builder's own chrome; it does not change the exported user-theme format or any Filament runtime surface.
 
 <a id="border-side-controls"></a>
-**Border-side controls:** [Border Side Controls](./docs/superpowers/specs/2026-11-18-border-side-controls-design.md) ([FTB-084](./TICKETS.md#ftb-084) / [GitHub #88](https://github.com/Azab-Inc/filament-theme-builder/issues/88)), delivered by [FTB-085](./TICKETS.md#ftb-085) / [#87](https://github.com/Azab-Inc/filament-theme-builder/issues/87) semantic controls then [FTB-086](./TICKETS.md#ftb-086) / [#86](https://github.com/Azab-Inc/filament-theme-builder/issues/86) raw Inspector. Open/Testing: uncommitted V8 implementation includes physical edge controls, uncapped nonnegative widths, ring-backed projection and MCP paths. Final full-unit gate remains blocked by concurrent stylesheet token naming. [Verification and supported scopes](./docs/verification/ftb-084-border-sides.md), [issue index](./ISSUES.md).
+**Border-side controls:** [Border Side Controls](./docs/superpowers/specs/2026-11-18-border-side-controls-design.md) ([FTB-084](./TICKETS.md#ftb-084) / [GitHub #88](https://github.com/Azab-Inc/filament-theme-builder/issues/88)), delivered by [FTB-085](./TICKETS.md#ftb-085) / [#87](https://github.com/Azab-Inc/filament-theme-builder/issues/87) semantic controls then [FTB-086](./TICKETS.md#ftb-086) / [#86](https://github.com/Azab-Inc/filament-theme-builder/issues/86) raw Inspector. Open/Testing: V8 implementation saved in `4562f2e` includes physical edge controls, uncapped nonnegative widths, ring-backed projection and MCP paths. Final full-unit gate remains blocked by concurrent stylesheet token naming. [Verification and supported scopes](./docs/verification/ftb-084-border-sides.md), [issue index](./ISSUES.md).
 
 This is the implementation contract. PRD.md defines the product problem and outcomes. TICKETS.md contains the executable vertical slices. Each section below links to the ticket or tickets that implement it.
 

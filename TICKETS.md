@@ -28,6 +28,138 @@
 
 ## Dependency map
 
+<a id="ftb-087"></a>
+### FTB-087 — Filament 5 panel properties (umbrella)
+
+**Phase classification (user decision):** non-visual panel configuration is deferred to the Composer package phase (Phase 2). Its issues have the `composer package phase` label and `(Composer package phase)` title suffix. The affected tickets are FTB-103–105, 107–109, 111–116, 121–133, 138–140, 142–144, 161, 163–164, and 166–180. Phase 2 remains blocked until FTB-040 and all approved Phase 1 requirements are complete; ticket-specific Phase 2 prerequisites also apply. Visual configuration retains its existing phase and `visual config` label. The umbrella spans both phases and cannot close until all its children are complete.
+
+**Status:** blocked (planning/inventory incomplete). **GitHub:** [#89](https://github.com/Azab-Inc/filament-theme-builder/issues/89). Inventory every documented Panel option, including security, authentication, routing, tenancy and extension APIs, and create a child for each. Preserve host defaults and permissions; specify validated state, migration, real preview, PHP export, and MCP parity. Coordinate existing FTB-018 and FTB-055. Completion requires all children and their verification; the inventory and most children remain outstanding. Sources and initial findings: [research](./docs/research/2026-11-18-panel-properties.md).
+
+<a id="ftb-088"></a>
+### FTB-088 — Filament panel top navigation
+
+**Status:** blocked (planning; panel contract and dependencies to be established). **GitHub:** [#90](https://github.com/Azab-Inc/filament-theme-builder/issues/90), child of #89. Configure `topNavigation()` on/off/inherited; retain defaults, persistence, reset, history, import/export, controlled real preview and valid PanelProvider output. Verify desktop/mobile and sidebar/topbar/navigation combinations, with TDD, Compose Playwright and authorized MCP preview/confirmed mutation and actual-client verification. Coordinate FTB-055. Full criteria: [#90](https://github.com/Azab-Inc/filament-theme-builder/issues/90).
+
+### FTB-089–FTB-102 — Navigation and layout settings
+
+**Status:** blocked (planning; establish panel configuration contract and dependencies). Each is a child of [#89](https://github.com/Azab-Inc/filament-theme-builder/issues/89) and is in GitHub Project #30. Verify Filament 5.9 signatures, all documented arguments and defaults, interactions and callback/class integration before implementation; coordinate FTB-018 and FTB-055. For each: accessible editing and reset; validation, existing-host defaults, persistence, import/export, undo/redo and migration; faithful real preview where applicable and valid PanelProvider output or explicit integration path; MCP discovery/read/preview/confirmed mutation with authorization, revalidation, capability inventory and actual-client verification; test-first regression and real Compose Playwright for visible behavior. CSS alone cannot stand in for PHP configuration. Full acceptance criteria are in each linked issue.
+
+| Ticket | Option | GitHub issue |
+| --- | --- | --- |
+| <a id="ftb-089"></a>FTB-089 | `navigation` visibility/custom builder | [#91](https://github.com/Azab-Inc/filament-theme-builder/issues/91) |
+| <a id="ftb-090"></a>FTB-090 | `navigationGroups` | [#92](https://github.com/Azab-Inc/filament-theme-builder/issues/92) |
+| <a id="ftb-091"></a>FTB-091 | `navigationItems` | [#93](https://github.com/Azab-Inc/filament-theme-builder/issues/93) |
+| <a id="ftb-092"></a>FTB-092 | `collapsibleNavigationGroups` | [#94](https://github.com/Azab-Inc/filament-theme-builder/issues/94) |
+| <a id="ftb-093"></a>FTB-093 | `sidebarCollapsibleOnDesktop` | [#95](https://github.com/Azab-Inc/filament-theme-builder/issues/95) |
+| <a id="ftb-094"></a>FTB-094 | `sidebarFullyCollapsibleOnDesktop` | [#96](https://github.com/Azab-Inc/filament-theme-builder/issues/96) |
+| <a id="ftb-095"></a>FTB-095 | `sidebarWidth` | [#97](https://github.com/Azab-Inc/filament-theme-builder/issues/97) |
+| <a id="ftb-096"></a>FTB-096 | `collapsedSidebarWidth` | [#98](https://github.com/Azab-Inc/filament-theme-builder/issues/98) |
+| <a id="ftb-097"></a>FTB-097 | `sidebarLivewireComponent` | [#99](https://github.com/Azab-Inc/filament-theme-builder/issues/99) |
+| <a id="ftb-098"></a>FTB-098 | `topbarLivewireComponent` | [#100](https://github.com/Azab-Inc/filament-theme-builder/issues/100) |
+| <a id="ftb-099"></a>FTB-099 | `breadcrumbs`, including hierarchy | [#101](https://github.com/Azab-Inc/filament-theme-builder/issues/101) |
+| <a id="ftb-100"></a>FTB-100 | `subNavigationPosition` | [#102](https://github.com/Azab-Inc/filament-theme-builder/issues/102) |
+| <a id="ftb-101"></a>FTB-101 | `maxContentWidth` | [#103](https://github.com/Azab-Inc/filament-theme-builder/issues/103) |
+| <a id="ftb-102"></a>FTB-102 | `simplePageMaxContentWidth` | [#104](https://github.com/Azab-Inc/filament-theme-builder/issues/104) |
+
+### FTB-103–FTB-127 — Panel runtime and authentication options
+
+**Status:** blocked (planning; establish panel configuration foundations). Each is a child of #89 and belongs to Project #30. Each issue requires documented arguments/defaults, inherited behavior, interaction and dependency analysis, host authorization and secret protection; accessible editing/reset, persistence, import/export, history and migration; faithful preview where applicable and valid PanelProvider output or explicit integration; relevant security and panel isolation tests; authorized MCP discovery/read/preview/confirmed mutation, revalidation, capability inventory and actual-client verification; TDD and real Compose Playwright for visible paths. Verify installed Filament 5.9 and coordinate FTB-018/055. Each linked issue carries its full criteria.
+
+| Ticket | Panel option | GitHub issue |
+| --- | --- | --- |
+| <a id="ftb-103"></a>FTB-103 | `path` | [#105](https://github.com/Azab-Inc/filament-theme-builder/issues/105) |
+| <a id="ftb-104"></a>FTB-104 | `domain` | [#106](https://github.com/Azab-Inc/filament-theme-builder/issues/106) |
+| <a id="ftb-105"></a>FTB-105 | `domains` | [#107](https://github.com/Azab-Inc/filament-theme-builder/issues/107) |
+| <a id="ftb-106"></a>FTB-106 | `renderHook` | [#108](https://github.com/Azab-Inc/filament-theme-builder/issues/108) |
+| <a id="ftb-107"></a>FTB-107 | `bootUsing` | [#109](https://github.com/Azab-Inc/filament-theme-builder/issues/109) |
+| <a id="ftb-108"></a>FTB-108 | `spa` and prefetching | [#110](https://github.com/Azab-Inc/filament-theme-builder/issues/110) |
+| <a id="ftb-109"></a>FTB-109 | `spaUrlExceptions` | [#111](https://github.com/Azab-Inc/filament-theme-builder/issues/111) |
+| <a id="ftb-110"></a>FTB-110 | `unsavedChangesAlerts` | [#112](https://github.com/Azab-Inc/filament-theme-builder/issues/112) |
+| <a id="ftb-111"></a>FTB-111 | `databaseTransactions` | [#113](https://github.com/Azab-Inc/filament-theme-builder/issues/113) |
+| <a id="ftb-112"></a>FTB-112 | `assets` | [#114](https://github.com/Azab-Inc/filament-theme-builder/issues/114) |
+| <a id="ftb-113"></a>FTB-113 | `middleware` | [#115](https://github.com/Azab-Inc/filament-theme-builder/issues/115) |
+| <a id="ftb-114"></a>FTB-114 | `authMiddleware` | [#116](https://github.com/Azab-Inc/filament-theme-builder/issues/116) |
+| <a id="ftb-115"></a>FTB-115 | `broadcasting` | [#117](https://github.com/Azab-Inc/filament-theme-builder/issues/117) |
+| <a id="ftb-116"></a>FTB-116 | `strictAuthorization` | [#118](https://github.com/Azab-Inc/filament-theme-builder/issues/118) |
+| <a id="ftb-117"></a>FTB-117 | `errorNotifications` | [#119](https://github.com/Azab-Inc/filament-theme-builder/issues/119) |
+| <a id="ftb-118"></a>FTB-118 | `registerErrorNotification` | [#120](https://github.com/Azab-Inc/filament-theme-builder/issues/120) |
+| <a id="ftb-119"></a>FTB-119 | `hiddenErrorNotification` | [#121](https://github.com/Azab-Inc/filament-theme-builder/issues/121) |
+| <a id="ftb-120"></a>FTB-120 | `disabledErrorNotification` | [#122](https://github.com/Azab-Inc/filament-theme-builder/issues/122) |
+| <a id="ftb-121"></a>FTB-121 | `login` | [#123](https://github.com/Azab-Inc/filament-theme-builder/issues/123) |
+| <a id="ftb-122"></a>FTB-122 | `registration` | [#124](https://github.com/Azab-Inc/filament-theme-builder/issues/124) |
+| <a id="ftb-123"></a>FTB-123 | `passwordReset` | [#125](https://github.com/Azab-Inc/filament-theme-builder/issues/125) |
+| <a id="ftb-124"></a>FTB-124 | `emailVerification` | [#126](https://github.com/Azab-Inc/filament-theme-builder/issues/126) |
+| <a id="ftb-125"></a>FTB-125 | `emailChangeVerification` | [#127](https://github.com/Azab-Inc/filament-theme-builder/issues/127) |
+| <a id="ftb-126"></a>FTB-126 | `profile` | [#128](https://github.com/Azab-Inc/filament-theme-builder/issues/128) |
+| <a id="ftb-127"></a>FTB-127 | `multiFactorAuthentication` | [#129](https://github.com/Azab-Inc/filament-theme-builder/issues/129) |
+
+### FTB-128–FTB-157 — Tenancy, search and styling options
+
+**Status:** blocked (planning; establish shared panel configuration contract). Each is a child of #89 and belongs to Project #30. Each issue requires valid values, host defaults, interactions and application callback/class integration; accessible editing/reset, validation, persistence, import/export, history and migration; real preview where applicable and valid PanelProvider output or explicit integration; authorization and tenant-isolation tests; MCP discovery/read/preview/confirmed mutation, revalidation, capability inventory and actual AI-client verification; TDD and Compose Playwright for visible paths. Protect secrets and preserve light/dark isolation. Verify Filament 5.9 and coordinate FTB-018/055. Full criteria are in the linked issues.
+
+| Ticket | Panel option | GitHub issue |
+| --- | --- | --- |
+| <a id="ftb-128"></a>FTB-128 | `tenant` | [#130](https://github.com/Azab-Inc/filament-theme-builder/issues/130) |
+| <a id="ftb-129"></a>FTB-129 | `tenantRegistration` | [#131](https://github.com/Azab-Inc/filament-theme-builder/issues/131) |
+| <a id="ftb-130"></a>FTB-130 | `tenantProfile` | [#132](https://github.com/Azab-Inc/filament-theme-builder/issues/132) |
+| <a id="ftb-131"></a>FTB-131 | `tenantBillingProvider` | [#133](https://github.com/Azab-Inc/filament-theme-builder/issues/133) |
+| <a id="ftb-132"></a>FTB-132 | `requiresTenantSubscription` | [#134](https://github.com/Azab-Inc/filament-theme-builder/issues/134) |
+| <a id="ftb-133"></a>FTB-133 | `tenantBillingRouteSlug` | [#135](https://github.com/Azab-Inc/filament-theme-builder/issues/135) |
+| <a id="ftb-134"></a>FTB-134 | `tenantMenuItems` | [#136](https://github.com/Azab-Inc/filament-theme-builder/issues/136) |
+| <a id="ftb-135"></a>FTB-135 | `searchableTenantMenu` | [#137](https://github.com/Azab-Inc/filament-theme-builder/issues/137) |
+| <a id="ftb-136"></a>FTB-136 | `tenantSwitcher` | [#138](https://github.com/Azab-Inc/filament-theme-builder/issues/138) |
+| <a id="ftb-137"></a>FTB-137 | `tenantMenu` | [#139](https://github.com/Azab-Inc/filament-theme-builder/issues/139) |
+| <a id="ftb-138"></a>FTB-138 | `tenantMiddleware` | [#140](https://github.com/Azab-Inc/filament-theme-builder/issues/140) |
+| <a id="ftb-139"></a>FTB-139 | `tenantRoutePrefix` | [#141](https://github.com/Azab-Inc/filament-theme-builder/issues/141) |
+| <a id="ftb-140"></a>FTB-140 | `tenantDomain` | [#142](https://github.com/Azab-Inc/filament-theme-builder/issues/142) |
+| <a id="ftb-141"></a>FTB-141 | `globalSearch` | [#143](https://github.com/Azab-Inc/filament-theme-builder/issues/143) |
+| <a id="ftb-142"></a>FTB-142 | `globalSearchResourceOptIn` | [#144](https://github.com/Azab-Inc/filament-theme-builder/issues/144) |
+| <a id="ftb-143"></a>FTB-143 | `globalSearchKeyBindings` | [#145](https://github.com/Azab-Inc/filament-theme-builder/issues/145) |
+| <a id="ftb-144"></a>FTB-144 | `globalSearchDebounce` | [#146](https://github.com/Azab-Inc/filament-theme-builder/issues/146) |
+| <a id="ftb-145"></a>FTB-145 | `globalSearchFieldSuffix` | [#147](https://github.com/Azab-Inc/filament-theme-builder/issues/147) |
+| <a id="ftb-146"></a>FTB-146 | `globalSearchFieldKeyBindingSuffix` | [#148](https://github.com/Azab-Inc/filament-theme-builder/issues/148) |
+| <a id="ftb-147"></a>FTB-147 | `darkMode` | [#149](https://github.com/Azab-Inc/filament-theme-builder/issues/149) |
+| <a id="ftb-148"></a>FTB-148 | `themeSwitcher` | [#150](https://github.com/Azab-Inc/filament-theme-builder/issues/150) |
+| <a id="ftb-149"></a>FTB-149 | `defaultThemeMode` | [#151](https://github.com/Azab-Inc/filament-theme-builder/issues/151) |
+| <a id="ftb-150"></a>FTB-150 | `brandName` | [#152](https://github.com/Azab-Inc/filament-theme-builder/issues/152) |
+| <a id="ftb-151"></a>FTB-151 | `brandLogo` | [#153](https://github.com/Azab-Inc/filament-theme-builder/issues/153) |
+| <a id="ftb-152"></a>FTB-152 | `darkModeBrandLogo` | [#154](https://github.com/Azab-Inc/filament-theme-builder/issues/154) |
+| <a id="ftb-153"></a>FTB-153 | `brandLogoHeight` | [#155](https://github.com/Azab-Inc/filament-theme-builder/issues/155) |
+| <a id="ftb-154"></a>FTB-154 | `favicon` | [#156](https://github.com/Azab-Inc/filament-theme-builder/issues/156) |
+| <a id="ftb-155"></a>FTB-155 | `font` | [#157](https://github.com/Azab-Inc/filament-theme-builder/issues/157) |
+| <a id="ftb-156"></a>FTB-156 | `colors` | [#158](https://github.com/Azab-Inc/filament-theme-builder/issues/158) |
+| <a id="ftb-157"></a>FTB-157 | `viteTheme` | [#159](https://github.com/Azab-Inc/filament-theme-builder/issues/159) |
+
+### FTB-158–FTB-180 — Menus, notifications, authentication routes and registration
+
+**Status:** blocked (planning; shared panel configuration contract). Each is an issue child of #89 and in Project #30. Each requires version-specific signature/default verification, authorized handling of callbacks/classes and secrets, accessible editing/reset, persistence/import/export/history/migration, real preview when applicable, valid PanelProvider output or explicit integration, authorization and isolation tests, authorized MCP discovery/read/preview/confirmed mutation and actual-client verification, TDD and applicable real Compose Playwright. Coordinate FTB-018/055. See each linked issue for its full criteria. The moving 5.x docs and installed 5.9 source differ for some method names; resolve this before implementation, without assuming an alias exists.
+
+| Ticket | Documented option | GitHub issue |
+| --- | --- | --- |
+| <a id="ftb-158"></a>FTB-158 | `userMenu` | [#160](https://github.com/Azab-Inc/filament-theme-builder/issues/160) |
+| <a id="ftb-159"></a>FTB-159 | `userMenuItems` | [#161](https://github.com/Azab-Inc/filament-theme-builder/issues/161) |
+| <a id="ftb-160"></a>FTB-160 | `databaseNotifications` | [#162](https://github.com/Azab-Inc/filament-theme-builder/issues/162) |
+| <a id="ftb-161"></a>FTB-161 | Polling: docs `databaseNotificationsPollingInterval`; v5.9 `databaseNotificationsPolling` | [#163](https://github.com/Azab-Inc/filament-theme-builder/issues/163) |
+| <a id="ftb-162"></a>FTB-162 | `defaultAvatarProvider` | [#164](https://github.com/Azab-Inc/filament-theme-builder/issues/164) |
+| <a id="ftb-163"></a>FTB-163 | `authGuard` | [#165](https://github.com/Azab-Inc/filament-theme-builder/issues/165) |
+| <a id="ftb-164"></a>FTB-164 | `authPasswordBroker` | [#166](https://github.com/Azab-Inc/filament-theme-builder/issues/166) |
+| <a id="ftb-165"></a>FTB-165 | `revealablePasswords` | [#167](https://github.com/Azab-Inc/filament-theme-builder/issues/167) |
+| <a id="ftb-166"></a>FTB-166 | `loginRouteSlug` | [#168](https://github.com/Azab-Inc/filament-theme-builder/issues/168) |
+| <a id="ftb-167"></a>FTB-167 | `registrationRouteSlug` | [#169](https://github.com/Azab-Inc/filament-theme-builder/issues/169) |
+| <a id="ftb-168"></a>FTB-168 | `passwordResetRoutePrefix` | [#170](https://github.com/Azab-Inc/filament-theme-builder/issues/170) |
+| <a id="ftb-169"></a>FTB-169 | Request slug: docs `requestPasswordResetRouteSlug`; v5.9 `passwordResetRequestRouteSlug` | [#171](https://github.com/Azab-Inc/filament-theme-builder/issues/171) |
+| <a id="ftb-170"></a>FTB-170 | Reset slug: docs `resetPasswordRouteSlug`; v5.9 `passwordResetRouteSlug` | [#172](https://github.com/Azab-Inc/filament-theme-builder/issues/172) |
+| <a id="ftb-171"></a>FTB-171 | `emailVerificationRoutePrefix` | [#173](https://github.com/Azab-Inc/filament-theme-builder/issues/173) |
+| <a id="ftb-172"></a>FTB-172 | `emailVerificationPromptRouteSlug` | [#174](https://github.com/Azab-Inc/filament-theme-builder/issues/174) |
+| <a id="ftb-173"></a>FTB-173 | `emailVerificationRouteSlug` | [#175](https://github.com/Azab-Inc/filament-theme-builder/issues/175) |
+| <a id="ftb-174"></a>FTB-174 | `emailChangeVerificationRoutePrefix` | [#176](https://github.com/Azab-Inc/filament-theme-builder/issues/176) |
+| <a id="ftb-175"></a>FTB-175 | `emailChangeVerificationRouteSlug` | [#177](https://github.com/Azab-Inc/filament-theme-builder/issues/177) |
+| <a id="ftb-176"></a>FTB-176 | `plugin` | [#178](https://github.com/Azab-Inc/filament-theme-builder/issues/178) |
+| <a id="ftb-177"></a>FTB-177 | `plugins` | [#179](https://github.com/Azab-Inc/filament-theme-builder/issues/179) |
+| <a id="ftb-178"></a>FTB-178 | `widgets` | [#180](https://github.com/Azab-Inc/filament-theme-builder/issues/180) |
+| <a id="ftb-179"></a>FTB-179 | `resources` | [#181](https://github.com/Azab-Inc/filament-theme-builder/issues/181) |
+| <a id="ftb-180"></a>FTB-180 | `pages` | [#182](https://github.com/Azab-Inc/filament-theme-builder/issues/182) |
+
 Demo-showcase delivery order (prose delivery order (not hard dependency blockers)): **Phase 1 → FTB-011 → FTB-012 → FTB-013 → FTB-014 → FTB-015 → FTB-016 → FTB-017 → FTB-018**. The dependency map below remains the source of hard blockers. The demo-complete gate is satisfied by current Compose evidence: FTB-009A/B/010, FTB-011, FTB-013, FTB-014, FTB-015, FTB-016, FTB-017, and FTB-018 are done; FTB-012 remains partial solely for theme-density integration and is explicitly not a blocker. Operational FTB-027 and FTB-028 are done, with FTB-028's full-suite documentation-mount gap recorded in its report. Phase 1 owns the branded existing dashboard shell, four commerce widgets (`CommerceStatsOverviewWidget`, `RevenueOrdersChartWidget`, `RecentOrdersWidget`, `LowStockWidget`), resource icons, and representative badges. FTB-015 owns the Showcase navigation/index, search/profile/authentication/tenant surfaces and must integrate (not duplicate) Phase 1 widgets/navigation. The official demo is research inspiration only; identity is independent; do not copy official-demo branding, content, or presentation.
 
 ```text
@@ -102,7 +234,7 @@ Provide discoverable All sides / Top / Right / Bottom / Left border editing on v
 
 **Related:** FTB-006/008/022, FTB-052/054/058/062/070/071. Existing project gates remain authoritative.
 
-**2026-11-18 implementation checkpoint:** Both slices are implemented as uncommitted work on `dev`; acceptance is not signed off. Integrated Compose browser/MCP: 17 passed; affected PHP: 21 passed / 150 assertions; type-check and Compose production build passed. Full builder units: 719 passed / 1 failed in the concurrent stylesheet-compliance work (276 forbidden generated `--builder-*` names). The authorized assertion correction preserves the naming rule and does not rename tokens. Issues stay open. See [verification and limitations](./docs/verification/ftb-084-border-sides.md); no feature commit or independent reviewer re-approval is claimed.
+**2026-11-18 implementation checkpoint:** Both slices are saved in commit `4562f2e` on `dev`; acceptance is not signed off. Integrated Compose browser/MCP: 17 passed; affected PHP: 21 passed / 150 assertions; type-check and Compose production build passed. Full builder units: 719 passed / 1 failed in the concurrent stylesheet-compliance work (276 forbidden generated `--builder-*` names). The authorized assertion correction preserves the naming rule and does not rename tokens. Issues stay open. See [verification and limitations](./docs/verification/ftb-084-border-sides.md); independent reviewer re-approval is not claimed.
 
 ---
 
@@ -2683,4 +2815,3 @@ Split the 706-line `visual-prototype.css` into shell, canvas, switcher, and deta
 - [ ] Confirm the aggregator order compiles and the visual mode still loads with no console errors.
 
 **Related:** [FTB-082](#ftb-082), [FTB-050](#ftb-050), [FTB-033](#ftb-033).
-
