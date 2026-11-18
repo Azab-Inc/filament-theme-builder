@@ -25,6 +25,9 @@
 
 **Deferred all-text color controls:** [FTB-056](./TICKETS.md#ftb-056) / [GitHub #56](https://github.com/Azab-Inc/filament-theme-builder/issues/56), specified at [Component text-color controls](#component-text-color-controls). Every text target throughout the Filament application must be covered; missing registry mappings are implementation work, not exclusions. Readiness remains blocked by the existing gate and prerequisite evidence.
 
+<a id="filament-component-variant-coverage"></a>
+**Filament component/variant coverage:** [Component and Variant Coverage](./docs/superpowers/specs/2026-11-18-filament-component-variant-coverage-design.md) and [Chart Widget Theming](./docs/superpowers/specs/2026-11-18-chart-widget-theming-design.md) ([FTB-070](./TICKETS.md#ftb-070) / [GitHub #72](https://github.com/Azab-Inc/filament-theme-builder/issues/72)). Charts are the first vertical slice; forms, tables, actions, notifications, schemas, support primitives, and panel surfaces follow the same verified-selector rule. Renderer-backed series colors and chart types are not CSS-addressable and require generated chart integration.
+
 This is the implementation contract. PRD.md defines the product problem and outcomes. TICKETS.md contains the executable vertical slices. Each section below links to the ticket or tickets that implement it.
 
 Remaining builder feature work follows the demo-complete gate recorded in root AGENTS.md and TICKETS.md. Those authoritative records already evidence completion of FTB-009A/B/010/011/013/014/015/016/017/018; the earlier blocked summary here was stale. FTB-012 remains partial only for theme-density integration and is not a blocker. This reconciliation does not complete or relax any prerequisite on behalf of padding work. Operational FTB-027 and FTB-028 retain their separate status and evidence; they are not substitutes for the demo gate.

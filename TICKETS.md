@@ -21,6 +21,7 @@
 - Builder keyboard shortcuts and command modal: [FTB-064](#ftb-064) / [GitHub #66](https://github.com/Azab-Inc/filament-theme-builder/issues/66).
 - Editor and demo preview resize handle: [FTB-065](#ftb-065) / [GitHub #67](https://github.com/Azab-Inc/filament-theme-builder/issues/67).
 - Builder onboarding tour: [FTB-066](#ftb-066) / [GitHub #68](https://github.com/Azab-Inc/filament-theme-builder/issues/68), split into [FTB-067](#ftb-067), [FTB-068](#ftb-068), and [FTB-069](#ftb-069).
+- Filament component/variant coverage: [FTB-070](#ftb-070) / [GitHub #72](https://github.com/Azab-Inc/filament-theme-builder/issues/72), split into [FTB-071](#ftb-071) / [#73](https://github.com/Azab-Inc/filament-theme-builder/issues/73), [FTB-072](#ftb-072) / [#74](https://github.com/Azab-Inc/filament-theme-builder/issues/74), [FTB-073](#ftb-073) / [#75](https://github.com/Azab-Inc/filament-theme-builder/issues/75), [FTB-074](#ftb-074) / [#76](https://github.com/Azab-Inc/filament-theme-builder/issues/76), and [FTB-075](#ftb-075) / [#77](https://github.com/Azab-Inc/filament-theme-builder/issues/77). Specs: [coverage inventory](./docs/superpowers/specs/2026-11-18-filament-component-variant-coverage-design.md) and [chart theming](./docs/superpowers/specs/2026-11-18-chart-widget-theming-design.md).
 
 ## Dependency map
 
@@ -2053,3 +2054,204 @@ Harden the tour across both editor layouts, narrow viewports, light/dark mode, k
 - [ ] Record browser coverage, viewport sizes, and any Driver.js limitations.
 
 **Related:** FTB-019, FTB-050, FTB-064.
+
+---
+
+<a id="ftb-070"></a>
+
+## FTB-070 — Complete Filament component and variant coverage (umbrella)
+
+**Status:** ready-for-agent (umbrella; do not implement directly)
+**Blocked by:** None
+**Specs:** [Component and variant coverage](./docs/superpowers/specs/2026-11-18-filament-component-variant-coverage-design.md), [Chart widget theming](./docs/superpowers/specs/2026-11-18-chart-widget-theming-design.md)
+**Children:** [FTB-071](#ftb-071) / [#73](https://github.com/Azab-Inc/filament-theme-builder/issues/73), [FTB-072](#ftb-072) / [#74](https://github.com/Azab-Inc/filament-theme-builder/issues/74), [FTB-073](#ftb-073) / [#75](https://github.com/Azab-Inc/filament-theme-builder/issues/75), [FTB-074](#ftb-074) / [#76](https://github.com/Azab-Inc/filament-theme-builder/issues/76), [FTB-075](#ftb-075) / [#77](https://github.com/Azab-Inc/filament-theme-builder/issues/77)
+**GitHub:** [#72](https://github.com/Azab-Inc/filament-theme-builder/issues/72)
+
+### What to build
+
+Track the verified Filament 5.9 component and variant inventory and the slices that turn selector-only surfaces into editable, exportable controls. Charts are the first vertical slice because canvas rendering exposes the gap most clearly; forms, tables, actions, notifications, schemas, support primitives, and panel surfaces follow without inventing selectors.
+
+### Acceptance criteria
+
+- [ ] Every inventory row in the coverage spec has a registry status of `absent`, `surface`, `css-controlled`, `renderer-controlled`, or `partial`; no row silently disappears.
+- [ ] Each child slice has a stable ticket, acceptance criteria, TDD/Playwright obligations, and a link back to this umbrella.
+- [ ] `COVERAGE.md` and the GitHub project reflect the same coverage state and do not claim unsupported capabilities.
+- [ ] Chart controls distinguish CSS-addressable appearance from renderer-backed series colors and chart types in both UI copy and export.
+- [ ] Remaining non-chart family controls are recorded as follow-up scope rather than folded into chart tickets.
+
+### Verification
+
+- [ ] Inventory spot-checks resolve each selector and property against the vendored Filament 5.9 package.
+- [ ] No child ticket relies on an unverified selector, custom property, or renderer behavior.
+- [ ] Close only when every child is done or explicitly deferred with a recorded reason.
+
+**Related:** FTB-006, FTB-007, FTB-008, FTB-026, FTB-032, FTB-039.
+
+---
+
+<a id="ftb-071"></a>
+
+## FTB-071 — Add the component/variant inventory and variant-aware editing seams
+
+**Status:** ready-for-agent
+**Blocked by:** None
+**Parent:** [FTB-070](#ftb-070)
+**Spec:** [Component and variant coverage](./docs/superpowers/specs/2026-11-18-filament-component-variant-coverage-design.md)
+**GitHub:** [#73](https://github.com/Azab-Inc/filament-theme-builder/issues/73)
+
+### What to build
+
+Turn the verified inventory into registry metadata with an explicit coverage status and a generic variant model. Add the editor affordances that let a user choose a component variant, edit it with inheritance and mode isolation, and see which controls are CSS-addressable versus renderer/runtime-backed. Use the existing registry, override, and projection seams; do not add a parallel theme state.
+
+### Acceptance criteria
+
+- [ ] Every family in the coverage spec is represented in the registry with verified selectors, coverage status, and declared variants/states where they exist.
+- [ ] Registry entries distinguish `css`, `css-variable`, `renderer`, and `runtime-config` controls; unsupported controls are not exposed.
+- [ ] A component with multiple variants exposes a variant selector and scopes edits through the existing Global → Component → Variant → State inheritance.
+- [ ] Variant and state overrides default to Inherit; reset removes the override and restores inherited behavior.
+- [ ] Light and dark values remain independent across component, variant, and state scopes.
+- [ ] Inspector resolution and exported CSS continue to use only verified selectors and never emit renderer-only values as CSS.
+- [ ] The registry catalog and coverage tests fail on duplicate selectors, unknown variants/states, or missing coverage-status metadata.
+
+### Verification
+
+- [ ] Write and run focused failing unit tests for inventory completeness, coverage-status invariants, variant/state validation, inheritance, reset, and mode isolation before implementation.
+- [ ] Add a Playwright CLI journey that selects a variant, edits it in both modes, resets one value, and confirms the other mode and inherited values are untouched.
+- [ ] Run builder type-check, focused unit tests, production build, and the focused Playwright journey on the settled change.
+- [ ] Verify the exported CSS contains variant-scoped rules only for CSS-addressable controls.
+
+**Related:** FTB-005, FTB-006, FTB-007, FTB-008, FTB-022, FTB-032.
+
+---
+
+<a id="ftb-072"></a>
+
+## FTB-072 — Add chart surface, geometry, legend, and tooltip controls
+
+**Status:** ready-for-agent
+**Blocked by:** [FTB-071](#ftb-071)
+**Parent:** [FTB-070](#ftb-070)
+**Spec:** [Chart widget theming](./docs/superpowers/specs/2026-11-18-chart-widget-theming-design.md)
+**GitHub:** [#74](https://github.com/Azab-Inc/filament-theme-builder/issues/74)
+
+### What to build
+
+Expose the chart appearance Filament 5.9 makes CSS-addressable: surface, border, grid, and text colors through the verified sentinel elements, plus line tension, point radius/style, bar radius, border width, legend swatch shape, and tooltip shape/colors through the verified custom properties. Apply the same treatment to the stats overview sparkline with its `--stat-chart-*` properties. Do not expose series colors or chart types in this ticket.
+
+### Acceptance criteria
+
+- [ ] Chart surface, border, grid, text, and tooltip colors map to the verified `fi-wi-chart-*` sentinel elements and follow light/dark mode independently.
+- [ ] Geometry controls map to `--chart-border-width`, `--chart-line-tension`, `--chart-point-radius`, `--chart-point-style`, `--chart-bar-border-radius`, `--chart-legend-box-width`, `--chart-legend-border-radius`, `--chart-tooltip-corner-radius`, and `--chart-tooltip-border-width`.
+- [ ] Sparkline controls map to `--stat-chart-border-width`, `--stat-chart-line-tension`, and `--stat-chart-fill`, with the verified sentinel colors.
+- [ ] Controls that do not apply to the active chart type are hidden or disabled with an explanation.
+- [ ] Reset returns each value to Filament's native default; undo/redo and JSON/CSS round-trip work.
+- [ ] Exported vanilla CSS and Tailwind `@apply` contain the selected values and no renderer-only dataset or chart-type data.
+
+### Verification
+
+- [ ] Write and run focused failing unit tests for selector mapping, custom-property values, mode isolation, reset, and CSS export before implementation.
+- [ ] Create and run a failing Playwright CLI test that reads computed sentinel colors and custom properties in the real iframe, switches mode, and confirms independence.
+- [ ] Run builder type-check, focused units, production build, and the focused Playwright test on the settled change.
+
+**Related:** FTB-005, FTB-006, FTB-008, FTB-024, FTB-026.
+
+---
+
+<a id="ftb-073"></a>
+
+## FTB-073 — Add chart series palettes and chart-type variants
+
+**Status:** ready-for-agent
+**Blocked by:** [FTB-071](#ftb-071), [FTB-072](#ftb-072)
+**Parent:** [FTB-070](#ftb-070)
+**Spec:** [Chart widget theming](./docs/superpowers/specs/2026-11-18-chart-widget-theming-design.md)
+**GitHub:** [#75](https://github.com/Azab-Inc/filament-theme-builder/issues/75)
+
+### What to build
+
+Add per-series color controls and all eight Filament chart-type variants for the chart widget. Preview through the real Chart.js instances in the iframe with a validated renderer projection; do not replace Filament's Alpine chart component. Series colors and chart types are renderer-backed controls and must be labeled as requiring generated chart integration.
+
+### Acceptance criteria
+
+- [ ] Series controls are discovered from the demo chart's datasets and keyed by zero-based index, with optional label guards; unconfigured series keep Filament's native colors.
+- [ ] Series colors support independent light/dark values, background/border, and the applicable point/hover colors, and participate in undo/redo and reset.
+- [ ] All eight variants are selectable: line, bar, pie, doughnut, polar area, radar, scatter, bubble. Incompatible variants warn and are not silently applied.
+- [ ] The bridge discovers charts with `Chart.getChart(canvas)`, validates an allowlisted `chartProjection`, applies dataset colors, and refreshes with `chart.update('resize')`.
+- [ ] Incompatible type changes recreate the Chart instance with Filament-compatible defaults while preserving data, labels, and safe user options.
+- [ ] The preview does not trigger a Livewire request, full reload, or non-GET mutation; polling/data updates and mode switches re-apply the theme.
+- [ ] CSS export excludes series and chart-type values; the canonical JSON round-trips them.
+
+### Verification
+
+- [ ] Write and run focused failing unit tests for series validation, variant validation, renderer/CSS segregation, mode isolation, reset, and JSON round-trip before implementation.
+- [ ] Create and run a failing Playwright CLI test that reads `Chart.getChart(canvas)` datasets, edits each series, switches every chart type, checks undo/redo/reset, and verifies light/dark independence and no reload.
+- [ ] Run builder type-check, focused units, production build, the PHP bridge tests, and the focused Playwright suite on the settled change.
+
+**Related:** FTB-006, FTB-008, FTB-022, FTB-033, FTB-072.
+
+---
+
+<a id="ftb-074"></a>
+
+## FTB-074 — Add chart/widget variant fixtures and structured chart Inspector targets
+
+**Status:** ready-for-agent
+**Blocked by:** [FTB-073](#ftb-073)
+**Parent:** [FTB-070](#ftb-070)
+**Spec:** [Chart widget theming](./docs/superpowers/specs/2026-11-18-chart-widget-theming-design.md)
+**GitHub:** [#76](https://github.com/Azab-Inc/filament-theme-builder/issues/76)
+
+### What to build
+
+Provide deterministic showcase fixtures for every chart type and the stats sparkline, including single- and multi-series charts, empty, collapsed, filtered, and polling states. When the Inspector selects a chart surface, expose a structured target list (`chart.surface`, `chart.series.N`, `chart.axes.x`, `chart.axes.y`, `chart.legend`, `chart.tooltip`) rather than pretending canvas pixels are DOM elements. Add the stable demo chart-key map used by the preview bridge.
+
+### Acceptance criteria
+
+- [ ] The showcase renders all eight chart types and stats sparklines with documented deterministic data.
+- [ ] Empty, collapsed, filtered, and polling update states are reachable without manual database changes.
+- [ ] Selecting a chart canvas exposes the structured chart targets and routes them to the matching controls; the UI states that canvas points are not individual DOM targets.
+- [ ] The demo chart-key map is explicit, bounded, and unavailable to user applications except through the documented fixture contract.
+- [ ] Fixtures do not change production dashboard data or require third-party packages.
+
+### Verification
+
+- [ ] Add focused unit tests for chart-key mapping, target validation, and unavailable/invalid targets before implementation.
+- [ ] Create and run a failing Playwright CLI test for every chart type, sparkline, empty/collapsed/filtered states, and structured Inspector selection before implementation.
+- [ ] Run the PHP demo tests, builder type-check, focused units, production build, and the focused Playwright suite on the settled change.
+
+**Related:** FTB-015, FTB-016, FTB-033, FTB-058.
+
+---
+
+<a id="ftb-075"></a>
+
+## FTB-075 — Export chart configuration, mode sync, and installation guidance
+
+**Status:** ready-for-agent
+**Blocked by:** [FTB-073](#ftb-073)
+**Parent:** [FTB-070](#ftb-070)
+**Spec:** [Chart widget theming](./docs/superpowers/specs/2026-11-18-chart-widget-theming-design.md)
+**GitHub:** [#77](https://github.com/Azab-Inc/filament-theme-builder/issues/77)
+
+### What to build
+
+Extend the export handoff with chart-specific outputs: the CSS already generated for CSS-addressable appearance, a versioned PHP config for chart types and per-series palettes, a generated trait for `getType()` and `getData()`, and a small generated mode-sync script so series colors follow Filament's client-side light/dark switch. Integrate with the existing export/installation guidance rather than creating a second export surface.
+
+### Acceptance criteria
+
+- [ ] Export emits a valid, versioned PHP config with chart keys, validated types, zero-based series indices, optional labels, and light/dark colors.
+- [ ] Export emits a documented trait or equivalent helper for `getType()` and `getData()` without overwriting unrelated widget logic.
+- [ ] The mode-sync script is generated, dependency-free, registered once per panel, idempotent, and limited to matching theme config.
+- [ ] Without the mode-sync script, export truthfully states that series colors use the light palette in both modes; it never claims live dark support.
+- [ ] Installation guidance explains config location, trait usage, key/label matching, asset registration, and that unconfigured charts/series remain unchanged.
+- [ ] CSS export and PHP export remain separate: no dataset colors or chart types in CSS; no CSS-only properties presented as PHP requirements.
+- [ ] Invalid or stale config falls back safely and reports the mismatch without applying the wrong color.
+
+### Verification
+
+- [ ] Write and run focused failing PHP and unit tests for config shape, trait behavior, label mismatch, invalid type, mode sync, idempotence, and CSS/PHP separation before implementation.
+- [ ] Create and run a failing Playwright CLI test that downloads/copies each export and verifies the expected content; verify preview/export parity for a representative multi-series chart in both modes.
+- [ ] Run PHP tests, builder type-check, focused units, production build, and the focused Playwright suite on the settled change.
+- [ ] Document any limitation that remains, including third-party chart plugins and per-scale options.
+
+**Related:** FTB-004, FTB-022, FTB-024, FTB-026, FTB-073.
