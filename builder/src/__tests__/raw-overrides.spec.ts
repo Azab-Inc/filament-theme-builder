@@ -50,13 +50,26 @@ describe('raw Inspector overrides', () => {
     expect(validateRawSelector('.fi-section > div').valid).toBe(false)
   })
 
-  it('does not propose an ancestor selector for a classless selected element', () => {
+  it('does not propose an ancestor selector for a classless selected element without surfaces', () => {
     expect(proposeRawSelector({
       candidateSelectors: ['.fi-section'],
       classNames: [],
       targetSelector: null,
       semanticBreadcrumb: 'Detected preview element',
     }, registry)).toMatchObject({ selector: null, quality: 'unavailable' })
+  })
+
+  it('falls back to the nearest Filament surface when the picked element is classless', () => {
+    expect(proposeRawSelector({
+      candidateSelectors: ['.fi-wi-stats-overview-stat-description', '.fi-wi-stats-overview-stat'],
+      classNames: [],
+      targetSelector: null,
+      semanticBreadcrumb: 'Detected preview element',
+      surfaces: [
+        { label: 'Surface: .fi-wi-stats-overview-stat-description', selector: '.fi-wi-stats-overview-stat-description' },
+        { label: 'Surface: .fi-wi-stats-overview-stat', selector: '.fi-wi-stats-overview-stat' },
+      ],
+    }, registry)).toEqual({ selector: '.fi-wi-stats-overview-stat-description', quality: 'stable' })
   })
 
   it('prefers a registered scoped selector ending at the selected child', () => {

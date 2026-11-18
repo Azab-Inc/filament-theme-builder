@@ -155,7 +155,7 @@ test.describe('FTB-007 semantic Inspector', () => {
     await expect(page.getByRole('status', { name: /inspector/i })).toContainText(/heroicon|sidebar|button/i)
   })
 
-  test('selects dashboard breadcrumb, table titles, and exact classless targets', async ({ page }) => {
+  test('selects dashboard breadcrumb, table titles, and classless targets through their surface', async ({ page }) => {
     const frame = page.frameLocator('iframe[title="Filament preview"]')
     await page.getByRole('button', { name: 'Inspector' }).click()
 
@@ -170,24 +170,14 @@ test.describe('FTB-007 semantic Inspector', () => {
     await expect(title).toHaveClass(/ftb-inspector-selected/)
     await expect(frame.locator('.fi-ta').first()).not.toHaveClass(/ftb-inspector-selected/)
 
-    const classlessAvailable = await frame.locator('main *').evaluateAll((elements) => {
-      const target = elements.find((element) => {
-        const rect = element.getBoundingClientRect()
-        return !element.hasAttribute('class') && element.children.length === 0
-          && !element.closest('button, a, [role="button"], svg')
-          && Boolean(element.textContent?.trim()) && rect.width > 0 && rect.height > 0
-      })
-      target?.setAttribute('data-ftb-test-target', 'classless-selection')
-      return Boolean(target)
-    })
-    expect(classlessAvailable).toBe(true)
-    const classless = frame.locator('[data-ftb-test-target="classless-selection"]')
+    const classless = frame.locator('.fi-wi-stats-overview-stat-description span').first()
     await classless.hover()
     await classless.click()
-    const selectedClassless = frame.locator('[data-ftb-test-target="classless-selection"]')
-    await expect(selectedClassless).toHaveClass(/ftb-inspector-selected/)
-    await expect(page.getByLabel('Raw element selector')).toHaveValue('')
-    await expect(page.getByText('No safe selector was detected.')).toBeVisible()
+    await expect(classless).toHaveClass(/ftb-inspector-selected/)
+    const rawSelector = page.getByLabel('Raw element selector')
+    await expect(rawSelector).toHaveValue('.fi-wi-stats-overview-stat-description')
+    await expect(page.getByLabel('Inspector target scope')).toHaveValue('.fi-wi-stats-overview-stat-description')
+    await expect(page.getByText('No safe selector was detected.')).toHaveCount(0)
   })
 
   test('inspects resource breadcrumbs, table titles, filter trigger, and open filter controls safely', async ({ page }) => {

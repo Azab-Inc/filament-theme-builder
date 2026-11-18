@@ -24,10 +24,11 @@ const options = computed(() => {
 <template>
   <div class="grid gap-2">
     <label for="inspector-target-scope">Edit target</label>
-    <select id="inspector-target-scope" aria-label="Inspector target scope" :value="selector" @change="emit('choose', ($event.target as HTMLSelectElement).value)">
-      <option v-if="!options.some((option) => option.selector === selector)" :value="selector">Custom selector</option>
+    <select id="inspector-target-scope" aria-label="Inspector target scope" :value="selector" :disabled="options.length === 0" @change="emit('choose', ($event.target as HTMLSelectElement).value)">
+      <option v-if="!options.some((option) => option.selector === selector)" :value="selector">{{ selector ? 'Custom selector' : 'No target picked' }}</option>
       <option v-for="option in options" :key="option.selector" :value="option.selector">{{ option.label }}</option>
     </select>
+    <p v-if="!selector" class="text-sm">Turn on Inspector in the toolbar, then click a Filament element in the preview.</p>
     <p v-if="evidence?.targetScope?.kind === 'table-column'" class="text-sm">Column positions include selection and action columns. This styles the same position in matching Filament tables.</p>
     <p v-if="evidence?.surfaces?.some((surface) => surface.selector.includes('chart'))" class="text-sm">Select a chart surface to edit its background. Canvas-drawn labels are not individual DOM targets.</p>
   </div>

@@ -36,11 +36,15 @@ export function classifyRawSelector(selector: string): RawSelectorProposal {
 
 export function proposeRawSelector(evidence: InspectorTargetEvidence, registry: FilamentRegistry): RawSelectorProposal {
   const candidates = [...new Set(evidence.candidateSelectors)]
-  if (evidence.targetSelector === null) return { selector: null, quality: 'unavailable', warning: 'No safe editable selector was detected.' }
+  const surfaceSelector = evidence.targetSelector
+    ? undefined
+    : evidence.surfaces?.map((surface) => surface.selector).find((selector) => validateRawSelector(selector).valid)
+  if (evidence.targetSelector === null && !surfaceSelector) return { selector: null, quality: 'unavailable', warning: 'No safe editable selector was detected.' }
   if (evidence.targetSelector) {
     const canonicalSameTarget = findEditableSameTargetMatch(registry, evidence)
     return classifyRawSelector(canonicalSameTarget?.selector ?? evidence.targetSelector)
   }
+  if (surfaceSelector) return classifyRawSelector(surfaceSelector)
   const semanticSelectors = new Set(registry.entries.flatMap((entry) => entry.selectors))
   const stableSemantic = candidates.find((candidate) => singleClassPattern.test(candidate) && semanticSelectors.has(candidate))
   if (stableSemantic) return { selector: stableSemantic, quality: 'stable' }
