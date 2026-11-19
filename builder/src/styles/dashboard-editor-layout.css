@@ -20,7 +20,8 @@
   @apply [color:var(--dashboard-editor-layout-header-p-text)] [font-size:0.75rem];
 }
 .preview-shell .preview-shell__header-controls {
-  @apply flex-nowrap [gap:0.3rem] overflow-x-auto [padding:0.15rem_0] [scrollbar-width:thin];
+  /* A scroll container clips dropdowns on both axes, even with visible Y overflow. */
+  @apply flex-wrap [gap:0.3rem] overflow-visible [padding:0.15rem_0];
 }
 .preview-shell .preview-shell__header-controls > * {
   @apply [flex:0_0_auto];
@@ -190,8 +191,13 @@
   @apply flex [align-items:baseline] justify-between [gap:0.4rem];
 }
   .preview-shell .preview-shell__header-controls {
-  @apply flex-nowrap;
+  @apply flex-wrap;
 }
+  .preview-shell .toolbar-menu {
+    > .toolbar-menu__panel {
+      @apply left-0 right-auto;
+    }
+  }
   .preview-shell .editor-workspace {
   @apply flex flex-col overflow-hidden;
 }

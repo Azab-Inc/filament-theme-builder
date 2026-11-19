@@ -2184,6 +2184,8 @@ Driver.js `1.3.6` is pinned. Seven stable-anchor steps share one lifecycle; sche
 
 Implementation commit: `6164b994eedc36b2349e33dc1894b4015071003e` (`Feature: add the Driver.js builder onboarding tour`). Ticket synchronization is saved separately; no push or PR was requested.
 
+**Dropdown follow-up (2026-11-19):** Fixed toolbar scroll-container clipping that hid Tools/Export menus. Toolbar controls now wrap with visible overflow; narrow-screen menus align to the left of their trigger. The test-first regression reproduced clipped pointer hit-testing at 1920, 1280 and 420px before the CSS fix. Settled checks: `COMPOSE_E2E=1 npx playwright test e2e/toolbar-dropdown-visibility.spec.ts` passed 10 cases across 1920/1280/768/640/420px and actual light/dark modes, including full-menu hit-testing, no toolbar scrolling, Escape/focus return, and Take a tour replay. All 16 onboarding tests passed in the affected combined run; one dropdown case timed out before app controls appeared (snapshot contained only devtools/live-mode UI, Compose remained healthy). The final dropdown run blocks unrelated `live.js` injection and passed all 10 cases. Builder focused `stylesheet-compliance`, `css-entrypoint`, and `App.toolbar` units passed 6 tests; Compose `npm run build` (including type-check) passed. Desktop/mobile screenshots were visually inspected. No theme/export code changed; the full unit suite was not rerun for this CSS-only fix. See `Fix - UI: prevent toolbar dropdown clipping` in git history.
+
 **Non-goals:** touring inside the Filament iframe; analytics, accounts, server persistence, or a second tour library.
 
 **Related:** FTB-003, FTB-005, FTB-006, FTB-007, FTB-008, FTB-019, FTB-021, FTB-022, FTB-050, FTB-064.
