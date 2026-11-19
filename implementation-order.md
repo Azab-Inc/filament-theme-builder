@@ -92,4 +92,6 @@ Added 2026-11-18 after verifying that current border controls had no top/right/b
 
 ## Execution rules
 
+**Onboarding tour complete (2026-11-19):** FTB-067 / #69 → FTB-068 / #70 → FTB-069 / #71 and umbrella FTB-066 / #68 are delivered together. See [integrated verification](./TICKETS.md#ftb-066) for passing unit/type/build/browser checks, tested viewport/mode/layout matrix, and environment limitations. This completion does not alter other feature gates.
+
 Use each ticket's acceptance criteria as authoritative, preserve light/dark isolation, use TDD and applicable real Compose Playwright coverage, and maintain MCP discovery, authorization, confirmation and actual-client verification where required. Keep CSS-addressable chart appearance separate from renderer-backed chart types and series palettes; the latter require generated PHP/config and mode-sync integration, not CSS-only claims. Recheck live issue state and local evidence before starting or closing; this snapshot does not supersede tracker policy.

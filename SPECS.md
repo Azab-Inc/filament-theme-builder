@@ -43,6 +43,10 @@ Remaining builder feature work follows the demo-complete gate recorded in root A
 
 ## 1. Repository and application boundary
 
+### Builder onboarding tour — delivered 2026-11-19
+
+The approved [Driver.js onboarding design](./docs/superpowers/specs/2026-11-18-driverjs-onboarding-tour-design.md) is implemented by [FTB-066–069](./TICKETS.md#ftb-066), GitHub #68–71. Driver.js 1.3.6 presents seven stable-anchor steps, isolated schema-1 local completion, validated preview readiness, and Tools replay without editing theme state. Integrated verification and its environment limitations are recorded in TICKETS.md: 728 unit tests, type-check, Compose production build, and 16 focused browser tests across both layouts/modes and desktop/narrow viewports.
+
 The project is one repository containing two sibling applications:
 
 - builder — Vue 3, Vite, Pinia, npm;

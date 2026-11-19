@@ -2145,7 +2145,7 @@ Related: FTB-007 and FTB-008. This fix does not close those broader tickets.
 
 ## FTB-066 — Add a Driver.js onboarding tour for the builder
 
-**Status:** in-progress (umbrella)
+**Status:** done (2026-11-19; FTB-067/068/069 integrated on `dev`)
 **Spec:** [Driver.js onboarding tour design](./docs/superpowers/specs/2026-11-18-driverjs-onboarding-tour-design.md)
 **GitHub:** [#68](https://github.com/Azab-Inc/filament-theme-builder/issues/68)
 **Children:** [FTB-067](#ftb-067) / [#69](https://github.com/Azab-Inc/filament-theme-builder/issues/69), [FTB-068](#ftb-068) / [#70](https://github.com/Azab-Inc/filament-theme-builder/issues/70), [FTB-069](#ftb-069) / [#71](https://github.com/Azab-Inc/filament-theme-builder/issues/71)
@@ -2156,19 +2156,33 @@ Add a short, skippable first-run tour using Driver.js that explains the builder 
 
 ### Acceptance criteria
 
-- [ ] First visit starts the tour after the preview shell is mounted and the iframe is visible; Skip dismisses it and records completion.
-- [ ] Next/Back/Done and Escape work. Incomplete tours restart at step one; Tools > Take a tour always replays from step one.
-- [ ] Completion uses versioned local storage isolated from theme JSON, exports, undo/redo, and autosave; invalid values fail safely.
-- [ ] Seven steps cover welcome, editor navigation, foundations, live preview, Inspector, themes/exports, and finish; missing optional targets are skipped safely.
-- [ ] Both editor navigation layouts, narrow viewport, light/dark mode, keyboard traversal, focus return, screen-reader content, and reduced motion are verified.
-- [ ] No tour action mutates theme values, mode, undo/redo, Inspector selection, or exports.
-- [ ] TDD and Playwright are used as required by repository guidance.
+- [x] First visit starts the tour after the preview shell is mounted and the iframe is visible; Skip dismisses it and records completion.
+- [x] Next/Back/Done and Escape work. Incomplete tours restart at step one; Tools > Take a tour always replays from step one.
+- [x] Completion uses versioned local storage isolated from theme JSON, exports, undo/redo, and autosave; invalid values fail safely.
+- [x] Seven steps cover welcome, editor navigation, foundations, live preview, Inspector, themes/exports, and finish; missing optional targets are skipped safely.
+- [x] Both editor navigation layouts, narrow viewport, light/dark mode, keyboard traversal, focus return, screen-reader content, and reduced motion are verified.
+- [x] No tour action mutates theme values, mode, undo/redo, Inspector selection, or exports.
+- [x] TDD and Playwright are used as required by repository guidance.
 
 ### Verification
 
-- [ ] All three child tickets are done with their focused failing-first evidence and settled verification.
-- [ ] Run builder type-check, unit tests, production build, and the focused Playwright tour suite; record actual results.
-- [ ] Keep unrelated worktree changes out of implementation commits.
+- [x] All three child tickets are done with their focused failing-first evidence and settled verification.
+- [x] Run builder type-check, unit tests, production build, and the focused Playwright tour suite; record actual results.
+- [x] Keep unrelated worktree changes out of implementation commits.
+
+### Integrated completion evidence — 2026-11-19
+
+Driver.js `1.3.6` is pinned. Seven stable-anchor steps share one lifecycle; schema-1 completion is browser-local and independent of theme state. Automatic startup requires iframe load plus an exact-origin/source validated bridge handshake. HTTP 404/500 and delayed preview startup are covered. No server persistence or MCP tour tool is introduced; the capability inventory records this presentation-only boundary.
+
+- Builder cwd: `npm run type-check` passed; focused storage/lifecycle/preview/protocol units passed (20 tests), and Inspector accessibility/protocol checks passed (14 tests).
+- Builder cwd: `npm run test:unit -- --run --testTimeout=30000 --hookTimeout=30000` passed **155 files / 728 tests**, 560.94s. Earlier default-5s runs timed out in App structure/recovery; the single-worker retry hit a 360s shell timeout. These are not reported as passing or flaky.
+- Repository cwd: `docker compose -f compose.dev.yaml exec -T builder-vite npm run build` passed. Host output permissions required the canonical Compose build path.
+- Repository cwd: `COMPOSE_E2E=1 npx playwright test e2e/onboarding-tour.spec.ts` passed **16 tests**, including both layouts × actual light/dark modes × 1280/420px widths (800px height), keyboard/focus, replay/cleanup, interrupted startup, preview failures, and JSON/CSS output equality. Two strengthened interrupted/missing-target assertions subsequently passed with `--grep 'interrupted first-run|optional target'`; unchanged scenarios retain their evidence.
+- Three affected legacy toolbar/Inspector browser checks passed. The entire legacy E2E suite was not certified; unrelated menu-order/field-label/tab/color-picker failures were observed during broader toolbar probing.
+- One read-only review identified load-only readiness as blocking; the bridge handshake repair and failed-preview regressions resolve that finding. Focus evidence blocks the external `live.js` injection in tests without modifying the unrelated local `builder/index.html` change.
+- Initial red runs included missing storage-module import and absent tour/dependency; later focused red assertions exposed invalid-date/storage-access, close lifecycle, focus, and final-button gaps before repairs. No claim of a separate per-slice commit or manual screen-reader audit is made.
+
+Implementation commit: `6164b994eedc36b2349e33dc1894b4015071003e` (`Feature: add the Driver.js builder onboarding tour`). Ticket synchronization is saved separately; no push or PR was requested.
 
 **Non-goals:** touring inside the Filament iframe; analytics, accounts, server persistence, or a second tour library.
 
@@ -2180,7 +2194,7 @@ Add a short, skippable first-run tour using Driver.js that explains the builder 
 
 ## FTB-067 — Add the Driver.js tour engine and first-run flow
 
-**Status:** ready-for-agent
+**Status:** done (2026-11-19; see [integrated evidence](#ftb-066))
 **Blocked by:** none
 **Parent:** [FTB-066](#ftb-066)
 **Spec:** [Driver.js onboarding tour design](./docs/superpowers/specs/2026-11-18-driverjs-onboarding-tour-design.md)
@@ -2192,18 +2206,18 @@ Create the tour engine and first-run lifecycle with the welcome, editor navigati
 
 ### Acceptance criteria
 
-- [ ] Driver.js is pinned to an exact reviewed version; no second tour library is introduced.
-- [ ] First visit shows the tour once after the shell and iframe are ready; Skip and Escape close it and record completion.
-- [ ] Next/Back/Done traverse the implemented steps; incomplete tours restart at step one on the next visit.
-- [ ] Stored progress survives reload; malformed or legacy values fail safely and show the tour without touching theme storage.
-- [ ] Missing anchors are skipped without crashing the remaining tour.
-- [ ] Repeated starts do not duplicate overlays or listeners; reduced motion disables animation.
+- [x] Driver.js is pinned to an exact reviewed version; no second tour library is introduced.
+- [x] First visit shows the tour once after the shell and iframe are ready; Skip and Escape close it and record completion.
+- [x] Next/Back/Done traverse the implemented steps; incomplete tours restart at step one on the next visit.
+- [x] Stored progress survives reload; malformed or legacy values fail safely and show the tour without touching theme storage.
+- [x] Missing anchors are skipped without crashing the remaining tour.
+- [x] Repeated starts do not duplicate overlays or listeners; reduced motion disables animation.
 
 ### Verification
 
-- [ ] Write focused failing unit tests for startup gating, persistence validation, navigation, skip/replay, missing anchors, reduced motion, and cleanup before implementation.
-- [ ] Create and run a failing Playwright CLI test for first-run display, Skip persistence, and replay before implementation.
-- [ ] Run builder type-check, unit tests, production build, and focused Playwright coverage on the settled change.
+- [x] Write focused failing unit tests for startup gating, persistence validation, navigation, skip/replay, missing anchors, reduced motion, and cleanup before implementation.
+- [x] Create and run a failing Playwright CLI test for first-run display, Skip persistence, and replay before implementation.
+- [x] Run builder type-check, unit tests, production build, and focused Playwright coverage on the settled change.
 
 **Related:** FTB-003, FTB-005, FTB-050.
 
@@ -2213,7 +2227,7 @@ Create the tour engine and first-run lifecycle with the welcome, editor navigati
 
 ## FTB-068 — Complete tour steps, replay, and Tools entry
 
-**Status:** ready-for-agent
+**Status:** done (2026-11-19; see [integrated evidence](#ftb-066))
 **Blocked by:** [FTB-067](#ftb-067)
 **Parent:** [FTB-066](#ftb-066)
 **Spec:** [Driver.js onboarding tour design](./docs/superpowers/specs/2026-11-18-driverjs-onboarding-tour-design.md)
@@ -2225,17 +2239,17 @@ Complete the seven-step tour with Inspector, themes/exports, and finish steps, a
 
 ### Acceptance criteria
 
-- [ ] Welcome, editor navigation, foundations, live preview, Inspector, themes/exports, and finish are covered in order.
-- [ ] Tools > Take a tour restarts from step one after completion and after a skipped tour.
-- [ ] No step opens a menu, changes mode, selects an editor section, or mutates theme state.
-- [ ] Missing optional targets are skipped and remaining steps stay ordered and usable.
-- [ ] Tour copy is short, accurate for Filament 5.9, and does not claim unsupported capabilities.
+- [x] Welcome, editor navigation, foundations, live preview, Inspector, themes/exports, and finish are covered in order.
+- [x] Tools > Take a tour restarts from step one after completion and after a skipped tour.
+- [x] No step opens a menu, changes mode, selects an editor section, or mutates theme state.
+- [x] Missing optional targets are skipped and remaining steps stay ordered and usable.
+- [x] Tour copy is short, accurate for Filament 5.9, and does not claim unsupported capabilities.
 
 ### Verification
 
-- [ ] Extend focused failing unit tests for the complete manifest, replay entry, ordering, missing targets, and no theme mutation before implementation.
-- [ ] Extend failing Playwright CLI coverage for every step, Tools replay, and unchanged theme/export/undo state before implementation.
-- [ ] Run builder type-check, unit tests, production build, and focused Playwright coverage on the settled change.
+- [x] Extend focused failing unit tests for the complete manifest, replay entry, ordering, missing targets, and no theme mutation before implementation.
+- [x] Extend failing Playwright CLI coverage for every step, Tools replay, and unchanged theme/export/undo state before implementation.
+- [x] Run builder type-check, unit tests, production build, and focused Playwright coverage on the settled change.
 
 **Related:** FTB-007, FTB-008, FTB-021, FTB-022, FTB-064.
 
@@ -2245,7 +2259,7 @@ Complete the seven-step tour with Inspector, themes/exports, and finish steps, a
 
 ## FTB-069 — Harden and verify the onboarding tour
 
-**Status:** ready-for-agent
+**Status:** done (2026-11-19; see [integrated evidence](#ftb-066))
 **Blocked by:** [FTB-067](#ftb-067), [FTB-068](#ftb-068)
 **Parent:** [FTB-066](#ftb-066)
 **Spec:** [Driver.js onboarding tour design](./docs/superpowers/specs/2026-11-18-driverjs-onboarding-tour-design.md)
@@ -2257,18 +2271,18 @@ Harden the tour across both editor layouts, narrow viewports, light/dark mode, k
 
 ### Acceptance criteria
 
-- [ ] The tour works in both layouts, at desktop and narrow widths, and in light and dark mode.
-- [ ] Tab, Enter/Space, Escape, focus entry/return, and Skip are verified against the real builder; limitations are documented truthfully.
-- [ ] Popover content is available to assistive technology, includes textual step counts, and remains reachable on narrow viewports.
-- [ ] Reduced motion disables Driver.js animation.
-- [ ] No tour action changes theme, mode, undo/redo, Inspector selection, or export output.
-- [ ] No duplicate overlays or dangling listeners remain after repeated open/close cycles or unmount.
+- [x] The tour works in both layouts, at desktop and narrow widths, and in light and dark mode.
+- [x] Tab, Enter/Space, Escape, focus entry/return, and Skip are verified against the real builder; limitations are documented truthfully.
+- [x] Popover content is available to assistive technology, includes textual step counts, and remains reachable on narrow viewports.
+- [x] Reduced motion disables Driver.js animation.
+- [x] No tour action changes theme, mode, undo/redo, Inspector selection, or export output.
+- [x] No duplicate overlays or dangling listeners remain after repeated open/close cycles or unmount.
 
 ### Verification
 
-- [ ] Create and run failing Playwright CLI tests for both layouts, narrow viewport, keyboard/focus, Escape, reduced motion, repeated replay, and unchanged theme/export state before fixes.
-- [ ] Run builder type-check, unit tests, production build, and the complete focused Playwright tour suite on the settled change.
-- [ ] Record browser coverage, viewport sizes, and any Driver.js limitations.
+- [x] Create and run failing Playwright CLI tests for both layouts, narrow viewport, keyboard/focus, Escape, reduced motion, repeated replay, and unchanged theme/export state before fixes.
+- [x] Run builder type-check, unit tests, production build, and the complete focused Playwright tour suite on the settled change.
+- [x] Record browser coverage, viewport sizes, and any Driver.js limitations.
 
 **Related:** FTB-019, FTB-050, FTB-064.
 

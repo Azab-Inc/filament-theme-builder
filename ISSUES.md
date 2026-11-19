@@ -6,6 +6,10 @@ Local issue index added with user permission on 2026-11-18. This index records t
 
 | Ticket | GitHub issue | State / Project #30 status | Scope | Dependencies |
 | --- | --- | --- | --- | --- |
+| [FTB-066](./TICKETS.md#ftb-066) | [#68](https://github.com/Azab-Inc/filament-theme-builder/issues/68) | Done | Driver.js onboarding umbrella; integrated verification in TICKETS.md | FTB-067/068/069 complete |
+| [FTB-067](./TICKETS.md#ftb-067) | [#69](https://github.com/Azab-Inc/filament-theme-builder/issues/69) | Done | Tour engine, bridge readiness, isolated completion | None |
+| [FTB-068](./TICKETS.md#ftb-068) | [#70](https://github.com/Azab-Inc/filament-theme-builder/issues/70) | Done | Seven steps and Tools replay | FTB-067 complete |
+| [FTB-069](./TICKETS.md#ftb-069) | [#71](https://github.com/Azab-Inc/filament-theme-builder/issues/71) | Done | Layout/mode, keyboard/focus, state/export preservation | FTB-067/068 complete |
 | [FTB-087](./TICKETS.md#ftb-087) | [#89](https://github.com/Azab-Inc/filament-theme-builder/issues/89) | Open / planning | All Panel properties umbrella; inventory incomplete | All option children |
 | [FTB-088](./TICKETS.md#ftb-088) | [#90](https://github.com/Azab-Inc/filament-theme-builder/issues/90) | Open / planning | Panel top navigation | Panel contract; coordinate FTB-055 |
 | [FTB-089–102](./TICKETS.md#ftb-089) | [#91–#104](https://github.com/Azab-Inc/filament-theme-builder/issues?q=is%3Aissue%20FTB-0) | Open / planning | Per-option navigation and layout children | Panel contract; coordinate FTB-018/055 |
