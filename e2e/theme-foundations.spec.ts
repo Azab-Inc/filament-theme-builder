@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+import { resetBuilderStorage } from "./support/reset-builder-storage";
 
 const composeBaseUrl = process.env.COMPOSE_BASE_URL ?? "http://127.0.0.1:4175";
 const foundationShades = Object.fromEntries(
@@ -345,7 +346,7 @@ test.describe("foundation preview integration", () => {
     const iframeBox = await page.locator('iframe[title="Filament preview"]').boundingBox();
     await nativePage.setViewportSize({ width: Math.floor(iframeBox?.width ?? 700), height: Math.floor(iframeBox?.height ?? 700) });
     await nativePage.goto(`${composeBaseUrl}/demo/admin/tables-showcase`);
-    await page.evaluate(() => localStorage.clear());
+    await page.evaluate(resetBuilderStorage);
     await page.reload();
     await expect(page.getByRole("heading", { name: "Filament Theme Builder" })).toBeVisible();
     await page.evaluate((tablesUrl) => {
@@ -584,7 +585,7 @@ test.describe("foundation preview integration", () => {
     await page.locator("#form").evaluate((form) => (form as HTMLFormElement).requestSubmit());
     await expect(page).toHaveURL(`${composeBaseUrl}/demo/admin`);
     await page.goto(composeBaseUrl);
-    await page.evaluate(() => localStorage.clear());
+    await page.evaluate(resetBuilderStorage);
     await page.reload();
     await expect(page.getByRole("heading", { name: "Filament Theme Builder" })).toBeVisible();
 

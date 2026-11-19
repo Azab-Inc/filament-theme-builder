@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test'
 import { authenticate, baseUrl } from './color-picker-acceptance.helpers'
+import { resetBuilderStorage } from './support/reset-builder-storage'
 
 test.skip(process.env.COMPOSE_E2E !== '1', 'Requires the canonical Compose stack')
 
 test('a dark-first primary edit does not block switching back to untouched light mode', async ({ page }) => {
   await authenticate(page)
-  await page.evaluate(() => localStorage.clear())
+  await page.evaluate(resetBuilderStorage)
   await page.goto(baseUrl)
   const root = page.frameLocator('iframe[title="Filament preview"]').locator('html')
   await expect(root).toBeVisible()

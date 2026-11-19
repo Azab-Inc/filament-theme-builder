@@ -39,7 +39,7 @@ onUnmounted(() => {
 
 <template>
   <details ref="menu" class="toolbar-menu" data-toolbar-menu @toggle="keepMenusExclusive">
-    <summary :aria-label="ariaLabel">{{ label }}</summary>
+    <summary :aria-label="ariaLabel" :data-tour="label === 'Tools' ? 'tools' : label === 'Export' ? 'exports' : undefined">{{ label }}</summary>
     <div class="toolbar-menu__panel" @click="closeAfterAction"><slot /></div>
   </details>
 </template>

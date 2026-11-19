@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test'
 import { authenticate, baseUrl } from './color-picker-acceptance.helpers'
+import { resetBuilderStorage } from './support/reset-builder-storage'
 
 test.skip(process.env.COMPOSE_E2E !== '1', 'Requires the canonical Compose stack')
 test.beforeEach(async ({ page }) => {
   await authenticate(page)
-  await page.evaluate(() => localStorage.clear())
+  await page.evaluate(resetBuilderStorage)
   await page.goto(baseUrl)
   await page.setViewportSize({ width: 1800, height: 1200 })
 })

@@ -1,12 +1,13 @@
 import { expect, test } from '@playwright/test'
 import { authenticate, baseUrl } from './color-picker-acceptance.helpers'
+import { resetBuilderStorage } from './support/reset-builder-storage'
 
 test.skip(process.env.COMPOSE_E2E !== '1', 'Requires the canonical Compose stack')
 
 for (const kind of ['color', 'palette'] as const) {
   test(`Create token accepts Secondary for a ${kind} and shows the normalized result`, async ({ page }) => {
     await authenticate(page)
-    await page.evaluate(() => localStorage.clear())
+    await page.evaluate(resetBuilderStorage)
     await page.goto(baseUrl)
     await page.setViewportSize({ width: 1200, height: 900 })
     await page.locator('[data-user-token-name]').fill('  Secondary  ')

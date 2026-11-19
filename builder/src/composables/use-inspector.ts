@@ -5,6 +5,7 @@ import type { InspectorTargetEvidence } from '@/models/inspector-target-evidence
 import { useInspectorMessageHandler } from '@/composables/use-inspector-message-handler'
 import {
   INSPECTOR_PROTOCOL_VERSION,
+  isInspectorEvent,
   type InspectorCommand,
   type InspectorResolution,
 } from '@/utils/inspector-protocol'
@@ -21,6 +22,7 @@ export function useInspector({
 }: UseInspectorOptions) {
   const inspectorEnabled = ref(false)
   const inspectorResolution = ref<InspectorResolution | null>(null)
+  const previewHandshakeReady = ref(false)
   const targetOrigin = new URL(previewUrl, window.location.href).origin
   const handleInspectorMessageForTarget = useInspectorMessageHandler({
     inspectorRegistry,
@@ -43,6 +45,12 @@ export function useInspector({
     target.postMessage(command, targetOrigin)
   }
 
+  function postPreviewHandshake(): void {
+    const target = iframe.value?.contentWindow
+    if (!target) return
+    target.postMessage({ type: 'ftb:preview:handshake', protocolVersion: INSPECTOR_PROTOCOL_VERSION }, targetOrigin)
+  }
+
   function toggleInspector(): void {
     inspectorEnabled.value = !inspectorEnabled.value
     inspectorResolution.value = null
@@ -50,13 +58,19 @@ export function useInspector({
   }
 
   function handleInspectorMessage(event: MessageEvent): void {
+    if (event.source === iframe.value?.contentWindow && event.origin === targetOrigin && isInspectorEvent(event.data) && (event.data.type === 'ftb:preview:ready' || event.data.type === 'ftb:inspector:ready')) {
+      previewHandshakeReady.value = true
+      window.dispatchEvent(new Event('ftb:preview-ready'))
+    }
     handleInspectorMessageForTarget(event, iframe.value?.contentWindow ?? null, targetOrigin)
   }
 
   function handlePreviewLoad(): void {
+    previewHandshakeReady.value = false
     inspectorResolution.value = null
     selectedInspectorEvidence.value = null
     postInspectorCommand()
+    postPreviewHandshake()
   }
 
   onMounted(() => {
@@ -71,10 +85,12 @@ export function useInspector({
   return {
     inspectorEnabled,
     inspectorResolution,
+    previewHandshakeReady,
     selectedInspectorEvidence,
     toggleInspector,
     handleInspectorMessage,
     postInspectorCommand,
+    postPreviewHandshake,
     onPreviewLoad: handlePreviewLoad,
   }
 }

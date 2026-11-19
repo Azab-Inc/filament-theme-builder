@@ -19,6 +19,7 @@ const evidence = (overrides: Partial<InspectorTargetEvidence> = {}): InspectorTa
 
 describe('inspector protocol', () => {
   it('accepts only versioned enable and disable commands', () => {
+    expect(isInspectorCommand({ type: 'ftb:preview:handshake', protocolVersion: INSPECTOR_PROTOCOL_VERSION })).toBe(true)
     expect(isInspectorCommand({ type: 'ftb:inspector:enable', protocolVersion: INSPECTOR_PROTOCOL_VERSION })).toBe(true)
     expect(isInspectorCommand({ type: 'ftb:inspector:disable', protocolVersion: INSPECTOR_PROTOCOL_VERSION })).toBe(true)
     expect(isInspectorCommand({ type: 'ftb:inspector:enable', protocolVersion: 2 })).toBe(false)
@@ -26,6 +27,7 @@ describe('inspector protocol', () => {
   })
 
   it('rejects unsafe selector evidence and malformed inspector events', () => {
+    expect(isInspectorEvent({ type: 'ftb:preview:ready', protocolVersion: INSPECTOR_PROTOCOL_VERSION })).toBe(true)
     expect(isInspectorEvent({
       type: 'ftb:inspector:hover',
       protocolVersion: INSPECTOR_PROTOCOL_VERSION,

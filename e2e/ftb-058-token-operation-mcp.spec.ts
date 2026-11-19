@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { builderBaseUrl } from './urls'
 import { composeLocalThemeCommand, startStdioMcpClient } from './support/stdio-mcp-client'
 import type { McpToolCallResult, StdioMcpClient } from './support/stdio-mcp-client.model'
+import { resetBuilderStorage } from './support/reset-builder-storage'
 
 test.skip(process.env.COMPOSE_E2E !== '1', 'FTB-058 requires the isolated Compose gateway.')
 test.use({ viewport: { width: 2000, height: 1100 } })
@@ -19,7 +20,7 @@ async function waitForStatus(client: StdioMcpClient, operationId: string, expect
 
 async function pair(page: Page, client: StdioMcpClient): Promise<string> {
   await page.goto(builderBaseUrl)
-  await page.evaluate(() => localStorage.clear())
+  await page.evaluate(resetBuilderStorage)
   await page.reload()
   await page.getByLabel('Theme tools').click()
   await page.getByRole('button', { name: 'Pair local client' }).click()

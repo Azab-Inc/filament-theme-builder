@@ -7,7 +7,7 @@ const shell = reactive(props.shell)
 </script>
 
 <template>
-  <fieldset class="editor-navigation-toggle" data-editor-navigation>
+  <fieldset class="editor-navigation-toggle" data-editor-navigation data-tour="editor-navigation">
     <legend>Editor navigation</legend>
     <label><input type="radio" role="radio" aria-label="Sidebar" name="editor-navigation" value="sidebar" :checked="shell.editorNavigationMode === 'sidebar'" :aria-checked="shell.editorNavigationMode === 'sidebar'" @change="shell.editorNavigationMode = 'sidebar'" /><span>Sidebar</span></label>
     <label><input type="radio" role="radio" aria-label="Top navigation" name="editor-navigation" value="top" :checked="shell.editorNavigationMode === 'top'" :aria-checked="shell.editorNavigationMode === 'top'" @change="shell.editorNavigationMode = 'top'" /><span>Top navigation</span></label>

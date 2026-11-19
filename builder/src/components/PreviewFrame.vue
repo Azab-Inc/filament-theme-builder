@@ -15,7 +15,7 @@ function setIframeRef(element: Element | ComponentPublicInstance | null): void {
 </script>
 
 <template>
-  <div ref="workspace" class="editor-workspace" data-editor-workspace :style="workspaceStyle">
+  <div ref="workspace" class="editor-workspace" data-editor-workspace data-tour="live-preview" :style="workspaceStyle">
     <slot />
     <button
       type="button"
@@ -38,6 +38,7 @@ function setIframeRef(element: Element | ComponentPublicInstance | null): void {
       data-editor-iframe
       class="preview-shell__frame"
       @load="onPreviewLoad"
+      @error="onPreviewError"
     />
   </div>
 </template>

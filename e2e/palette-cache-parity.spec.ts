@@ -1,12 +1,13 @@
 import { expect, test } from '@playwright/test'
 import { authenticate, baseUrl } from './color-picker-acceptance.helpers'
+import { resetBuilderStorage } from './support/reset-builder-storage'
 
 test.skip(process.env.COMPOSE_E2E !== '1', 'Requires the canonical Compose stack')
 
 for (const explicitDarkBase of [false, true]) {
   test(`preview ignores stale palette caches with explicit dark base ${explicitDarkBase}`, async ({ page }) => {
     await authenticate(page)
-    await page.evaluate(() => localStorage.clear())
+    await page.evaluate(resetBuilderStorage)
     await page.goto(baseUrl)
     const preview = page.frameLocator('iframe[title="Filament preview"]')
     await expect(preview.locator('html')).toBeVisible()

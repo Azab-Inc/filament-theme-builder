@@ -652,6 +652,10 @@
         window.addEventListener('message', (event) => {
             if (!allowedOrigins.includes(event.origin) || event.source !== window.parent) return;
             const message = event.data;
+            if (message && message.type === 'ftb:preview:handshake' && message.protocolVersion === INSPECTOR_PROTOCOL_VERSION && Object.keys(message).length === 2 && window.parent !== window) {
+                window.parent.postMessage({ type: 'ftb:preview:ready', protocolVersion: INSPECTOR_PROTOCOL_VERSION }, event.origin);
+                return;
+            }
             if (inspectorEnabled && message?.type === 'ftb:inspector:scope' && message.protocolVersion === INSPECTOR_PROTOCOL_VERSION && Object.keys(message).length === 3 && isSafeRawSelector(message.selector)) {
                 clearScope();
                 if (selectedTarget) selectedTarget.classList.remove('ftb-inspector-selected');

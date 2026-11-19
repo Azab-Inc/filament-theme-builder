@@ -1,15 +1,24 @@
 <script setup lang="ts">
-import { computed, provide, reactive } from 'vue'
+import { computed, provide, reactive, ref } from 'vue'
 import type { ModeLinkTarget } from '@/models/mode-link-target.model'
 import { PALETTE_NAMES, PALETTE_SHADES } from '@/models/foundations.model'
 import EditorToolbar from '@/components/EditorToolbar.vue'
 import PreviewFrame from '@/components/PreviewFrame.vue'
 import EditorWorkspace from '@/components/EditorWorkspace.vue'
 import { useBuilderShell } from '@/composables/use-builder-shell'
+import { useOnboardingTour } from '@/composables/use-onboarding-tour'
 
 const previewUrl = import.meta.env.VITE_DEMO_URL ?? '/demo/admin'
 const model = useBuilderShell(previewUrl)
 const shell = reactive(model)
+const previewReady = ref(false)
+const tour = useOnboardingTour({ ready: () => previewReady.value && model.inspector.previewHandshakeReady.value })
+function handlePreviewLoad(): void {
+  shell.preview.onPreviewLoad()
+  previewReady.value = !shell.preview.runtimeLoading
+  window.dispatchEvent(new Event('ftb:preview-ready'))
+}
+function handlePreviewError(): void { previewReady.value = false }
 provide('user-token-options', computed(() => {
   const tokens = shell.theme.theme.foundations.userTokens
   return [...Object.keys(tokens?.colors ?? {}).map((name) => `user.color.${name}`), ...Object.entries(tokens?.palettes ?? {}).flatMap(([name, palette]) => Object.keys(palette.shades).map((shade) => `user.palette.${name}.${shade}`))]
@@ -61,8 +70,9 @@ provide('theme-color-values', computed(() => {
       @rename="shell.theme.renameTheme"
       @duplicate="shell.theme.duplicateTheme"
       @delete="shell.theme.deleteTheme"
+      @take-tour="tour.replay"
     />
-    <PreviewFrame :iframe-src="shell.preview.iframeSrc" :set-iframe="shell.setPreviewIframe" :on-preview-load="shell.preview.onPreviewLoad">
+    <PreviewFrame :iframe-src="shell.preview.iframeSrc" :set-iframe="shell.setPreviewIframe" :on-preview-load="handlePreviewLoad" :on-preview-error="handlePreviewError">
       <EditorWorkspace :shell="model" />
     </PreviewFrame>
   </main>

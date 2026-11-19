@@ -12,7 +12,7 @@ const shell = reactive(props.shell)
 </script>
 
 <template>
-  <section v-show="shell.selectedEditorSection === 'foundations'" id="editor-panel-foundations" class="foundations grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-foundations" data-editor-section="foundations">
+  <section v-show="shell.selectedEditorSection === 'foundations'" id="editor-panel-foundations" class="foundations grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-foundations" data-editor-section="foundations" data-tour="foundations">
     <FoundationsPanel :shell="props.shell" />
   </section>
   <BrandingSettingsPanel :active="shell.selectedEditorSection === 'branding'" :branding="shell.theme.theme.branding" :upload-errors="shell.uploadErrors" @change-branding="shell.applyBrandingChange" @upload-asset="shell.uploadBrandingAsset($event.setting, $event.event)" @set-brand-typography="shell.setBrandTypography" @set-custom-brand-typography="shell.setCustomBrandTypography" @reset-branding="shell.theme.resetBranding" />

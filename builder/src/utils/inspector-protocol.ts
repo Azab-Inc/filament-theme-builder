@@ -25,13 +25,13 @@ const allowedTargetKeys = ['candidateSelectors', 'classNames', 'targetId', 'targ
 export function isInspectorCommand(value: unknown): value is InspectorCommand {
   if (!isRecord(value) || value.protocolVersion !== INSPECTOR_PROTOCOL_VERSION) return false
   if (value.type === 'ftb:inspector:scope') return Object.keys(value).length === 3 && validateRawSelector(value.selector).valid
-  if (value.type !== 'ftb:inspector:enable' && value.type !== 'ftb:inspector:disable') return false
+  if (value.type !== 'ftb:preview:handshake' && value.type !== 'ftb:inspector:enable' && value.type !== 'ftb:inspector:disable') return false
   return Object.keys(value).length === 2
 }
 
 export function isInspectorEvent(value: unknown): value is InspectorEvent {
   if (!isRecord(value) || value.protocolVersion !== INSPECTOR_PROTOCOL_VERSION || typeof value.type !== 'string') return false
-  if (value.type === 'ftb:inspector:ready' || value.type === 'ftb:inspector:clear') return Object.keys(value).length === 2
+  if (value.type === 'ftb:preview:ready' || value.type === 'ftb:inspector:ready' || value.type === 'ftb:inspector:clear') return Object.keys(value).length === 2
   if (value.type !== 'ftb:inspector:hover' && value.type !== 'ftb:inspector:select') return false
   return Object.keys(value).length === 3 && isInspectorTargetEvidence(value.target)
 }

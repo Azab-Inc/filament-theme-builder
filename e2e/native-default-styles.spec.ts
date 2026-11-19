@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { resetBuilderStorage } from './support/reset-builder-storage'
 
 const baseUrl = process.env.COMPOSE_BASE_URL ?? 'http://127.0.0.1:4175'
 const dashboardUrl = `${baseUrl}/demo/admin`
@@ -21,7 +22,7 @@ test('untouched builder preview preserves native dashboard layout and table styl
 
     const builder = await context.newPage()
     await builder.goto(baseUrl)
-    await builder.evaluate(() => localStorage.clear())
+    await builder.evaluate(resetBuilderStorage)
     await builder.reload()
     const builderIframeStyles = await builder.locator('iframe[title="Filament preview"]').evaluate((iframe) => {
       const style = getComputedStyle(iframe)

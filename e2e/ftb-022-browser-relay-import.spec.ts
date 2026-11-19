@@ -1,11 +1,12 @@
 import { expect, test, type Page } from '@playwright/test'
 import { builderBaseUrl } from './urls'
 import { installBrowserRelayRoutes } from './support/browser-relay-routes'
+import { resetBuilderStorage } from './support/reset-builder-storage'
 
 test.skip(process.env.COMPOSE_E2E !== '1', 'Browser relay imports require the same-origin Compose gateway.')
 
 async function openImportPreview(page: Page, options: { authorizationFails?: boolean } = {}) {
-  await page.addInitScript(() => { if (window.top === window) localStorage.clear() })
+  await page.addInitScript(resetBuilderStorage)
   const relay = await installBrowserRelayRoutes(page, options)
   await page.goto(builderBaseUrl)
   await page.getByText('Tools', { exact: true }).click()

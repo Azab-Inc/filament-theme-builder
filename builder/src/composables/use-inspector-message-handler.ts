@@ -29,6 +29,7 @@ export function useInspectorMessageHandler({
       }
       return
     }
+    if (message.type === 'ftb:preview:ready') return
     if (message.type === 'ftb:inspector:clear') {
       inspectorResolution.value = null
       selectedInspectorEvidence.value = null

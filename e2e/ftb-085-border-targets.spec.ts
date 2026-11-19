@@ -1,12 +1,13 @@
 import { expect, test } from '@playwright/test'
 import { builderBaseUrl } from './urls'
+import { resetBuilderStorage } from './support/reset-builder-storage'
 
 test.skip(process.env.COMPOSE_E2E !== '1', 'FTB-085 requires the Compose gateway.')
 
 for (const [target, selector] of [['form.product-name', '.fi-input-wrp'], ['surface.section', '.fi-section'], ['surface.card', '.fi-ta-ctn']] as const) {
   test(`verified ${target} target projects a physical bottom edge`, async ({ page }) => {
     await page.goto(builderBaseUrl)
-    await page.evaluate(() => localStorage.clear())
+    await page.evaluate(resetBuilderStorage)
     await page.reload()
     const border = page.getByRole('group', { name: 'Border', exact: true })
     await border.getByLabel('Border target').selectOption(target)
@@ -24,7 +25,7 @@ for (const [target, selector] of [['form.product-name', '.fi-input-wrp'], ['surf
 
 test('verified table separator preserves physical sibling edges', async ({ page }) => {
   await page.goto(builderBaseUrl)
-  await page.evaluate(() => localStorage.clear())
+  await page.evaluate(resetBuilderStorage)
   await page.reload()
   const border = page.getByRole('group', { name: 'Border', exact: true })
   await border.getByLabel('Border target').selectOption('table.header')

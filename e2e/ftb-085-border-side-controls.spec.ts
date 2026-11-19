@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test'
 import { builderBaseUrl } from './urls'
+import { resetBuilderStorage } from './support/reset-builder-storage'
 
 test.skip(process.env.COMPOSE_E2E !== '1', 'FTB-085 requires the Compose gateway.')
 
 test('semantic Border controls expose physical side selection without mutating on selection', async ({ page }) => {
   await page.goto(builderBaseUrl)
-  await page.evaluate(() => localStorage.clear())
+  await page.evaluate(resetBuilderStorage)
   await page.reload()
 
   const border = page.getByRole('group', { name: 'Border', exact: true })
@@ -22,7 +23,7 @@ test('semantic Border controls expose physical side selection without mutating o
 
 test('ring-backed semantic borders reach the real preview without removing elevation', async ({ page }) => {
   await page.goto(builderBaseUrl)
-  await page.evaluate(() => localStorage.clear())
+  await page.evaluate(resetBuilderStorage)
   await page.reload()
   const border = page.getByRole('group', { name: 'Border', exact: true })
   await border.getByLabel('Border target').selectOption('table.container')
@@ -40,7 +41,7 @@ test('ring-backed semantic borders reach the real preview without removing eleva
 
 test('physical edges isolate light and dark values through reset, undo, and reload', async ({ page }) => {
   await page.goto(builderBaseUrl)
-  await page.evaluate(() => localStorage.clear())
+  await page.evaluate(resetBuilderStorage)
   await page.reload()
   const border = page.getByRole('group', { name: 'Border', exact: true })
   await border.getByLabel('Border target').selectOption('table.container')
@@ -67,7 +68,7 @@ test('physical edges isolate light and dark values through reset, undo, and relo
 
 test('semantic component contexts expose global, component, variant and state border controls', async ({ page }) => {
   await page.goto(builderBaseUrl)
-  await page.evaluate(() => localStorage.clear())
+  await page.evaluate(resetBuilderStorage)
   await page.reload()
   await page.getByRole('tab', { name: 'Components' }).click()
   for (const label of ['Semantic global border', 'Semantic component border', 'Semantic state (focus) border']) {
@@ -91,7 +92,7 @@ test('semantic component contexts expose global, component, variant and state bo
 
 test('semantic component border edits remain on the real input wrapper while focused', async ({ page }) => {
   await page.goto(builderBaseUrl)
-  await page.evaluate(() => localStorage.clear())
+  await page.evaluate(resetBuilderStorage)
   await page.reload()
   await page.getByRole('tab', { name: 'Components' }).click()
   const componentBorder = page.getByRole('group', { name: 'Semantic component border', exact: true })
@@ -112,7 +113,7 @@ test('semantic component border edits remain on the real input wrapper while foc
 test('border controls preserve mixed, none, color, keyboard, narrow and RTL behavior', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto(builderBaseUrl)
-  await page.evaluate(() => localStorage.clear())
+  await page.evaluate(resetBuilderStorage)
   await page.reload()
   await page.evaluate(() => {
     document.documentElement.dir = 'rtl'
@@ -158,7 +159,7 @@ test('border controls preserve mixed, none, color, keyboard, narrow and RTL beha
 
 test('verified semantic Inspector selections expose the semantic border context', async ({ page }) => {
   await page.goto(builderBaseUrl)
-  await page.evaluate(() => localStorage.clear())
+  await page.evaluate(resetBuilderStorage)
   await page.reload()
   const frame = page.frameLocator('iframe[title="Filament preview"]')
   await page.getByRole('button', { name: 'Inspector' }).click()

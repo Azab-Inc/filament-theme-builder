@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { builderBaseUrl } from './urls'
 import { composeLocalThemeCommand, startStdioMcpClient } from './support/stdio-mcp-client'
+import { resetBuilderStorage } from './support/reset-builder-storage'
 
 test.skip(process.env.COMPOSE_E2E !== '1', 'FTB-085 requires the isolated Compose gateway.')
 test.use({ acceptDownloads: true })
@@ -11,7 +12,7 @@ test('stdio MCP discovers, previews, confirms, applies, and rejects unauthorized
   try {
     await client.initialize()
     await page.goto(builderBaseUrl)
-    await page.evaluate(() => localStorage.clear())
+    await page.evaluate(resetBuilderStorage)
     await page.reload()
     await page.getByLabel('Theme tools').click()
     await page.getByRole('button', { name: 'Pair local client' }).click()

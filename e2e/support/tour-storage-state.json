@@ -1,0 +1,17 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://127.0.0.1:4173",
+      "localStorage": [
+        { "name": "ftb-onboarding-tour", "value": "{\"schemaVersion\":1,\"completedAt\":\"2026-11-19T00:00:00.000Z\"}" }
+      ]
+    },
+    {
+      "origin": "http://127.0.0.1:4175",
+      "localStorage": [
+        { "name": "ftb-onboarding-tour", "value": "{\"schemaVersion\":1,\"completedAt\":\"2026-11-19T00:00:00.000Z\"}" }
+      ]
+    }
+  ]
+}

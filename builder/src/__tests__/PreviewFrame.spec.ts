@@ -7,11 +7,13 @@ describe('PreviewFrame', () => {
   it('preserves the editor-before-preview DOM structure and iframe contract', async () => {
     const setIframe = vi.fn()
     const onPreviewLoad = vi.fn()
+    const onPreviewError = vi.fn()
     const wrapper = mount(PreviewFrame, {
       props: {
         iframeSrc: '/demo/admin?theme=preview',
         setIframe,
         onPreviewLoad,
+        onPreviewError,
       },
       slots: {
         default: '<section data-editor-panel aria-label="Editor panel">Editor controls</section>',
@@ -36,6 +38,8 @@ describe('PreviewFrame', () => {
 
     await iframe.trigger('load')
     expect(onPreviewLoad).toHaveBeenCalledOnce()
+    await iframe.trigger('error')
+    expect(onPreviewError).toHaveBeenCalledOnce()
     wrapper.unmount()
     expect(setIframe).toHaveBeenLastCalledWith(null)
   })

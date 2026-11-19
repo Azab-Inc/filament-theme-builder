@@ -19,6 +19,7 @@ export default defineConfig({
     browserName: 'chromium',
     headless: true,
     baseURL: composeE2e ? process.env.COMPOSE_BASE_URL ?? 'http://127.0.0.1:4175' : 'http://127.0.0.1:4173',
+    storageState: 'e2e/support/tour-storage-state.json',
   },
   webServer: composeE2e
     ? []
