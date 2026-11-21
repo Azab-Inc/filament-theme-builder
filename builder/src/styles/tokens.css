@@ -6,6 +6,7 @@
   --color-builder-border: #dce5e2;
   --color-builder-accent: #315b53;
   --radius-builder-sm: 0.35rem;
+  --spacing-builder-palette-name: 9ch;
 
   /* Color-control semantic values. */
   --color-control-color-popover-swatches-button-pressed-focus: 2px solid #18181b;

@@ -1,5 +1,9 @@
 # Filament Theme Builder — Issue Index
 
+**Live-site PHP export (2026-11-19):** [Production-ready PanelProvider export acceptance contract](./TICKETS.md#production-panel-provider-export), mirrored in #26, #89 and all 46 open `visual config` issue bodies. Export must produce portable, version-valid consumer `AdminPanelProvider::panel()` configuration from the requesting draft, preserve false/inherited semantics, exclude demo preview dependencies, and pass real concurrent Export UI and clean-reference runtime checks with applicable MCP parity. Linked Project #30 issue bodies carry the same requirements; implementation remains pending.
+
+**Deployed preview isolation (2026-11-19):** [Required acceptance contract](./TICKETS.md#deployed-preview-isolation), mirrored in [#89](https://github.com/Azab-Inc/filament-theme-builder/issues/89) and all 46 open `visual config` issue bodies (including #18, #55 and #90). Require independent visitor/tab settings, request/worker isolation, context propagation through navigation/Livewire, option-specific lifecycle verification, and test-first production Compose concurrent-browser plus applicable MCP evidence. Project #30 uses the linked issue bodies; statuses and phase gates are unchanged.
+
 **Panel configuration phase classification:** The non-visual children of [#89](https://github.com/Azab-Inc/filament-theme-builder/issues/89) are deferred to Composer package Phase 2, marked `composer package phase` and titled `(Composer package phase)`. The exact ticket list and Phase 2 gate are in [TICKETS.md](./TICKETS.md#ftb-087). Visual children retain their `visual config` label and existing phase; #89 spans both phases.
 
 Local issue index added with user permission on 2026-11-18. This index records the border-side request; the pre-existing backlog remains in [TICKETS.md](./TICKETS.md) and GitHub.

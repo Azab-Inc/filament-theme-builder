@@ -28,6 +28,32 @@
 
 ## Dependency map
 
+<a id="production-panel-provider-export"></a>
+### Required: production-ready PanelProvider export
+
+User requirement added 2026-11-19 to FTB-026 / [#26](https://github.com/Azab-Inc/filament-theme-builder/issues/26), FTB-087 / [#89](https://github.com/Azab-Inc/filament-theme-builder/issues/89), and all 46 open `visual config` issues. Pressing Export on the public online builder must deliver correct consumer `app/Providers/Filament/AdminPanelProvider.php` configuration; repository reference: `demo/app/Providers/Filament/AdminPanelProvider.php`.
+
+- [ ] Export only the requesting visitor/tab's draft, preserving explicit false, reset/inheritance, history and import semantics independently of other previews and Octane workers.
+- [ ] Generate valid, installed-version-verified method calls for `panel(Panel $panel): Panel`, with imports, enums, escaped PHP values and asset/font setup guidance. Explicit top navigation exports `->topNavigation(true)` or `->topNavigation(false)`; omit inherited/unset options in snippets to preserve host defaults rather than substituting demo defaults.
+- [ ] Consumer output must work without request/query preview adapters (`PanelBrandingSettings`, `ftb_branding`, preview IDs), preview bridge hooks, demo-only classes/auth bypasses or temporary asset URLs. Provide portable assets or actionable dependency installation steps and explicit application-specific integration guidance.
+- [ ] The live Export flow includes relevant PHP configuration and installation guidance alongside applicable CSS/JSON. Copyable method-call snippets are the default and preserve unrelated provider configuration; optional full providers are clearly examples, not replacements for existing providers.
+- [ ] Write failing regressions first; verify actual Export copy/download behavior with concurrent conflicting browser contexts and independent same-session tabs, PHP syntax and Filament API validity, representative generated configuration in a clean reference Filament project without demo dependencies, and applicable MCP export parity.
+
+Shared handoff owner: FTB-026; panel contract owner: FTB-087. Mirrored in all 48 linked GitHub issue bodies in Project #30. Pending acceptance only; phase gates, prerequisites and completion statuses remain in force.
+
+<a id="deployed-preview-isolation"></a>
+### Required: deployed multi-user preview isolation
+
+Acceptance requirement added 2026-11-19 to FTB-087 / [#89](https://github.com/Azab-Inc/filament-theme-builder/issues/89), all 46 open `visual config` issues (including FTB-018, FTB-055 and FTB-088), and their linked Project #30 issue bodies. Applies to UI and MCP preview changes; existing phases, prerequisites and completion statuses remain in force.
+
+- [ ] Isolate settings per visitor and per preview/tab: conflicting values such as `topNavigation` enabled for A and disabled for B must remain independent through edits, reset, undo/redo, import and refresh.
+- [ ] Resolve validated settings in the current request/preview context; do not rewrite shared PHP/configuration files or retain visitor-specific values in global/static/singleton state or unscoped caches. Verify Octane/FrankenPHP worker reuse cannot leak values.
+- [ ] Preserve isolated context across iframe reloads, navigation and Livewire requests. Cookies alone do not propagate URL settings; session-only settings do not isolate tabs. Server-stored previews require isolated keys and ownership/authorization checks.
+- [ ] Verify the installed Filament API/lifecycle option by option: request-time evaluation where supported, an explicitly isolated strategy for eager/boot-time APIs, and preservation of host authorization and other visitors' settings.
+- [ ] Write failing regression coverage first, then pass production Compose Playwright with two isolated browser contexts holding conflicting values concurrently, interleaved changes/reloads/navigation/Livewire where applicable, same-session independent tabs and worker reuse; include equivalent MCP isolation coverage where applicable. Source inspection alone is not completion evidence.
+
+[Source investigation and known propagation/verification gaps](./docs/research/2026-11-19-preview-concurrency-isolation.md). The umbrella owns the shared contract; every applicable visual child must satisfy it.
+
 <a id="ftb-087"></a>
 ### FTB-087 — Filament 5 panel properties (umbrella)
 

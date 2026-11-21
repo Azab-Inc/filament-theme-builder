@@ -1,5 +1,23 @@
 .surface-layout {
   @apply min-w-0 border-0 p-0;
+
+  &.surface-layout--paired {
+    .surface-layout__row {
+      @apply py-3 px-1;
+    }
+    .color-field__controls {
+      @apply grid [grid-template-columns:auto_auto_minmax(0,_1fr)_minmax(0,_1fr)] gap-1.5;
+    }
+    .color-field__text {
+      @apply [grid-column:3_/_-1];
+    }
+    .color-field__trigger {
+      @apply [grid-column:1_/_4] row-start-2;
+    }
+    .color-field__token-select {
+      @apply col-start-4 row-start-2;
+    }
+  }
 }
 .surface-layout legend {
   @apply font-bold [color:var(--color-builder-surfaces-surface-layout-legend-text)] [margin-bottom:12px];

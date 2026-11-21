@@ -25,7 +25,7 @@ function reset(path: string): void { resetField(path); emit('reset', path) }
 </script>
 
 <template>
-  <fieldset class="surface-layout">
+  <fieldset class="surface-layout surface-layout--paired">
     <legend>Surfaces, borders, text, and modes</legend>
     <div class="surface-layout__groups">
       <section v-for="group in groups" :key="group.key" class="surface-layout__group">

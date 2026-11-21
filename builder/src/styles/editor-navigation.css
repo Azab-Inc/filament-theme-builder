@@ -69,6 +69,26 @@
 .palette-accordion__summary {
   @apply [color:var(--color-builder-navigation-palette-accordion-summary-text)] [font-size:0.75rem];
 }
+
+.palette-compact {
+  @apply gap-2.5 min-w-0;
+
+  .palette-accordion__header {
+    @apply grid [grid-template-columns:1rem_var(--spacing-builder-palette-name)_minmax(0,_1fr)] gap-x-2 gap-y-1;
+  }
+  .palette-accordion__name {
+    @apply col-start-2 row-start-1;
+  }
+  .palette-accordion__base {
+    @apply col-start-2 row-start-2;
+  }
+  .palette-accordion__ramp {
+    @apply w-full h-4.5 col-start-3 row-start-1;
+  }
+  .palette-accordion__summary {
+    @apply col-start-3 row-start-2 text-right text-xs whitespace-normal;
+  }
+}
 .palette-accordion__panel {
   @apply grid [gap:0.75rem] min-w-0 [padding:0.75rem_0.25rem_1rem];
 }

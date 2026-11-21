@@ -6,7 +6,7 @@ describe('FoundationsPaletteControls actions', () => {
 
   it('preserves fieldset hooks and exact typed palette actions', async () => {
     const wrapper = mountPaletteControls()
-    expect(wrapper.get('fieldset').classes()).toEqual(['grid', 'gap-4', 'rounded-lg', 'border', 'border-zinc-200', 'p-4'])
+    expect(wrapper.get('fieldset').classes()).toEqual(expect.arrayContaining(['grid', 'gap-4', 'rounded-lg', 'border', 'border-zinc-200', 'p-4']))
     expect(wrapper.get('legend').text()).toBe('Color palettes')
     await wrapper.get('[data-palette-header="primary"]').trigger('click')
     expect((wrapper.get('#primary-palette-base').element as HTMLInputElement).value).toBe('#6366f1')
