@@ -51,7 +51,7 @@ test('traverses all seven anchors and closes with Escape without changing theme 
   await page.addInitScript(() => localStorage.clear())
   await page.goto('/')
   const popover = page.locator('.driver-popover:visible')
-  const titles = ['Welcome to the Theme Builder', 'Find your way around', 'Start with foundations', 'See the live preview', 'Inspect preview elements', 'Manage and export themes', 'You are ready to build']
+  const titles = ['Welcome to the Theme Builder', 'Find your way around', 'Start with foundations', 'Find the Inspector', 'See the live preview', 'Manage and export themes', 'You are ready to build']
   const before = await page.evaluate(() => Object.fromEntries(Object.keys(localStorage).filter((key) => key !== 'ftb-onboarding-tour').map((key) => [key, localStorage.getItem(key)])))
   for (let index = 0; index < titles.length; index += 1) {
     await expect(popover).toContainText(titles[index])
@@ -102,7 +102,7 @@ test('covers narrow anchors, keyboard controls, focus return, alternate layout, 
   await page.getByLabel('Top navigation').check()
   await page.locator('[data-tour="tools"]').click()
   await page.getByRole('button', { name: 'Take a tour' }).click()
-  const selectors = ['welcome', 'editor-navigation', 'foundations', 'live-preview', 'inspector', 'tools', 'finish']
+  const selectors = ['welcome', 'editor-navigation', 'foundations', 'inspector', 'live-preview', 'tools', 'finish']
   await popover.getByRole('button', { name: 'Next' }).focus()
   await page.keyboard.press('Enter')
   await expect(popover).toContainText('Step 2 of 7')
@@ -263,7 +263,7 @@ test('continues safely when an optional target is unavailable', async ({ page })
   await popover.getByRole('button', { name: 'Next' }).click()
   await popover.getByRole('button', { name: 'Next' }).click()
   await expect(popover).toContainText('Step 3 of 6')
-  await expect(popover.locator('.driver-popover-title')).toHaveText('See the live preview')
+  await expect(popover.locator('.driver-popover-title')).toHaveText('Find the Inspector')
   await expect(popover).toHaveCount(1)
   await popover.getByRole('button', { name: 'Skip tour' }).click()
 })

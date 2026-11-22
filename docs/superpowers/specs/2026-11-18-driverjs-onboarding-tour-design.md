@@ -43,10 +43,10 @@ Use stable `data-tour` attributes on the builder controls rather than CSS classe
 1. Welcome: introduce the builder and explain that changes apply to the live preview immediately.
 2. Editor navigation: show the section navigation (Foundations, Components, Branding, Icons, Inspector).
 3. Foundations: explain palette, surface, typography, spacing, density, radius, border width, and shadow controls.
-4. Live preview: explain that the iframe is a real Filament 5.9 application and that navigation is safe while Inspector is off.
-5. Inspector: show the toolbar toggle, explain hover/click selection and the raw-element fallback, and state that Inspector must be off for normal interaction.
+4. Inspector: highlight the Inspector button in the top toolbar before mentioning it in preview guidance; explain hover/click selection and the raw-element fallback, and state that Inspector must be off for normal interaction.
+5. Live preview: explain that the iframe is a real Filament 5.9 application and that navigation is safe while Inspector is off.
 6. Themes and exports: show the Tools and Export menu triggers, Save theme, and the available JSON/CSS/PHP exports.
-7. Finish: summarize the workflow and point to Tools > Take a tour for replay.
+7. Finish: explain that theme changes are saved in this browser’s local storage, exporting keeps a copy outside this browser, and a Composer package for using themes in a project is coming soon. Do not claim the temporary demo records are stored in local storage or that the future package is already available. Replay remains available from Tools > Take a tour.
 
 Steps must not require opening a menu, changing mode, or selecting a section. If a target is missing because the layout is collapsed or an optional panel is unavailable, skip that step and continue with the next available target rather than failing the whole tour.
 

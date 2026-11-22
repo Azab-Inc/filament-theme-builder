@@ -9,9 +9,24 @@ import {
 describe('onboarding tour completion storage', () => {
   it('keeps the seven-step manifest ordered and anchored', () => {
     expect(ONBOARDING_TOUR_STEPS.map(({ id }) => id)).toEqual([
-      'welcome', 'editor-navigation', 'foundations', 'live-preview', 'inspector', 'themes-exports', 'finish',
+      'welcome', 'editor-navigation', 'foundations', 'inspector', 'live-preview', 'themes-exports', 'finish',
     ])
     expect(ONBOARDING_TOUR_STEPS.every(({ selector, title, description }) => selector.startsWith('[data-tour=') && title && description)).toBe(true)
+  })
+
+  it('shows where Inspector is before discussing preview navigation', () => {
+    const inspector = ONBOARDING_TOUR_STEPS[3]!
+    expect(inspector.selector).toBe('[data-tour="inspector"]')
+    expect(inspector.description).toContain('top toolbar')
+  })
+
+  it('explains local theme retention and the upcoming Composer package at the finish', () => {
+    const finish = ONBOARDING_TOUR_STEPS[6]!
+    expect(finish.description).toContain('theme changes')
+    expect(finish.description).toContain("this browser’s local storage")
+    expect(finish.description).toContain('Export')
+    expect(finish.description).toContain('Composer package')
+    expect(finish.description).toContain('coming soon')
   })
 
   it('accepts only the current version and ignores malformed values', () => {

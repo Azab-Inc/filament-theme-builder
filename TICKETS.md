@@ -2214,6 +2214,8 @@ Implementation commit: `6164b994eedc36b2349e33dc1894b4015071003e` (`Feature: add
 
 **Navigation highlight follow-up:** Moved the `editor-navigation` tour anchor from the Sidebar/Top navigation layout-selector fieldset to the actual Editor sections tablist in both layouts. New `e2e/onboarding-navigation-target.spec.ts` first reproduced the wrong highlighted fieldset, then passed for Sidebar and Top navigation, asserting Foundations/Components/Branding/Icons are inside the highlighted tablist and no layout radio is included. Settled repository check: `COMPOSE_E2E=1 npx playwright test e2e/onboarding-navigation-target.spec.ts e2e/onboarding-tour.spec.ts` passed **18 tests**. Builder focused navigation/structure/tour units passed 14 tests; `npm run test:unit -- --run --testTimeout=30000 --hookTimeout=30000` passed **156 files / 734 tests**, 292.30s. Compose `npm run build`, including type-check, passed. No theme state or navigation behavior changed. See `Fix - UI: highlight section navigation in the onboarding tour` in git history; unrelated concurrent work remains outside that commit.
 
+**Inspector-first and retention guidance follow-up (user-approved):** Step 4 now highlights the actual Inspector button in the top toolbar before step 5 explains preview interaction. The tour remains seven steps and does not toggle Inspector. Step 7 explains that theme changes are saved in this browser’s local storage, exporting keeps a copy outside the browser, and a Composer package for project integration is coming soon. Temporary demo records are not represented as local-storage data. Unit regressions first failed on the old step order and finish copy; four real-browser regressions first showed the live-preview title at step 4. Settled checks: focused tour units **10 passed**; `COMPOSE_E2E=1 npx playwright test e2e/onboarding-instructions.spec.ts e2e/onboarding-navigation-target.spec.ts e2e/onboarding-tour.spec.ts` **22 passed**; full builder units with `--run --testTimeout=30000 --hookTimeout=30000` **156 files / 736 tests passed**, 213.45s; Compose production build/type-check passed. The mechanical UI detector returned no findings, and rendered Inspector/finish steps were visually inspected at desktop/mobile sizes. The approved design spec carries the updated order and retention wording. No storage/export implementation changed. See `Fix - UI: clarify Inspector and theme retention in the tour` in git history.
+
 **Non-goals:** touring inside the Filament iframe; analytics, accounts, server persistence, or a second tour library.
 
 **Related:** FTB-003, FTB-005, FTB-006, FTB-007, FTB-008, FTB-019, FTB-021, FTB-022, FTB-050, FTB-064.
@@ -2269,7 +2271,7 @@ Complete the seven-step tour with Inspector, themes/exports, and finish steps, a
 
 ### Acceptance criteria
 
-- [x] Welcome, editor navigation, foundations, live preview, Inspector, themes/exports, and finish are covered in order.
+- [x] Welcome, editor navigation, foundations, Inspector, live preview, themes/exports, and finish are covered in order.
 - [x] Tools > Take a tour restarts from step one after completion and after a skipped tour.
 - [x] No step opens a menu, changes mode, selects an editor section, or mutates theme state.
 - [x] Missing optional targets are skipped and remaining steps stay ordered and usable.
