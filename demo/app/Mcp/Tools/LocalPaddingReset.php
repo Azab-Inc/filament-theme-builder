@@ -11,7 +11,16 @@ use Laravel\Mcp\ResponseFactory;
 final class LocalPaddingReset extends LocalPaddingMutationTool
 {
     protected string $name = 'local_padding_reset';
+
     protected string $description = 'Stage a validated padding reset for paired browser confirmation.';
-    public function schema(JsonSchema $schema): array { return $this->mutationSchema($schema); }
-    public function handle(Request $request): ResponseFactory { return $this->stage($request, 'reset'); }
+
+    public function schema(JsonSchema $schema): array
+    {
+        return $this->mutationSchema($schema);
+    }
+
+    public function handle(Request $request): ResponseFactory
+    {
+        return $this->stage($request, 'reset');
+    }
 }

@@ -52,6 +52,9 @@ class DemoResetTest extends TestCase
         foreach ([$this->database, $this->snapshot, $this->lock] as $path) {
             @unlink($path);
         }
+        foreach (glob($this->database.'-*') ?: [] as $sidecar) {
+            @unlink($sidecar);
+        }
 
         @unlink($this->uploads.'/temporary-upload.pdf');
         @rmdir($this->uploads);
@@ -72,16 +75,57 @@ class DemoResetTest extends TestCase
 
     public function test_existing_database_connection_can_write_after_reset(): void
     {
+        $this->assertTrue(extension_loaded('sqlite3'));
+        $this->assertTrue(class_exists(\SQLite3::class));
+        $snapshot = base_path('database/demo-snapshot.sqlite');
+        copy($snapshot, $this->database);
+        Config::set('maintenance.demo_snapshot_path', $snapshot);
+        $inode = fileinode($this->database);
+
+        $connection = new \PDO('sqlite:'.$this->database);
+        $connection->exec('PRAGMA journal_mode = WAL');
+        $connection->query('select count(*) from sessions')->fetchColumn();
+
+        $this->artisan('demo:reset')->assertExitCode(0);
+
+        $this->assertSame($inode, fileinode($this->database));
+        $this->assertNotFalse($connection->exec('update sessions set last_activity = last_activity'));
+    }
+
+    public function test_sqlite_snapshot_fails_closed_without_sqlite3_support(): void
+    {
+        $snapshot = base_path('database/demo-snapshot.sqlite');
+        copy($snapshot, $this->database);
+
+        $this->expectExceptionMessage('The SQLite3 extension is required to restore SQLite snapshots safely.');
+        (new DemoResetService(new TemporaryUploadStorage, false))->reset($snapshot, $this->database, $this->lock);
+    }
+
+    public function test_sqlite_reset_failure_preserves_the_existing_database(): void
+    {
         $snapshot = base_path('database/demo-snapshot.sqlite');
         copy($snapshot, $this->database);
         Config::set('maintenance.demo_snapshot_path', $snapshot);
 
         $connection = new \PDO('sqlite:'.$this->database);
-        $connection->query('select count(*) from sessions')->fetchColumn();
+        $connection->exec('PRAGMA journal_mode = WAL');
+        $connection->exec("UPDATE products SET name = 'Locked mutation' WHERE sku = 'DEMO-CHAIR-001'");
+        $connection->exec('BEGIN IMMEDIATE');
+        $inode = fileinode($this->database);
 
-        $this->artisan('demo:reset')->assertExitCode(0);
+        try {
+            (new DemoResetService(new TemporaryUploadStorage))->reset($snapshot, $this->database, $this->lock);
+            self::fail('A busy SQLite destination must fail closed.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('The SQLite snapshot could not be restored in place.', $exception->getMessage());
+        } finally {
+            $connection->rollBack();
+        }
 
-        $this->assertNotFalse($connection->exec('update sessions set last_activity = last_activity'));
+        $verification = new \PDO('sqlite:'.$this->database);
+        $name = $verification->query("SELECT name FROM products WHERE sku = 'DEMO-CHAIR-001'")->fetchColumn();
+        $this->assertSame($inode, fileinode($this->database));
+        $this->assertSame('Locked mutation', $name);
     }
 
     public function test_repeated_reset_is_deterministic_and_does_not_touch_persistent_shares(): void

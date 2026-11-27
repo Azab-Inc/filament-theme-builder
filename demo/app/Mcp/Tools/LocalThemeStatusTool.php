@@ -47,8 +47,12 @@ abstract class LocalThemeStatusTool extends LocalThemeTool
                         unset($value['version']);
                         if (is_string($value['json'] ?? null)) {
                             $export = json_decode($value['json'], true);
-                            if (is_array($export) && is_array($export['border_read'] ?? null)) $value['border_read'] = $export['border_read'];
-                            if (is_array($export) && is_array($export['paddingRead'] ?? null)) $value['paddingRead'] = $export['paddingRead'];
+                            if (is_array($export) && is_array($export['border_read'] ?? null)) {
+                                $value['border_read'] = $export['border_read'];
+                            }
+                            if (is_array($export) && is_array($export['paddingRead'] ?? null)) {
+                                $value['paddingRead'] = $export['paddingRead'];
+                            }
                         }
                         $result['result'] = $value;
                     }
