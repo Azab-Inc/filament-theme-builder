@@ -1,4 +1,4 @@
-import type { Density, FoundationState, PaletteName, PaletteShade, ThemeMode } from '@/models/foundations.model'
+import type { Density, DensityPreset, FoundationState, PaletteName, PaletteShade, ThemeMode } from '@/models/foundations.model'
 import { createDefaultFoundationState, densityPreset } from '@/utils/foundation-defaults'
 import { clearExplicitPath, markExplicitPath } from '@/utils/foundation-provenance'
 import { isEditableFoundationPath, validateFoundationState } from '@/utils/foundation-validation'
@@ -81,7 +81,7 @@ export function useThemeFoundationActions({ theme, commit = (candidate) => { the
 }
 
 function applyDensityPreset(foundations: FoundationState, value: Density): void {
-  const preset = densityPreset(value)
+  const preset: DensityPreset = densityPreset(value)
   foundations.density = value
   Object.assign(foundations.spacing, preset.spacing)
   Object.keys(preset.spacing).forEach((key) => clearExplicitPath(foundations, `spacing.${key}`))

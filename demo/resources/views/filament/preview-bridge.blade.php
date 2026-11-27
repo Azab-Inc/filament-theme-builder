@@ -200,10 +200,11 @@
         const rawVisualProperties = ['color', 'background-color', 'border-color', 'border-width', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width', 'border-top-style', 'border-right-style', 'border-bottom-style', 'border-left-style', 'border-radius', 'box-shadow', 'opacity', 'padding', 'margin', 'font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'text-decoration', 'border-style', 'text-align', 'white-space'];
         const rawSelectorPattern = /^(?:\.fi-[A-Za-z0-9_-]+)(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus))?(?:\s+\.fi-[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus))?)*$/;
         const uniqueIdPattern = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
+        const uniqueSelectorId = (selector) => /^#([A-Za-z][A-Za-z0-9_-]{0,63})(?::(?:hover|focus))?$/.exec(selector)?.[1] ?? null;
         const reservedUniqueIds = new Set(['ftb-preview-bridge', 'ftb-managed-theme', 'ftb-inspector-style']);
         const rawValuePattern = /[;{}<>]|\/\*|\*\/|url\s*\(|@(?:import|supports|media|layer|font-face)|expression\s*\(|javascript\s*:/i;
         const columnSelectorPattern = /^\.fi-ta :is\(\.fi-ta-header-cell, \.fi-ta-cell\):nth-child\(([1-9]|[12]\d|3[0-2])\)$/;
-        const isSafeRawSelector = (value) => typeof value === 'string' && (rawSelectorPattern.test(value) || columnSelectorPattern.test(value) || (value.startsWith('#') && uniqueIdPattern.test(value.slice(1)))) && !/\.fi-ta-(?:header-cell|cell)-[^\s]+\.(?!fi-)/.test(value);
+        const isSafeRawSelector = (value) => typeof value === 'string' && (rawSelectorPattern.test(value) || columnSelectorPattern.test(value) || (value.startsWith('#') && /^#[A-Za-z][A-Za-z0-9_-]{0,63}(?::(?:hover|focus))?$/.test(value))) && !/\.fi-ta-(?:header-cell|cell)-[^\s]+\.(?!fi-)/.test(value);
         const isSafeUniqueAssignment = (value) => isRecord(value) && Object.keys(value).length === 3 && uniqueIdPattern.test(value.id) && !reservedUniqueIds.has(value.id) && isSafeRawSelector(value.sourceSelector) && value.sourceSelector.startsWith('.') && Number.isSafeInteger(value.matchIndex) && value.matchIndex >= 0 && value.matchIndex <= 999;
         const isSafeUniqueAssignments = (value) => Array.isArray(value) && value.length <= 100 && value.every(isSafeUniqueAssignment) && new Set(value.map((item) => item.id)).size === value.length && new Set(value.map((item) => `${item.sourceSelector}\u0000${item.matchIndex}`)).size === value.length;
         const isSafeRawPropertyValue = (property, value, tokens) => {
@@ -302,8 +303,8 @@
              const paddingValid = Array.isArray(message.theme.padding) && message.theme.padding.every(isSafePaddingRecord) && new Set(message.theme.padding.map(paddingIdentity)).size === message.theme.padding.length;
              const foundationValid = isFoundationRecord(message.theme.foundations);
              const projectionValid = foundationValid && isAcceptedProjection(message.projection, message.theme.foundations);
-               const assignedIds = new Set((message.theme.uniqueElementIds ?? []).map((assignment) => `#${assignment.id}`));
-               const accepted = hasSupportedKeys && paddingValid && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && foundationValid && Array.isArray(message.theme.overrides) && message.theme.overrides.every((override) => isSafeOverride(override, message.theme.foundations.userTokens)) && message.theme.overrides.every((override) => semanticOverrideMappings.has(`${override.targetId}\u0000${override.controlId}`)) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && Array.isArray(message.theme.rawOverrides) && message.theme.rawOverrides.every((override) => isSafeRawOverride(override, message.theme.foundations.userTokens)) && message.theme.rawOverrides.every((override) => !override.selector.startsWith('#') || assignedIds.has(override.selector)) && new Set(message.theme.rawOverrides.map((override) => override.selector)).size === message.theme.rawOverrides.length && message.theme.customCss === '' && (message.theme.branding === undefined || isSafeBranding(message.theme.branding)) && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && projectionValid;
+                const assignedIds = new Set((message.theme.uniqueElementIds ?? []).map((assignment) => `#${assignment.id}`));
+                const accepted = hasSupportedKeys && paddingValid && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && foundationValid && Array.isArray(message.theme.overrides) && message.theme.overrides.every((override) => isSafeOverride(override, message.theme.foundations.userTokens)) && message.theme.overrides.every((override) => semanticOverrideMappings.has(`${override.targetId}\u0000${override.controlId}`)) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && Array.isArray(message.theme.rawOverrides) && message.theme.rawOverrides.every((override) => isSafeRawOverride(override, message.theme.foundations.userTokens)) && message.theme.rawOverrides.every((override) => !override.selector.startsWith('#') || assignedIds.has(`#${uniqueSelectorId(override.selector)}`)) && new Set(message.theme.rawOverrides.map((override) => override.selector)).size === message.theme.rawOverrides.length && message.theme.customCss === '' && (message.theme.branding === undefined || isSafeBranding(message.theme.branding)) && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && projectionValid;
              return accepted && (message.theme.modeLinks === undefined || validModeLinks(message.theme.modeLinks, message.theme));
         };
          const projectionMatchesCanonicalFoundation = (projection, foundations) => {
@@ -369,15 +370,15 @@
         const radiusVariableRule = (value) => `:root { --radius-xs: ${value}; --radius-sm: ${value}; --radius-md: ${value}; --radius-lg: ${value}; --radius-xl: ${value}; --radius-2xl: ${value}; --radius-3xl: ${value}; --radius-4xl: ${value}; }`;
         const shadowValues = { none: 'none', sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)', md: '0 4px 6px -1px rgb(0 0 0 / 0.1)', lg: '0 10px 15px -3px rgb(0 0 0 / 0.1)', xl: '0 20px 25px -5px rgb(0 0 0 / 0.1)' };
         const cssValue = (value) => typeof value === 'number' ? `${value}px` : value;
-         let bridgeAssignedIds = [];
+          let bridgeAssignedTargets = [];
          const hasApplicationOwnedIdCollision = (id, target) => [...document.querySelectorAll(`[id="${CSS.escape(id)}"]`)].some((node) => node !== target && node.getAttribute('data-ftb-unique-id') !== 'true');
          const applyUniqueElementIds = (assignments) => {
-             bridgeAssignedIds.forEach((id) => document.querySelectorAll(`[id="${CSS.escape(id)}"]`).forEach((node) => { if (node.getAttribute('data-ftb-unique-id') === 'true') { node.removeAttribute('id'); node.removeAttribute('data-ftb-unique-id'); } }));
-             bridgeAssignedIds = [];
+              bridgeAssignedTargets.forEach((node) => { if (node.getAttribute('data-ftb-unique-id') === 'true') { node.removeAttribute('id'); node.removeAttribute('data-ftb-unique-id'); } });
+              bridgeAssignedTargets = [];
              assignments.forEach((assignment) => {
                  const target = document.querySelectorAll(assignment.sourceSelector)[assignment.matchIndex];
                  if (!target || hasApplicationOwnedIdCollision(assignment.id, target) || (target.id && target.id !== assignment.id) || (target.id === assignment.id && target.getAttribute('data-ftb-unique-id') !== 'true')) return;
-                 target.id = assignment.id; target.setAttribute('data-ftb-unique-id', 'true'); bridgeAssignedIds.push(assignment.id);
+                  target.id = assignment.id; target.setAttribute('data-ftb-unique-id', 'true'); bridgeAssignedTargets.push(target);
              });
          };
          const updateTheme = (message) => {
@@ -450,8 +451,8 @@
                   if (!match) return [selector];
                   return [selector, `${match[1] ? `${match[1]} ` : ''}.fi-sidebar-item-icon`];
               };
-               const appliedUniqueIds = new Set(bridgeAssignedIds);
-               const rawOverrideRules = [...message.theme.rawOverrides].filter((override) => !override.selector.startsWith('#') || appliedUniqueIds.has(override.selector.slice(1))).sort((left, right) => {
+                const appliedUniqueIds = new Set(bridgeAssignedTargets.map((target) => target.id));
+                const rawOverrideRules = [...message.theme.rawOverrides].filter((override) => !override.selector.startsWith('#') || appliedUniqueIds.has(uniqueSelectorId(override.selector))).sort((left, right) => {
                    const leftUnique = left.selector.startsWith('#');
                    const rightUnique = right.selector.startsWith('#');
                    if (leftUnique !== rightUnique) return Number(leftUnique) - Number(rightUnique);

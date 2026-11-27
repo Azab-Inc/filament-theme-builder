@@ -17,6 +17,14 @@ describe('raw Inspector visual states', () => {
     expect(inspectorStateForSelector('.fi-btn:focus')).toBe('focus')
   })
 
+  it('keeps unique ID targets usable for hover, focus, and default states', () => {
+    expect(selectorForInspectorState('#bottom-header', 'default')).toBe('#bottom-header')
+    expect(selectorForInspectorState('#bottom-header', 'hover')).toBe('#bottom-header:hover')
+    expect(selectorForInspectorState('#bottom-header:hover', 'focus')).toBe('#bottom-header:focus')
+    expect(inspectorStateForSelector('#bottom-header:hover')).toBe('hover')
+    expect(validateRawSelector('#bottom-header:hover').valid).toBe(true)
+  })
+
   it('does not invent selected state for unrelated or unsafe selector evidence', () => {
     expect(selectorForInspectorState('.fi-btn', 'selected')).toBeNull()
     expect(selectorForInspectorState('.custom-button', 'hover')).toBeNull()

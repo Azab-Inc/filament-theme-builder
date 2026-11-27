@@ -56,10 +56,13 @@ function validateVersionedState(value: Record<string, unknown>, registry?: Filam
     if (!borderResult.valid) return invalid('invalid-value', 'borderEdges', borderResult.message)
   }
   if (value.schemaVersion === 8 && value.uniqueElementIds !== undefined) {
-    const uniqueResult = validateUniqueElementIdAssignments(value.uniqueElementIds)
+    const uniqueResult: ReturnType<typeof validateUniqueElementIdAssignments> = validateUniqueElementIdAssignments(value.uniqueElementIds)
     if (!uniqueResult.valid) return invalid('invalid-value', 'uniqueElementIds', uniqueResult.error)
-    const assignedIds = new Set(uniqueResult.value.map((assignment) => `#${assignment.id}`))
-    if (Array.isArray(value.rawOverrides) && value.rawOverrides.some((override) => override.selector.startsWith('#') && !assignedIds.has(override.selector))) return invalid('invalid-value', 'rawOverrides', 'Unique raw selectors require a matching element ID assignment')
+    const assignedIds: Set<string> = new Set(uniqueResult.value.map((assignment) => `#${assignment.id}`))
+     if (Array.isArray(value.rawOverrides) && value.rawOverrides.some((override) => {
+       const match: RegExpExecArray | null = /^#([A-Za-z][A-Za-z0-9_-]{0,63})(?::(?:hover|focus))?$/.exec(override.selector)
+       return match !== null && !assignedIds.has(`#${match[1]}`)
+     })) return invalid('invalid-value', 'rawOverrides', 'Unique raw selectors require a matching element ID assignment')
   }
   if (hasUnknownUserReference(namedTokens as import('@/models/user-tokens.model').UserTokens | undefined, refs)) return invalid('invalid-value', 'overrides', 'Unknown named color reference')
   if (value.icons !== undefined) {

@@ -109,3 +109,32 @@ test('preview bridge ignores inspector commands from invalid origins, sources, a
   })
   expect(result).toBe(true)
 })
+
+test('rejects malformed unique assignments without changing accepted DOM or style', async ({ page }) => {
+  await page.goto(baseUrl)
+  const result = await page.evaluate(async () => {
+    const iframe = document.querySelector<HTMLIFrameElement>('iframe[title="Filament preview"]')!
+    const frameWindow = iframe.contentWindow!
+    const before = await frameWindow.eval(`(() => ({
+      body: getComputedStyle(document.body).backgroundColor,
+      style: document.getElementById('ftb-managed-theme')?.textContent ?? '',
+    }))()`)
+    let accepted = false
+    frameWindow.addEventListener('ftb:preview-message-accepted', () => { accepted = true })
+    frameWindow.postMessage({
+      type: 'ftb:theme:update',
+      schemaVersion: 1,
+      activeMode: 'light',
+      projection: { mode: 'light' },
+      theme: { schemaVersion: 8, uniqueElementIds: [{ id: '1-malformed', sourceSelector: '.fi-section-header', matchIndex: 0 }] },
+    }, location.origin)
+    await new Promise((resolve) => setTimeout(resolve, 75))
+    const after = await frameWindow.eval(`(() => ({
+      body: getComputedStyle(document.body).backgroundColor,
+      style: document.getElementById('ftb-managed-theme')?.textContent ?? '',
+    }))()`)
+    return { before, after, accepted }
+  })
+  expect(result.accepted).toBe(false)
+  expect(result.after).toEqual(result.before)
+})

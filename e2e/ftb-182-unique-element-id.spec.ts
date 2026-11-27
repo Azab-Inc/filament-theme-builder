@@ -1,14 +1,16 @@
 import { expect, test } from '@playwright/test'
+import { demoBaseUrl } from './urls'
 
 test.skip(process.env.COMPOSE_E2E !== '1', 'Requires a running Compose stack')
 
 test('isolates a repeated Inspector target with a persisted unique ID', async ({ page }) => {
   test.setTimeout(60_000)
-  await page.addInitScript(() => localStorage.removeItem('ftb-theme'))
+  await page.addInitScript(() => { localStorage.removeItem('ftb-theme'); localStorage.setItem('ftb-onboarding-tour', JSON.stringify({ schemaVersion: 1, completedAt: new Date().toISOString() })) })
   await page.goto('/')
   const frame = page.frameLocator('iframe[title="Filament preview"]')
   await expect(frame.locator('.fi-section-header')).toHaveCount(2)
   const before = await frame.locator('.fi-section-header').first().evaluate((element) => getComputedStyle(element).backgroundColor)
+  const bottomBefore = await frame.locator('.fi-section-header-text-ctn').nth(1).evaluate((element) => getComputedStyle(element).backgroundColor)
   await page.getByRole('button', { name: 'Inspector' }).click()
   await frame.locator('.fi-section-header').nth(1).click()
   await expect(page.locator('#unique-element-id-toggle')).toBeVisible()
@@ -17,11 +19,125 @@ test('isolates a repeated Inspector target with a persisted unique ID', async ({
   expect(id).toMatch(/^[A-Za-z][A-Za-z0-9_-]{0,63}$/)
   await page.locator('#raw-background-color').fill('#fef3c7')
   await expect.poll(() => frame.locator('.fi-section-header').first().evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(before)
+  await expect(frame.locator('.fi-section-header-text-ctn').first()).toHaveCSS('background-color', bottomBefore)
+  await expect.poll(() => frame.locator(`#${id}`).evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(bottomBefore)
+  await expect(frame.locator(`#${id}`)).toHaveCSS('background-color', 'rgb(254, 243, 199)')
+  await expect(frame.locator(`#${id}`)).toHaveCount(1)
+
+  await page.getByRole('button', { name: 'Hover', exact: true }).click()
+  await page.locator('#raw-background-color').fill('#bfdbfe')
+  await expect.poll(() => page.evaluate(() => Object.values(localStorage).join('\n'))).toContain(`#${id}:hover`)
+
+  await page.locator('#unique-element-id').fill('bottom-header-renamed')
+  await expect(frame.locator('#bottom-header-renamed')).toHaveCount(1)
+  await expect(frame.locator(`#${id}`)).toHaveCount(0)
+
+  await page.getByLabel('Undo').click()
+  await expect(frame.locator(`#${id}`)).toHaveCount(1)
+  await page.getByLabel('Redo').click()
+  await expect(frame.locator('#bottom-header-renamed')).toHaveCount(1)
+
+  await page.locator('#unique-element-id').fill(id)
+  await page.getByRole('button', { name: 'Default', exact: true }).click()
+  await page.getByRole('button', { name: 'Reset raw element override', exact: true }).click()
+  await page.locator('summary[aria-label="Export actions"]').click()
+  const [jsonDownload] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Export theme JSON' }).click(),
+  ])
+  const jsonStream = await jsonDownload.createReadStream()
+  let json = ''
+  for await (const chunk of jsonStream ?? []) json += chunk.toString()
+  expect(json).toContain(`"id": "${id}"`)
   await page.waitForTimeout(400)
   await page.reload()
   await expect(page.getByRole('button', { name: 'Inspector' })).toBeVisible({ timeout: 30_000 })
   await page.getByRole('button', { name: 'Inspector' }).click()
   await frame.locator('.fi-section-header').nth(1).click()
   await expect(page.locator('#unique-element-id')).toHaveValue(id)
+  await expect(frame.locator(`#${id}`)).toHaveCount(1)
+  await expect.poll(() => frame.locator('.fi-section-header').first().evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(before)
+})
+
+test('exports a unique rule that matches the same ID in a clean fixture', async ({ page, context }) => {
+  test.setTimeout(60_000)
+  await page.addInitScript(() => { localStorage.clear(); localStorage.setItem('ftb-onboarding-tour', JSON.stringify({ schemaVersion: 1, completedAt: new Date().toISOString() })) })
+  await page.goto('/')
+  const frame = page.frameLocator('iframe[title="Filament preview"]')
+  await page.getByRole('button', { name: 'Inspector' }).click()
+  await frame.locator('.fi-section-header').nth(1).click()
+  await page.locator('#unique-element-id-toggle').check()
+  const id = await page.locator('#unique-element-id').inputValue()
+  await page.locator('#raw-background-color').fill('#fef3c7')
+  const previewColor = await frame.locator(`#${id}`).evaluate((element) => getComputedStyle(element).backgroundColor)
+
+  await page.locator('summary[aria-label="Export actions"]').click()
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Download vanilla CSS' }).click(),
+  ])
+  const stream = await download.createReadStream()
+  let css = ''
+  for await (const chunk of stream ?? []) css += chunk.toString()
+  expect(css).toContain(`#${id} {`)
+
+  const clean = await context.newPage()
+  await clean.goto(`${demoBaseUrl}/demo/admin`)
+  await clean.locator('.fi-section-header-text-ctn').nth(1).evaluate((element, value) => { element.id = value as string }, id)
+  await clean.addStyleTag({ content: css })
+  await expect(clean.locator(`#${id}`)).toHaveCSS('background-color', previewColor)
+  await clean.close()
+})
+
+test('rejects an application-owned or duplicate ID without changing accepted preview state', async ({ page }) => {
+  test.setTimeout(60_000)
+  await page.addInitScript(() => { localStorage.clear(); localStorage.setItem('ftb-onboarding-tour', JSON.stringify({ schemaVersion: 1, completedAt: new Date().toISOString() })) })
+  await page.goto('/')
+  const frame = page.frameLocator('iframe[title="Filament preview"]')
+  await page.getByRole('button', { name: 'Inspector' }).click()
+  await frame.locator('.fi-section-header').nth(0).click()
+  await page.locator('#unique-element-id-toggle').check()
+  const firstId = await page.locator('#unique-element-id').inputValue()
+  await frame.locator('.fi-section-header').nth(1).click()
+  await page.locator('#unique-element-id-toggle').check()
+  const secondId = await page.locator('#unique-element-id').inputValue()
+  await page.locator('#unique-element-id').fill(firstId)
+  await expect(page.locator('#unique-element-id-error')).toContainText('already assigned')
+  await expect(page.locator('#unique-element-id')).toHaveValue(secondId)
+  await expect(frame.locator(`#${firstId}`)).toHaveCount(1)
+  await expect(frame.locator(`#${secondId}`)).toHaveCount(1)
+})
+
+test('fails closed when an application-owned ID collides with the accepted assignment', async ({ page }) => {
+  test.setTimeout(60_000)
+  await page.addInitScript(() => { localStorage.clear(); localStorage.setItem('ftb-onboarding-tour', JSON.stringify({ schemaVersion: 1, completedAt: new Date().toISOString() })) })
+  await page.goto('/')
+  const frame = page.frameLocator('iframe[title="Filament preview"]')
+  await page.getByRole('button', { name: 'Inspector' }).click()
+  await frame.locator('.fi-section-header').nth(1).click()
+  await page.locator('#unique-element-id-toggle').check()
+  const id = await page.locator('#unique-element-id').inputValue()
+  await frame.locator('.fi-section-header-text-ctn').nth(0).evaluate((element, value) => { element.id = value as string }, id)
+  await page.locator('#raw-background-color').fill('#fef3c7')
+  await expect(frame.locator('.fi-section-header-text-ctn').nth(0)).toHaveAttribute('id', id)
+  await expect(frame.locator('.fi-section-header-text-ctn').nth(1)).not.toHaveAttribute('id', id)
+  await expect(frame.locator('.fi-section-header-text-ctn').nth(0)).not.toHaveCSS('background-color', 'rgb(254, 243, 199)')
+  await expect.poll(() => page.evaluate(() => Object.values(localStorage).join('\n'))).toContain(`"id":"${id}"`)
+})
+
+test('retries an accepted assignment after preview navigation away and back', async ({ page }) => {
+  test.setTimeout(60_000)
+  await page.addInitScript(() => { localStorage.clear(); localStorage.setItem('ftb-onboarding-tour', JSON.stringify({ schemaVersion: 1, completedAt: new Date().toISOString() })) })
+  await page.goto('/')
+  const frame = page.frameLocator('iframe[title="Filament preview"]')
+  await page.getByRole('button', { name: 'Inspector' }).click()
+  await frame.locator('.fi-section-header').nth(1).click()
+  await page.locator('#unique-element-id-toggle').check()
+  const id = await page.locator('#unique-element-id').inputValue()
+  await page.getByRole('button', { name: 'Inspector' }).click()
+  await page.frames().find((candidate) => candidate !== page.mainFrame())?.evaluate(() => { window.location.href = '/demo/admin/showcase' })
+  await expect.poll(() => page.frames().find((candidate) => candidate !== page.mainFrame())?.url() ?? '').toContain('/showcase')
+  await page.frames().find((candidate) => candidate !== page.mainFrame())?.evaluate(() => { window.location.href = '/demo/admin' })
+  await expect.poll(() => page.frames().find((candidate) => candidate !== page.mainFrame())?.url() ?? '').toMatch(/\/demo\/admin$/)
   await expect(frame.locator(`#${id}`)).toHaveCount(1)
 })

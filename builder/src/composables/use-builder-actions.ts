@@ -13,6 +13,7 @@ import { computed } from 'vue'
 import { selectorForInspectorState, type InspectorVisualState } from '@/utils/raw-inspector-state'
 import { isColorFieldValueValid } from '@/utils/color-field-validation'
 import { validateUniqueElementId } from '@/utils/unique-element-id-validation'
+import type { InspectorTargetEvidence } from '@/utils/inspector-protocol'
 
 export function useBuilderActions(state: BuilderState) {
   const iconOptions = ['heroicon-o-cube', 'heroicon-o-star', 'heroicon-o-bolt', 'heroicon-o-heart', 'heroicon-o-check-circle', 'heroicon-s-cube', 'heroicon-s-star', 'heroicon-s-bolt', 'heroicon-s-heart', 'heroicon-s-check-circle', 'heroicon-m-cube', 'heroicon-m-star', 'heroicon-m-bolt', 'heroicon-m-heart', 'heroicon-m-check-circle']
@@ -47,19 +48,19 @@ export function useBuilderActions(state: BuilderState) {
   function setRawSelector(change: RawSelectorChange): void { const next = (change.event.target as HTMLInputElement).value.trim(); const validation = validateRawSelector(next); state.rawSelectorError.value = validation.valid ? undefined : validation.error; if (validation.valid) state.rawSelector.value = next }
   function setRawInspectorState(mode: InspectorVisualState): void { const next = selectorForInspectorState(state.rawSelector.value, mode); if (next && validateRawSelector(next).valid) { state.rawSelectorError.value = undefined; state.rawSelector.value = next } }
   function toggleUniqueElementId(enabled: boolean): void {
-    const evidence = state.inspectorEvidence.value
+    const evidence: InspectorTargetEvidence | null = state.inspectorEvidence.value
     if (!evidence?.targetSelector || evidence.matchIndex === undefined) return
     state.uniqueElementIdError.value = undefined
     if (enabled) state.rawSelector.value = `#${state.theme.enableUniqueElementId(evidence.targetSelector, evidence.matchIndex)}`
     else { state.theme.disableUniqueElementId(evidence.targetSelector, evidence.matchIndex); state.rawSelector.value = evidence.targetSelector }
   }
   function setUniqueElementId(event: Event): void {
-    const evidence = state.inspectorEvidence.value
+    const evidence: InspectorTargetEvidence | null = state.inspectorEvidence.value
     if (!evidence?.targetSelector || evidence.matchIndex === undefined) return
-    const id = (event.target as HTMLInputElement).value.trim()
-    const validationError = validateUniqueElementId(id)
+    const id: string = (event.target as HTMLInputElement).value.trim()
+    const validationError: string | null = validateUniqueElementId(id)
     if (validationError) { state.uniqueElementIdError.value = validationError; return }
-    const error = state.theme.renameUniqueElementId(evidence.targetSelector, evidence.matchIndex, id)
+    const error: string | null = state.theme.renameUniqueElementId(evidence.targetSelector, evidence.matchIndex, id)
     state.uniqueElementIdError.value = error ?? undefined
     if (!error) state.rawSelector.value = `#${id}`
   }

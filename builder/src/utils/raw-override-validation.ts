@@ -20,7 +20,7 @@ const pseudoStatesPattern = SUPPORTED_PSEUDO_STATES.join('|')
 const selectorPattern = new RegExp(`^(?:\\.fi-[A-Za-z0-9_-]+)(?:\\.[A-Za-z0-9_-]+)*(?::(?:${pseudoStatesPattern}))?(?:\\s+\\.fi-[A-Za-z0-9_-]+(?:\\.[A-Za-z0-9_-]+)*(?::(?:${pseudoStatesPattern}))?)*$`)
 const singleClassPattern = /^\.fi-[A-Za-z0-9_-]+$/
 const columnPattern = /^\.fi-ta :is\(\.fi-ta-header-cell, \.fi-ta-cell\):nth-child\(([1-9]|[12]\d|3[0-2])\)$/
-const uniqueIdSelectorPattern = new RegExp(`^#${UNIQUE_ELEMENT_ID_PATTERN.source.slice(1, -1)}$`)
+const uniqueIdSelectorPattern: RegExp = new RegExp(`^#${UNIQUE_ELEMENT_ID_PATTERN.source.slice(1, -1)}(?::(?:${pseudoStatesPattern}))?$`)
 export function validateRawSelector(value: unknown): RawValidationResult<string> {
   if (typeof value === 'string' && /\.fi-ta-(?:header-cell|cell)-[^\s]+\.(?!fi-)/.test(value)) return { valid: false, error: 'Use generic Filament table classes instead of field-specific selectors' }
   if (typeof value !== 'string' || (!selectorPattern.test(value) && !columnPattern.test(value) && !uniqueIdSelectorPattern.test(value))) {

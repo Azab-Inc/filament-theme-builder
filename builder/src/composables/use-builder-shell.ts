@@ -1,5 +1,6 @@
-import { computed, onBeforeUnmount, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, type ComputedRef } from 'vue'
 import { ALL_RAW_VISUAL_PROPERTIES } from '@/models/raw-overrides.model'
+import type { UniqueElementIdAssignment } from '@/models/unique-element-id-assignment.model'
 import { classifyRawSelector } from '@/utils/raw-override-validation'
 import { inspectorStateForSelector } from '@/utils/raw-inspector-state'
 import { useBuilderState } from './use-builder-state'
@@ -17,12 +18,12 @@ export function useBuilderShell(previewUrl: string) {
   const actions = useBuilderActions(state)
   const uploads = useBrandingUpload(state)
   const selectedRawOverride = computed(() => state.theme.theme.rawOverrides.find((override) => override.selector === state.rawSelector.value))
-  const uniqueElementAssignment = computed(() => state.inspectorEvidence.value?.targetSelector && state.inspectorEvidence.value.matchIndex !== undefined
+  const uniqueElementAssignment: ComputedRef<UniqueElementIdAssignment | undefined> = computed(() => state.inspectorEvidence.value?.targetSelector && state.inspectorEvidence.value.matchIndex !== undefined
     ? (state.theme.theme.uniqueElementIds ?? []).find((item) => item.sourceSelector === state.inspectorEvidence.value?.targetSelector && item.matchIndex === state.inspectorEvidence.value?.matchIndex)
     : undefined)
-  const uniqueElementId = computed(() => uniqueElementAssignment.value?.id ?? '')
-  const uniqueElementIdEnabled = computed(() => Boolean(uniqueElementAssignment.value))
-  const uniqueElementIdAvailable = computed(() => Boolean(state.inspectorEvidence.value?.targetSelector && state.inspectorEvidence.value.matchIndex !== undefined))
+  const uniqueElementId: ComputedRef<string> = computed(() => uniqueElementAssignment.value?.id ?? '')
+  const uniqueElementIdEnabled: ComputedRef<boolean> = computed(() => Boolean(uniqueElementAssignment.value))
+  const uniqueElementIdAvailable: ComputedRef<boolean> = computed(() => Boolean(state.inspectorEvidence.value?.targetSelector && state.inspectorEvidence.value.matchIndex !== undefined))
   const rawSelectorClassification = computed(() => state.rawSelector.value ? classifyRawSelector(state.rawSelector.value) : { selector: null, quality: 'unavailable' as const })
   const rawInspectorState = computed(() => inspectorStateForSelector(state.rawSelector.value))
   const primaryColor = foundations.primaryColor

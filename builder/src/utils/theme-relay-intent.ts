@@ -45,7 +45,7 @@ export function applyThemeRelayIntent(previous: ThemeStateCurrent, intent: Theme
   const context: ThemeStoreContext = { theme, registry, commit: (candidate) => { theme.value = candidate } }
   const foundation = useThemeFoundationActions(context); const palette = useThemePaletteActions(context)
   const raw = useThemeRawActions(context); const override = useThemeOverrideActions(context)
-  const tokens = useThemeUserTokens(context); const links = useThemeModeLinkActions(context); const borders = useThemeBorderActions(context); const padding = useThemePaddingActions(context)
+  const tokens = useThemeUserTokens(context); const links = useThemeModeLinkActions(context); const borders = useThemeBorderActions(context); const padding: ReturnType<typeof useThemePaddingActions> = useThemePaddingActions(context)
   const mode = intent.mode ?? 'light'; const target = intent.target
   if (intent.action === 'create-color' || intent.action === 'create-palette') {
     if (!isTokenTarget(target) || target.name.length === 0 || typeof intent.value !== 'string') throw new Error('invalid_intent')
@@ -119,12 +119,12 @@ function isValue(value: unknown): value is ThemeValue { return typeof value === 
 function isRecord(value: unknown): value is Record<string, unknown> { return value !== null && typeof value === 'object' && !Array.isArray(value) }
 
 function validPaddingRelayTarget(target: Extract<import('@/models/theme-relay-intent.model').ThemeRelayIntent['target'], { kind: 'padding' }>, registry: FilamentRegistry): boolean {
-  const keys = Object.keys(target).sort()
+  const keys: string[] = Object.keys(target).sort()
   if (!keys.every((key) => ['kind', 'targetId', 'context', 'edges', 'resetEdges'].includes(key)) || typeof target.targetId !== 'string' || !isRecord(target.context)) return false
-  const contextKeys = Object.keys(target.context)
+  const contextKeys: string[] = Object.keys(target.context)
   if (target.context.scope === 'global') return contextKeys.length === 1
   if (target.context.scope === 'section') return contextKeys.length === 2 && typeof target.context.sectionId === 'string'
   if (!('targetId' in target.context) || typeof target.context.targetId !== 'string') return false
-  const targetId = target.context.targetId
+  const targetId: string = target.context.targetId
   return registry.entries.flatMap((entry) => entry.paddingTargets ?? []).some((item) => item.id === targetId && item.status === 'supported')
 }

@@ -5,7 +5,7 @@ export function selectorForInspectorState(selector: string, state: InspectorVisu
     || /^\.fi-sidebar-item-btn:(?:hover|focus) \.fi-sidebar-item-label$/.test(selector)
     ? '.fi-sidebar-item-label'
     : selector.replace(/:hover|:focus/g, '').trim()
-  if (!/^\.fi-[\w-]+(?:\.[\w-]+)*(?:\s+\.fi-[\w-]+(?:\.[\w-]+)*)*$/.test(base)) return null
+  if (!/^(?:\.fi-[\w-]+(?:\.[\w-]+)*(?:\s+\.fi-[\w-]+(?:\.[\w-]+)*)*|#[A-Za-z][A-Za-z0-9_-]{0,63})$/.test(base)) return null
   if (state === 'default') return base
   if (state === 'selected') return base === '.fi-sidebar-item-label'
     ? '.fi-sidebar-item.fi-active .fi-sidebar-item-label'

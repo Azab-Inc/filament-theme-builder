@@ -24,8 +24,8 @@ export function renderRawOverrides(theme: ThemeStateInput, errors: string[]): st
     return [validation.value]
   })
   const ordered = validOverrides.sort((left, right) => {
-    const leftUnique = left.selector.startsWith('#')
-    const rightUnique = right.selector.startsWith('#')
+    const leftUnique: boolean = left.selector.startsWith('#')
+    const rightUnique: boolean = right.selector.startsWith('#')
     if (leftUnique !== rightUnique) return Number(leftUnique) - Number(rightUnique)
     const leftIcon = /(?:^| )\.fi-sidebar-item-icon$/.test(left.selector)
     const rightIcon = /(?:^| )\.fi-sidebar-item-icon$/.test(right.selector)
@@ -33,7 +33,7 @@ export function renderRawOverrides(theme: ThemeStateInput, errors: string[]): st
   })
   const render = (override: typeof ordered[number], properties: Record<string, string>, prefix = '') => {
     return expandRawOverrideSelectors(override.selector).map((selector) => {
-      const projectedProperties = selector === override.selector
+      const projectedProperties: Record<string, string> = selector === override.selector
         ? properties
         : Object.fromEntries(Object.entries(properties).filter(([property]) => property === 'color'))
       if (!Object.keys(projectedProperties).length) return ''

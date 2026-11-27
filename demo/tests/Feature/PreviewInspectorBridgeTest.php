@@ -41,10 +41,13 @@ class PreviewInspectorBridgeTest extends TestCase
             ->assertOk()
             ->assertSee('uniqueElementIds', false)
             ->assertSee('isSafeUniqueAssignments', false)
+            ->assertSee('uniqueSelectorId', false)
             ->assertSee('applyUniqueElementIds', false)
             ->assertSee('hasApplicationOwnedIdCollision', false)
             ->assertSee('node !== target', false)
+            ->assertSee('bridgeAssignedTargets', false)
             ->assertSee('document.querySelectorAll(assignment.sourceSelector)[assignment.matchIndex]', false)
+            ->assertSee('(?::(?:hover|focus))?', false)
             ->assertSee('data-ftb-unique-id', false);
     }
 

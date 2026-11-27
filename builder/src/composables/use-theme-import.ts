@@ -54,8 +54,8 @@ export function useThemeImport(store: ThemeStore): ThemeImportUi {
       }
       if (intent?.action === 'read' && intent.target.kind === 'padding') {
         await relay.acknowledgePayload(payload.operationId, payload.digest)
-        const readState = JSON.parse(JSON.stringify(serializeCanonicalTheme(store.theme))) as ThemeStateCurrent
-        const read = readPadding(readState, registry, { targetId: intent.target.targetId, selectedContext: intent.target.context })
+        const readState: ThemeStateCurrent = JSON.parse(JSON.stringify(serializeCanonicalTheme(store.theme))) as ThemeStateCurrent
+        const read: ReturnType<typeof readPadding> = readPadding(readState, registry, { targetId: intent.target.targetId, selectedContext: intent.target.context })
         await relay.publishExportResult(payload.operationId, JSON.stringify({ schemaVersion: store.theme.schemaVersion, paddingRead: read }))
         remote = null; state.open = false; state.preview = null
         return
@@ -94,7 +94,7 @@ export function useThemeImport(store: ThemeStore): ThemeImportUi {
       if (grant.status !== 'pending' || !grant.grantId || grant.grantExpiresAt <= Date.now() || grant.grantExpiresAt > Date.now() + 5_000) return rejectStale(current)
         if (current.intent) {
           if (current.intent.action === 'read' && current.intent.target.kind === 'padding') {
-            const read = readPadding(structuredClone(store.theme) as ThemeStateCurrent, createThemeRegistry(), { targetId: current.intent.target.targetId, selectedContext: current.intent.target.context })
+            const read: ReturnType<typeof readPadding> = readPadding(structuredClone(store.theme) as ThemeStateCurrent, createThemeRegistry(), { targetId: current.intent.target.targetId, selectedContext: current.intent.target.context })
             await current.relay.publishExportResult(current.payload.operationId, JSON.stringify({ schemaVersion: store.theme.schemaVersion, paddingRead: read }))
             remote = null; state.open = false
             return { ok: true as const, record: { id: current.payload.operationId, name: state.proposedName, updatedAt: Date.now() } }

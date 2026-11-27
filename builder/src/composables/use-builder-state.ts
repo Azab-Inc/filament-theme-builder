@@ -1,4 +1,4 @@
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, type Ref } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import type { EditorNavigationMode, EditorSection } from '@/models/editor.model'
@@ -20,7 +20,7 @@ export function useBuilderState(previewUrl: string) {
   const iframe = ref<HTMLIFrameElement>()
   const rawSelector = ref('')
   const rawSelectorError = ref<string | undefined>()
-  const uniqueElementIdError = ref<string | undefined>()
+  const uniqueElementIdError: Ref<string | undefined> = ref<string | undefined>()
   const exportStatus = ref('')
   const activeMode = ref<ThemeMode>('light')
   const editorNavigationMode = ref<EditorNavigationMode>('sidebar')
