@@ -41,12 +41,12 @@
 
 Verified on `dev` at base `d50ce7298aba5a9a56c7493757c6578d1572f017` plus uncommitted fix/tests and preserved pre-existing UI WIP. Original unit regression failed because spacing stayed unchanged; Playwright expected spacing 2 = 6 but received 8. Final focused command from `builder/`: `npm run test:unit -- --run src/__tests__/theme-state-density.spec.ts` (6 passed). Broader settled-production checks: `npm run type-check` passed; `npm run test:unit -- --run` passed (156 files / 729 tests before final test-only expansion); affected integration checks passed (33 tests). Root: `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/foundation-density-regression.spec.ts` passed (1 test: dropdown, Compact/Default/Spacious buttons, Reset).
 
-`npm run build` hit pre-existing root-owned `builder/dist/assets` permissions (`EACCES`); `npm run build-only -- --outDir /tmp/opencode/ftb-builder-dist-final` passed, validating production output without altering existing assets. No dependencies added; unrelated UI WIP preserved. No commit made or authorized.
+`npm run build` hit pre-existing root-owned `builder/dist/assets` permissions (`EACCES`); `npm run build-only -- --outDir /tmp/opencode/ftb-builder-dist-final` passed, validating production output without altering existing assets. No dependencies added; unrelated UI WIP preserved. Subsequently committed with user authorization in local commit `5a26a76`; not pushed. Original verification context above is retained.
 
 <a id="ftb-182"></a>
 ### FTB-182 — Isolate repeated Inspector elements with unique CSS IDs
 
-**Phase:** Phase 1 online builder. **Status:** testing (implementation present; full-unit gate blocked). **GitHub:** [#184](https://github.com/Azab-Inc/filament-theme-builder/issues/184). **Project:** #30 / Testing.
+**Phase:** Phase 1 online builder. **Status:** testing (acceptance behavior/evidence gaps remain). **GitHub:** [#184](https://github.com/Azab-Inc/filament-theme-builder/issues/184). **Project:** #30 / Testing.
 **Prerequisite:** [FTB-008](#ftb-008) is complete. Coordinate with [FTB-022](#ftb-022),
 [FTB-004](#ftb-004), and [FTB-058](#ftb-058). **Spec:** [Inspector Unique Element IDs](./docs/superpowers/specs/2026-11-26-inspector-unique-element-ids-design.md).
 
@@ -69,18 +69,18 @@ changing the others.
   the selected preview element.
 - [x] Renaming the ID updates the preview and CSS target without creating a
   duplicate assignment or unsafe selector.
-- [x] Duplicate, reserved, malformed, out-of-bounds, and application-owned ID
+- [ ] Duplicate, reserved, malformed, out-of-bounds, and application-owned ID
   cases fail closed without mutating the accepted theme or unrelated DOM.
 - [x] The shared class rule remains intact, while edits made through the
   enabled unique target affect only that target. Disabling returns editing to
   the shared selector without deleting unrelated shared properties.
-- [x] Light/dark inheritance, explicit overrides, state variants, reset,
+- [ ] Light/dark inheritance, explicit overrides, state variants, reset,
   undo/redo, local persistence, and JSON import/export remain independent and
   round-trip the assignment data.
 - [x] Vanilla CSS export emits deterministic `#id` rules after their shared
   source rules and reproduces the preview result when the clean fixture has
   the same ID in its markup.
-- [x] Preview bridge validation, cleanup, navigation retry, iframe reload, and
+- [ ] Preview bridge validation, cleanup, navigation retry, iframe reload, and
   inspector evidence remain safe and deterministic; invalid payloads leave the
   last accepted theme unchanged.
 - [ ] Failing unit/component tests are written before implementation, followed
@@ -88,13 +88,23 @@ changing the others.
    unit tests, production build, and the required real-browser Playwright
    journey. No new dependency is added.
 
-Implementation is present in the uncommitted integrated worktree. The unique-ID
-unit/component, PHP bridge, focused Playwright, type-check, alternate production
-build, and `git diff --check` checks pass. The full builder unit suite reached
-156/157 files and 748/749 tests before the existing
-`App.inspector-advanced.spec.ts` timeout; its focused rerun passes. The standard
-production output remains blocked by pre-existing `builder/dist/assets`
-permissions. No dependency, service, branch, or commit was added.
+Original implementation is in local commit `5a26a76`; state-validation,
+rename/disable, mode-link and bridge-node repairs are in `568cb78`. Neither was
+pushed. Reassessment: full builder units pass (157 files / 755 tests), type-check
+and normal production build pass, focused PHP bridge passes (9 tests / 89
+assertions), and bridge/unique browser checks pass (9 tests). The prior App
+timeout did not recur; its cause is not established. Build-output recovery
+restores normal builds but does not prevent future root-owned output creation.
+
+**Not done:** the unique-assignment malformed-message test uses an incomplete
+envelope/wrong sender and does not establish the validator boundary. Computed
+hover/focus, dark-mode inheritance/override, reset-to-shared fallback, and
+keyboard/status evidence remain incomplete. Application-owned collisions leave
+the target unassigned and suppress its CSS but lack the visible Inspector status
+required by the spec. Full Composer verification stops at existing MCP Pint
+violations; live Jenkins execution is unavailable. See the exact
+[criterion-to-assertion map](./docs/verification/ftb-182.md) and
+[environment retrofit](./docs/verification/2026-11-27-agent-retrofit.md).
 
 ### Out of scope
 
@@ -1320,6 +1330,14 @@ Create high-level browser tests around the real builder/iframe boundary and dete
 **Status:** ready-for-agent  
 **Blocked by:** [FTB-033](#ftb-033), [FTB-035](#ftb-035)
 
+**2026-11-27 initial verification slice:** one Jenkinsfile now wires locked
+dependency setup, root contracts, changed-TypeScript checks, builder/demo
+builds, Composer checks and job-owned bounded Compose browser verification with
+logs/artifacts. Node contract tests pass; no live Jenkins endpoint is available.
+This is partial work only: deployment, release monitoring, full visual regression
+and this ticket's existing prerequisites/acceptance remain outstanding. No GitHub
+Actions or Git hooks were added. [Evidence](./docs/verification/2026-11-27-agent-retrofit.md).
+
 ### What to build
 
 Create one Jenkins pipeline that builds and tests the repository on every relevant run and deploys only when explicitly requested. Add hourly detection of new Filament releases that invokes the same pipeline with deployment disabled.
@@ -1932,7 +1950,7 @@ Decompose the oversized `App.vue` into cohesive visual components and focused `u
 
 **Priority:** high (urgent)
 
-**Status:** done (2026-11-26, uncommitted integrated worktree) — implementation, focused verification, and actual stdio MCP journey complete
+**Status:** done (2026-11-26; integrated work subsequently committed in local `5a26a76`, not pushed) — implementation, focused verification, and actual stdio MCP journey complete
 
 **Blocked by:** None after readiness reconciliation against the existing FTB-003/006/022/053 completion evidence and root demo-first gate record. The registry padding extension and V5 migration are implementation deliverables, not missing predecessor tickets. Existing FTB-004 vanilla CSS and canonical JSON parity remain acceptance requirements. FTB-012 remains partial only for density integration; FTB-052 remains future coordination only. Preserve unrelated App/Studio prototype and test/guidance edits.
 

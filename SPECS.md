@@ -8,7 +8,7 @@
 
 **Phase 2 technical specification:** [docs/phase-2/SPECS.md](./docs/phase-2/SPECS.md)
 
-**Density spacing regression:** [FTB-181](./TICKETS.md#ftb-181) / [#183](https://github.com/Azab-Inc/filament-theme-builder/issues/183). Done (uncommitted): dropdown and preset buttons atomically apply existing density preset spacing keys 1–4 to canonical foundations and immediately update numeric controls. Reset restores default preset spacing; unrelated keys/settings and existing mode/generic MCP contracts remain unchanged. Failing-first unit/browser regressions pass, with history, persistence and serialization coverage. Type-check/full units and alternate-output production build pass; standard dist output has a pre-existing permissions blocker. [Commands and evidence](./TICKETS.md#ftb-181).
+**Density spacing regression:** [FTB-181](./TICKETS.md#ftb-181) / [#183](https://github.com/Azab-Inc/filament-theme-builder/issues/183). Done (local commit `5a26a76`, not pushed): dropdown and preset buttons atomically apply existing density preset spacing keys 1–4 to canonical foundations and immediately update numeric controls. Reset restores default preset spacing; unrelated keys/settings and existing mode/generic MCP contracts remain unchanged. Failing-first unit/browser regressions pass, with history, persistence and serialization coverage. Original type-check/full units and alternate-output production build pass; the original standard-output permission failure and subsequent normal-build recovery are recorded in the [commands and evidence](./TICKETS.md#ftb-181).
 
 **Panel properties planning:** [FTB-087](./TICKETS.md#ftb-087) / [#89](https://github.com/Azab-Inc/filament-theme-builder/issues/89); initial [research inventory](./docs/research/2026-11-18-panel-properties.md), [FTB-088 top navigation](./TICKETS.md#ftb-088), [FTB-089–102 navigation/layout](./TICKETS.md#ftb-089), [FTB-103–127 runtime/authentication](./TICKETS.md#ftb-103), [FTB-128–157 tenancy/search/styling](./TICKETS.md#ftb-128), and [FTB-158–180 menus/notifications/auth routes/registrations](./TICKETS.md#ftb-158). Inventory and full specification remain incomplete.
 
@@ -240,6 +240,8 @@ Raw overrides live in canonical state and participate in history, persistence, J
 **Tickets:** [FTB-007](./TICKETS.md#ftb-007), [FTB-008](./TICKETS.md#ftb-008)
 
 **Unique repeated-element targeting:** [Inspector Unique Element IDs](./docs/superpowers/specs/2026-11-26-inspector-unique-element-ids-design.md) ([FTB-182](./TICKETS.md#ftb-182)). A selected repeated class target can opt into a generated, editable CSS ID while preserving the shared class rule as its baseline. The ID assignment, occurrence binding, raw override, light/dark values, persistence, history, JSON export, preview bridge, and vanilla CSS export must remain validated and deterministic.
+
+Implementation progress and remaining acceptance gaps belong in the [FTB-182 evidence map](./docs/verification/ftb-182.md); the requirements above remain unchanged. The [Jenkins-only verification retrofit](./docs/verification/2026-11-27-agent-retrofit.md) is an initial FTB-034 slice, not completion of its deployment/release-monitoring scope.
 
 ## 10. Foundations
 
