@@ -4,10 +4,10 @@ Approved scope: retrospective items 1–6, Jenkins-only CI, and an honest FTB-18
 
 ## Repository changes
 
-- Expanded FTB-182 assertions exposed and repaired unique state validation, state-rule rename/disable, raw mode-link identity migration, and stale bridge-node cleanup. [Criterion evidence and unresolved acceptance](./ftb-182.md) remain authoritative; the issue is not done.
+- Expanded FTB-182 assertions exposed and repaired unique state validation, state-rule rename/disable, raw mode-link identity migration, stale bridge-node cleanup, collision feedback and malformed update handling. The subsequent remaining-gap pass completed [FTB-182 acceptance](./ftb-182.md) in `48bf507`, with runtime/Composer repairs in `62e2302` (local, not pushed).
 - `Jenkinsfile` installs locked dependencies and runs root contracts, a changed-TypeScript guard, builder units/type/build, demo build/Composer checks, and Compose browser checks. It uses a job-owned project/port, startup bounds, cleanup, and retained logs/artifacts. No GitHub Actions, Git hooks, deployment, or release monitoring were added. FTB-034 retains its prerequisites and full scope.
 - The guard uses installed TypeScript tooling. It checks `.ts` syntax/suppressions and production-file non-regression counts for explicit `any`, `as never`, and unannotated variable declarations. It covers branch plus local changes. It is not a full Vue/template linter or enforcement of every coding standard.
-- Normal builds can recover from blocked generated output without changing ownership. Symlink and alternate-output cases have behavioral tests; writable output is preserved. This is recovery, not proof of container UID prevention.
+- Normal builds retain safe recovery for previously blocked output. The remaining-gap pass also runs Node development processes as configured `HOST_UID`/`HOST_GID` with writable cache/dependency volumes; real container tests prove host-owned generated files, alternate-GID behavior, argv preservation and termination signals. Only the two owned Node services were restarted.
 
 ## Shared environment changes
 
@@ -25,5 +25,5 @@ Shared Markdown changes were inspected for consistent policy references; no new 
 - Controller: standards guard checked 40 changed `.ts` files; standards/output/Jenkins Node checks passed 13/13; `git diff --check` passed.
 - Owner: full builder suite 157 files / 755 tests, type-check, normal production build, demo asset build, root contracts, focused PHP bridge 9 tests / 89 assertions, and bridge/unique-ID browser 9 tests passed. Exact commands and caveats are in the linked evidence.
 - Live Jenkins remains unavailable; contract tests do not prove Jenkins execution. The pipeline's first real run will also require the documented Node/PHP/Docker/Chromium agent prerequisites.
-- Controller `composer test` failed at existing Pint violations in seven MCP files. PHPStan/full PHPUnit stages were not reached.
-- FTB-182 remains Testing with explicit behavior/evidence gaps. No broader issue or release gate is closed by this retrofit.
+- Historical Composer Pint/PHPStan/inventory/reset blockers are resolved. Final controller `composer test`: Pint and PHPStan pass; **274 PHP tests / 2,398 assertions pass**. SQLite snapshot restore preserves existing connections/inodes using backup-in-place, refuses unsafe/missing-extension cases and preserves persistent shares.
+- Final controller browser acceptance: **21 bridge/unique-ID tests passed**, with a still-valid **25 affected integration tests passed**. Full builder evidence is **756 unit tests**, type-check and normal build passing. FTB-182 is complete; no broader release gate or full Jenkins/deployment ticket is closed by this result.

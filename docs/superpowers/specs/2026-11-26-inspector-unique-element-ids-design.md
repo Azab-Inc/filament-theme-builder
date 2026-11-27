@@ -1,6 +1,6 @@
 # Inspector Unique Element IDs
 
-Date: 2026-11-26. Phase: Phase 1 online builder. Status: planning contract; not implemented.
+Date: 2026-11-26. Phase: Phase 1 online builder. Status: implemented and acceptance verified in local `48bf507`, with runtime/Composer repairs `62e2302`; [evidence](../../verification/ftb-182.md). No push performed.
 
 Tracking: [FTB-182 / #184](../../../TICKETS.md#ftb-182) ([GitHub issue](https://github.com/Azab-Inc/filament-theme-builder/issues/184)).
 Related: [FTB-008](../../../TICKETS.md#ftb-008), [FTB-022](../../../TICKETS.md#ftb-022),

@@ -241,7 +241,7 @@ Raw overrides live in canonical state and participate in history, persistence, J
 
 **Unique repeated-element targeting:** [Inspector Unique Element IDs](./docs/superpowers/specs/2026-11-26-inspector-unique-element-ids-design.md) ([FTB-182](./TICKETS.md#ftb-182)). A selected repeated class target can opt into a generated, editable CSS ID while preserving the shared class rule as its baseline. The ID assignment, occurrence binding, raw override, light/dark values, persistence, history, JSON export, preview bridge, and vanilla CSS export must remain validated and deterministic.
 
-Implementation progress and remaining acceptance gaps belong in the [FTB-182 evidence map](./docs/verification/ftb-182.md); the requirements above remain unchanged. The [Jenkins-only verification retrofit](./docs/verification/2026-11-27-agent-retrofit.md) is an initial FTB-034 slice, not completion of its deployment/release-monitoring scope.
+FTB-182 acceptance is complete; the [criterion-to-assertion map](./docs/verification/ftb-182.md) records local completion `48bf507` and verification/runtime repairs `62e2302`. Requirements above remain unchanged. The [Jenkins-only verification retrofit](./docs/verification/2026-11-27-agent-retrofit.md) is an initial FTB-034 slice, not completion of its deployment/release-monitoring scope.
 
 ## 10. Foundations
 
@@ -378,6 +378,12 @@ Requirements:
 - create/edit/action UX remains realistic enough for theming.
 
 shares.sqlite is completely separate and never reset with demo.sqlite.
+
+Approved reset regression repair: valid SQLite snapshot restoration preserves the
+destination inode and existing connections through SQLite3 backup-in-place;
+busy/failed restore leaves the destination intact. Generic non-SQLite snapshots
+retain atomic replacement. Missing SQLite3 support fails closed for SQLite data.
+Persistent share data remains excluded. [Verification](./docs/verification/ftb-182.md).
 
 **Tickets:** [FTB-028](./TICKETS.md#ftb-028), [FTB-035](./TICKETS.md#ftb-035)
 

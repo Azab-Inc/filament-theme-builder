@@ -46,7 +46,7 @@ Verified on `dev` at base `d50ce7298aba5a9a56c7493757c6578d1572f017` plus uncomm
 <a id="ftb-182"></a>
 ### FTB-182 — Isolate repeated Inspector elements with unique CSS IDs
 
-**Phase:** Phase 1 online builder. **Status:** testing (acceptance behavior/evidence gaps remain). **GitHub:** [#184](https://github.com/Azab-Inc/filament-theme-builder/issues/184). **Project:** #30 / Testing.
+**Phase:** Phase 1 online builder. **Status:** done. **GitHub:** [#184](https://github.com/Azab-Inc/filament-theme-builder/issues/184). **Project:** #30 / Done.
 **Prerequisite:** [FTB-008](#ftb-008) is complete. Coordinate with [FTB-022](#ftb-022),
 [FTB-004](#ftb-004), and [FTB-058](#ftb-058). **Spec:** [Inspector Unique Element IDs](./docs/superpowers/specs/2026-11-26-inspector-unique-element-ids-design.md).
 
@@ -69,42 +69,44 @@ changing the others.
   the selected preview element.
 - [x] Renaming the ID updates the preview and CSS target without creating a
   duplicate assignment or unsafe selector.
-- [ ] Duplicate, reserved, malformed, out-of-bounds, and application-owned ID
+- [x] Duplicate, reserved, malformed, out-of-bounds, and application-owned ID
   cases fail closed without mutating the accepted theme or unrelated DOM.
 - [x] The shared class rule remains intact, while edits made through the
   enabled unique target affect only that target. Disabling returns editing to
   the shared selector without deleting unrelated shared properties.
-- [ ] Light/dark inheritance, explicit overrides, state variants, reset,
+- [x] Light/dark inheritance, explicit overrides, state variants, reset,
   undo/redo, local persistence, and JSON import/export remain independent and
   round-trip the assignment data.
 - [x] Vanilla CSS export emits deterministic `#id` rules after their shared
   source rules and reproduces the preview result when the clean fixture has
   the same ID in its markup.
-- [ ] Preview bridge validation, cleanup, navigation retry, iframe reload, and
+- [x] Preview bridge validation, cleanup, navigation retry, iframe reload, and
   inspector evidence remain safe and deterministic; invalid payloads leave the
   last accepted theme unchanged.
-- [ ] Failing unit/component tests are written before implementation, followed
+- [x] Failing unit/component tests are written before implementation, followed
    by focused checks, affected integration checks, builder type-check, full
    unit tests, production build, and the required real-browser Playwright
    journey. No new dependency is added.
 
-Original implementation is in local commit `5a26a76`; state-validation,
-rename/disable, mode-link and bridge-node repairs are in `568cb78`. Neither was
-pushed. Reassessment: full builder units pass (157 files / 755 tests), type-check
-and normal production build pass, focused PHP bridge passes (9 tests / 89
-assertions), and bridge/unique browser checks pass (9 tests). The prior App
-timeout did not recur; its cause is not established. Build-output recovery
-restores normal builds but does not prevent future root-owned output creation.
+Completion is saved in local `48bf507`, with runtime/Composer verification
+repairs in `62e2302`; original implementation `5a26a76`, state repairs `568cb78`
+and Jenkins guardrails `a003098` remain in history. None was pushed.
 
-**Not done:** the unique-assignment malformed-message test uses an incomplete
-envelope/wrong sender and does not establish the validator boundary. Computed
-hover/focus, dark-mode inheritance/override, reset-to-shared fallback, and
-keyboard/status evidence remain incomplete. Application-owned collisions leave
-the target unassigned and suppress its CSS but lack the visible Inspector status
-required by the spec. Full Composer verification stops at existing MCP Pint
-violations; live Jenkins execution is unavailable. See the exact
-[criterion-to-assertion map](./docs/verification/ftb-182.md) and
-[environment retrofit](./docs/verification/2026-11-27-agent-retrofit.md).
+All acceptance criteria map to actual assertions in the
+[verification checkpoint](./docs/verification/ftb-182.md): full builder units
+**157 files / 756 tests**, type-check and normal build pass; final full Composer
+Pint/PHPStan/**274 tests / 2,398 assertions** pass; **21** bridge/unique browser
+and **25** affected browser integration tests pass. Complete parent-sourced
+invalid updates preserve accepted DOM/style/state, collisions report an
+accessible Inspector error, missing routes skip/retry, and computed mode/state,
+shared reset, keyboard/history/persistence/JSON/CSS fixture behavior pass.
+
+Independent review's validation-throw and runtime-signal blockers were repaired
+test-first and verified. Node ownership prevention, argv and SIGTERM/SIGINT
+checks pass. The historical App timeout did not reproduce; no timeout increase
+or root-cause claim is made. Live Jenkins remains an FTB-034 operational
+requirement, not an FTB-182 prerequisite. Concurrent toolbar/style edits are
+preserved outside these commits. [Environment evidence](./docs/verification/2026-11-27-agent-retrofit.md).
 
 ### Out of scope
 
@@ -1186,6 +1188,15 @@ Allow the public demo to exercise real Filament upload UI while constraining fil
 
 **Status:** done
 **Blocked by:** [FTB-009A](#ftb-009), [FTB-027](#ftb-027)
+
+**Approved regression repair (2026-11-27):** `62e2302` (local, not pushed)
+restores valid SQLite snapshots through SQLite3 backup-in-place, preserving
+existing PDO handles and destination inode/WAL consistency. Failed/busy restores
+preserve data; unavailable SQLite3 fails closed. Generic non-SQLite snapshots
+retain atomic replacement. Focused reset **8 tests / 37 assertions** and final
+full Composer **274 tests / 2,398 assertions**, Pint and PHPStan pass. Shares and
+reset locking remain covered. This repairs the regression only; pre-existing
+GitHub/local full-ticket status reconciliation remains separate.
 
 ### What to build
 
