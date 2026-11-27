@@ -11,6 +11,7 @@ import { createThemeRegistry } from '@/registry/theme-registry'
 import { validateUserTokens, hasUnknownUserReference } from '@/utils/user-token-validation'
 import { validateModeLinks } from '@/utils/theme-mode-link-validation'
 import { validateBorderEdges } from '@/utils/border-edge-validation'
+import { validateUniqueElementIdAssignments } from '@/utils/unique-element-id-validation'
 
 export function validateFoundationState(value: unknown, registry?: FilamentRegistry): FoundationValidationResult {
   if (!isRecord(value)) return invalid('invalid-value', 'state', 'Foundation state must be an object')
@@ -18,16 +19,16 @@ export function validateFoundationState(value: unknown, registry?: FilamentRegis
 }
 
 function validateVersionedState(value: Record<string, unknown>, registry?: FilamentRegistry): FoundationValidationResult {
-  const topLevel = checkKeys(value, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding', 'padding', 'modeLinks', 'borderEdges'], ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss'], '')
+  const topLevel = checkKeys(value, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding', 'padding', 'modeLinks', 'borderEdges', 'uniqueElementIds'], ['schemaVersion', 'colors', 'foundations', 'overrides', 'customCss'], '')
   if (topLevel) return topLevel
-    if (value.schemaVersion !== 3 && value.schemaVersion !== 4 && value.schemaVersion !== 5 && value.schemaVersion !== 6 && value.schemaVersion !== 7 && value.schemaVersion !== 8) return invalid('invalid-value', 'schemaVersion', 'Unsupported foundation schema version')
-    if ((value.schemaVersion === 5 || value.schemaVersion === 6 || value.schemaVersion === 7 || value.schemaVersion === 8) && !('padding' in value)) return invalid('invalid-value', 'padding', 'Padding is required in schema version 5, 6, 7, or 8')
-    if (value.schemaVersion !== 5 && value.schemaVersion !== 6 && value.schemaVersion !== 7 && value.schemaVersion !== 8 && 'padding' in value) return invalid('invalid-value', 'padding', 'Padding is unsupported before schema version 5')
-    if (value.schemaVersion === 4 || value.schemaVersion === 5 || value.schemaVersion === 6 || value.schemaVersion === 7 || value.schemaVersion === 8) {
+     if (value.schemaVersion !== 3 && value.schemaVersion !== 4 && value.schemaVersion !== 5 && value.schemaVersion !== 6 && value.schemaVersion !== 7 && value.schemaVersion !== 8) return invalid('invalid-value', 'schemaVersion', 'Unsupported foundation schema version')
+     if ((value.schemaVersion === 5 || value.schemaVersion === 6 || value.schemaVersion === 7 || value.schemaVersion === 8) && !('padding' in value)) return invalid('invalid-value', 'padding', 'Padding is required in schema version 5 or later')
+     if (value.schemaVersion !== 5 && value.schemaVersion !== 6 && value.schemaVersion !== 7 && value.schemaVersion !== 8 && 'padding' in value) return invalid('invalid-value', 'padding', 'Padding is unsupported before schema version 5')
+     if (value.schemaVersion === 4 || value.schemaVersion === 5 || value.schemaVersion === 6 || value.schemaVersion === 7 || value.schemaVersion === 8) {
     const rawResult = validateRawOverrides(value.rawOverrides)
     if (!rawResult.valid) return invalid('invalid-value', 'rawOverrides', rawResult.error)
   }
-    if (value.schemaVersion === 5 || value.schemaVersion === 6 || value.schemaVersion === 7 || value.schemaVersion === 8) {
+     if (value.schemaVersion === 5 || value.schemaVersion === 6 || value.schemaVersion === 7 || value.schemaVersion === 8) {
     if (!Array.isArray(value.padding)) return invalid('invalid-value', 'padding', 'Padding must be an array')
     const padding = validatePaddingState(value.padding, registry ?? createThemeRegistry())
     if (!padding.valid) return invalid('invalid-value', padding.path, padding.message)
@@ -50,9 +51,15 @@ function validateVersionedState(value: Record<string, unknown>, registry?: Filam
   const namedTokens = isRecord(value.foundations) ? value.foundations.userTokens : undefined
   const refs = (value.overrides as Array<{ value?: unknown; darkValue?: unknown }>).flatMap((override) => [override.value, override.darkValue])
   if (Array.isArray(value.rawOverrides)) for (const override of value.rawOverrides) refs.push(...Object.values(override.properties ?? {}), ...Object.values(override.darkProperties ?? {}))
-  if (value.schemaVersion === 8) {
+   if (value.schemaVersion === 8) {
     const borderResult = validateBorderEdges(value.borderEdges, registry ?? createThemeRegistry())
     if (!borderResult.valid) return invalid('invalid-value', 'borderEdges', borderResult.message)
+  }
+  if (value.schemaVersion === 8 && value.uniqueElementIds !== undefined) {
+    const uniqueResult = validateUniqueElementIdAssignments(value.uniqueElementIds)
+    if (!uniqueResult.valid) return invalid('invalid-value', 'uniqueElementIds', uniqueResult.error)
+    const assignedIds = new Set(uniqueResult.value.map((assignment) => `#${assignment.id}`))
+    if (Array.isArray(value.rawOverrides) && value.rawOverrides.some((override) => override.selector.startsWith('#') && !assignedIds.has(override.selector))) return invalid('invalid-value', 'rawOverrides', 'Unique raw selectors require a matching element ID assignment')
   }
   if (hasUnknownUserReference(namedTokens as import('@/models/user-tokens.model').UserTokens | undefined, refs)) return invalid('invalid-value', 'overrides', 'Unknown named color reference')
   if (value.icons !== undefined) {

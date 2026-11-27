@@ -199,9 +199,13 @@
             && ['collapsible', 'fully-collapsible', 'top-navigation'].includes(branding.sidebar);
         const rawVisualProperties = ['color', 'background-color', 'border-color', 'border-width', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width', 'border-top-style', 'border-right-style', 'border-bottom-style', 'border-left-style', 'border-radius', 'box-shadow', 'opacity', 'padding', 'margin', 'font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'text-decoration', 'border-style', 'text-align', 'white-space'];
         const rawSelectorPattern = /^(?:\.fi-[A-Za-z0-9_-]+)(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus))?(?:\s+\.fi-[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*(?::(?:hover|focus))?)*$/;
+        const uniqueIdPattern = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
+        const reservedUniqueIds = new Set(['ftb-preview-bridge', 'ftb-managed-theme', 'ftb-inspector-style']);
         const rawValuePattern = /[;{}<>]|\/\*|\*\/|url\s*\(|@(?:import|supports|media|layer|font-face)|expression\s*\(|javascript\s*:/i;
         const columnSelectorPattern = /^\.fi-ta :is\(\.fi-ta-header-cell, \.fi-ta-cell\):nth-child\(([1-9]|[12]\d|3[0-2])\)$/;
-        const isSafeRawSelector = (value) => typeof value === 'string' && (rawSelectorPattern.test(value) || columnSelectorPattern.test(value)) && !/\.fi-ta-(?:header-cell|cell)-[^\s]+\.(?!fi-)/.test(value);
+        const isSafeRawSelector = (value) => typeof value === 'string' && (rawSelectorPattern.test(value) || columnSelectorPattern.test(value) || (value.startsWith('#') && uniqueIdPattern.test(value.slice(1)))) && !/\.fi-ta-(?:header-cell|cell)-[^\s]+\.(?!fi-)/.test(value);
+        const isSafeUniqueAssignment = (value) => isRecord(value) && Object.keys(value).length === 3 && uniqueIdPattern.test(value.id) && !reservedUniqueIds.has(value.id) && isSafeRawSelector(value.sourceSelector) && value.sourceSelector.startsWith('.') && Number.isSafeInteger(value.matchIndex) && value.matchIndex >= 0 && value.matchIndex <= 999;
+        const isSafeUniqueAssignments = (value) => Array.isArray(value) && value.length <= 100 && value.every(isSafeUniqueAssignment) && new Set(value.map((item) => item.id)).size === value.length && new Set(value.map((item) => `${item.sourceSelector}\u0000${item.matchIndex}`)).size === value.length;
         const isSafeRawPropertyValue = (property, value, tokens) => {
             if (typeof value !== 'string' || value.length === 0 || value.length > 300 || rawValuePattern.test(value)) return false;
             if (['color', 'background-color', 'border-color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color'].includes(property) && /^var\(--ftb-palette-(?:primary|success|warning|danger|info|gray)-(?:50|100|200|300|400|500|600|700|800|900|950)\)$/.test(value)) return true;
@@ -291,13 +295,15 @@
         };
         const isAcceptedTheme = (message) => {
              if (!isRecord(message) || message.type !== 'ftb:theme:update' || message.schemaVersion !== 1 || !['light', 'dark'].includes(message.activeMode) || !isRecord(message.projection) || message.activeMode !== message.projection.mode || !isRecord(message.theme) || ![5, 6, 7, 8].includes(message.theme.schemaVersion) || !isAcceptedPaddingProjection(message.paddingProjection, message.theme) || !isAcceptedBorderProjection(message.borderProjection, message.activeMode)) return false;
-              const hasSupportedKeys = exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'padding'], ['icons', 'branding', 'modeLinks', 'borderEdges']);
+              const hasSupportedKeys = exactKeys(message.theme, ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'padding'], ['icons', 'branding', 'modeLinks', 'borderEdges', 'uniqueElementIds']);
               if ((message.theme.schemaVersion === 7 || message.theme.schemaVersion === 8) && (!isRecord(message.theme.modeLinks) || !message.theme.foundations?.userTokens)) return false;
-              if (message.theme.schemaVersion === 8 && (!Array.isArray(message.theme.borderEdges) || new Set(message.theme.borderEdges.map((edge) => [edge.targetId, edge.edge, edge.property, edge.scope, edge.componentId ?? '', edge.variantId ?? '', edge.stateId ?? ''].join('\u0000'))).size !== message.theme.borderEdges.length)) return false;
+               if (message.theme.schemaVersion === 8 && (!Array.isArray(message.theme.borderEdges) || new Set(message.theme.borderEdges.map((edge) => [edge.targetId, edge.edge, edge.property, edge.scope, edge.componentId ?? '', edge.variantId ?? '', edge.stateId ?? ''].join('\u0000'))).size !== message.theme.borderEdges.length)) return false;
+               if (message.theme.uniqueElementIds !== undefined && !isSafeUniqueAssignments(message.theme.uniqueElementIds)) return false;
              const paddingValid = Array.isArray(message.theme.padding) && message.theme.padding.every(isSafePaddingRecord) && new Set(message.theme.padding.map(paddingIdentity)).size === message.theme.padding.length;
              const foundationValid = isFoundationRecord(message.theme.foundations);
              const projectionValid = foundationValid && isAcceptedProjection(message.projection, message.theme.foundations);
-              const accepted = hasSupportedKeys && paddingValid && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && foundationValid && Array.isArray(message.theme.overrides) && message.theme.overrides.every((override) => isSafeOverride(override, message.theme.foundations.userTokens)) && message.theme.overrides.every((override) => semanticOverrideMappings.has(`${override.targetId}\u0000${override.controlId}`)) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && Array.isArray(message.theme.rawOverrides) && message.theme.rawOverrides.every((override) => isSafeRawOverride(override, message.theme.foundations.userTokens)) && new Set(message.theme.rawOverrides.map((override) => override.selector)).size === message.theme.rawOverrides.length && message.theme.customCss === '' && (message.theme.branding === undefined || isSafeBranding(message.theme.branding)) && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && projectionValid;
+               const assignedIds = new Set((message.theme.uniqueElementIds ?? []).map((assignment) => `#${assignment.id}`));
+               const accepted = hasSupportedKeys && paddingValid && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && foundationValid && Array.isArray(message.theme.overrides) && message.theme.overrides.every((override) => isSafeOverride(override, message.theme.foundations.userTokens)) && message.theme.overrides.every((override) => semanticOverrideMappings.has(`${override.targetId}\u0000${override.controlId}`)) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && Array.isArray(message.theme.rawOverrides) && message.theme.rawOverrides.every((override) => isSafeRawOverride(override, message.theme.foundations.userTokens)) && message.theme.rawOverrides.every((override) => !override.selector.startsWith('#') || assignedIds.has(override.selector)) && new Set(message.theme.rawOverrides.map((override) => override.selector)).size === message.theme.rawOverrides.length && message.theme.customCss === '' && (message.theme.branding === undefined || isSafeBranding(message.theme.branding)) && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && projectionValid;
              return accepted && (message.theme.modeLinks === undefined || validModeLinks(message.theme.modeLinks, message.theme));
         };
          const projectionMatchesCanonicalFoundation = (projection, foundations) => {
@@ -363,9 +369,21 @@
         const radiusVariableRule = (value) => `:root { --radius-xs: ${value}; --radius-sm: ${value}; --radius-md: ${value}; --radius-lg: ${value}; --radius-xl: ${value}; --radius-2xl: ${value}; --radius-3xl: ${value}; --radius-4xl: ${value}; }`;
         const shadowValues = { none: 'none', sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)', md: '0 4px 6px -1px rgb(0 0 0 / 0.1)', lg: '0 10px 15px -3px rgb(0 0 0 / 0.1)', xl: '0 20px 25px -5px rgb(0 0 0 / 0.1)' };
         const cssValue = (value) => typeof value === 'number' ? `${value}px` : value;
-        const updateTheme = (message) => {
+         let bridgeAssignedIds = [];
+         const hasApplicationOwnedIdCollision = (id, target) => [...document.querySelectorAll(`[id="${CSS.escape(id)}"]`)].some((node) => node !== target && node.getAttribute('data-ftb-unique-id') !== 'true');
+         const applyUniqueElementIds = (assignments) => {
+             bridgeAssignedIds.forEach((id) => document.querySelectorAll(`[id="${CSS.escape(id)}"]`).forEach((node) => { if (node.getAttribute('data-ftb-unique-id') === 'true') { node.removeAttribute('id'); node.removeAttribute('data-ftb-unique-id'); } }));
+             bridgeAssignedIds = [];
+             assignments.forEach((assignment) => {
+                 const target = document.querySelectorAll(assignment.sourceSelector)[assignment.matchIndex];
+                 if (!target || hasApplicationOwnedIdCollision(assignment.id, target) || (target.id && target.id !== assignment.id) || (target.id === assignment.id && target.getAttribute('data-ftb-unique-id') !== 'true')) return;
+                 target.id = assignment.id; target.setAttribute('data-ftb-unique-id', 'true'); bridgeAssignedIds.push(assignment.id);
+             });
+         };
+         const updateTheme = (message) => {
             if (!isAcceptedTheme(message)) return false;
-             const root = document.documentElement;
+              const root = document.documentElement;
+              applyUniqueElementIds(message.theme.uniqueElementIds ?? []);
              root.classList.toggle('dark', message.projection.mode === 'dark');
              const branding = message.theme.branding ?? { appName: 'Filament Theme Builder', lightLogo: null, darkLogo: null, favicon: null, logoHeight: '2.5rem', brandTypography: { kind: 'system', name: 'System', family: 'ui-sans-serif, system-ui, sans-serif' }, contentWidth: '7xl', sidebar: 'collapsible' };
              const brandingStyle = document.getElementById('ftb-branding-theme') ?? document.createElement('style');
@@ -432,18 +450,24 @@
                   if (!match) return [selector];
                   return [selector, `${match[1] ? `${match[1]} ` : ''}.fi-sidebar-item-icon`];
               };
-              const rawOverrideRules = [...message.theme.rawOverrides].sort((left, right) => {
+               const appliedUniqueIds = new Set(bridgeAssignedIds);
+               const rawOverrideRules = [...message.theme.rawOverrides].filter((override) => !override.selector.startsWith('#') || appliedUniqueIds.has(override.selector.slice(1))).sort((left, right) => {
+                   const leftUnique = left.selector.startsWith('#');
+                   const rightUnique = right.selector.startsWith('#');
+                   if (leftUnique !== rightUnique) return Number(leftUnique) - Number(rightUnique);
                   const leftIcon = /(?:^| )\.fi-sidebar-item-icon$/.test(left.selector);
                   const rightIcon = /(?:^| )\.fi-sidebar-item-icon$/.test(right.selector);
                   return Number(leftIcon) - Number(rightIcon) || left.selector.localeCompare(right.selector);
               }).flatMap((override) => {
                    const properties = message.activeMode === 'dark' ? { ...override.properties, ...(override.darkProperties ?? {}) } : override.properties;
-                     return Object.keys(properties).length ? expandRawSelector(override.selector).map((selector) => {
-                         const ringBacked = ringBackedRawSelectors.has(selector) && Object.keys(properties).some((property) => physicalRawBorderProperties.has(property));
-                         const projectedSelector = ringBacked ? `${selector}:not(:focus):not(:focus-within):not(:focus-visible)` : selector;
-                         const declarations = Object.entries(properties).sort(([left], [right]) => left.localeCompare(right)).map(([property, value]) => `${property}: ${resolveUserToken(value, tokens, message.activeMode)};`).join(' ');
-                         return `${projectedSelector} { ${declarations}${ringBacked ? ' --tw-ring-shadow: 0 0 #0000;' : ''} }`;
-                     }) : [];
+                      return Object.keys(properties).length ? expandRawSelector(override.selector).map((selector, index) => {
+                          const projectedProperties = index === 0 ? properties : Object.fromEntries(Object.entries(properties).filter(([property]) => property === 'color'));
+                          if (!Object.keys(projectedProperties).length) return '';
+                          const ringBacked = ringBackedRawSelectors.has(selector) && Object.keys(projectedProperties).some((property) => physicalRawBorderProperties.has(property));
+                          const projectedSelector = ringBacked ? `${selector}:not(:focus):not(:focus-within):not(:focus-visible)` : selector;
+                          const declarations = Object.entries(projectedProperties).sort(([left], [right]) => left.localeCompare(right)).map(([property, value]) => `${property}: ${resolveUserToken(value, tokens, message.activeMode)};`).join(' ');
+                          return `${projectedSelector} { ${declarations}${ringBacked ? ' --tw-ring-shadow: 0 0 #0000;' : ''} }`;
+                      }).filter(Boolean) : [];
               });
              rules.push(...rawOverrideRules);
             const iconConfiguration = message.theme.icons ?? { pack: 'default', overrides: {} };
@@ -573,8 +597,9 @@
                 const selector = `.${classes[classes.length - 1]}`;
                 if (!surfaces.some((surface) => surface.selector === selector)) surfaces.push({ label: `Surface: ${selector}`, selector });
             }
-            const identity = typeof target.id === 'string' && /^[A-Za-z][A-Za-z0-9_.-]{0,199}$/.test(target.id) ? target.id : null;
-            return { candidateSelectors: uniqueSelectors, classNames: uniqueClasses, targetSelector: targetSelector ?? null, surfaces, ...(identity ? { targetId: identity } : {}), ...(targetScope ? { targetScope } : {}), ...(semanticBreadcrumb ? { semanticBreadcrumb } : {}) };
+             const identity = typeof target.id === 'string' && /^[A-Za-z][A-Za-z0-9_.-]{0,199}$/.test(target.id) ? target.id : null;
+             const matchIndex = targetSelector ? [...document.querySelectorAll(targetSelector)].indexOf(target) : -1;
+             return { candidateSelectors: uniqueSelectors, classNames: uniqueClasses, targetSelector: targetSelector ?? null, ...(matchIndex >= 0 ? { matchIndex } : {}), surfaces, ...(identity ? { targetId: identity } : {}), ...(targetScope ? { targetScope } : {}), ...(semanticBreadcrumb ? { semanticBreadcrumb } : {}) };
         };
         const ensureInspectorStyle = () => {
             let style = document.getElementById(inspectorStyleId);

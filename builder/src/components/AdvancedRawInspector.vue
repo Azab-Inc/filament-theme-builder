@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import RawVisualProperties from './RawVisualProperties.vue'
 import InspectorTargetControls from '@/components/InspectorTargetControls.vue'
 import type { InspectorTargetEvidence } from '@/models/inspector-target-evidence.model'
@@ -13,12 +13,26 @@ import type {
 import type { AdvancedRawInspectorProps } from './advanced-raw-inspector.model'
 import type { InspectorVisualState } from '@/utils/raw-inspector-state'
 import { selectorForInspectorState } from '@/utils/raw-inspector-state'
+import { validateUniqueElementId } from '@/utils/unique-element-id-validation'
 import { BORDER_TARGET_CATALOG, borderTargetMetadata } from '@/registry/border-target-catalog'
 import BorderEdgeControls from '@/components/BorderEdgeControls.vue'
 import RawBorderEdgeControls from '@/components/RawBorderEdgeControls.vue'
 import type { RawPropertyBatchChange } from './advanced-raw-inspector.dto'
 
 const props = defineProps<AdvancedRawInspectorProps & { activeMode?: ThemeMode; evidence?: InspectorTargetEvidence | null }>()
+const uniqueElementIdDraft = ref(props.uniqueElementId ?? '')
+const uniqueElementIdError = ref(props.uniqueElementIdError)
+watch(() => props.uniqueElementId, (value) => { uniqueElementIdDraft.value = value ?? '' })
+watch(() => props.uniqueElementIdError, (value) => {
+  uniqueElementIdError.value = value
+  if (value) uniqueElementIdDraft.value = props.uniqueElementId ?? ''
+})
+function updateUniqueElementId(event: Event): void {
+  const value = (event.target as HTMLInputElement).value.trim()
+  uniqueElementIdError.value = validateUniqueElementId(value) ?? undefined
+  if (!uniqueElementIdError.value) emit('set-unique-element-id', event)
+  else uniqueElementIdDraft.value = props.uniqueElementId ?? ''
+}
 
 const emit = defineEmits<{
   'set-selector': [change: RawSelectorChange]
@@ -29,6 +43,8 @@ const emit = defineEmits<{
   'reset-properties': [properties: ReadonlyArray<import('@/models/raw-overrides.model').RawVisualProperty>]
   'set-state': [state: InspectorVisualState]
   'choose-target': [selector: string]
+  'toggle-unique-element-id': [enabled: boolean]
+  'set-unique-element-id': [event: Event]
 }>()
 const stateOptions = computed((): InspectorVisualState[] => (['default', 'hover', 'focus', 'selected'] as const).filter((state) => selectorForInspectorState(props.selector, state) !== null))
 const semanticBorderContext = computed(() => {
@@ -60,6 +76,16 @@ function resetProperties(properties: ReadonlyArray<import('@/models/raw-override
   >
     <h2 id="advanced-inspector-heading">Advanced Inspector</h2>
     <InspectorTargetControls :evidence="evidence" :selector="selector" @choose="emit('choose-target', $event)" />
+    <fieldset v-if="uniqueElementIdAvailable" class="editor-control-surface grid gap-2">
+      <legend>Unique element targeting</legend>
+      <label class="flex items-center gap-2" for="unique-element-id-toggle">
+        <input id="unique-element-id-toggle" type="checkbox" role="switch" :checked="uniqueElementIdEnabled" @change="emit('toggle-unique-element-id', ($event.target as HTMLInputElement).checked)" />
+        Unique element ID
+      </label>
+      <label for="unique-element-id">Element ID</label>
+      <input id="unique-element-id" :value="uniqueElementIdDraft" :disabled="!uniqueElementIdEnabled" :aria-invalid="uniqueElementIdError ? 'true' : undefined" :aria-describedby="uniqueElementIdError ? 'unique-element-id-error' : undefined" @input="updateUniqueElementId" />
+      <p v-if="uniqueElementIdError" id="unique-element-id-error" role="alert">{{ uniqueElementIdError }}</p>
+    </fieldset>
     <BorderEdgeControls
       v-if="semanticBorderContext"
       :target-id="semanticBorderContext.targetId"
@@ -74,7 +100,7 @@ function resetProperties(properties: ReadonlyArray<import('@/models/raw-override
       Raw visual overrides are validated typed properties and remain separate from Semantic
       controls.
     </p>
-    <fieldset class="grid gap-2 rounded-lg border border-zinc-200 p-4">
+    <fieldset class="editor-control-surface gap-2">
       <legend>Raw element target</legend>
       <label for="raw-selector">Selector</label>
       <input
@@ -99,7 +125,7 @@ function resetProperties(properties: ReadonlyArray<import('@/models/raw-override
         No safe selector was detected.
       </p>
     </fieldset>
-    <fieldset class="grid grid-cols-2 gap-2 rounded-lg border border-zinc-200 p-4" aria-label="Inspector state">
+    <fieldset class="editor-control-surface grid-cols-2 gap-2" aria-label="Inspector state">
       <legend>Visual state</legend>
       <button v-for="state in stateOptions" :key="state" type="button" :aria-pressed="(props.state ?? 'default') === state" @click="chooseState(state)">
         {{ state[0]?.toUpperCase() }}{{ state.slice(1) }}

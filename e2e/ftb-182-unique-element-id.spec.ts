@@ -1,0 +1,27 @@
+import { expect, test } from '@playwright/test'
+
+test.skip(process.env.COMPOSE_E2E !== '1', 'Requires a running Compose stack')
+
+test('isolates a repeated Inspector target with a persisted unique ID', async ({ page }) => {
+  test.setTimeout(60_000)
+  await page.addInitScript(() => localStorage.removeItem('ftb-theme'))
+  await page.goto('/')
+  const frame = page.frameLocator('iframe[title="Filament preview"]')
+  await expect(frame.locator('.fi-section-header')).toHaveCount(2)
+  const before = await frame.locator('.fi-section-header').first().evaluate((element) => getComputedStyle(element).backgroundColor)
+  await page.getByRole('button', { name: 'Inspector' }).click()
+  await frame.locator('.fi-section-header').nth(1).click()
+  await expect(page.locator('#unique-element-id-toggle')).toBeVisible()
+  await page.locator('#unique-element-id-toggle').check()
+  const id = await page.locator('#unique-element-id').inputValue()
+  expect(id).toMatch(/^[A-Za-z][A-Za-z0-9_-]{0,63}$/)
+  await page.locator('#raw-background-color').fill('#fef3c7')
+  await expect.poll(() => frame.locator('.fi-section-header').first().evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(before)
+  await page.waitForTimeout(400)
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Inspector' })).toBeVisible({ timeout: 30_000 })
+  await page.getByRole('button', { name: 'Inspector' }).click()
+  await frame.locator('.fi-section-header').nth(1).click()
+  await expect(page.locator('#unique-element-id')).toHaveValue(id)
+  await expect(frame.locator(`#${id}`)).toHaveCount(1)
+})

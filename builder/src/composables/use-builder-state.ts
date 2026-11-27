@@ -20,6 +20,7 @@ export function useBuilderState(previewUrl: string) {
   const iframe = ref<HTMLIFrameElement>()
   const rawSelector = ref('')
   const rawSelectorError = ref<string | undefined>()
+  const uniqueElementIdError = ref<string | undefined>()
   const exportStatus = ref('')
   const activeMode = ref<ThemeMode>('light')
   const editorNavigationMode = ref<EditorNavigationMode>('sidebar')
@@ -50,7 +51,7 @@ export function useBuilderState(previewUrl: string) {
   watch(rawSelectorProposal, (proposal) => {
     if (!rawSelector.value || rawSelectorError.value) rawSelector.value = proposal.selector ?? ''
   }, { immediate: true })
-  return { theme, canUndo, canRedo, restoreLegacyRecovery, downloadLegacyRecovery, iframe, rawSelector, rawSelectorError, exportStatus, activeMode, editorNavigationMode, selectedEditorSection, foundationErrors, uploadErrors, inspectorRegistry, defaultFoundation, foundation, paletteNames, paletteShades, editorSections, fontChoices, inspector, preview }
+  return { theme, canUndo, canRedo, restoreLegacyRecovery, downloadLegacyRecovery, iframe, rawSelector, rawSelectorError, uniqueElementIdError, exportStatus, activeMode, editorNavigationMode, selectedEditorSection, foundationErrors, uploadErrors, inspectorEvidence, inspectorRegistry, defaultFoundation, foundation, paletteNames, paletteShades, editorSections, fontChoices, inspector, preview }
 }
 
 export type { BuilderState } from '@/models/builder-state.model'

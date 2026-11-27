@@ -11,21 +11,26 @@ import { useThemeOverrideActions } from '@/composables/use-theme-override-action
 import { useThemeUserTokens } from '@/composables/use-theme-user-tokens'
 import { useThemeModeLinkActions } from '@/composables/use-theme-mode-link-actions'
 import { useThemeBorderActions } from '@/composables/use-theme-border-actions'
+import { useThemePaddingActions } from '@/composables/use-theme-padding-actions'
 import { validModeLinkTarget } from '@/utils/mode-link-target-validation'
 import { modeLinkTargetIdentity } from '@/models/mode-link-target.model'
 import { validateRawSelector } from '@/utils/raw-override-validation'
+import { validatePaddingMutation } from '@/utils/padding-validation'
 import { cloneTheme } from '@/utils/theme-store-helpers'
 import { resetModeLinkTarget } from '@/utils/reset-mode-link-target'
 import { ensureChanged, isModeTarget, isPaletteShade, isTokenMutationTarget, isTokenTarget, supportedTargetForAction } from '@/utils/theme-relay-intent-validation'
 
-const actions = ['set', 'reset', 'link', 'unlink', 'create-color', 'create-palette', 'update', 'remove'] as const
+const actions = ['set', 'reset', 'read', 'link', 'unlink', 'create-color', 'create-palette', 'update', 'remove'] as const
 
 export function parseThemeRelayIntent(value: string, registry?: FilamentRegistry): ThemeRelayIntent | null {
   try {
     const parsed: unknown = JSON.parse(value)
     if (!isRecord(parsed) || parsed.schemaVersion !== 1 || parsed.kind !== 'theme-intent' || !isRecord(parsed.target) || !actions.includes(parsed.action as never)) return null
     const target = parsed.target as ThemeRelayIntent['target']
-    if (!isTokenTarget(target) && registry && !validModeLinkTarget(target as ModeLinkTarget, registry)) return null
+    if (target.kind === 'padding') {
+      if (!registry || !validPaddingRelayTarget(target, registry)) return null
+      if (parsed.action !== 'read' && !validatePaddingMutation({ operation: parsed.action, context: target.context, ...(target.edges ? { edges: target.edges } : {}), ...(target.resetEdges ? { resetEdges: target.resetEdges } : {}) }, { padding: [] }, registry).valid) return null
+    } else if (!isTokenTarget(target) && registry && !validModeLinkTarget(target as ModeLinkTarget, registry)) return null
     if (!isTokenTarget(target) && target.kind === 'raw' && !validateRawSelector(target.selector).valid) return null
     if (!supportedTargetForAction(parsed.action as ThemeRelayIntent['action'], target)) return null
     if (parsed.mode !== undefined && parsed.mode !== 'light' && parsed.mode !== 'dark') return null
@@ -40,7 +45,7 @@ export function applyThemeRelayIntent(previous: ThemeStateCurrent, intent: Theme
   const context: ThemeStoreContext = { theme, registry, commit: (candidate) => { theme.value = candidate } }
   const foundation = useThemeFoundationActions(context); const palette = useThemePaletteActions(context)
   const raw = useThemeRawActions(context); const override = useThemeOverrideActions(context)
-  const tokens = useThemeUserTokens(context); const links = useThemeModeLinkActions(context); const borders = useThemeBorderActions(context)
+  const tokens = useThemeUserTokens(context); const links = useThemeModeLinkActions(context); const borders = useThemeBorderActions(context); const padding = useThemePaddingActions(context)
   const mode = intent.mode ?? 'light'; const target = intent.target
   if (intent.action === 'create-color' || intent.action === 'create-palette') {
     if (!isTokenTarget(target) || target.name.length === 0 || typeof intent.value !== 'string') throw new Error('invalid_intent')
@@ -53,6 +58,13 @@ export function applyThemeRelayIntent(previous: ThemeStateCurrent, intent: Theme
     const shade = 'shade' in target && isPaletteShade(target.shade) ? target.shade : undefined
     const result = intent.action === 'remove' ? tokens.removeUserToken(target.name) : tokens.updateUserToken(target.name, intent.value as string, mode, shade)
     if (!result.ok) throw new Error(result.error); return cloneTheme(theme.value)
+  }
+  if (target.kind === 'padding') {
+    if (intent.action === 'read') return cloneTheme(theme.value)
+    if (intent.action === 'set' && target.edges) padding.setPadding({ operation: 'set', context: target.context, edges: target.edges })
+    else if (intent.action === 'reset') padding.resetPadding({ operation: 'reset', context: target.context, resetEdges: target.resetEdges })
+    else throw new Error('invalid_padding_intent')
+    return cloneTheme(theme.value)
   }
   if (!isModeTarget(target) || !validModeLinkTarget(target, registry)) throw new Error('invalid_target')
   const before = JSON.stringify(theme.value)
@@ -105,3 +117,14 @@ function resetTarget(state: ThemeStateCurrent, target: ModeLinkTarget, mode: 'li
 
 function isValue(value: unknown): value is ThemeValue { return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' }
 function isRecord(value: unknown): value is Record<string, unknown> { return value !== null && typeof value === 'object' && !Array.isArray(value) }
+
+function validPaddingRelayTarget(target: Extract<import('@/models/theme-relay-intent.model').ThemeRelayIntent['target'], { kind: 'padding' }>, registry: FilamentRegistry): boolean {
+  const keys = Object.keys(target).sort()
+  if (!keys.every((key) => ['kind', 'targetId', 'context', 'edges', 'resetEdges'].includes(key)) || typeof target.targetId !== 'string' || !isRecord(target.context)) return false
+  const contextKeys = Object.keys(target.context)
+  if (target.context.scope === 'global') return contextKeys.length === 1
+  if (target.context.scope === 'section') return contextKeys.length === 2 && typeof target.context.sectionId === 'string'
+  if (!('targetId' in target.context) || typeof target.context.targetId !== 'string') return false
+  const targetId = target.context.targetId
+  return registry.entries.flatMap((entry) => entry.paddingTargets ?? []).some((item) => item.id === targetId && item.status === 'supported')
+}

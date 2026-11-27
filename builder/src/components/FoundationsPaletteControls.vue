@@ -30,7 +30,7 @@ function resetShade(name: PaletteName, shade: PaletteShade): void { resetField(`
 </script>
 
 <template>
-  <fieldset class="palette-compact grid gap-4 rounded-lg border border-zinc-200 p-4">
+  <fieldset class="editor-control-surface palette-compact grid gap-4 rounded-lg border border-zinc-200 p-4">
     <legend>Color palettes</legend>
     <section v-for="name in paletteNames" :key="name" class="palette-accordion__item">
       <h3 class="palette-accordion__heading">

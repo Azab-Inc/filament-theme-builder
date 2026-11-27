@@ -50,12 +50,12 @@ function resetValue(row: SemanticComponentRow): void {
   >
     <h2 id="component-controls-heading">Component controls</h2>
     <p>Product name input · <code>.fi-fo-text-input .fi-input</code> · background color</p>
-    <fieldset class="grid gap-2 rounded-lg border border-zinc-200 p-4">
+    <fieldset class="editor-control-surface gap-2">
       <legend>Global → Component → Variant → State</legend>
       <div
         v-for="row in rows"
         :key="row.scope"
-        class="component-control-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]"
+        class="component-control-row editor-control-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]"
       >
          <ColorField :id="`product-name-${row.scope}-background`" :label="`Product name ${row.label} background`" :visible-label="`Product name ${row.scope} background`" :text-label="`Product name ${row.scope} background`" :value="row.value" :effective-value="row.value" profile="hex6" :context-key="`${activeThemeId ?? ''}:${props.activeMode ?? 'light'}:${row.scope}:${row.request.targetId}`" :status-id="`product-name-${row.scope}-status`" :reset-key="resetKeys[row.scope]" @input="setValue(row, $event)" />
         <span :id="`product-name-${row.scope}-status`" role="status" :data-theme-source="row.source">{{

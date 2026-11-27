@@ -4,6 +4,47 @@ import { applyThemeRelayIntent, parseThemeRelayIntent } from '@/utils/theme-rela
 import { createThemeRegistry } from '@/registry/theme-registry'
 
 describe('canonical relay token intents', () => {
+  it('accepts and applies a typed padding set intent through the canonical store action', () => {
+    const registry = createThemeRegistry()
+    const intent = parseThemeRelayIntent(JSON.stringify({
+      schemaVersion: 1,
+      kind: 'theme-intent',
+      action: 'set',
+      target: { kind: 'padding', targetId: 'forms.input', context: { scope: 'component', targetId: 'forms.input' }, edges: { top: '12px', right: 0 } },
+    }), registry)
+
+    expect(intent).not.toBeNull()
+    const next = applyThemeRelayIntent(createDefaultCurrentThemeState(), intent!, registry)
+    expect(next.padding).toEqual([{ scope: 'component', targetId: 'forms.input', edges: { top: '12px', right: 0 } }])
+  })
+
+  it('parses typed padding read intents for the MCP read boundary', () => {
+    const intent = parseThemeRelayIntent(JSON.stringify({
+      schemaVersion: 1,
+      kind: 'theme-intent',
+      action: 'read',
+      target: { kind: 'padding', targetId: 'forms.input', context: { scope: 'component', targetId: 'forms.input' } },
+    }), createThemeRegistry())
+
+    expect(intent?.action).toBe('read')
+  })
+
+  it('rejects arbitrary selectors in padding relay intents', () => {
+    expect(parseThemeRelayIntent(JSON.stringify({
+      schemaVersion: 1,
+      kind: 'theme-intent',
+      action: 'set',
+      target: { kind: 'padding', selector: '.fi-btn', property: 'padding-top', value: '1px' },
+    }), createThemeRegistry())).toBeNull()
+  })
+
+  it('rejects unknown padding targets and unsafe edge values before mutation', () => {
+    const registry = createThemeRegistry()
+    const base = { schemaVersion: 1, kind: 'theme-intent', action: 'set', target: { kind: 'padding', targetId: 'forms.input', context: { scope: 'component', targetId: 'forms.input' } } }
+    expect(parseThemeRelayIntent(JSON.stringify({ ...base, target: { ...base.target, targetId: 'forms.multiselect', context: { scope: 'component', targetId: 'forms.multiselect' }, edges: { top: '1px' } } }), registry)).toBeNull()
+    expect(parseThemeRelayIntent(JSON.stringify({ ...base, target: { ...base.target, edges: { top: 'calc(1px)' } } }), registry)).toBeNull()
+  })
+
   it('rejects malformed intent payloads before any store mutation', () => {
     expect(parseThemeRelayIntent(JSON.stringify({ schemaVersion: 1, kind: 'theme-intent', action: 'set' }))).toBeNull()
     expect(parseThemeRelayIntent(JSON.stringify({ schemaVersion: 1, kind: 'theme-intent', action: 'set', target: { kind: 'raw', selector: 'body', property: 'color' }, mode: 'light', value: '#123456' }))).toBeNull()

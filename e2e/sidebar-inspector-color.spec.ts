@@ -32,4 +32,24 @@ test('selects sidebar icons and inherits label color unless explicitly overridde
   await page.getByLabel('Raw color', { exact: true }).fill('#abcdef')
   await expect.poll(() => icon.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(171, 205, 239)')
   await expect.poll(() => label.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(18, 52, 86)')
+
+  await page.getByRole('button', { name: 'Undo' }).click()
+  await expect.poll(() => icon.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(18, 52, 86)')
+  await page.getByRole('button', { name: 'Redo' }).click()
+  await expect.poll(() => icon.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(171, 205, 239)')
+
+  await page.locator('summary[aria-label="Export actions"]').click()
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Download vanilla CSS' }).click(),
+  ])
+  const stream = await download.createReadStream()
+  let css = ''
+  if (stream) {
+    for await (const chunk of stream) css += chunk.toString()
+  }
+  expect(css).toContain('.fi-sidebar-item-icon')
+
+  await page.getByLabel('Reset raw color').click()
+  await expect.poll(() => icon.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(18, 52, 86)')
 })

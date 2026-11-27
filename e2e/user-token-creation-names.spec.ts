@@ -17,9 +17,9 @@ for (const kind of ['color', 'palette'] as const) {
     await expect(page.locator('[data-user-token-error]')).toHaveCount(0)
     await expect(page.locator('[data-user-token-success]')).toHaveText('Created secondary.')
     await expect(page.locator('[data-user-token-name]')).toHaveValue('')
+    await page.locator('[data-user-color-tokens] summary').filter({ hasText: 'secondary' }).click()
     if (kind === 'color') await expect(page.getByLabel('Named color secondary', { exact: true })).toHaveValue('#64748b')
     else {
-      await page.locator('[data-user-color-tokens] summary').filter({ hasText: /^secondary palette/ }).click()
       await expect(page.getByLabel('Named palette secondary seed', { exact: true })).toHaveValue('#64748b')
       await expect(page.getByLabel('secondary shade 500', { exact: true })).toHaveValue('#64748b')
     }

@@ -17,7 +17,7 @@ final class OperationStore
 
     public function create(string $kind, string $pairingId, string $processId, string $digest, ?string $themeId = null): string
     {
-        if (! in_array($kind, ['list', 'export', 'import'], true) || ! preg_match('/\A[a-f0-9]{64}\z/', $digest)
+        if (! in_array($kind, ['list', 'export', 'import', 'padding-read'], true) || ! preg_match('/\A[a-f0-9]{64}\z/', $digest)
             || ($themeId !== null && ($kind !== 'export' || ! preg_match('/\A[a-zA-Z0-9_-]{1,120}\z/', $themeId)))) {
             throw new \InvalidArgumentException('Invalid relay operation.');
         }

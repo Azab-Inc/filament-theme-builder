@@ -20,7 +20,7 @@ const selectorPattern = new RegExp(`^(?:\\.fi-[A-Za-z0-9_-]+)(?:\\.[A-Za-z0-9_-]
 const classPattern = /^fi-[A-Za-z0-9_-]+$/
 const targetIdPattern = /^[A-Za-z][A-Za-z0-9_.-]{0,199}$/
 const breadcrumbPattern = /^[^<>]{1,200}$/
-const allowedTargetKeys = ['candidateSelectors', 'classNames', 'targetId', 'targetSelector', 'semanticBreadcrumb', 'componentId', 'variantId', 'stateId', 'targetScope', 'surfaces'] as const
+const allowedTargetKeys = ['candidateSelectors', 'classNames', 'targetId', 'targetSelector', 'matchIndex', 'semanticBreadcrumb', 'componentId', 'variantId', 'stateId', 'targetScope', 'surfaces'] as const
 
 export function isInspectorCommand(value: unknown): value is InspectorCommand {
   if (!isRecord(value) || value.protocolVersion !== INSPECTOR_PROTOCOL_VERSION) return false
@@ -43,6 +43,7 @@ export function isInspectorTargetEvidence(value: unknown): value is InspectorTar
   if (value.candidateSelectors.some((selector) => typeof selector !== 'string' || !selectorPattern.test(selector))) return false
   if (value.classNames.some((className) => typeof className !== 'string' || !classPattern.test(className))) return false
   if (value.targetSelector !== undefined && value.targetSelector !== null && (typeof value.targetSelector !== 'string' || !selectorPattern.test(value.targetSelector) || !value.candidateSelectors.includes(value.targetSelector))) return false
+  if (value.matchIndex !== undefined && (typeof value.matchIndex !== 'number' || !Number.isSafeInteger(value.matchIndex) || value.matchIndex < 0 || value.matchIndex > 999)) return false
   if (value.targetId !== undefined && (typeof value.targetId !== 'string' || !targetIdPattern.test(value.targetId))) return false
   for (const key of ['componentId', 'variantId', 'stateId'] as const) {
     if (value[key] !== undefined && (typeof value[key] !== 'string' || !classPattern.test(value[key]))) return false

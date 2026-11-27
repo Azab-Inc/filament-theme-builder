@@ -15,8 +15,8 @@ const sourceText = (edge: PaddingEdge): string => sources.value[edge] === 'nativ
 </script>
 
 <template>
-  <article class="grid gap-2 rounded border p-3" :data-padding-target="target.id" :data-padding-context="contextKey">
-    <h4>{{ target.id }} · {{ label }}</h4>
+  <article class="editor-control-surface editor-control-row gap-2" :data-padding-target="target.id" :data-padding-context="contextKey">
+    <h4 class="editor-control-surface__heading">{{ target.id }} · {{ label }}</h4>
     <div class="grid grid-cols-2 gap-2 text-sm"><span v-for="edge in ['top', 'right', 'bottom', 'left']" :key="edge"><strong>{{ edge }}</strong>: {{ edges[edge as PaddingEdge] ?? 'Native' }} · {{ sourceText(edge as PaddingEdge) }}</span></div>
     <button type="button" :aria-label="`${linked ? 'Edit separate' : 'Link'} ${label} ${target.id} padding edges`" @click="linked = !linked">{{ linked ? 'Edit separate edges' : 'Link all edges' }}</button>
     <PaddingEdgeEditor :linked="linked" :context-key="contextKey" :context-label="`${target.id} · ${label}`" :edges="edges" @set="editor.setEdges" />

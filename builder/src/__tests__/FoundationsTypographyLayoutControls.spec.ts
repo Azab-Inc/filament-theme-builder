@@ -40,7 +40,7 @@ describe('FoundationsTypographyLayoutControls', () => {
     await wrapper.get('#density').setValue('spacious')
     await wrapper.get('#spacing-1-5').setValue('1.75')
     await wrapper.get('#border-width').setValue('2')
-    await wrapper.get('[aria-label="Compact density"]').trigger('click')
+    await wrapper.get('#density').setValue('compact')
     await wrapper.get('[aria-label="Reset body font"]').trigger('click')
 
     expect(wrapper.emitted('set-font-name')?.[0]?.[0]).toMatchObject({ name: 'body' })

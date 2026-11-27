@@ -12,7 +12,7 @@ const shadowOptions = ['none', 'sm', 'md', 'lg', 'xl'] as const
 </script>
 
 <template>
-  <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
+  <fieldset class="editor-control-surface grid gap-4">
     <legend>Layout foundations</legend>
     <div class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
       <label for="density">Density</label>
@@ -23,11 +23,6 @@ const shadowOptions = ['none', 'sm', 'md', 'lg', 'xl'] as const
       </select>
       <span role="status" aria-live="polite">{{ statusFor('density') }}</span>
       <button type="button" aria-label="Reset density" @click="emit('reset', 'density')">Reset</button>
-    </div>
-    <div role="group" aria-label="Density presets">
-      <button type="button" aria-label="Compact density" @click="emit('set-density', 'compact')">Compact</button>
-      <button type="button" aria-label="Default density" @click="emit('set-density', 'default')">Default</button>
-      <button type="button" aria-label="Spacious density" @click="emit('set-density', 'spacious')">Spacious</button>
     </div>
     <div v-for="key in spacingNames" :key="key" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
       <label :for="`spacing-${key.replace('.', '-')}`">Spacing {{ key }}</label>

@@ -39,7 +39,7 @@ abstract class LocalThemeStatusTool extends LocalThemeTool
                 $result['digest'] = $operation['digest'];
                 $result['preview'] = $operation['preview'];
             }
-            if (in_array($status['kind'], ['list', 'export'], true) && $status['status'] === 'approved') {
+            if (in_array($status['kind'], ['list', 'export', 'padding-read'], true) && $status['status'] === 'approved') {
                 $json = app(OperationResultStore::class)->consume($id, $operation['pairingId'], $this->scope->processId);
                 if ($json !== null) {
                     $value = json_decode($json, true);
@@ -48,6 +48,7 @@ abstract class LocalThemeStatusTool extends LocalThemeTool
                         if (is_string($value['json'] ?? null)) {
                             $export = json_decode($value['json'], true);
                             if (is_array($export) && is_array($export['border_read'] ?? null)) $value['border_read'] = $export['border_read'];
+                            if (is_array($export) && is_array($export['paddingRead'] ?? null)) $value['paddingRead'] = $export['paddingRead'];
                         }
                         $result['result'] = $value;
                     }

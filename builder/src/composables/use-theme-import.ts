@@ -2,11 +2,13 @@ import { shallowReactive } from 'vue'
 import type { useThemeStore } from '@/stores/theme'
 import type { BrowserPayload, BrowserRelay } from '@/composables/use-theme-relay'
 import type { ThemeImportUi } from '@/models/theme-import-ui.model'
+import type { ThemeStateCurrent } from '@/models/theme.model'
 import { MAX_THEME_IMPORT_BYTES, previewThemeImport } from '@/utils/theme-import-service'
 import { createThemeRegistry } from '@/registry/theme-registry'
 import { applyApprovedImport } from '@/utils/theme-relay-apply'
 import { parseThemeRelayIntent, applyThemeRelayIntent } from '@/utils/theme-relay-intent'
 import { serializeCanonicalTheme } from '@/utils/theme-serialization'
+import { readPadding } from '@/utils/padding-resolver'
 import { digestBytes } from '@/utils/theme-import-bytes'
 
 type ThemeStore = ReturnType<typeof useThemeStore>
@@ -35,24 +37,34 @@ export function useThemeImport(store: ThemeStore): ThemeImportUi {
     state.canCancel = true
     let result
     try {
-      const previewBytes = intent ? new TextEncoder().encode(JSON.stringify(serializeCanonicalTheme(applyThemeRelayIntent(serializeCanonicalTheme(store.theme), intent, registry)))) : remote.bytes
+      const previewBytes = intent
+        ? new TextEncoder().encode(JSON.stringify(serializeCanonicalTheme(intent.action === 'read' ? store.theme : applyThemeRelayIntent(serializeCanonicalTheme(store.theme), intent, registry))))
+        : remote.bytes
       result = await previewThemeImport(previewBytes, intent ? 'filament-theme.json' : payload.filename, payload.proposedName, registry)
     }
-    catch { await rejectRemote(remote, 'invalid_theme'); state.error = 'Unable to validate this relay theme'; remote = null; return }
+    catch { await rejectRemote(remote, 'invalid_theme'); state.error = 'Unable to validate this relay theme'; remote = null; state.open = false; state.preview = null; return }
     if (payload.version !== 1 || !result.valid || await digestBytes(remote.bytes) !== payload.digest || remote.bytes.byteLength !== payload.byteLength
       || remote.bytes.byteLength > MAX_THEME_IMPORT_BYTES) {
-      await rejectRemote(remote, 'invalid_theme'); state.error = result.valid ? 'Relay payload digest or size did not match' : result.message; remote = null; return
+      await rejectRemote(remote, 'invalid_theme'); state.error = result.valid ? 'Relay payload digest or size did not match' : result.message; remote = null; state.open = false; state.preview = null; return
     }
     try {
       if (intent) {
         result.preview.candidateDigest = result.preview.payloadDigest
         result.preview.payloadDigest = payload.digest
       }
+      if (intent?.action === 'read' && intent.target.kind === 'padding') {
+        await relay.acknowledgePayload(payload.operationId, payload.digest)
+        const readState = JSON.parse(JSON.stringify(serializeCanonicalTheme(store.theme))) as ThemeStateCurrent
+        const read = readPadding(readState, registry, { targetId: intent.target.targetId, selectedContext: intent.target.context })
+        await relay.publishExportResult(payload.operationId, JSON.stringify({ schemaVersion: store.theme.schemaVersion, paddingRead: read }))
+        remote = null; state.open = false; state.preview = null
+        return
+      }
       await relay.acknowledgePayload(payload.operationId, payload.digest)
       await relay.submitPreview(payload.operationId, previewDto(result.preview, intent ? payload.digest : undefined))
       state.preview = result.preview
     } catch {
-      await rejectRemote(remote, 'operation_failed'); state.error = 'The browser relay could not prepare this import'; remote = null
+      await relay.reject(payload.operationId, 'operation_failed').catch(() => undefined); state.error = 'The browser relay could not prepare this import'; remote = null
     }
   }
   async function confirm() {
@@ -80,7 +92,13 @@ export function useThemeImport(store: ThemeStore): ThemeImportUi {
       const revision = current.recordId && !current.intent ? store.revision : current.revision
       const grant = await current.relay.authorizeApply(current.payload.operationId, current.payload.digest, revision, state.proposedName, state.preview?.candidateDigest)
       if (grant.status !== 'pending' || !grant.grantId || grant.grantExpiresAt <= Date.now() || grant.grantExpiresAt > Date.now() + 5_000) return rejectStale(current)
-       if (current.intent) {
+        if (current.intent) {
+          if (current.intent.action === 'read' && current.intent.target.kind === 'padding') {
+            const read = readPadding(structuredClone(store.theme) as ThemeStateCurrent, createThemeRegistry(), { targetId: current.intent.target.targetId, selectedContext: current.intent.target.context })
+            await current.relay.publishExportResult(current.payload.operationId, JSON.stringify({ schemaVersion: store.theme.schemaVersion, paddingRead: read }))
+            remote = null; state.open = false
+            return { ok: true as const, record: { id: current.payload.operationId, name: state.proposedName, updatedAt: Date.now() } }
+          }
           if (current.recordId) {
             await current.relay.publishImportResult(current.payload.operationId, grant.grantId, current.recordId, current.payload.digest)
             remote = null; state.open = false

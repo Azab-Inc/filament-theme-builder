@@ -19,10 +19,10 @@ function contexts(target: PaddingUiTarget): ContextRow[] {
 </script>
 
 <template>
-  <section class="grid gap-4" aria-label="Hierarchical padding controls" data-padding-hierarchy>
-    <h3>Padding</h3><p>Registry-supported targets inherit effective values until explicitly overridden.</p>
+  <section class="editor-control-surface gap-4" aria-label="Hierarchical padding controls" data-padding-hierarchy>
+    <h3 class="editor-control-surface__heading">Padding</h3><p>Registry-supported targets inherit effective values until explicitly overridden.</p>
     <div v-for="section in [...new Set(supported.map((target) => target.sectionId))]" :key="section" class="grid gap-3">
-      <h4>{{ section }}</h4>
+      <h4 class="editor-control-surface__heading">{{ section }}</h4>
       <template v-for="target in supported.filter((item) => item.sectionId === section)" :key="target.id">
         <PaddingTargetRow v-for="row in contexts(target)" :key="`${target.id}-${row.key}`" :target="target" :context="row.context" :context-key="`${target.id}-${row.key}`" :label="row.label" :read="props.read" :set="props.set" :reset="props.reset" />
       </template>

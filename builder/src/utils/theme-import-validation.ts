@@ -9,7 +9,7 @@ const keys: Record<ImportVersion, string[]> = {
   5: ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding', 'padding'],
   6: ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding', 'padding'],
   7: ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding', 'padding', 'modeLinks'],
-  8: ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding', 'padding', 'modeLinks', 'borderEdges'],
+  8: ['schemaVersion', 'colors', 'foundations', 'overrides', 'rawOverrides', 'customCss', 'icons', 'branding', 'padding', 'modeLinks', 'borderEdges', 'uniqueElementIds'],
 }
 
 export function validateImportDocument(value: unknown): ValidationResult {

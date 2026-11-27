@@ -7,6 +7,7 @@
   --color-builder-accent: #315b53;
   --radius-builder-sm: 0.35rem;
   --spacing-builder-palette-name: 9ch;
+  --spacing-builder-padding-unit: 5rem;
 
   /* Color-control semantic values. */
   --color-control-color-popover-swatches-button-pressed-focus: 2px solid #18181b;
@@ -18,7 +19,11 @@
   --color-control-color-popover-transparent-pressed-tru-border: #18181b;
   --color-control-color-popover-tabs-selected-border: #52525b;
   --color-control-color-popover-border: 1px solid #d4d4d8;
-  --color-control-color-popover-transparent-span-surface: repeating-conic-gradient(#d4d4d8 0 25%, #fff 0 50%) 50% / .5rem .5rem;
+  --color-control-color-popover-transparent-span-surface: repeating-conic-gradient(
+      #d4d4d8 0 25%,
+      #fff 0 50%
+    )
+    50% / 0.5rem 0.5rem;
 
   /* Dashboard semantic values. */
   --dashboard-editor-layout-header-control-surface: #eff7f4;

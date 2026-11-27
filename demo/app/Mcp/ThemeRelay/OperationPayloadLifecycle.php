@@ -25,7 +25,7 @@ final class OperationPayloadLifecycle
         $lock = RelayRecordLock::acquire($this->store, 'operation-'.$id);
         try {
             $record = $this->reader->read('operation-'.$id);
-            if (! $record || ($record['kind'] ?? null) !== 'import' || ($record['pairingId'] ?? null) !== $pairingId
+            if (! $record || ! in_array($record['kind'] ?? null, ['import', 'padding-read'], true) || ($record['pairingId'] ?? null) !== $pairingId
                 || ($record['processId'] ?? null) !== $processId || ($record['status'] ?? null) !== 'pending'
                 || ($record['expiresAt'] ?? 0) <= $this->clock->now()
                 || ! hash_equals((string) ($record['digest'] ?? ''), hash('sha256', $payload))) {
@@ -57,7 +57,7 @@ final class OperationPayloadLifecycle
         $lock = RelayRecordLock::acquire($this->store, 'operation-'.$id);
         try {
             $record = $this->reader->read('operation-'.$id);
-            if (! $record || ($record['kind'] ?? null) !== 'import'
+            if (! $record || ! in_array($record['kind'] ?? null, ['import', 'padding-read'], true)
                 || ($record['status'] ?? null) !== 'pending' || ! $this->matches($record, $session) || ($record['payloadAvailable'] ?? false) !== true
                 || ($record['expiresAt'] ?? 0) <= $this->clock->now()) {
                 return null;

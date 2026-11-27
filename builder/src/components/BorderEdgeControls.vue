@@ -35,7 +35,7 @@ function reset(): void {
 </script>
 
 <template>
-  <fieldset class="border-controls" role="group" :aria-label="label ?? 'Border'">
+  <fieldset class="editor-control-surface border-controls gap-2" role="group" :aria-label="label ?? 'Border'">
     <legend>{{ label ?? 'Border' }}</legend>
     <label v-if="targetOptions">Target<select v-model="selectedTarget" aria-label="Border target"><option v-for="target in targetOptions" :key="target.id" :value="target.id">{{ target.label }}</option></select></label>
     <div role="group" aria-label="Border side" class="border-controls__sides">

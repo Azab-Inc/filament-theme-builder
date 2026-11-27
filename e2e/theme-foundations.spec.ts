@@ -394,7 +394,7 @@ test.describe("foundation preview integration", () => {
 
     navigationRequests.length = 0;
     mutationRequests.length = 0;
-    await page.getByRole("button", { name: "Compact density" }).click();
+    await page.locator("#density").selectOption("compact");
     await expect(page.locator("#density")).toHaveValue("compact");
     await expect
       .poll(() => previewFrame!.evaluate(() => Number(document.body.dataset.tableDensityEvents)))
@@ -408,7 +408,7 @@ test.describe("foundation preview integration", () => {
       .toBe(2);
     const restoredMeasurements = await measure(previewFrame!);
 
-    await page.getByRole("button", { name: "Spacious density" }).click();
+    await page.locator("#density").selectOption("spacious");
     await expect(page.locator("#density")).toHaveValue("spacious");
     await expect
       .poll(() => previewFrame!.evaluate(() => Number(document.body.dataset.tableDensityEvents)))
@@ -841,9 +841,9 @@ test.describe("foundation preview integration", () => {
     await page.getByRole("button", { name: "Reset body font" }).click();
     await expect(page.getByLabel("Body font name")).toHaveValue("System");
 
-    await page.getByRole("button", { name: "Compact density" }).click();
+    await page.locator("#density").selectOption("compact");
     await expect(page.locator("#density")).toHaveValue("compact");
-    await page.getByRole("button", { name: "Spacious density" }).click();
+    await page.locator("#density").selectOption("spacious");
     await expect(page.locator("#density")).toHaveValue("spacious");
 
     await page.getByLabel("Body font name").fill("Editorial Sans");

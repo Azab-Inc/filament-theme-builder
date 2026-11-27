@@ -8,9 +8,11 @@
 
 **Phase 2 technical specification:** [docs/phase-2/SPECS.md](./docs/phase-2/SPECS.md)
 
+**Density spacing regression:** [FTB-181](./TICKETS.md#ftb-181) / [#183](https://github.com/Azab-Inc/filament-theme-builder/issues/183). Done (uncommitted): dropdown and preset buttons atomically apply existing density preset spacing keys 1–4 to canonical foundations and immediately update numeric controls. Reset restores default preset spacing; unrelated keys/settings and existing mode/generic MCP contracts remain unchanged. Failing-first unit/browser regressions pass, with history, persistence and serialization coverage. Type-check/full units and alternate-output production build pass; standard dist output has a pre-existing permissions blocker. [Commands and evidence](./TICKETS.md#ftb-181).
+
 **Panel properties planning:** [FTB-087](./TICKETS.md#ftb-087) / [#89](https://github.com/Azab-Inc/filament-theme-builder/issues/89); initial [research inventory](./docs/research/2026-11-18-panel-properties.md), [FTB-088 top navigation](./TICKETS.md#ftb-088), [FTB-089–102 navigation/layout](./TICKETS.md#ftb-089), [FTB-103–127 runtime/authentication](./TICKETS.md#ftb-103), [FTB-128–157 tenancy/search/styling](./TICKETS.md#ftb-128), and [FTB-158–180 menus/notifications/auth routes/registrations](./TICKETS.md#ftb-158). Inventory and full specification remain incomplete.
 
-**Panel configuration phase decision:** Non-visual configuration is deferred to the Composer package (Phase 2); its exact issue list and gate are recorded at [FTB-087](./TICKETS.md#ftb-087). Visual configuration retains its existing phase. The umbrella spans both phases.
+**Panel configuration phase decision:** Non-visual configuration is deferred to the Composer package (Phase 2); its exact issue list and gate are recorded at [FTB-087](./TICKETS.md#ftb-087). Other issues carry the `Phase 1` label, including the umbrella for its online-builder work. The umbrella still spans both phases; Phase 1 features also need porting to the Composer package in Phase 2.
 
 **Live-site PanelProvider export:** [Required acceptance contract](./TICKETS.md#production-panel-provider-export), mirrored in #26, #89 and all 46 open `visual config` issues. Export must deliver the requesting draft's portable, version-valid `AdminPanelProvider::panel()` configuration with correct false/unset semantics, imports and asset/font integration guidance; no demo request/query adapters, bridge hooks, auth bypasses, demo-only classes or temporary asset dependencies. PHP snippets accompany applicable CSS/JSON and preserve unrelated provider configuration; full providers are optional examples. Require test-first concurrent real Export UI, PHP/API validation, clean-reference runtime verification and applicable MCP parity. Acceptance remains pending.
 
@@ -26,7 +28,7 @@
 **Deferred builder component/composable refactor:** [Refactor builder into components, composables, and utilities](./docs/superpowers/specs/2026-10-14-builder-component-composable-refactor.md) ([FTB-053](./TICKETS.md#ftb-053), [GitHub #53](https://github.com/Azab-Inc/filament-theme-builder/issues/53)). This is a behavior-preserving structural refactor only; it does not lift the existing demo-first gate or implement FTB-050/051/052.
 
 <a id="deferred-hierarchical-padding-controls"></a>
-**Urgent hierarchical padding design:** [Hierarchical Padding Controls](./docs/superpowers/specs/2026-10-14-hierarchical-padding-controls.md) ([FTB-054](./TICKETS.md#ftb-054), [GitHub #54](https://github.com/Azab-Inc/filament-theme-builder/issues/54)). Readiness reconciled on 2026-10-22; schema V5, leaf-only defaults, and shared resolver/MCP integration are approved. See the [implementation plan](./docs/superpowers/plans/2026-10-22-hierarchical-padding-controls.md); completion still requires the full acceptance evidence.
+**Urgent hierarchical padding design:** [Hierarchical Padding Controls](./docs/superpowers/specs/2026-10-14-hierarchical-padding-controls.md) ([FTB-054](./TICKETS.md#ftb-054), [GitHub #54](https://github.com/Azab-Inc/filament-theme-builder/issues/54)). Readiness reconciled on 2026-10-22; schema V5, leaf-only defaults, and shared resolver/MCP integration are approved. See the [implementation plan](./docs/superpowers/plans/2026-10-22-hierarchical-padding-controls.md) and completed verification in [FTB-054](./TICKETS.md#ftb-054).
 
 <a id="deferred-filament-topbar-visibility"></a>
 **Deferred Filament topbar visibility:** [FTB-055](./TICKETS.md#ftb-055) / [GitHub #55](https://github.com/Azab-Inc/filament-theme-builder/issues/55), specified at [#filament-topbar-visibility](#filament-topbar-visibility). This is a concise planning contract for a Phase 1 Filament runtime control, not the builder toolbar or a Phase 2 feature; readiness remains subject to prerequisite evidence and existing repository gates.
@@ -236,6 +238,8 @@ When registry coverage is incomplete, the tool proposes the most stable selector
 Raw overrides live in canonical state and participate in history, persistence, JSON, sharing, preview, and CSS export.
 
 **Tickets:** [FTB-007](./TICKETS.md#ftb-007), [FTB-008](./TICKETS.md#ftb-008)
+
+**Unique repeated-element targeting:** [Inspector Unique Element IDs](./docs/superpowers/specs/2026-11-26-inspector-unique-element-ids-design.md) ([FTB-182](./TICKETS.md#ftb-182)). A selected repeated class target can opt into a generated, editable CSS ID while preserving the shared class rule as its baseline. The ID assignment, occurrence binding, raw override, light/dark values, persistence, history, JSON export, preview bridge, and vanilla CSS export must remain validated and deterministic.
 
 ## 10. Foundations
 

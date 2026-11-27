@@ -1,5 +1,5 @@
-import type { Density, PaletteName, PaletteShade, ThemeMode } from '@/models/foundations.model'
-import { createDefaultFoundationState } from '@/utils/foundation-defaults'
+import type { Density, FoundationState, PaletteName, PaletteShade, ThemeMode } from '@/models/foundations.model'
+import { createDefaultFoundationState, densityPreset } from '@/utils/foundation-defaults'
 import { clearExplicitPath, markExplicitPath } from '@/utils/foundation-provenance'
 import { isEditableFoundationPath, validateFoundationState } from '@/utils/foundation-validation'
 import { cloneTheme, getPath, setPath } from '@/utils/theme-store-helpers'
@@ -32,6 +32,12 @@ export function useThemeFoundationActions({ theme, commit = (candidate) => { the
     const paletteBase = /^palettes\.(primary|success|warning|danger|info|gray)\.dark\.base$/.exec(path)
     if (!isEditableFoundationPath(path) && !paletteOverride && !paletteBase) return
     const candidate = cloneTheme(theme.value)
+    if (path === 'density') {
+      applyDensityPreset(candidate.foundations, 'default')
+      clearExplicitPath(candidate.foundations, 'density')
+      if (validateFoundationState(candidate.foundations).valid) commit(candidate)
+      return
+    }
     const baseReset = /^palettes\.(primary|success|warning|danger|info|gray)\.(?:dark\.)?base$/.exec(path)
     if (baseReset) {
       const linked = Object.entries(candidate.modeLinks ?? {}).filter(([, link]) => link.target?.kind === 'palette-base' && link.target.name === baseReset[1])
@@ -66,10 +72,17 @@ export function useThemeFoundationActions({ theme, commit = (candidate) => { the
   function setDensity(value: Density): void {
     if (!['compact', 'default', 'spacious'].includes(value)) return
     const candidate = cloneTheme(theme.value)
-    candidate.foundations.density = value
+    applyDensityPreset(candidate.foundations, value)
     markExplicitPath(candidate.foundations, 'density')
     if (validateFoundationState(candidate.foundations).valid) commit(candidate)
   }
 
   return { setPrimaryColor, setFoundation, resetFoundation, setDensity }
+}
+
+function applyDensityPreset(foundations: FoundationState, value: Density): void {
+  const preset = densityPreset(value)
+  foundations.density = value
+  Object.assign(foundations.spacing, preset.spacing)
+  Object.keys(preset.spacing).forEach((key) => clearExplicitPath(foundations, `spacing.${key}`))
 }

@@ -55,7 +55,7 @@ class ServeLocalThemeMcpTest extends TestCase
         $tools = $responses[1]->result->tools;
         $names = array_map(fn ($tool) => $tool->name, $tools);
         sort($names);
-        self::assertSame(['local_theme_disconnect', 'local_theme_export', 'local_theme_import_preview',
+        self::assertSame(['local_padding_discover', 'local_padding_preview', 'local_padding_read', 'local_padding_reset', 'local_padding_set', 'local_theme_disconnect', 'local_theme_export', 'local_theme_import_preview',
             'local_theme_import_status', 'local_theme_list', 'local_theme_operation_status', 'local_theme_pair', 'local_theme_token_operation'], $names);
         foreach ($tools as $tool) {
             self::assertFalse($tool->inputSchema->additionalProperties, $tool->name);
@@ -69,6 +69,9 @@ class ServeLocalThemeMcpTest extends TestCase
         self::assertSame(['pairing_id', 'action', 'target', 'mode', 'value', 'proposed_name', 'theme_id'], array_keys((array) $tokenOperation->inputSchema->properties));
         self::assertSame(['pairing_id', 'action'], (array) $tokenOperation->inputSchema->required);
         self::assertFalse($tokenOperation->inputSchema->additionalProperties);
+        $paddingDiscovery = collect($tools)->firstWhere('name', 'local_padding_discover');
+        self::assertSame(['pairing_id'], array_keys((array) $paddingDiscovery->inputSchema->properties));
+        self::assertSame(['pairing_id'], (array) $paddingDiscovery->inputSchema->required);
         self::assertSame(3, $responses[2]->id);
         self::assertSame(['error' => 'pairing_required'], (array) $responses[2]->result->structuredContent);
     }

@@ -24,19 +24,26 @@ export function renderRawOverrides(theme: ThemeStateInput, errors: string[]): st
     return [validation.value]
   })
   const ordered = validOverrides.sort((left, right) => {
+    const leftUnique = left.selector.startsWith('#')
+    const rightUnique = right.selector.startsWith('#')
+    if (leftUnique !== rightUnique) return Number(leftUnique) - Number(rightUnique)
     const leftIcon = /(?:^| )\.fi-sidebar-item-icon$/.test(left.selector)
     const rightIcon = /(?:^| )\.fi-sidebar-item-icon$/.test(right.selector)
     return Number(leftIcon) - Number(rightIcon) || left.selector.localeCompare(right.selector)
   })
   const render = (override: typeof ordered[number], properties: Record<string, string>, prefix = '') => {
-    const declarations = Object.entries(properties).sort(([left], [right]) => left.localeCompare(right))
-      .map(([property, value]) => { const css = userTokenCssValue(value, theme.foundations.userTokens); if (css === null) { errors.push(`Unknown named color: ${value}`); return '' }; return `  ${property}: ${css};` }).filter(Boolean).join('\n')
     return expandRawOverrideSelectors(override.selector).map((selector) => {
-      const ringBacked = BORDER_TARGET_CATALOG.some((target) => target.ringBacked && target.selectors.includes(selector)) && Object.keys(properties).some((property) => physicalBorderProperties.has(property))
+      const projectedProperties = selector === override.selector
+        ? properties
+        : Object.fromEntries(Object.entries(properties).filter(([property]) => property === 'color'))
+      if (!Object.keys(projectedProperties).length) return ''
+      const declarations = Object.entries(projectedProperties).sort(([left], [right]) => left.localeCompare(right))
+        .map(([property, value]) => { const css = userTokenCssValue(value, theme.foundations.userTokens); if (css === null) { errors.push(`Unknown named color: ${value}`); return '' }; return `  ${property}: ${css};` }).filter(Boolean).join('\n')
+      const ringBacked = BORDER_TARGET_CATALOG.some((target) => target.ringBacked && target.selectors.includes(selector)) && Object.keys(projectedProperties).some((property) => physicalBorderProperties.has(property))
       const projectedSelector = ringBacked ? `${selector}:not(:focus):not(:focus-within):not(:focus-visible)` : selector
       const projectedDeclarations = ringBacked ? `${declarations}\n  --tw-ring-shadow: 0 0 #0000;` : declarations
       return `${prefix}${projectedSelector} {\n${projectedDeclarations}\n}`
-    }).join('\n')
+    }).filter(Boolean).join('\n')
   }
   const light = ordered.filter((override) => Object.keys(override.properties).length).map((override) => render(override, override.properties, ':where(html:not(.dark)) ')).join('\n')
   const dark = ordered.flatMap((override) => {

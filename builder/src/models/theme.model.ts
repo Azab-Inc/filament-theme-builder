@@ -45,7 +45,7 @@ export type ThemeStateV7 = Omit<ThemeStateV6, 'schemaVersion'> & {
   foundations: Omit<ThemeStateV6['foundations'], 'userTokens'> & { userTokens: import('@/models/user-tokens.model').UserTokens }
   modeLinks: import('@/models/theme-mode-link.model').ModeLinkMap
 }
-export type ThemeStateV8 = Omit<ThemeStateV7, 'schemaVersion'> & { schemaVersion: 8; borderEdges: import('@/models/border-edge.model').BorderEdgeOverride[] }
+export type ThemeStateV8 = Omit<ThemeStateV7, 'schemaVersion'> & { schemaVersion: 8; borderEdges: import('@/models/border-edge.model').BorderEdgeOverride[]; uniqueElementIds?: import('@/models/unique-element-id-assignment.model').UniqueElementIdAssignment[] }
 export type ThemeStateCurrent = ThemeStateV8
 export type ThemeStateInput = ThemeStateV4 | ThemeStateV5 | ThemeStateV6 | ThemeStateV7 | ThemeStateV8
 

@@ -16,7 +16,7 @@ function resetAll(): void { props.properties.forEach(resetField); emit('reset-ov
 </script>
 
 <template>
-  <fieldset class="grid gap-2 rounded-lg border border-zinc-200 p-4" :disabled="!selector">
+  <fieldset class="editor-control-surface gap-2" :disabled="!selector">
     <legend>Visual properties</legend>
     <p v-if="!selector" role="status" class="text-sm">This picked element has no editable selector. Choose a parent surface in Edit target before applying colors.</p>
     <p class="text-sm">Locks keep a value identical between themes. Resetting a linked raw value resets both themes and removes its lock.</p>

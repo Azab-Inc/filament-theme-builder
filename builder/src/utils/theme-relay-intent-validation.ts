@@ -18,7 +18,7 @@ export function supportedTargetForAction(action: ThemeRelayIntent['action'], tar
   if (action === 'create-color') return target.kind === 'user-color' && isTokenTarget(target)
   if (action === 'create-palette') return target.kind === 'user-palette' && isTokenTarget(target) && !('shade' in target)
   if (action === 'update' || action === 'remove') return isTokenMutationTarget(target)
-  if (action === 'reset') return target.kind === 'raw' || target.kind === 'semantic' || target.kind === 'semantic-border' || target.kind === 'foundation' || target.kind === 'palette-base' || target.kind === 'palette-shade'
+  if (action === 'reset' || action === 'read') return target.kind === 'padding' || target.kind === 'raw' || target.kind === 'semantic' || target.kind === 'semantic-border' || target.kind === 'foundation' || target.kind === 'palette-base' || target.kind === 'palette-shade'
   return target.kind !== 'user-palette'
 }
 export function ensureChanged(before: string, after: ThemeStateCurrent): void { if (before === JSON.stringify(after)) throw new Error('unchanged') }

@@ -26,7 +26,7 @@ final class OperationResultValidator
             return true;
         }
 
-        return $kind === 'export' && self::hasKeys($result, ['version', 'filename', 'schemaVersion', 'json'])
+        return in_array($kind, ['export', 'padding-read'], true) && self::hasKeys($result, ['version', 'filename', 'schemaVersion', 'json'])
             && $result['version'] === 1
              && $result['filename'] === 'filament-theme.json' && in_array($result['schemaVersion'], [4, 5, 6, 7, 8], true)
             && is_string($result['json']) && strlen($result['json']) <= RelayLimits::MAX_THEME_BYTES

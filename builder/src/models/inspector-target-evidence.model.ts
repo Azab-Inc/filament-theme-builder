@@ -3,6 +3,7 @@ export type InspectorTargetEvidence = {
   classNames: string[]
   targetId?: string
   targetSelector?: string | null
+  matchIndex?: number
   semanticBreadcrumb?: string
   componentId?: string
   variantId?: string

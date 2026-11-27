@@ -26,6 +26,7 @@ export function restoreLegacyTheme(value: unknown): ThemeStateCurrent | null {
     rawOverrides,
     padding: [],
     borderEdges: [],
+    uniqueElementIds: [],
     customCss: typeof legacy.customCss === 'string' ? legacy.customCss : '',
     icons: defaults.icons,
     branding: defaults.branding,

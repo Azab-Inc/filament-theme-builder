@@ -47,7 +47,7 @@ describe('App structure', () => {
     expect(wrapper.get('#spacing-0-5').attributes('type')).toBe('number')
     expect((wrapper.get('#spacing-0-5').element as HTMLInputElement).value).toBe('2')
     expect(wrapper.get('#density').attributes('aria-label')).toBeUndefined()
-    expect(wrapper.get('[role="group"][aria-label="Density presets"]')).toBeTruthy()
+    expect(wrapper.find('[role="group"][aria-label="Density presets"]').exists()).toBe(false)
     expect(wrapper.get('#radius').element).toHaveProperty('value', 'md')
     expect(wrapper.get('#border-width').attributes('min')).toBe('0')
     expect(wrapper.get('#shadow').element).toHaveProperty('value', 'sm')

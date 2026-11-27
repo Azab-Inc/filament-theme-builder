@@ -16,7 +16,7 @@ function fontSelection(name: FoundationTypographyName): string {
 </script>
 
 <template>
-  <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
+  <fieldset class="editor-control-surface grid gap-4">
     <legend>Typography</legend>
     <div v-for="name in typographyNames" :key="name" class="foundation-row grid grid-cols-1 gap-2 md:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)_auto_auto]">
       <label :for="`${name}-font-kind`">{{ name }} font type</label>

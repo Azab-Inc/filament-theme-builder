@@ -20,8 +20,9 @@ export function useEditorResizer(workspace: Ref<HTMLElement | null>) {
     const element = workspace.value
     if (!element) return
     workspaceWidth.value = element.clientWidth
-    const width = clampEditorWidth(currentWidth.value, workspaceWidth.value - HANDLE_WIDTH, EDITOR_MINIMUM, PREVIEW_MINIMUM)
-    editorWidth.value = width
+    if (editorWidth.value !== null) {
+      editorWidth.value = clampEditorWidth(currentWidth.value, workspaceWidth.value - HANDLE_WIDTH, EDITOR_MINIMUM, PREVIEW_MINIMUM)
+    }
   }
 
   function setWidth(width: number): void {

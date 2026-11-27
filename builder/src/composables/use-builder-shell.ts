@@ -1,4 +1,4 @@
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted } from 'vue'
 import { ALL_RAW_VISUAL_PROPERTIES } from '@/models/raw-overrides.model'
 import { classifyRawSelector } from '@/utils/raw-override-validation'
 import { inspectorStateForSelector } from '@/utils/raw-inspector-state'
@@ -17,6 +17,12 @@ export function useBuilderShell(previewUrl: string) {
   const actions = useBuilderActions(state)
   const uploads = useBrandingUpload(state)
   const selectedRawOverride = computed(() => state.theme.theme.rawOverrides.find((override) => override.selector === state.rawSelector.value))
+  const uniqueElementAssignment = computed(() => state.inspectorEvidence.value?.targetSelector && state.inspectorEvidence.value.matchIndex !== undefined
+    ? (state.theme.theme.uniqueElementIds ?? []).find((item) => item.sourceSelector === state.inspectorEvidence.value?.targetSelector && item.matchIndex === state.inspectorEvidence.value?.matchIndex)
+    : undefined)
+  const uniqueElementId = computed(() => uniqueElementAssignment.value?.id ?? '')
+  const uniqueElementIdEnabled = computed(() => Boolean(uniqueElementAssignment.value))
+  const uniqueElementIdAvailable = computed(() => Boolean(state.inspectorEvidence.value?.targetSelector && state.inspectorEvidence.value.matchIndex !== undefined))
   const rawSelectorClassification = computed(() => state.rawSelector.value ? classifyRawSelector(state.rawSelector.value) : { selector: null, quality: 'unavailable' as const })
   const rawInspectorState = computed(() => inspectorStateForSelector(state.rawSelector.value))
   const primaryColor = foundations.primaryColor
@@ -28,7 +34,7 @@ export function useBuilderShell(previewUrl: string) {
   }
   onMounted(() => window.addEventListener('keydown', handleKeydown))
   onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
-  return { ...state, ...foundations, ...controls, ...exports, ...actions, ...uploads, primaryColor, setPreviewIframe, handleKeydown, rawProperties: ALL_RAW_VISUAL_PROPERTIES, rawSelectorClassification, rawInspectorState, selectedRawOverride }
+  return { ...state, ...foundations, ...controls, ...exports, ...actions, ...uploads, primaryColor, setPreviewIframe, handleKeydown, rawProperties: ALL_RAW_VISUAL_PROPERTIES, rawSelectorClassification, rawInspectorState, selectedRawOverride, uniqueElementId, uniqueElementIdEnabled, uniqueElementIdAvailable }
 }
 
 export type { BuilderShell } from '@/models/builder-shell.model'

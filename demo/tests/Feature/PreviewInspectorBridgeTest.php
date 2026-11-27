@@ -35,6 +35,19 @@ class PreviewInspectorBridgeTest extends TestCase
             ->assertSee('url\\s*\\(', false);
     }
 
+    public function test_preview_bridge_validates_and_retries_unique_element_id_assignments(): void
+    {
+        $this->get('/demo/admin/login')
+            ->assertOk()
+            ->assertSee('uniqueElementIds', false)
+            ->assertSee('isSafeUniqueAssignments', false)
+            ->assertSee('applyUniqueElementIds', false)
+            ->assertSee('hasApplicationOwnedIdCollision', false)
+            ->assertSee('node !== target', false)
+            ->assertSee('document.querySelectorAll(assignment.sourceSelector)[assignment.matchIndex]', false)
+            ->assertSee('data-ftb-unique-id', false);
+    }
+
     public function test_preview_bridge_keeps_raw_allowlist_and_duplicate_rejection_in_sync_with_builder_contract(): void
     {
         $response = $this->get('/demo/admin/login')->assertOk();

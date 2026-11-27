@@ -42,3 +42,59 @@
 .foundations-panel .color-field__native {
   @apply [width:34px] [height:34px] [border:var(--color-builder-theme-dialog-local-theme-dialog-border)] [border-radius:4px] [padding:2px] [background:var(--color-builder-theme-dialog-local-theme-dialog-surface)];
 }
+.editor-control-surface {
+  @apply grid min-w-0 rounded border gap-3 [border:var(--color-builder-surfaces-surface-layout-row-border)] [background:var(--color-builder-theme-dialog-local-theme-dialog-surface)] p-3;
+
+  legend,
+  .editor-control-surface__heading {
+    @apply m-0 px-2 py-1.5 [background:var(--color-builder-surfaces-surface-layout-heading-surface)] [color:var(--color-builder-surfaces-surface-layout-legend-text)] text-xs font-bold;
+  }
+
+  label:not(.sr-only):not(.color-field *) {
+    @apply grid min-w-0 gap-1.5 text-xs font-semibold;
+  }
+
+  .sr-only {
+    @apply absolute -m-px h-px w-px overflow-hidden whitespace-nowrap border-0 p-0 opacity-0;
+  }
+
+  input:not(.color-field *):not([type="color"]):not([type="checkbox"]):not([type="range"]),
+  select:not(.color-field *),
+  textarea:not(.color-field *) {
+    @apply box-border min-w-0 w-full min-h-8 px-2 py-1.5 [border:var(--color-builder-responsive-toolbar-strip-toolbar-edit-border)] rounded-builder-sm [background:var(--color-builder-theme-dialog-local-theme-dialog-input-surface)] [color:var(--color-builder-theme-dialog-local-theme-dialog-text)] [font:inherit];
+  }
+
+  button:not(.color-field *) {
+    @apply min-h-8 px-2 py-1 [border:var(--color-builder-theme-dialog-local-theme-dialog-border)] rounded-builder-sm [background:var(--color-builder-surfaces-surface-layout-heading-surface)] [color:var(--color-builder-surfaces-surface-layout-legend-text)] [font:inherit] cursor-pointer;
+
+    &:hover {
+      @apply [background:var(--color-builder-controls-foundations-panel-button-hover-surface)];
+    }
+  }
+
+  :is(input, select, button, textarea):not(.color-field *):focus-visible {
+    @apply [outline:var(--color-builder-theme-dialog-input-focus-visible-focus)] [outline-offset:2px];
+  }
+}
+
+.editor-control-row {
+  @apply min-w-0 [border-bottom:var(--color-builder-surfaces-surface-layout-row-border)] py-2 px-1;
+}
+
+.component-control-row {
+  .color-field__controls {
+    @apply grid [grid-template-columns:auto_auto_minmax(0,_1fr)_minmax(0,_1fr)] gap-1.5;
+  }
+
+  .color-field__text {
+    @apply [grid-column:3_/_-1];
+  }
+
+  .color-field__trigger {
+    @apply [grid-column:1_/_4] row-start-2;
+  }
+
+  .color-field__token-select {
+    @apply col-start-4 row-start-2;
+  }
+}

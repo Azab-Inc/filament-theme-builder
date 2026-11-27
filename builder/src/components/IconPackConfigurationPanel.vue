@@ -10,7 +10,7 @@ defineEmits<IconPackConfigurationPanelEmits>()
   <section v-show="active" id="editor-panel-icons" class="icons grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-icons" data-editor-section="icons">
     <h2 id="icons-heading">Icons</h2>
     <p>Heroicons are runtime Filament configuration. Preview changes apply to rendered icons immediately.</p>
-    <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
+    <fieldset class="editor-control-surface gap-4">
       <legend>IconPackConfiguration</legend>
       <label for="icon-pack">Icon pack</label>
       <select id="icon-pack" name="icon-pack" autocomplete="off" aria-label="Icon pack" :value="configuration.pack" @change="$emit('changePack', ($event.target as HTMLSelectElement).value as IconPackName)">

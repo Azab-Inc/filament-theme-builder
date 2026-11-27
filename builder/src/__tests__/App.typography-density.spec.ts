@@ -10,7 +10,7 @@ describe('App typography and density', () => {
 
     await wrapper.get('#body-font-name').setValue('Editorial Sans')
     await wrapper.get('button[aria-label="Dark mode"]').trigger('click')
-    await wrapper.get('button[aria-label="Compact density"]').trigger('click')
+    await wrapper.get('#density').setValue('compact')
 
     expect(wrapper.get('#body-font-name').element).toHaveProperty('value', 'Editorial Sans')
     expect(wrapper.get('button[aria-label="Dark mode"]').attributes('aria-pressed')).toBe('true')

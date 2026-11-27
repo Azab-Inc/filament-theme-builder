@@ -147,8 +147,8 @@
 .preview-shell [data-padding-target] .inline-flex input {
   @apply [width:4rem] min-w-0;
 }
-.preview-shell [data-padding-target] .inline-flex select {
-  @apply [width:3.2rem] min-w-0;
+.preview-shell [data-padding-target] .inline-flex .padding-unit-select {
+  @apply w-builder-padding-unit min-w-builder-padding-unit shrink-0;
 }
 .preview-shell [data-padding-target] label {
   @apply min-w-0 [overflow-wrap:anywhere];

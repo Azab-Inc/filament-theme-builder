@@ -125,6 +125,18 @@ describe('raw Inspector overrides', () => {
     expect(css.lastIndexOf('.fi-sidebar-item-icon {\n  color: #222222;')).toBeGreaterThan(css.indexOf('.fi-sidebar-item-label {\n  color: #111111;'))
   })
 
+  it('does not expand non-color label properties onto sidebar icons', () => {
+    const theme = createDefaultCurrentThemeState()
+    theme.rawOverrides = [
+      { selector: '.fi-sidebar-item-label', properties: { 'font-weight': '700', padding: '1rem' } },
+    ]
+    const css = renderRawOverrides(theme, [])
+
+    expect(css).toContain('.fi-sidebar-item-label {')
+    expect(css).not.toContain('.fi-sidebar-item-icon {\n  font-weight: 700;')
+    expect(css).not.toContain('.fi-sidebar-item-icon {\n  padding: 1rem;')
+  })
+
   it('does not borrow the product-name raw selector for an unrelated fi-input', () => {
     expect(proposeRawSelector({
       candidateSelectors: ['.fi-input', '.fi-global-search .fi-input', '.fi-input-wrp-content-ctn .fi-input'],

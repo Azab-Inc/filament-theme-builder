@@ -25,8 +25,81 @@
 - Builder stylesheet compliance: [FTB-076](#ftb-076) / [GitHub #78](https://github.com/Azab-Inc/filament-theme-builder/issues/78), split into [FTB-077](#ftb-077) / [#79](https://github.com/Azab-Inc/filament-theme-builder/issues/79), [FTB-078](#ftb-078) / [#80](https://github.com/Azab-Inc/filament-theme-builder/issues/80), [FTB-079](#ftb-079) / [#81](https://github.com/Azab-Inc/filament-theme-builder/issues/81), [FTB-080](#ftb-080) / [#82](https://github.com/Azab-Inc/filament-theme-builder/issues/82), [FTB-081](#ftb-081) / [#83](https://github.com/Azab-Inc/filament-theme-builder/issues/83), [FTB-082](#ftb-082) / [#84](https://github.com/Azab-Inc/filament-theme-builder/issues/84), and [FTB-083](#ftb-083) / [#85](https://github.com/Azab-Inc/filament-theme-builder/issues/85). Spec: [stylesheet compliance](./docs/superpowers/specs/2026-11-18-builder-stylesheet-tailwind-compliance-design.md); plan: [implementation](./docs/superpowers/plans/2026-11-18-builder-stylesheet-tailwind-compliance.md).
 
 - Border-side controls: [FTB-084](#ftb-084) / [GitHub #88](https://github.com/Azab-Inc/filament-theme-builder/issues/88), delivered by [FTB-085](#ftb-085) / [#87](https://github.com/Azab-Inc/filament-theme-builder/issues/87) then [FTB-086](#ftb-086) / [#86](https://github.com/Azab-Inc/filament-theme-builder/issues/86). [Spec](./docs/superpowers/specs/2026-11-18-border-side-controls-design.md), [issue index](./ISSUES.md).
+- Unique repeated Inspector targeting: [FTB-182](#ftb-182) / [#184](https://github.com/Azab-Inc/filament-theme-builder/issues/184). [Spec](./docs/superpowers/specs/2026-11-26-inspector-unique-element-ids-design.md), [issue index](./ISSUES.md).
 
 ## Dependency map
+
+<a id="ftb-181"></a>
+### FTB-181 — Update foundation spacing values when density changes
+
+**Status:** done. **GitHub:** [#183](https://github.com/Azab-Inc/filament-theme-builder/issues/183). **Project:** #30 / Done. Narrow FTB-005 regression follow-up; demo-first gate is satisfied.
+
+- [x] Dropdown and preset buttons immediately apply the existing canonical Compact/Default/Spacious spacing presets.
+- [x] Commit density and preset spacing keys 1–4 atomically; preserve unrelated spacing keys/settings and existing mode contracts without a schema change. Preview, serialization and persistence coverage passes. Existing generic foundation/MCP setter contracts are unchanged; preset application remains the `setDensity` operation.
+- [x] Reset and undo/redo remain coherent.
+- [x] Capture failing unit and Playwright CLI regressions before implementation, then pass focused/integration checks, builder type-check, full units and production bundle validation (alternate output directory).
+
+Verified on `dev` at base `d50ce7298aba5a9a56c7493757c6578d1572f017` plus uncommitted fix/tests and preserved pre-existing UI WIP. Original unit regression failed because spacing stayed unchanged; Playwright expected spacing 2 = 6 but received 8. Final focused command from `builder/`: `npm run test:unit -- --run src/__tests__/theme-state-density.spec.ts` (6 passed). Broader settled-production checks: `npm run type-check` passed; `npm run test:unit -- --run` passed (156 files / 729 tests before final test-only expansion); affected integration checks passed (33 tests). Root: `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/foundation-density-regression.spec.ts` passed (1 test: dropdown, Compact/Default/Spacious buttons, Reset).
+
+`npm run build` hit pre-existing root-owned `builder/dist/assets` permissions (`EACCES`); `npm run build-only -- --outDir /tmp/opencode/ftb-builder-dist-final` passed, validating production output without altering existing assets. No dependencies added; unrelated UI WIP preserved. No commit made or authorized.
+
+<a id="ftb-182"></a>
+### FTB-182 — Isolate repeated Inspector elements with unique CSS IDs
+
+**Phase:** Phase 1 online builder. **Status:** testing (implementation present; full-unit gate blocked). **GitHub:** [#184](https://github.com/Azab-Inc/filament-theme-builder/issues/184). **Project:** #30 / Testing.
+**Prerequisite:** [FTB-008](#ftb-008) is complete. Coordinate with [FTB-022](#ftb-022),
+[FTB-004](#ftb-004), and [FTB-058](#ftb-058). **Spec:** [Inspector Unique Element IDs](./docs/superpowers/specs/2026-11-26-inspector-unique-element-ids-design.md).
+
+### What to build
+
+Add an Advanced Inspector toggle that lets a user isolate one selected element
+when several preview elements share the same Filament class selector, such as
+two `.fi-section-header` elements. Enabling the toggle generates a stable,
+editable valid ID, assigns it to the selected occurrence in the preview, and
+routes subsequent raw styling through `#id`. The existing class selector stays
+as the shared baseline so the feature can refine one element without silently
+changing the others.
+
+### Acceptance criteria
+
+- [x] The Inspector exposes an accessible **Unique element ID** toggle and an
+  editable ID field with immediate validation and inline error association.
+- [x] Enabling the toggle generates a stable ID, preserves the selected
+  source selector and bounded occurrence binding, and assigns the ID only to
+  the selected preview element.
+- [x] Renaming the ID updates the preview and CSS target without creating a
+  duplicate assignment or unsafe selector.
+- [x] Duplicate, reserved, malformed, out-of-bounds, and application-owned ID
+  cases fail closed without mutating the accepted theme or unrelated DOM.
+- [x] The shared class rule remains intact, while edits made through the
+  enabled unique target affect only that target. Disabling returns editing to
+  the shared selector without deleting unrelated shared properties.
+- [x] Light/dark inheritance, explicit overrides, state variants, reset,
+  undo/redo, local persistence, and JSON import/export remain independent and
+  round-trip the assignment data.
+- [x] Vanilla CSS export emits deterministic `#id` rules after their shared
+  source rules and reproduces the preview result when the clean fixture has
+  the same ID in its markup.
+- [x] Preview bridge validation, cleanup, navigation retry, iframe reload, and
+  inspector evidence remain safe and deterministic; invalid payloads leave the
+  last accepted theme unchanged.
+- [ ] Failing unit/component tests are written before implementation, followed
+   by focused checks, affected integration checks, builder type-check, full
+   unit tests, production build, and the required real-browser Playwright
+   journey. No new dependency is added.
+
+Implementation is present in the uncommitted integrated worktree. The unique-ID
+unit/component, PHP bridge, focused Playwright, type-check, alternate production
+build, and `git diff --check` checks pass. The full builder unit suite reached
+156/157 files and 748/749 tests before the existing
+`App.inspector-advanced.spec.ts` timeout; its focused rerun passes. The standard
+production output remains blocked by pre-existing `builder/dist/assets`
+permissions. No dependency, service, branch, or commit was added.
+
+### Out of scope
+
+MCP mutation support, arbitrary custom selectors, automatic IDs for all DOM
+elements, application-owned ID replacement, and a general custom CSS editor.
 
 <a id="production-panel-provider-export"></a>
 ### Required: production-ready PanelProvider export
@@ -57,7 +130,7 @@ Acceptance requirement added 2026-11-19 to FTB-087 / [#89](https://github.com/Az
 <a id="ftb-087"></a>
 ### FTB-087 — Filament 5 panel properties (umbrella)
 
-**Phase classification (user decision):** non-visual panel configuration is deferred to the Composer package phase (Phase 2). Its issues have the `composer package phase` label and `(Composer package phase)` title suffix. The affected tickets are FTB-103–105, 107–109, 111–116, 121–133, 138–140, 142–144, 161, 163–164, and 166–180. Phase 2 remains blocked until FTB-040 and all approved Phase 1 requirements are complete; ticket-specific Phase 2 prerequisites also apply. Visual configuration retains its existing phase and `visual config` label. The umbrella spans both phases and cannot close until all its children are complete.
+**Phase classification (user decision):** non-visual panel configuration is deferred to the Composer package phase (Phase 2). Its issues have the `composer package phase` label and `(Composer package phase)` title suffix. The affected tickets are FTB-103–105, 107–109, 111–116, 121–133, 138–140, 142–144, 161, 163–164, and 166–180. Phase 2 remains blocked until FTB-040 and all approved Phase 1 requirements are complete; ticket-specific Phase 2 prerequisites also apply. All other GitHub issues, including closed issues, carry `Phase 1`. The umbrella carries `Phase 1` for its online-builder work, but spans both phases and cannot close until all its children are complete. Phase 1 features also need to be ported to the Composer package in Phase 2. Visual configuration retains its `visual config` label.
 
 **Status:** blocked (planning/inventory incomplete). **GitHub:** [#89](https://github.com/Azab-Inc/filament-theme-builder/issues/89). Inventory every documented Panel option, including security, authentication, routing, tenancy and extension APIs, and create a child for each. Preserve host defaults and permissions; specify validated state, migration, real preview, PHP export, and MCP parity. Coordinate existing FTB-018 and FTB-055. Completion requires all children and their verification; the inventory and most children remain outstanding. Sources and initial findings: [research](./docs/research/2026-11-18-panel-properties.md).
 
@@ -1859,7 +1932,7 @@ Decompose the oversized `App.vue` into cohesive visual components and focused `u
 
 **Priority:** high (urgent)
 
-**Status:** in progress — implementation authorized and schema/default/integration decisions approved on 2026-10-22; verified target registry first
+**Status:** done (2026-11-26, uncommitted integrated worktree) — implementation, focused verification, and actual stdio MCP journey complete
 
 **Blocked by:** None after readiness reconciliation against the existing FTB-003/006/022/053 completion evidence and root demo-first gate record. The registry padding extension and V5 migration are implementation deliverables, not missing predecessor tickets. Existing FTB-004 vanilla CSS and canonical JSON parity remain acceptance requirements. FTB-012 remains partial only for density integration; FTB-052 remains future coordination only. Preserve unrelated App/Studio prototype and test/guidance edits.
 
@@ -1873,22 +1946,24 @@ Decompose the oversized `App.vue` into cohesive visual components and focused `u
 
 **Plan:** [Hierarchical padding controls implementation](./docs/superpowers/plans/2026-10-22-hierarchical-padding-controls.md). Approved decisions: schema V5, leaf-only global/section defaults, and one canonical resolver/projection with existing paired revision-bound MCP confirmation. See spec §13.
 
+**Verification update (2026-11-26):** Existing padding implementation passed focused unit/store/registry/projection/UI coverage (49 tests including the read-parser regression), type-check, 13 affected PHP tests (130 assertions), real Compose iframe padding journeys (3 tests), alternate-output production build, and `git diff --check`. The MCP extension includes discover/read/preview/confirm/set/reset tools, typed relay intents, invalid target/value coverage, canonical resolved/provenance reads, and capability-inventory entries. The actual stdio-client journey passed (1 test, 1.2 minutes) after the gateway recovered, covering discovery, unauthorized set rejection, invalid target rejection, preview→confirm→set, read/provenance, and reset→confirm. The broader builder unit suite still has two unrelated App timeout failures (739 passed, 2 failed), and the standard build output remains blocked by existing `builder/dist` permissions; alternate-output build passed. Work remains uncommitted and unrelated dirty changes are preserved.
+
 ### What to build
 
 Give users semantic padding controls that inherit from global default through section, individual component, and existing variant/state scopes. Users can edit linked all-sides padding or independent edges, see effective values and their source, reset explicit values back to inheritance/native Filament behavior, and observe immediate real-demo preview plus CSS/JSON export parity. The implementation must cover every verified mapped visual target without blanket DOM selectors or duplicate nested padding.
 
 ### Acceptance criteria
 
-- [ ] A validated registry coverage matrix identifies stable target IDs, exact verified Filament selectors, group/visual boundaries, compatibility evidence, supported edges/units, and supported/unmapped/excluded status for global, Forms, Tables, Buttons, and other mapped registry groups. It includes concrete input, textarea, select, table container/header/header-cell/cell, and button targets where the real Filament fixtures verify them; it does not invent fake selectors or style icons, checkbox/radio internals, `html`, `body`, menus, or arbitrary wrappers.
-- [ ] The editor presents an explicit registry-driven tree: Global; Forms with Default, Input, Textarea, and Select; Tables with Default, Header, and Cell; Buttons with Default; and other verified groups. Variant/state controls remain beneath their mapped component target, while unsupported groups are identified rather than rendered as fake controls.
-- [ ] Padding stores four optional canonical edges; omission differs from explicit zero; each edge resolves most-specific inheritance through global → section → component → variant → state; effective value, source, explicitness, and native/unmapped status are exposed without persisting resolved copies. Parent changes preserve child explicit overrides and reset removes only the selected explicit edge/record.
-- [ ] Linked editing intentionally writes all four edges as one history entry; separate editing changes only the selected edge; switching presentation modes never silently overwrites heterogeneous edges and clearly represents mixed values. Existing density, spacing scale, light/dark, color, raw override, branding, and unrelated semantic state remain unchanged.
-- [ ] Values reuse the existing raw visual-value allowlist: unitless zero, nonzero numeric lengths with currently allowed units, and existing bounded nonnegative spacing lists where applicable; semantic spacing-scale choices resolve to canonical validated CSS lengths and never emit literal token names. Actual emitted CSS values are validated for finiteness, allowed syntax, and injection safety; no arbitrary `calc(...)`, `var(...)`, URL, declaration, or executable content is accepted, and unsupported input is rejected rather than silently coerced. Per-edge values remain individual declarations, not a composite shorthand.
-- [ ] The real Filament iframe updates immediately through the shared canonical preview path. Playwright computed-style evidence proves all four edges for global/Forms input/textarea/select/Tables container-header-cell/Buttons targets, native-before/after reset, no duplicate nested padding, keyboard/narrow/zoom behavior, and no reload or non-GET mutation.
-- [ ] Existing FTB-004 vanilla CSS and canonical JSON exports use the same resolver/registry result as preview. Padding inheritance is semantic, not DOM inheritance: preview and minimal CSS materialize resolved explicit global/section/component/variant/state values on each mapped target's verified selector. Reset recomputes the next explicit ancestor value or removes the declaration for native fallback. JSON retains only sparse explicit edges, including zero; native/unmapped values are not emitted. Future Fully Explicit/Tailwind exporters integrate only if available and are not prerequisites. Old-theme migration preserves all unrelated theme state.
-- [ ] Unit/store tests cover registry evidence, per-edge inheritance, source/effective resolution, parent preservation, native fallback, linked/separate history, reset/undo/redo, persistence, old JSON migration, validation quarantine, and preview/CSS/JSON parity. If FTB-052 exists, padding lock identities prevent locked per-edge bulk changes; padlocks are not otherwise implemented here.
-- [ ] Purpose-built MCP discovery/read/preview/confirm/set/reset capabilities use the same services, authorization, validation, resolver, export, and lock boundaries as the UI; confirmation and apply-time revalidation are tested with invalid/stale/unauthorized cases and an actual AI-client journey. The capability-to-tool inventory records this coverage and logs contain no sensitive values or arbitrary payloads.
-- [ ] The implementation refreshes the full review fixed point, preserves unrelated dirty worktree changes, adds no third-party dependency/server service, does not modify or close parent tickets, and does not claim the demo-first gate or FTB-012 complete.
+- [x] A validated registry coverage matrix identifies stable target IDs, exact verified Filament selectors, group/visual boundaries, compatibility evidence, supported edges/units, and supported/unmapped/excluded status for global, Forms, Tables, Buttons, and other mapped registry groups. It includes concrete input, textarea, select, table container/header/header-cell/cell, and button targets where the real Filament fixtures verify them; it does not invent fake selectors or style icons, checkbox/radio internals, `html`, `body`, menus, or arbitrary wrappers.
+- [x] The editor presents an explicit registry-driven tree: Global; Forms with Default, Input, Textarea, and Select; Tables with Default, Header, and Cell; Buttons with Default; and other verified groups. Variant/state controls remain beneath their mapped component target, while unsupported groups are identified rather than rendered as fake controls.
+- [x] Padding stores four optional canonical edges; omission differs from explicit zero; each edge resolves most-specific inheritance through global → section → component → variant → state; effective value, source, explicitness, and native/unmapped status are exposed without persisting resolved copies. Parent changes preserve child explicit overrides and reset removes only the selected explicit edge/record.
+- [x] Linked editing intentionally writes all four edges as one history entry; separate editing changes only the selected edge; switching presentation modes never silently overwrites heterogeneous edges and clearly represents mixed values. Existing density, spacing scale, light/dark, color, raw override, branding, and unrelated semantic state remain unchanged.
+- [x] Values reuse the existing raw visual-value allowlist: unitless zero, nonzero numeric lengths with currently allowed units, and existing bounded nonnegative spacing lists where applicable; semantic spacing-scale choices resolve to canonical validated CSS lengths and never emit literal token names. Actual emitted CSS values are validated for finiteness, allowed syntax, and injection safety; no arbitrary `calc(...)`, `var(...)`, URL, declaration, or executable content is accepted, and unsupported input is rejected rather than silently coerced. Per-edge values remain individual declarations, not a composite shorthand.
+- [x] The real Filament iframe updates immediately through the shared canonical preview path. Playwright computed-style evidence proves all four edges for global/Forms input/textarea/select/Tables container-header-cell/Buttons targets, native-before/after reset, no duplicate nested padding, keyboard/narrow/zoom behavior, and no reload or non-GET mutation.
+- [x] Existing FTB-004 vanilla CSS and canonical JSON exports use the same resolver/registry result as preview. Padding inheritance is semantic, not DOM inheritance: preview and minimal CSS materialize resolved explicit global/section/component/variant/state values on each mapped target's verified selector. Reset recomputes the next explicit ancestor value or removes the declaration for native fallback. JSON retains only sparse explicit edges, including zero; native/unmapped values are not emitted. Future Fully Explicit/Tailwind exporters integrate only if available and are not prerequisites. Old-theme migration preserves all unrelated theme state.
+- [x] Unit/store tests cover registry evidence, per-edge inheritance, source/effective resolution, parent preservation, native fallback, linked/separate history, reset/undo/redo, persistence, old JSON migration, validation quarantine, and preview/CSS/JSON parity. If FTB-052 exists, padding lock identities prevent locked per-edge bulk changes; padlocks are not otherwise implemented here.
+- [x] Purpose-built MCP discovery/read/preview/confirm/set/reset capabilities use the same services, authorization, validation, resolver, export, and lock boundaries as the UI; confirmation and apply-time revalidation are tested with invalid/stale/unauthorized cases and an actual AI-client journey. The capability-to-tool inventory records this coverage and logs contain no sensitive values or arbitrary payloads.
+- [x] The implementation refreshes the full review fixed point, preserves unrelated dirty worktree changes, adds no third-party dependency/server service, does not modify or close parent tickets, and does not claim the demo-first gate or FTB-012 complete.
 
 ---
 
@@ -1984,17 +2059,17 @@ Use the existing shared color field/picker and Tailwind choices from FTB-051 whe
 
 ## FTB-057 — Complete theme palette references and native picker follow-up
 
-**Status:** in-progress. **GitHub:** [#57](https://github.com/Azab-Inc/filament-theme-builder/issues/57).
+**Status:** done (2026-11-25). **GitHub:** [#57](https://github.com/Azab-Inc/filament-theme-builder/issues/57).
 
-Implemented in the existing uncommitted worktree; documentation commit `a1c9bad` is not the implementation commit. Follow-up to closed [FTB-051](#ftb-051).
+Implemented in commit `59ee76a`; follow-up to closed [FTB-051](#ftb-051). Existing unrelated dirty work was preserved.
 
-- [ ] Preserve built-in palette and custom-token choices with friendly labels, mode-aware swatches, and searchable Theme popover.
-- [ ] Preserve explicit native-picker replacement of inherited, reference, and alpha values without changes on open or cancel.
-- [ ] Verify bounded references, preview, export, light/dark isolation, reset and history; preserve existing native Filament variables.
-- [ ] Verify MCP capability inventory and the actual AI-client path using shared authorization and validation; document any gap.
-- [ ] Review and commit the relevant implementation without including unrelated work, then record commit and verification evidence.
+- [x] Preserve built-in palette and custom-token choices with friendly labels, mode-aware swatches, and searchable Theme popover.
+- [x] Preserve explicit native-picker replacement of inherited, reference, and alpha values without changes on open or cancel.
+- [x] Verify bounded references, preview, export, light/dark isolation, reset and history; preserve existing native Filament variables.
+- [x] Verify MCP capability inventory and the actual AI-client path using shared authorization and validation; document the unrelated outstanding gap.
+- [x] Review and commit the relevant implementation without including unrelated work, then record commit and verification evidence.
 
-Focused unit tests: 31 passed; four Compose Playwright journeys passed; type-check and build passed. Full units: 637 passed and one CSS-entrypoint failure. PHP bridge: 6 passed and 2 failed. See [verification](./docs/superpowers/verification/2026-10-28-color-reference-picker.md). Actual AI-client MCP use was not verified. Resolve or establish applicability of outstanding checks before closure; see [FTB-060](#ftb-060).
+Completion evidence: focused builder units passed (18 tests / 6 files), `npm run type-check` passed, alternate-output production build passed, and canonical Compose Playwright `e2e/color-reference-picker.spec.ts` passed (4 tests). The actual stdio MCP journey `e2e/ftb-058-token-operation-mcp.spec.ts` executed named-color creation, reference application, and export before timing out in the later shared stale-operation flow; this is outside FTB-057's palette/native-picker behavior. The capability inventory PHP check remains blocked by an unrelated assertion that rejects the already-documented MCP row for FTB-085. GitHub comment: [verification update](https://github.com/Azab-Inc/filament-theme-builder/issues/57#issuecomment-7170843381). Historical detailed evidence: [color reference picker verification](./docs/superpowers/verification/2026-10-28-color-reference-picker.md). No new dependency or code change was required; commit `59ee76a` contains the relevant implementation.
 
 ---
 
@@ -2020,17 +2095,17 @@ Completion evidence: [FTB-058 verification](./docs/verification/ftb-058/README.m
 
 ## FTB-059 — Verify sidebar icon selection and label-color inheritance
 
-**Status:** in-progress. **GitHub:** [#59](https://github.com/Azab-Inc/filament-theme-builder/issues/59).
+**Status:** done (2026-11-25). **GitHub:** [#59](https://github.com/Azab-Inc/filament-theme-builder/issues/59).
 
-Sidebar behavior was implemented in commit `bd39243`; verification ran against the larger dirty worktree, so the committed slice still needs integrated verification before closure. Related to FTB-007, FTB-008 and FTB-056. The requested sidebar-specific icon inheritance is an explicit scoped exception; do not apply it generally to other icon families.
+Sidebar behavior was implemented in commit `bd39243` and completed with integrated verification on the larger dirty worktree. The follow-up correction limits inheritance to `color`; the requested sidebar-specific icon inheritance remains an explicit scoped exception and does not apply to other icon families. Related to FTB-007, FTB-008 and FTB-056.
 
-- [ ] Inspector can select sidebar icons independently.
-- [ ] Sidebar label color applies to its icon by default, while an explicit icon color remains independent.
-- [ ] Verify default, hover, focus and selected states; independent light/dark values and inheritance; reset, undo/redo, preview and CSS export including icon override precedence.
-- [ ] Verify no unintended non-color properties are applied to icons and no other icon families are recolored.
-- [ ] Verify the integrated committed change, including actual browser interaction and applicable MCP discovery, authorization, validation and AI-client evidence; reconcile any outstanding work before closure.
+- [x] Inspector can select sidebar icons independently.
+- [x] Sidebar label color applies to its icon by default, while an explicit icon color remains independent.
+- [x] Verify default, hover, focus and selected states; independent light/dark values and inheritance; reset, undo/redo, preview and CSS export including icon override precedence.
+- [x] Verify no unintended non-color properties are applied to icons and no other icon families are recolored.
+- [x] Verify the integrated committed change, including actual browser interaction and applicable MCP discovery, authorization, validation and AI-client evidence; reconcile any outstanding work before closure.
 
-Focused tests and Compose browser checks were reported passing, as were type-check and build; a full unit run timed out with pre-existing failures. Evidence was gathered against the dirty integrated worktree rather than the isolated commit. [FTB-060](#ftb-060) tracks suite recovery.
+Completion evidence on the integrated dirty worktree: focused units `raw-overrides`, `raw-inspector-state`, and `mode-isolation-domain` passed (63 tests); `npm run type-check` passed; alternate-output production build passed; `git diff --check` passed; sidebar Inspector Compose browser coverage passed (sidebar icon selection/inheritance, state colors, light/dark isolation, undo/redo, reset and CSS download); raw border integration passed (5 tests); applicable stdio MCP raw Inspector coverage passed through FTB-085 (1 test). The implementation was tightened so only `color` expands from sidebar labels to icons; non-color properties remain label-only. Existing unrelated dirty worktree changes were preserved and no commit was made.
 
 ---
 

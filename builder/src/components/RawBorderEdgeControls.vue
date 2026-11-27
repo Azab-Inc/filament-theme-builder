@@ -23,7 +23,7 @@ function reset(): void { emit('reset-properties', selected().map((item) => raw(i
 </script>
 
 <template>
-  <fieldset class="grid gap-2 rounded-lg border border-zinc-200 p-4" :disabled="!selector" aria-label="Raw border edges">
+  <fieldset class="editor-control-surface gap-2" :disabled="!selector" aria-label="Raw border edges">
     <legend>Raw border edges</legend>
     <div role="group" aria-label="Raw border side" class="flex flex-wrap gap-2">
       <button v-for="candidate in ['all', ...sides]" :key="candidate" type="button" :aria-pressed="side === candidate" @click="side = candidate as typeof side">{{ candidate === 'all' ? 'All sides' : candidate }}</button>

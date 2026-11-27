@@ -12,6 +12,7 @@ import { ICON_PACK_NAMES, RESOURCE_ICON_KEYS, ICON_PACK_PRESETS } from '@/regist
 import { computed } from 'vue'
 import { selectorForInspectorState, type InspectorVisualState } from '@/utils/raw-inspector-state'
 import { isColorFieldValueValid } from '@/utils/color-field-validation'
+import { validateUniqueElementId } from '@/utils/unique-element-id-validation'
 
 export function useBuilderActions(state: BuilderState) {
   const iconOptions = ['heroicon-o-cube', 'heroicon-o-star', 'heroicon-o-bolt', 'heroicon-o-heart', 'heroicon-o-check-circle', 'heroicon-s-cube', 'heroicon-s-star', 'heroicon-s-bolt', 'heroicon-s-heart', 'heroicon-s-check-circle', 'heroicon-m-cube', 'heroicon-m-star', 'heroicon-m-bolt', 'heroicon-m-heart', 'heroicon-m-check-circle']
@@ -45,6 +46,23 @@ export function useBuilderActions(state: BuilderState) {
   }
   function setRawSelector(change: RawSelectorChange): void { const next = (change.event.target as HTMLInputElement).value.trim(); const validation = validateRawSelector(next); state.rawSelectorError.value = validation.valid ? undefined : validation.error; if (validation.valid) state.rawSelector.value = next }
   function setRawInspectorState(mode: InspectorVisualState): void { const next = selectorForInspectorState(state.rawSelector.value, mode); if (next && validateRawSelector(next).valid) { state.rawSelectorError.value = undefined; state.rawSelector.value = next } }
+  function toggleUniqueElementId(enabled: boolean): void {
+    const evidence = state.inspectorEvidence.value
+    if (!evidence?.targetSelector || evidence.matchIndex === undefined) return
+    state.uniqueElementIdError.value = undefined
+    if (enabled) state.rawSelector.value = `#${state.theme.enableUniqueElementId(evidence.targetSelector, evidence.matchIndex)}`
+    else { state.theme.disableUniqueElementId(evidence.targetSelector, evidence.matchIndex); state.rawSelector.value = evidence.targetSelector }
+  }
+  function setUniqueElementId(event: Event): void {
+    const evidence = state.inspectorEvidence.value
+    if (!evidence?.targetSelector || evidence.matchIndex === undefined) return
+    const id = (event.target as HTMLInputElement).value.trim()
+    const validationError = validateUniqueElementId(id)
+    if (validationError) { state.uniqueElementIdError.value = validationError; return }
+    const error = state.theme.renameUniqueElementId(evidence.targetSelector, evidence.matchIndex, id)
+    state.uniqueElementIdError.value = error ?? undefined
+    if (!error) state.rawSelector.value = `#${id}`
+  }
   function sameOverrideKey(override: ThemeOverride, scope: ThemeScope): boolean { return override.targetId === productNameTarget.targetId && override.controlId === productNameTarget.controlId && override.scope === scope && (scope === 'global' || override.componentId === productNameContext.componentId) && (scope === 'global' || scope === 'component' || override.variantId === productNameContext.variantId) && (scope !== 'state' || override.stateId === productNameContext.stateId) }
-  return { chooseRawTarget, iconOptions, iconPreviews, productNameRows, applyBrandingChange, setBrandTypography, setCustomBrandTypography, setIconPack, setIconOverride, setProductNameValue, resetProductNameValue, rawPropertyValue, setRawProperty, setRawProperties, resetRawProperty, resetRawProperties, resetRawOverride, setRawSelector, setRawInspectorState, iconPackNames: ICON_PACK_NAMES, resourceIconKeys: RESOURCE_ICON_KEYS }
+  return { chooseRawTarget, iconOptions, iconPreviews, productNameRows, applyBrandingChange, setBrandTypography, setCustomBrandTypography, setIconPack, setIconOverride, setProductNameValue, resetProductNameValue, rawPropertyValue, setRawProperty, setRawProperties, resetRawProperty, resetRawProperties, resetRawOverride, setRawSelector, setRawInspectorState, toggleUniqueElementId, setUniqueElementId, iconPackNames: ICON_PACK_NAMES, resourceIconKeys: RESOURCE_ICON_KEYS }
 }

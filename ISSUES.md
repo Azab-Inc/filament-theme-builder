@@ -4,12 +4,14 @@
 
 **Deployed preview isolation (2026-11-19):** [Required acceptance contract](./TICKETS.md#deployed-preview-isolation), mirrored in [#89](https://github.com/Azab-Inc/filament-theme-builder/issues/89) and all 46 open `visual config` issue bodies (including #18, #55 and #90). Require independent visitor/tab settings, request/worker isolation, context propagation through navigation/Livewire, option-specific lifecycle verification, and test-first production Compose concurrent-browser plus applicable MCP evidence. Project #30 uses the linked issue bodies; statuses and phase gates are unchanged.
 
-**Panel configuration phase classification:** The non-visual children of [#89](https://github.com/Azab-Inc/filament-theme-builder/issues/89) are deferred to Composer package Phase 2, marked `composer package phase` and titled `(Composer package phase)`. The exact ticket list and Phase 2 gate are in [TICKETS.md](./TICKETS.md#ftb-087). Visual children retain their `visual config` label and existing phase; #89 spans both phases.
+**Phase classification:** Issues marked `composer package phase` remain Phase 2; all other issues, including closed issues, are labelled `Phase 1`. The non-visual children of [#89](https://github.com/Azab-Inc/filament-theme-builder/issues/89) deferred to Phase 2 also carry the `(Composer package phase)` title suffix. The exact ticket list and Phase 2 gate are in [TICKETS.md](./TICKETS.md#ftb-087). Visual children retain `visual config`; #89 is labelled `Phase 1` for its online-builder work but spans both phases. Phase 1 features also need porting to the Composer package in Phase 2.
 
-Local issue index added with user permission on 2026-11-18. This index records the border-side request; the pre-existing backlog remains in [TICKETS.md](./TICKETS.md) and GitHub.
+Local issue index added with user permission on 2026-11-18. This index records local feature requests, including border-side controls and unique Inspector element targeting; the pre-existing backlog remains in [TICKETS.md](./TICKETS.md) and GitHub.
 
 | Ticket | GitHub issue | State / Project #30 status | Scope | Dependencies |
 | --- | --- | --- | --- | --- |
+| [FTB-182](./TICKETS.md#ftb-182) | [#184](https://github.com/Azab-Inc/filament-theme-builder/issues/184) | Phase 1 / Open / Testing | Implementation present: generated/editable unique CSS IDs on repeated elements; shared baseline, preview binding, persistence, history and CSS/JSON export verified. Full builder unit gate remains blocked by an existing App Inspector timeout; standard dist build remains blocked by existing permissions. | FTB-008 raw Inspector; coordinate FTB-022, FTB-004 and FTB-058 |
+| [FTB-181](./TICKETS.md#ftb-181) | [#183](https://github.com/Azab-Inc/filament-theme-builder/issues/183) | Closed / Done | Density/spacing atomic update and reset; failing-first regressions, 6 focused units and Compose browser pass; full units/type-check pass, production bundle passes alternate output (existing dist permission blocker) | Existing FTB-005 preset contract; demo gate satisfied; uncommitted |
 | [FTB-066](./TICKETS.md#ftb-066) | [#68](https://github.com/Azab-Inc/filament-theme-builder/issues/68) | Done | Driver.js onboarding umbrella; integrated verification in TICKETS.md | FTB-067/068/069 complete |
 | [FTB-067](./TICKETS.md#ftb-067) | [#69](https://github.com/Azab-Inc/filament-theme-builder/issues/69) | Done | Tour engine, bridge readiness, isolated completion | None |
 | [FTB-068](./TICKETS.md#ftb-068) | [#70](https://github.com/Azab-Inc/filament-theme-builder/issues/70) | Done | Seven steps and Tools replay | FTB-067 complete |
@@ -23,6 +25,7 @@ Local issue index added with user permission on 2026-11-18. This index records t
 | [FTB-084](./TICKETS.md#ftb-084) | [#88](https://github.com/Azab-Inc/filament-theme-builder/issues/88) | Open / Testing | Border-side controls umbrella | Both child slices; full-unit gate |
 | [FTB-085](./TICKETS.md#ftb-085) | [#87](https://github.com/Azab-Inc/filament-theme-builder/issues/87) | Open / Testing | Semantic border-side controls, preview/export and MCP | Implementation present; full-unit gate and acceptance sign-off pending |
 | [FTB-086](./TICKETS.md#ftb-086) | [#86](https://github.com/Azab-Inc/filament-theme-builder/issues/86) | Open / Testing | Raw Inspector edge properties, preview/export and MCP | Implementation present; FTB-085 and shared final gate |
+| [FTB-054](./TICKETS.md#ftb-054) | [#54](https://github.com/Azab-Inc/filament-theme-builder/issues/54) | Closed / Done | Hierarchical padding controls, sparse inheritance, preview/export, and MCP capabilities | Uncommitted integrated worktree; unrelated App suite timeouts and standard dist permissions recorded in TICKETS.md |
 
 ## Confirmed gap
 

@@ -11,6 +11,11 @@ use App\Mcp\Tools\LocalThemeImportStatus;
 use App\Mcp\Tools\LocalThemeList;
 use App\Mcp\Tools\LocalThemeOperationStatus;
 use App\Mcp\Tools\LocalThemePair;
+use App\Mcp\Tools\LocalPaddingDiscover;
+use App\Mcp\Tools\LocalPaddingPreview;
+use App\Mcp\Tools\LocalPaddingSet;
+use App\Mcp\Tools\LocalPaddingReset;
+use App\Mcp\Tools\LocalPaddingRead;
 use App\Mcp\Tools\LocalThemeTokenOperation;
 use Laravel\Mcp\Server;
 
@@ -29,5 +34,10 @@ final class LocalThemeServer extends Server
         LocalThemeOperationStatus::class,
         LocalThemeDisconnect::class,
         LocalThemeTokenOperation::class,
+        LocalPaddingDiscover::class,
+        LocalPaddingPreview::class,
+        LocalPaddingSet::class,
+        LocalPaddingReset::class,
+        LocalPaddingRead::class,
     ];
 }

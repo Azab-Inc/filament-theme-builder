@@ -17,7 +17,7 @@ const assetFields = computed(() => [
   <section v-show="active" id="editor-panel-branding" class="branding grid gap-4" role="tabpanel" tabindex="0" aria-labelledby="editor-tab-branding" data-editor-section="branding">
     <h2 id="branding-heading">Panel branding and runtime</h2>
     <p>CSS-previewable values apply immediately. PanelProvider values refresh the iframe without losing this draft.</p>
-    <fieldset class="grid gap-4 rounded-lg border border-zinc-200 p-4">
+    <fieldset class="editor-control-surface gap-4">
       <legend>PanelBrandingSettings</legend>
       <label for="brand-app-name">App name</label>
       <input id="brand-app-name" name="brand-app-name" autocomplete="off" aria-label="App name" :value="branding.appName" @input="$emit('changeBranding', { setting: 'appName', value: ($event.target as HTMLInputElement).value })" />

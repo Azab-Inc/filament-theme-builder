@@ -33,6 +33,10 @@ Do not require separate host commands to start either application when using one
 
 Use test-driven development for every feature and bug fix: write the test first, run it and verify that it fails for the expected reason, then implement the smallest change that makes it pass. For user-visible behavior, create and run the Playwright CLI test before implementation and use it to verify the completed feature or fix. A feature is not done and a bug is not fixed until its test passes.
 
+### Version control
+
+Create commits automatically once the approved implementation and required verification are settled. Never push commits or modify remote branches unless the user explicitly requests it.
+
 ## Theme mode isolation
 
 Treat light and dark mode values as independent theme-context values with inheritance. When a user changes a value in the light theme, the dark theme may inherit that value until the user explicitly changes the same value in dark mode. At that point, persist and render separate light and dark values. Verify this behavior for semantic controls, Inspector/raw overrides, state variants, exports, reset, and undo/redo; never overwrite the other mode when editing the active mode.

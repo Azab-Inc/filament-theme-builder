@@ -27,13 +27,13 @@ export type PairingStatusDto = {
 export type OperationResultStatusDto = {
   version: 1
   operationId: string
-  kind: 'list' | 'export' | 'import'
+  kind: 'list' | 'export' | 'import' | 'padding-read'
   status: 'pending' | 'approved' | 'rejected' | 'expired' | 'disconnected'
   recordId?: string
   errorCategory?: string
 }
 
-export type OperationNoticeDto = { operationId: string; kind: 'list' | 'export' | 'import'; status: OperationResultStatusDto['status']; themeId?: string }
+export type OperationNoticeDto = { operationId: string; kind: 'list' | 'export' | 'import' | 'padding-read'; status: OperationResultStatusDto['status']; themeId?: string }
 export type RelayPayloadDto = { version: 1; operationId: string; payload: string; filename: string; proposedName: string; digest: string; byteLength: number }
 export type ImportPreviewDto = { sourceVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8; targetVersion: 8; migrationPath: number[]; displayName: string; summary: string[]; payloadDigest: string; candidateDigest?: string; byteLength: number }
 export type ApplyGrantDto = { version: 1; status: 'pending'; grantId: string; grantExpiresAt: number }

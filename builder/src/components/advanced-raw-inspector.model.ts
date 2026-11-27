@@ -11,4 +11,8 @@ export type AdvancedRawInspectorProps = {
   activeThemeId?: string
   fontChoices?: ReadonlyArray<FoundationFontChoiceOption>
   state?: import('@/utils/raw-inspector-state').InspectorVisualState
+  uniqueElementId?: string
+  uniqueElementIdError?: string
+  uniqueElementIdAvailable?: boolean
+  uniqueElementIdEnabled?: boolean
 }

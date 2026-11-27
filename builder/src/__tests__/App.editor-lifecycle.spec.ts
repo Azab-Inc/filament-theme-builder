@@ -23,7 +23,7 @@ describe('App editor lifecycle', () => {
 
     await wrapper.get('[aria-label="Reset spacing 1.5"]').trigger('click')
     expect(wrapper.get('#spacing-1-5').element).toHaveProperty('value', '6')
-    await wrapper.get('[aria-label="Compact density"]').trigger('click')
+    await wrapper.get('#density').setValue('compact')
     expect(wrapper.get('#density').element).toHaveProperty('value', 'compact')
 
     wrapper.unmount()
