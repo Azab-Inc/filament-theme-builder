@@ -46,7 +46,7 @@ export function useBuilderState(previewUrl: string) {
   const rawSelectorProposal = computed(() => inspectorEvidence.value
     ? proposeRawSelector(inspectorEvidence.value, inspectorRegistry)
     : { selector: null, quality: 'unavailable' as const })
-  const inspector = useInspector({ iframe, previewUrl, inspectorRegistry, selectedEditorSection, rawSelector, rawSelectorError, rawSelectorProposal, selectedInspectorEvidence: inspectorEvidence })
+  const inspector = useInspector({ iframe, previewUrl, inspectorRegistry, selectedEditorSection, rawSelector, rawSelectorError, rawSelectorProposal, uniqueElementIdError, selectedInspectorEvidence: inspectorEvidence })
   const preview = usePreviewTheme({ theme, activeMode, previewUrl, iframe, onPreviewLoad: inspector.onPreviewLoad })
   watch(rawSelectorProposal, (proposal) => {
     if (!rawSelector.value || rawSelectorError.value) rawSelector.value = proposal.selector ?? ''

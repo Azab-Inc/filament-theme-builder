@@ -227,7 +227,8 @@
         };
         const isSafeRawOverride = (override, tokens) => isRecord(override)
              && Object.keys(override).every((key) => ['selector', 'properties', 'darkProperties'].includes(key))
-            && isSafeRawSelector(override.selector)
+             && isSafeRawSelector(override.selector)
+             && isRecord(override.properties)
              && (override.darkProperties === undefined || isRecord(override.darkProperties))
              && (Object.keys(override.properties).length > 0 || Object.keys(override.darkProperties ?? {}).length > 0)
               && [...Object.entries(override.properties), ...Object.entries(override.darkProperties ?? {})].every(([property, value]) => rawVisualProperties.includes(property) && isSafeRawPropertyValue(property, value, tokens));
@@ -304,7 +305,7 @@
              const foundationValid = isFoundationRecord(message.theme.foundations);
              const projectionValid = foundationValid && isAcceptedProjection(message.projection, message.theme.foundations);
                 const assignedIds = new Set((message.theme.uniqueElementIds ?? []).map((assignment) => `#${assignment.id}`));
-                const accepted = hasSupportedKeys && paddingValid && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && foundationValid && Array.isArray(message.theme.overrides) && message.theme.overrides.every((override) => isSafeOverride(override, message.theme.foundations.userTokens)) && message.theme.overrides.every((override) => semanticOverrideMappings.has(`${override.targetId}\u0000${override.controlId}`)) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && Array.isArray(message.theme.rawOverrides) && message.theme.rawOverrides.every((override) => isSafeRawOverride(override, message.theme.foundations.userTokens)) && message.theme.rawOverrides.every((override) => !override.selector.startsWith('#') || assignedIds.has(`#${uniqueSelectorId(override.selector)}`)) && new Set(message.theme.rawOverrides.map((override) => override.selector)).size === message.theme.rawOverrides.length && message.theme.customCss === '' && (message.theme.branding === undefined || isSafeBranding(message.theme.branding)) && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && projectionValid;
+                 const accepted = hasSupportedKeys && paddingValid && exactKeys(message.theme.colors, ['primary']) && /^[#\da-f]{7,9}$/i.test(message.theme.colors.primary) && message.theme.colors.primary === message.theme.foundations?.palettes?.primary?.base && foundationValid && Array.isArray(message.theme.overrides) && message.theme.overrides.every((override) => isSafeOverride(override, message.theme.foundations.userTokens)) && message.theme.overrides.every((override) => semanticOverrideMappings.has(`${override.targetId}\u0000${override.controlId}`)) && new Set(message.theme.overrides.map((override) => [override.targetId, override.controlId, override.scope, override.componentId ?? '', override.variantId ?? '', override.stateId ?? ''].join('\u0000'))).size === message.theme.overrides.length && Array.isArray(message.theme.rawOverrides) && message.theme.rawOverrides.every((override) => isSafeRawOverride(override, message.theme.foundations.userTokens)) && message.theme.rawOverrides.every((override) => !override.selector.startsWith('#') || assignedIds.has(`#${uniqueSelectorId(override.selector)}`)) && new Set(message.theme.rawOverrides.map((override) => override.selector)).size === message.theme.rawOverrides.length && message.theme.customCss === '' && (message.theme.branding === undefined || isSafeBranding(message.theme.branding)) && (message.theme.icons === undefined || isSafeIconConfiguration(message.theme.icons)) && projectionValid && !uniqueAssignmentCollision(message.theme.uniqueElementIds ?? []);
              return accepted && (message.theme.modeLinks === undefined || validModeLinks(message.theme.modeLinks, message.theme));
         };
          const projectionMatchesCanonicalFoundation = (projection, foundations) => {
@@ -497,10 +498,22 @@
             style.id = styleId;
             style.textContent = rules.join('\n');
             document.head.append(style);
-            window.dispatchEvent(new CustomEvent('ftb:theme:updated', { detail: message.theme }));
-            return true;
-        };
-        const INSPECTOR_PROTOCOL_VERSION = 1;
+             window.dispatchEvent(new CustomEvent('ftb:theme:updated', { detail: message.theme }));
+             return true;
+         };
+         const uniqueAssignmentCollision = (assignments) => assignments.some((assignment) => {
+             if (!isSafeUniqueAssignments(assignments)) return false;
+             const target = document.querySelectorAll(assignment.sourceSelector)[assignment.matchIndex];
+             const existing = document.getElementById(assignment.id);
+             return target !== undefined && ((existing && existing !== target && existing.getAttribute('data-ftb-unique-id') !== 'true') || hasApplicationOwnedIdCollision(assignment.id, target) || (target.id && target.id !== assignment.id && target.getAttribute('data-ftb-unique-id') !== 'true') || (target.id === assignment.id && target.getAttribute('data-ftb-unique-id') !== 'true'));
+         });
+         const themeRejectionReason = (message) => {
+             if (!isRecord(message) || message.type !== 'ftb:theme:update') return null;
+             if (isAcceptedTheme(message)) return null;
+             if (isRecord(message.theme) && isSafeUniqueAssignments(message.theme.uniqueElementIds ?? []) && uniqueAssignmentCollision(message.theme.uniqueElementIds ?? [])) return 'Unique element ID collision with an application-owned element.';
+             return null;
+         };
+         const INSPECTOR_PROTOCOL_VERSION = 1;
         const inspectorStyleId = 'ftb-inspector-style';
         let inspectorEnabled = false;
         let inspectorParentOrigin = null;
@@ -509,11 +522,14 @@
         let scopedTargets = [];
         const clearScope = () => { scopedTargets.forEach((target) => target.classList.remove('ftb-inspector-selected')); scopedTargets = []; };
 
-        const postInspectorEvent = (message) => {
-            if (inspectorParentOrigin && window.parent !== window) {
-                window.parent.postMessage({ protocolVersion: INSPECTOR_PROTOCOL_VERSION, ...message }, inspectorParentOrigin);
-            }
-        };
+         const postInspectorEvent = (message) => {
+             if (inspectorParentOrigin && window.parent !== window) {
+                 window.parent.postMessage({ protocolVersion: INSPECTOR_PROTOCOL_VERSION, ...message }, inspectorParentOrigin);
+             }
+         };
+         const postThemeRejection = (reason) => {
+             if (inspectorParentOrigin && window.parent !== window) window.parent.postMessage({ type: 'ftb:theme:rejected', protocolVersion: INSPECTOR_PROTOCOL_VERSION, reason }, inspectorParentOrigin);
+         };
         const inspectorTarget = (node) => {
             if (!(node instanceof Element)) return null;
             if (node.closest('script, style, link, meta, head, #ftb-preview-bridge, #ftb-inspector-style')) return null;
@@ -692,7 +708,12 @@
                 if (message.type === 'ftb:inspector:enable') enableInspector(event.origin);
                 else if (message.type === 'ftb:inspector:disable' && inspectorEnabled) disableInspector();
             }
-            if (updateTheme(event.data)) window.dispatchEvent(new CustomEvent('ftb:preview-message-accepted'));
+             const rejectionReason = themeRejectionReason(event.data);
+             if (rejectionReason) {
+                 postThemeRejection(rejectionReason);
+                 return;
+             }
+             if (updateTheme(event.data)) window.dispatchEvent(new CustomEvent('ftb:preview-message-accepted'));
         });
     })();
 </script>

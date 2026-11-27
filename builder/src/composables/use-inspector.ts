@@ -18,6 +18,7 @@ export function useInspector({
   rawSelector,
   rawSelectorError,
   rawSelectorProposal,
+  uniqueElementIdError,
   selectedInspectorEvidence = ref<InspectorTargetEvidence | null>(null),
 }: UseInspectorOptions) {
   const inspectorEnabled = ref(false)
@@ -33,6 +34,7 @@ export function useInspector({
     rawSelector,
     rawSelectorError,
     rawSelectorProposal,
+    uniqueElementIdError,
   })
 
   function postInspectorCommand(enabled = inspectorEnabled.value): void {

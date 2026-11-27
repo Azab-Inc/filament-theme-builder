@@ -22,7 +22,7 @@ const migratedRuntimeExports = {
   foundationProvenance: ['markExplicitPath', 'clearExplicitPath', 'isExplicitPath', 'isModeInherited', 'isPaletteExplicit', 'isPaletteModeExplicit', 'paletteOverridePath', 'resolveModeValue'],
   foundationValidation: ['validateFoundationState', 'validateFoundationMapping', 'isEditableFoundationPath', 'validateFoundationColor'],
   iconExport: ['exportIconConfigurationPhp'],
-  inspectorProtocol: ['INSPECTOR_PROTOCOL_VERSION', 'isInspectorCommand', 'isInspectorEvent', 'isInspectorTargetEvidence', 'resolveInspectorTarget'],
+  inspectorProtocol: ['INSPECTOR_PROTOCOL_VERSION', 'isInspectorCommand', 'isInspectorEvent', 'isInspectorTargetEvidence', 'isPreviewThemeRejection', 'resolveInspectorTarget'],
   paletteGenerator: ['generatePalette', 'applyPaletteOverrides', 'resetPaletteShade'],
   panelBrandingExport: ['exportPanelBrandingJson', 'exportPanelProviderBrandingPhp'],
   panelBrandingValidation: ['createDefaultPanelBrandingSettings', 'validatePanelBrandingSettings', 'classifyPanelBrandingSetting'],

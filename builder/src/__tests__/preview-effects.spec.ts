@@ -60,6 +60,7 @@ describe('preview effect composables', () => {
     const selectedEditorSection = ref<EditorSection>('foundations')
     const rawSelector = ref('')
     const rawSelectorError = ref<string | undefined>()
+    const uniqueElementIdError = ref<string | undefined>()
     const rawSelectorProposal = computed(() => ({ selector: '.fi-btn', quality: 'exact' as const }))
     const wrapper = mount({
       setup() {
@@ -71,6 +72,7 @@ describe('preview effect composables', () => {
           rawSelector,
           rawSelectorError,
           rawSelectorProposal,
+          uniqueElementIdError,
         })
         return inspector
       },

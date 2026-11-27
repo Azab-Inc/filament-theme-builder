@@ -4,6 +4,7 @@ import type { InspectorCommand } from '@/models/inspector-command.model'
 import type { InspectorEvent } from '@/models/inspector-event.model'
 import type { InspectorResolution } from '@/models/inspector-resolution.model'
 import type { InspectorTargetEvidence } from '@/models/inspector-target-evidence.model'
+import type { PreviewThemeRejection } from '@/models/preview-theme-rejection.model'
 import { findEditableSameTargetMatch, findSameTargetRegistryMatches, isEditableInspectorTarget } from '@/utils/inspector-target-matching'
 import { isInspectorTargetScope } from '@/utils/inspector-target-scope-validation'
 import { validateRawSelector } from '@/utils/raw-override-validation'
@@ -12,6 +13,7 @@ export type { InspectorCommand } from '@/models/inspector-command.model'
 export type { InspectorEvent } from '@/models/inspector-event.model'
 export type { InspectorResolution } from '@/models/inspector-resolution.model'
 export type { InspectorTargetEvidence } from '@/models/inspector-target-evidence.model'
+export type { PreviewThemeRejection } from '@/models/preview-theme-rejection.model'
 
 export const INSPECTOR_PROTOCOL_VERSION = 1 as const
 
@@ -34,6 +36,16 @@ export function isInspectorEvent(value: unknown): value is InspectorEvent {
   if (value.type === 'ftb:preview:ready' || value.type === 'ftb:inspector:ready' || value.type === 'ftb:inspector:clear') return Object.keys(value).length === 2
   if (value.type !== 'ftb:inspector:hover' && value.type !== 'ftb:inspector:select') return false
   return Object.keys(value).length === 3 && isInspectorTargetEvidence(value.target)
+}
+
+export function isPreviewThemeRejection(value: unknown): value is PreviewThemeRejection {
+  return isRecord(value)
+    && value.type === 'ftb:theme:rejected'
+    && value.protocolVersion === INSPECTOR_PROTOCOL_VERSION
+    && Object.keys(value).length === 3
+    && typeof value.reason === 'string'
+    && value.reason.length > 0
+    && value.reason.length <= 200
 }
 
 export function isInspectorTargetEvidence(value: unknown): value is InspectorTargetEvidence {

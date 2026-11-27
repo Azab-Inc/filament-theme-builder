@@ -15,4 +15,5 @@ export type InspectorMessageHandlerOptions = {
   rawSelector: Ref<string>
   rawSelectorError: Ref<string | undefined>
   rawSelectorProposal: ComputedRef<InspectorRawSelectorProposal>
+  uniqueElementIdError: Ref<string | undefined>
 }

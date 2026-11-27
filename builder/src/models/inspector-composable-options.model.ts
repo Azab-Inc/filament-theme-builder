@@ -13,5 +13,6 @@ export type UseInspectorOptions = {
   rawSelector: Ref<string>
   rawSelectorError: Ref<string | undefined>
   rawSelectorProposal: ComputedRef<InspectorRawSelectorProposal>
+  uniqueElementIdError: Ref<string | undefined>
   selectedInspectorEvidence?: Ref<InspectorTargetEvidence | null>
 }

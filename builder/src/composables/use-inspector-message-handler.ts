@@ -1,5 +1,5 @@
 import type { InspectorMessageHandlerOptions } from '@/models/inspector-message-handler-options.model'
-import { INSPECTOR_PROTOCOL_VERSION, isInspectorEvent, type InspectorCommand } from '@/utils/inspector-protocol'
+import { INSPECTOR_PROTOCOL_VERSION, isInspectorEvent, isPreviewThemeRejection, type InspectorCommand } from '@/utils/inspector-protocol'
 import { resolveInspectorTarget } from '@/registry/theme-registry'
 
 export function useInspectorMessageHandler({
@@ -11,13 +11,20 @@ export function useInspectorMessageHandler({
   rawSelector,
   rawSelectorError,
   rawSelectorProposal,
+  uniqueElementIdError,
 }: InspectorMessageHandlerOptions) {
   return function handleInspectorMessageForTarget(
     event: MessageEvent,
     target: Window | null,
     targetOrigin: string,
   ): void {
-    if (!target || event.source !== target || event.origin !== targetOrigin || !isInspectorEvent(event.data)) return
+    if (!target || event.source !== target || event.origin !== targetOrigin) return
+    if (isPreviewThemeRejection(event.data)) {
+      if (event.data.reason === 'Theme update rejected.' && uniqueElementIdError.value) return
+      uniqueElementIdError.value = event.data.reason
+      return
+    }
+    if (!isInspectorEvent(event.data)) return
     const message = event.data
     if (message.type === 'ftb:inspector:ready') {
       if (inspectorEnabled.value) {
