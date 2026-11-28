@@ -1,11 +1,12 @@
-import type { Density, DensityPreset, FoundationState, PaletteName, PaletteShade, ThemeMode } from '@/models/foundations.model'
-import { createDefaultFoundationState, densityPreset } from '@/utils/foundation-defaults'
+import type { Density, FoundationState, PaletteName, PaletteShade, ThemeMode } from '@/models/foundations.model'
+import { createDefaultFoundationState } from '@/utils/foundation-defaults'
 import { clearExplicitPath, markExplicitPath } from '@/utils/foundation-provenance'
 import { isEditableFoundationPath, validateFoundationState } from '@/utils/foundation-validation'
 import { cloneTheme, getPath, setPath } from '@/utils/theme-store-helpers'
 import { isDerivedShadePath, rebuildPalette, syncPalette } from '@/utils/theme-store-palettes'
 import type { ThemeStoreContext } from '@/models/theme-store.model'
 import { resetModeLinkTarget } from '@/utils/reset-mode-link-target'
+import { applyDensityPreset } from '@/utils/apply-density-preset'
 
 export function useThemeFoundationActions({ theme, commit = (candidate) => { theme.value = candidate } }: ThemeStoreContext) {
   function setPrimaryColor(color: string, mode: ThemeMode = 'light'): void {
@@ -33,7 +34,7 @@ export function useThemeFoundationActions({ theme, commit = (candidate) => { the
     if (!isEditableFoundationPath(path) && !paletteOverride && !paletteBase) return
     const candidate = cloneTheme(theme.value)
     if (path === 'density') {
-      applyDensityPreset(candidate.foundations, 'default')
+      candidate.foundations = applyDensityPreset(candidate.foundations, 'default')
       clearExplicitPath(candidate.foundations, 'density')
       if (validateFoundationState(candidate.foundations).valid) commit(candidate)
       return
@@ -72,17 +73,10 @@ export function useThemeFoundationActions({ theme, commit = (candidate) => { the
   function setDensity(value: Density): void {
     if (!['compact', 'default', 'spacious'].includes(value)) return
     const candidate = cloneTheme(theme.value)
-    applyDensityPreset(candidate.foundations, value)
+    candidate.foundations = applyDensityPreset(candidate.foundations, value)
     markExplicitPath(candidate.foundations, 'density')
     if (validateFoundationState(candidate.foundations).valid) commit(candidate)
   }
 
   return { setPrimaryColor, setFoundation, resetFoundation, setDensity }
-}
-
-function applyDensityPreset(foundations: FoundationState, value: Density): void {
-  const preset: DensityPreset = densityPreset(value)
-  foundations.density = value
-  Object.assign(foundations.spacing, preset.spacing)
-  Object.keys(preset.spacing).forEach((key) => clearExplicitPath(foundations, `spacing.${key}`))
 }
