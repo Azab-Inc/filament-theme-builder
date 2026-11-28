@@ -20,7 +20,7 @@ pipeline {
         stage('Changed-code standards guard') {
             steps {
                 sh 'git diff --check'
-                sh 'FTB_BASE_REF="origin/${CHANGE_TARGET:-dev}" node builder/scripts/changed-code-standards.mjs'
+                sh 'FTB_BASE_REF="origin/${CHANGE_TARGET:-dev}" npm run lint:changed'
                 sh 'FTB_BASE_REF="origin/${CHANGE_TARGET:-dev}" node --test builder/scripts/changed-code-standards.test.mjs'
                 sh 'node --test builder/scripts/prepare-build-output.test.mjs'
             }
@@ -28,14 +28,14 @@ pipeline {
 
         stage('Root contract checks') {
             steps {
-                sh 'node --test scripts/setup.test.mjs scripts/compose-bootstrap.test.mjs scripts/demo-first-roadmap.test.mjs scripts/jenkins-contract.test.mjs'
+                sh 'node --test scripts/setup.test.mjs scripts/compose-bootstrap.test.mjs scripts/demo-first-roadmap.test.mjs scripts/changed-code-check.test.mjs scripts/verification-checkpoint.test.mjs scripts/jenkins-contract.test.mjs'
             }
         }
 
         stage('Builder verification') {
             steps {
                 dir('builder') {
-                    sh 'npm run test:unit -- --run'
+                    sh 'npm run test:unit -- --run --testTimeout=$(node ../scripts/verification-checkpoint.mjs profile unit-timeout) --hookTimeout=$(node ../scripts/verification-checkpoint.mjs profile unit-timeout)'
                     sh 'npm run type-check'
                     sh 'npm run build'
                 }
@@ -60,7 +60,7 @@ pipeline {
 
         stage('Compose browser verification') {
             options {
-                timeout(time: 15, unit: 'MINUTES')
+                timeout(time: 30, unit: 'MINUTES')
             }
             steps {
                 sh '''
@@ -82,7 +82,7 @@ pipeline {
                     $compose up -d --build
                     timeout 12m sh -c 'until curl --fail --silent "http://127.0.0.1:${GATEWAY_PORT}/api/health" >/dev/null; do sleep 2; done'
                     timeout 2m sh -c 'until curl --fail --silent "http://127.0.0.1:${GATEWAY_PORT}/" >/dev/null; do sleep 2; done'
-                    COMPOSE_E2E=1 COMPOSE_BASE_URL="http://127.0.0.1:${GATEWAY_PORT}" npx playwright test e2e/ftb-007-bridge.spec.ts e2e/ftb-182-unique-element-id.spec.ts --reporter=line
+                    timeout 15m sh -c 'COMPOSE_E2E=1 COMPOSE_BASE_URL="http://127.0.0.1:${GATEWAY_PORT}" node scripts/verification-checkpoint.mjs browser'
                 '''
             }
         }

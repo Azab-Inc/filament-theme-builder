@@ -1,7 +1,7 @@
-import { expect, type Page, type Response } from '@playwright/test'
+import { expect, type Locator, type Page, type Response } from '@playwright/test'
 import type { McpToolCallResult, StdioMcpClient } from './stdio-mcp-client.model'
 
-export const resultStatus = (result: McpToolCallResult): Record<string, unknown> => result.structuredContent
+export function resultStatus(result: McpToolCallResult): Record<string, unknown> { return result.structuredContent }
 
 export async function waitForOperation(client: StdioMcpClient, operationId: string, expected: string): Promise<Record<string, unknown>> {
   let result: Record<string, unknown> = {}
@@ -27,7 +27,7 @@ export async function pairLocalClient(page: Page, client: StdioMcpClient): Promi
 
 export async function confirmIntent(page: Page, client: StdioMcpClient, args: Record<string, unknown>, confirm: boolean): Promise<Record<string, unknown>> {
   const operation: Record<string, unknown> = resultStatus(await client.call('local_theme_token_operation', args))
-  const preview = page.getByRole('dialog', { name: 'Import preview' })
+  const preview: Locator = page.getByRole('dialog', { name: 'Import preview' })
   await expect(preview).toBeVisible({ timeout: 20_000 })
   if (confirm) {
     await page.getByRole('button', { name: 'Confirm import' }).click()
