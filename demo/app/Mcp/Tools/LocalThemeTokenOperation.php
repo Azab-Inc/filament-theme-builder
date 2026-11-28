@@ -40,6 +40,7 @@ final class LocalThemeTokenOperation extends LocalThemeTool
             if ($action === 'discover') {
                 return [
                     'target_kinds' => ['semantic', 'semantic-border', 'raw', 'foundation', 'palette-base', 'palette-shade', 'user-color', 'user-palette-base', 'user-palette-shade'],
+                    'foundation_targets' => [['path' => 'density', 'scope' => 'shared', 'values' => ['compact', 'default', 'spacious'], 'actions' => ['read', 'preview', 'set', 'reset']]],
                     'actions' => ['read', 'preview', 'set', 'reset', 'link', 'unlink', 'create-color', 'create-palette', 'update', 'remove'],
                     'border_targets' => [
                         ['id' => 'table.header', 'selectors' => ['.fi-ta-header'], 'sides' => ['top', 'right', 'bottom', 'left'], 'properties' => ['width', 'color', 'style'], 'units' => ['width' => 'px', 'color' => 'css-color', 'style' => ['none', 'solid', 'dashed', 'dotted', 'double']], 'ring_backed' => false],

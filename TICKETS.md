@@ -802,7 +802,7 @@ Completed: native fixtures and selector-only registry coverage include every vis
 
 ## FTB-012 — Cover Tables visually
 
-**Status:** partial
+**Status:** done (2026-11-28). **GitHub:** [#12](https://github.com/Azab-Inc/filament-theme-builder/issues/12). **Project #30:** Done. Density MCP completion is uncommitted on `dev`, base `7e471f3`; nothing was pushed.
 **Blocked by:** [FTB-005](#ftb-005), [FTB-006](#ftb-006), [FTB-002](#ftb-002)
 
 ### What to build
@@ -816,11 +816,22 @@ Create a Tables showcase and realistic table fixtures covering all visually dist
 - [x] Row selection, bulk actions, row actions, and reorder support are represented where installed; read-only actions require confirmation and do not mutate seeded records.
 - [x] Empty and loading states, invalid filters, missing image/relationship data, long names, mobile layout, and selection reset are covered deterministically.
 - [x] Coverage is registered in `COVERAGE.md` with Livewire and Playwright sources for table surfaces, rows, headers, controls, and relevant states.
-- [x] Table density/spacing changes visibly respond to theme controls. Evidence: `builder/src/__tests__/foundation-projection.spec.ts` covers the verified `.fi-ta` projection tuple, and `e2e/theme-foundations.spec.ts` verifies Compact/Default/Spacious changes on the native Products/Orders/Inventory tables in the Compose preview iframe without reload or non-GET traffic. The bridge uses only verified Filament 5.9 `.fi-ta-header`, `.fi-ta-header-cell`, `.fi-ta-text`, `.fi-ta-icon`, `.fi-ta-image`, and `.fi-ta-cell.fi-ta-selection-cell` selectors.
+- [x] Table density/spacing changes visibly respond to theme controls. Evidence: `builder/src/__tests__/foundation-projection-scopes.spec.ts` covers the verified `.fi-ta` projection tuple, and `e2e/theme-foundations.spec.ts` verifies Compact/Default/Spacious changes on the native Products/Orders/Inventory tables in the Compose preview iframe without reload or non-GET traffic. The bridge uses only verified Filament 5.9 `.fi-ta-header`, `.fi-ta-header-cell`, `.fi-ta-text`, `.fi-ta-icon`, `.fi-ta-image`, and `.fi-ta-cell.fi-ta-selection-cell` selectors.
+- [x] MCP discovery/read/preview/set/reset supports the shared finite density presets through canonical `setDensity`/`resetFoundation` actions, without mode links or a schema change. Failing-first domain/browser regressions and actual stdio-client coverage verify pairing authorization, invalid inputs, preview without mutation, cancellation, revision-bound confirmation, stale rejection, atomic spacing/history, unrelated-value preservation, JSON read/export, reload persistence, and three-table/native geometry parity. Sources: `theme-relay-density.spec.ts`, `e2e/ftb-012-density-mcp.spec.ts`, and the [capability inventory](./docs/ai-operability/demo-showcase-capability-inventory.md).
 
 The native tables and interaction contract are implemented. Density integration is limited to the evidence-backed table selectors above; unrelated Filament controls remain unchanged and FTB-011 partial/native themability gaps are not claimed here.
 
 Implementation: `293b7aa` (`Feature: add tables showcase fixtures`); verification: [`TablesShowcaseTest`](./demo/tests/Feature/Filament/Showcase/TablesShowcaseTest.php), `e2e/demo-showcase.spec.ts`.
+
+Completion verification on base `7e471f3` plus only the scoped density MCP implementation/tests/inventory (initial worktree clean):
+
+- `builder/`: `npm run test:unit -- --run src/__tests__/foundation-projection-scopes.spec.ts src/__tests__/foundation-inventory-evidence.spec.ts src/__tests__/theme-state-density.spec.ts` — exit 0, 20 passed. New density boundary units — 16 passed. Initial meaningful red: density intent parsed as null; later tests exposed link/unlink/read contract gaps before repair. The browser red showed missing `foundation_targets` discovery. An initial PHP discovery test had a harness error, not a product regression.
+- `builder/`: final `npm run test:unit -- --run --testTimeout=20000 && npm run type-check && npm run build` — exit 0, 158 files / 772 tests, type-check and normal production build passed. Earlier default-5-second full run passed once; a later concurrent run had two timeouts (`App.foundations`, `App.inspector-advanced`), 770 passed. Both files passed in isolation (10 tests) without changing their timeout; the final serialized full run above passed. No crash or flakiness claim is made.
+- `demo/`: `vendor/bin/pint --test app/Mcp/Tools/LocalThemeTokenOperation.php tests/Feature/Mcp/LocalThemeToolSchemaTest.php` — exit 0. `php artisan test tests/Feature/Mcp/LocalThemeToolSchemaTest.php tests/Feature/Mcp/LocalThemeToolImportRelayTest.php tests/Feature/Filament/Showcase/TablesShowcaseTest.php tests/Feature/PreviewInspectorBridgeTest.php tests/Feature/AiOperability/DemoShowcaseCapabilityInventoryTest.php` — exit 0, 26 tests / 746 assertions. Initial import-order and inventory-wording failures were repaired before this result.
+- Repository root: `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/ftb-012-density-mcp.spec.ts` — exit 0, 1 actual stdio/browser journey passed. `COMPOSE_E2E=1 COMPOSE_BASE_URL=http://127.0.0.1:4175 npx playwright test e2e/demo-showcase.spec.ts e2e/theme-foundations.spec.ts --grep 'tables showcase|changes native Products, Orders, and Inventory table density immediately without requests'` — exit 0, 4 passed.
+- Repository root: `FTB_BASE_REF=HEAD node builder/scripts/changed-code-standards.mjs` and `git diff --check` — exit 0. One independent read-only review found no confirmed product blocker; its preview/isolation/invalid-client evidence gaps were covered before final verification.
+
+Existing development Compose at `http://127.0.0.1:4175` was verified healthy and source-mounted to this worktree, and reused without restarts or new services. Production bundle compilation passed; production Compose deployment was not run or claimed. Prerequisites FTB-002/005/006 have local completion evidence; their still-open GitHub records remain separate reconciliation work. Historical density-partial statements elsewhere describe the earlier state and do not override this completion. No unrelated issue or Phase 2 release gate is completed by this slice.
 
 ---
 

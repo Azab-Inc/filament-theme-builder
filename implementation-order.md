@@ -16,7 +16,7 @@ Panel configuration planning: [FTB-087](./TICKETS.md#ftb-087) / [#89](https://gi
 
 GitHub reports issues #1–#8, #11, #13–#18, #21, #22, #27, #28, #50 and #53 **open**, while their local tickets say **done**. Reconcile each issue against its local completion notes and actual verification; synchronize and close only when its approved scope and required evidence are complete. Do not reimplement or silently mark them complete based on local status alone. FTB-009 and FTB-010 are already closed on GitHub; FTB-009 includes local subtickets FTB-009A/B. FTB-051 is closed; its later follow-up is FTB-057.
 
-The repository's demo-first gate is evidenced satisfied for FTB-009A/B, FTB-010, FTB-011, and FTB-013 through FTB-018. FTB-012 remains partial only for theme-density integration and is not a demo-first blocker. This does not waive any ticket-specific dependency or the stricter Phase 2 release gate.
+The repository's demo-first gate is evidenced satisfied for FTB-009A/B, FTB-010, FTB-011, and FTB-013 through FTB-018. FTB-012's density-only partial was completed on 2026-11-28, including approved MCP parity; see its [verification](./TICKETS.md#ftb-012). This does not waive any ticket-specific dependency or the stricter Phase 2 release gate.
 
 ## 1. Stabilize and finish active work
 
@@ -35,7 +35,7 @@ These slices overlap an extensive dirty worktree: preserve unrelated changes and
 
 The following are recommended in order within each dependency chain; independent items can proceed in parallel if their actual prerequisites are met and work does not conflict.
 
-1. [FTB-012](./TICKETS.md#ftb-012) — Finish the remaining table theme-density integration and verify the full table contract. This matters to later full coverage and Phase 2 even though it does not block the demo-first gate.
+1. [FTB-012](./TICKETS.md#ftb-012) — Done 2026-11-28: native table/density behavior verified and shared density MCP parity completed. Full builder units (772), type-check/build, affected PHP (26 tests / 746 assertions), four table/density browser checks and actual stdio-client journey pass. Completion is uncommitted on `dev` base `7e471f3`, not pushed; initial timeout/lint/fixture limitations are retained in the ticket. Does not complete other coverage or Phase 2 gates.
 2. [FTB-052](./TICKETS.md#ftb-052) — Strict per-value padlocks, after its stated stabilization and FTB-022 prerequisites are verified. FTB-058 mode links are related but are not a substitute for padlocks.
 3. [FTB-055](./TICKETS.md#ftb-055) — Topbar visibility, after FTB-018/006 prerequisite readiness is evidenced; currently planning/blocked.
 4. [FTB-056](./TICKETS.md#ftb-056) — Comprehensive text color controls, after its documented registry/inheritance, JSON/migration and stabilization prerequisites are evidenced. FTB-059 is a sidebar-specific icon exception, not permission to recolor unrelated icons.

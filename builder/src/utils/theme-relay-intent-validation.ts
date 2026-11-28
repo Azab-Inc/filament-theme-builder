@@ -1,4 +1,4 @@
-import { PALETTE_SHADES } from '@/models/foundations.model'
+import { PALETTE_SHADES, type Density } from '@/models/foundations.model'
 import type { ModeLinkTarget } from '@/models/mode-link-target.model'
 import type { ThemeRelayIntent } from '@/models/theme-relay-intent.model'
 import type { ThemeStateCurrent } from '@/models/theme.model'
@@ -20,5 +20,12 @@ export function supportedTargetForAction(action: ThemeRelayIntent['action'], tar
   if (action === 'update' || action === 'remove') return isTokenMutationTarget(target)
   if (action === 'reset' || action === 'read') return target.kind === 'padding' || target.kind === 'raw' || target.kind === 'semantic' || target.kind === 'semantic-border' || target.kind === 'foundation' || target.kind === 'palette-base' || target.kind === 'palette-shade'
   return target.kind !== 'user-palette'
+}
+export function isDensityValue(value: unknown): value is Density { return value === 'compact' || value === 'default' || value === 'spacious' }
+export function isDensityTarget(target: ThemeRelayIntent['target']): target is Extract<ThemeRelayIntent['target'], { kind: 'foundation' }> { return target.kind === 'foundation' && target.path === 'density' && Object.keys(target).length === 2 }
+export function isDensityAction(action: ThemeRelayIntent['action']): boolean { return action === 'read' || action === 'set' || action === 'reset' }
+export function validDensityRelayIntent(action: ThemeRelayIntent['action'], target: ThemeRelayIntent['target'], value: unknown): boolean {
+  if (!isDensityTarget(target)) return true
+  return isDensityAction(action) && (action === 'set' ? isDensityValue(value) : value === undefined)
 }
 export function ensureChanged(before: string, after: ThemeStateCurrent): void { if (before === JSON.stringify(after)) throw new Error('unchanged') }

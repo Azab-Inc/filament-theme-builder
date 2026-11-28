@@ -18,7 +18,8 @@ import { validateRawSelector } from '@/utils/raw-override-validation'
 import { validatePaddingMutation } from '@/utils/padding-validation'
 import { cloneTheme } from '@/utils/theme-store-helpers'
 import { resetModeLinkTarget } from '@/utils/reset-mode-link-target'
-import { ensureChanged, isModeTarget, isPaletteShade, isTokenMutationTarget, isTokenTarget, supportedTargetForAction } from '@/utils/theme-relay-intent-validation'
+import { ensureChanged, isDensityTarget, isModeTarget, isPaletteShade, isTokenMutationTarget, isTokenTarget, supportedTargetForAction, validDensityRelayIntent } from '@/utils/theme-relay-intent-validation'
+import { applyDensityRelayIntent } from '@/utils/theme-relay-density'
 
 const actions = ['set', 'reset', 'read', 'link', 'unlink', 'create-color', 'create-palette', 'update', 'remove'] as const
 
@@ -27,7 +28,9 @@ export function parseThemeRelayIntent(value: string, registry?: FilamentRegistry
     const parsed: unknown = JSON.parse(value)
     if (!isRecord(parsed) || parsed.schemaVersion !== 1 || parsed.kind !== 'theme-intent' || !isRecord(parsed.target) || !actions.includes(parsed.action as never)) return null
     const target = parsed.target as ThemeRelayIntent['target']
-    if (target.kind === 'padding') {
+    if (isDensityTarget(target)) {
+      if (!validDensityRelayIntent(parsed.action as ThemeRelayIntent['action'], target, parsed.value)) return null
+    } else if (target.kind === 'padding') {
       if (!registry || !validPaddingRelayTarget(target, registry)) return null
       if (parsed.action !== 'read' && !validatePaddingMutation({ operation: parsed.action, context: target.context, ...(target.edges ? { edges: target.edges } : {}), ...(target.resetEdges ? { resetEdges: target.resetEdges } : {}) }, { padding: [] }, registry).valid) return null
     } else if (!isTokenTarget(target) && registry && !validModeLinkTarget(target as ModeLinkTarget, registry)) return null
@@ -41,6 +44,7 @@ export function parseThemeRelayIntent(value: string, registry?: FilamentRegistry
 
 export function applyThemeRelayIntent(previous: ThemeStateCurrent, intent: ThemeRelayIntent, registry: FilamentRegistry): ThemeStateCurrent {
   if (!supportedTargetForAction(intent.action, intent.target)) throw new Error('invalid_intent')
+  if (isDensityTarget(intent.target)) return applyDensityRelayIntent(previous, intent, registry)
   const theme = ref(cloneTheme(previous))
   const context: ThemeStoreContext = { theme, registry, commit: (candidate) => { theme.value = candidate } }
   const foundation = useThemeFoundationActions(context); const palette = useThemePaletteActions(context)

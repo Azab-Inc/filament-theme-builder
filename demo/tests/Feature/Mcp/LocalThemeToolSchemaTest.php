@@ -6,6 +6,10 @@ namespace Tests\Feature\Mcp;
 
 use App\Mcp\Servers\LocalThemeServer;
 use App\Mcp\ThemeRelay\RelayLimits;
+use App\Mcp\Tools\LocalThemePair;
+use App\Mcp\Tools\LocalThemeTokenOperation;
+use Illuminate\Support\Collection;
+use Illuminate\Testing\Fluent\AssertableJson;
 use Laravel\Mcp\Server\Transport\FakeTransporter;
 
 final class LocalThemeToolSchemaTest extends LocalThemeToolTestCase
@@ -72,5 +76,20 @@ final class LocalThemeToolSchemaTest extends LocalThemeToolTestCase
         self::assertSame(['filament-theme.json'], $import['filename']['enum']);
         $status = app(LocalThemeToolRegistry::class)->tool('local_theme_operation_status')['inputSchema']['properties'];
         self::assertSame('^[a-f0-9]{64}$', $status['operation_id']['pattern']);
+    }
+
+    public function test_discovery_advertises_shared_density_foundation_capability(): void
+    {
+        $this->approveBrowserPair('density-discovery', 'density-session');
+        LocalThemeServer::tool(LocalThemePair::class, ['pairing_id' => 'density-discovery']);
+        $response = LocalThemeServer::tool(LocalThemeTokenOperation::class, [
+            'pairing_id' => 'density-discovery',
+            'action' => 'discover',
+        ]);
+
+        $response->assertStructuredContent(fn (AssertableJson $json): AssertableJson => $json
+            ->where('target_kinds', fn (Collection $kinds): bool => $kinds->contains('foundation'))
+            ->where('foundation_targets', fn (Collection $targets): bool => $targets->contains(['path' => 'density', 'scope' => 'shared', 'values' => ['compact', 'default', 'spacious'], 'actions' => ['read', 'preview', 'set', 'reset']]))
+            ->etc());
     }
 }

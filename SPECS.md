@@ -45,7 +45,7 @@
 
 This is the implementation contract. PRD.md defines the product problem and outcomes. TICKETS.md contains the executable vertical slices. Each section below links to the ticket or tickets that implement it.
 
-Remaining builder feature work follows the demo-complete gate recorded in root AGENTS.md and TICKETS.md. Those authoritative records already evidence completion of FTB-009A/B/010/011/013/014/015/016/017/018; the earlier blocked summary here was stale. FTB-012 remains partial only for theme-density integration and is not a blocker. This reconciliation does not complete or relax any prerequisite on behalf of padding work. Operational FTB-027 and FTB-028 retain their separate status and evidence; they are not substitutes for the demo gate.
+Remaining builder feature work follows the demo-complete gate recorded in root AGENTS.md and TICKETS.md. Those records already evidence completion of FTB-009A/B/010/011/013/014/015/016/017/018; the earlier blocked summary here was stale. FTB-012's density-only partial was completed on 2026-11-28; see its [acceptance and verification](./TICKETS.md#ftb-012). This reconciliation does not complete or relax any other prerequisite on behalf of padding work. Operational FTB-027 and FTB-028 retain their separate status and evidence; they are not substitutes for the demo gate.
 
 ## 1. Repository and application boundary
 
@@ -337,6 +337,8 @@ Dedicated showcase areas cover:
 The goal is every visually distinct first-party Filament 5 surface, not every API permutation. Identical rendering does not need duplicate fixtures.
 
 All showcase output must be real Filament output.
+
+FTB-012 density is a shared structural foundation with finite Compact/Default/Spacious presets, not a light/dark mode-link target. UI and authenticated MCP set/reset use the same atomic density/spacing actions; MCP discovery advertises supported values and per-target read/preview/set/reset actions. Writes require browser preview, explicit confirmation and revision revalidation; read uses the existing canonical theme export boundary. Invalid targets/actions/values, canceled previews and stale confirmations must not mutate the theme. Preserve unrelated semantic/raw/palette/user-token values and non-preset spacing. Verify actual Products/Orders/Inventory geometry and native reset parity. [Acceptance evidence](./TICKETS.md#ftb-012).
 
 **Tickets:** [FTB-011](./TICKETS.md#ftb-011), [FTB-012](./TICKETS.md#ftb-012), [FTB-013](./TICKETS.md#ftb-013), [FTB-014](./TICKETS.md#ftb-014), [FTB-015](./TICKETS.md#ftb-015)
 
