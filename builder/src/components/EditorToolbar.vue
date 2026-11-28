@@ -66,25 +66,159 @@ function replayTour(event: MouseEvent): void {
   <header class="preview-shell__header" data-tour="welcome">
     <div class="preview-shell__header-copy">
       <h1>Filament Theme Builder</h1>
-      <p data-demo-notice data-tour="finish">Preview demo data is temporary.</p>
+      <p data-demo-notice data-tour="finish">Alpha v1.0.0</p>
     </div>
-        <div class="preview-shell__header-controls toolbar-strip toolbar-icon-segments" data-editor-header-controls>
-          <div class="toolbar-cluster toolbar-edit toolbar-align-compact"><ColorField id="toolbar-primary-color" label="Primary color" visible-label="Primary color" text-label="Primary color text" :value="primaryColor" :effective-value="primaryColor" profile="hex6" :context-key="activeThemeId" native-label="Primary color" :native-primary="true" @input="updatePrimaryColor" /><div class="toolbar-mode"><ModeValueLink :target="{ kind: 'palette-base', name: 'primary' }" /><ToolbarModeToggle :mode="activeMode" variant="segmented" @change="emit('set-mode', $event)" /></div></div>
-           <EditorHistoryControls :can-undo="canUndo" :can-redo="canRedo" :inspector-enabled="inspectorEnabled" @undo="emit('undo')" @redo="emit('redo')" @toggle-inspector="emit('toggleInspector')" />
-            <div class="toolbar-cluster toolbar-delivery"><ToolbarMenu label="Tools" ariaLabel="Theme tools"><button type="button" aria-label="Take a tour" @click="replayTour">Take a tour</button><LocalThemeManager :themes="themes" :active-theme-id="activeThemeId" :storage-error="storageError" @save="emit('save')" @create="emit('create')" @open="emit('open', $event)" @rename="relayRename" @duplicate="emit('duplicate', $event)" @delete="emit('delete', $event)" @close="emit('close')" /><div class="toolbar-import"><ThemeImportDialog ref="importDialog" /></div><ThemePairingControl :on-import-payload="receiveRelayImport" /></ToolbarMenu><ToolbarMenu label="Export" ariaLabel="Export actions"><button type="button" aria-label="Export theme JSON" @click="emit('exportCanonicalJson')">Export JSON</button><button type="button" aria-label="Copy vanilla CSS" @click="emit('copyVanillaThemeCss')">Copy CSS</button><button type="button" aria-label="Download vanilla CSS" @click="emit('exportVanillaThemeCss')">Download CSS</button><button type="button" aria-label="Export PanelProvider icon config" @click="emit('exportIconPhp')">Export icon PHP</button><button type="button" aria-label="Export panel branding JSON" @click="emit('exportBrandingJson')">Export branding JSON</button><button type="button" aria-label="Export PanelProvider branding config" @click="emit('exportBrandingPhp')">Export branding PHP</button></ToolbarMenu><button type="button" class="toolbar-primary-action" data-tour="save-theme" aria-label="Save theme" @click="emit('save')"><ToolbarIcon name="save" />Save theme</button></div>
+    <div
+      class="preview-shell__header-controls toolbar-strip toolbar-icon-segments"
+      data-editor-header-controls
+    >
+      <div class="toolbar-cluster toolbar-edit toolbar-align-compact">
+        <ColorField
+          id="toolbar-primary-color"
+          label="Primary color"
+          visible-label="Primary color"
+          text-label="Primary color text"
+          :value="primaryColor"
+          :effective-value="primaryColor"
+          profile="hex6"
+          :context-key="activeThemeId"
+          native-label="Primary color"
+          :native-primary="true"
+          @input="updatePrimaryColor"
+        />
+        <div class="toolbar-mode">
+          <ModeValueLink
+            :target="{ kind: 'palette-base', name: 'primary' }"
+          /><ToolbarModeToggle
+            :mode="activeMode"
+            variant="segmented"
+            @change="emit('set-mode', $event)"
+          />
         </div>
+      </div>
+      <EditorHistoryControls
+        :can-undo="canUndo"
+        :can-redo="canRedo"
+        :inspector-enabled="inspectorEnabled"
+        @undo="emit('undo')"
+        @redo="emit('redo')"
+        @toggle-inspector="emit('toggleInspector')"
+      />
+      <div class="toolbar-cluster toolbar-delivery">
+        <ToolbarMenu label="Tools" ariaLabel="Theme tools"
+          ><button type="button" aria-label="Take a tour" @click="replayTour">
+            Take a tour</button
+          ><LocalThemeManager
+            :themes="themes"
+            :active-theme-id="activeThemeId"
+            :storage-error="storageError"
+            @save="emit('save')"
+            @create="emit('create')"
+            @open="emit('open', $event)"
+            @rename="relayRename"
+            @duplicate="emit('duplicate', $event)"
+            @delete="emit('delete', $event)"
+            @close="emit('close')" />
+          <div class="toolbar-import">
+            <ThemeImportDialog ref="importDialog" />
+          </div>
+          <ThemePairingControl
+            :on-import-payload="receiveRelayImport" /></ToolbarMenu
+        ><ToolbarMenu label="Export" ariaLabel="Export actions"
+          ><button
+            type="button"
+            aria-label="Export theme JSON"
+            @click="emit('exportCanonicalJson')"
+          >
+            Export JSON</button
+          ><button
+            type="button"
+            aria-label="Copy vanilla CSS"
+            @click="emit('copyVanillaThemeCss')"
+          >
+            Copy CSS</button
+          ><button
+            type="button"
+            aria-label="Download vanilla CSS"
+            @click="emit('exportVanillaThemeCss')"
+          >
+            Download CSS</button
+          ><button
+            type="button"
+            aria-label="Export PanelProvider icon config"
+            @click="emit('exportIconPhp')"
+          >
+            Export icon PHP</button
+          ><button
+            type="button"
+            aria-label="Export panel branding JSON"
+            @click="emit('exportBrandingJson')"
+          >
+            Export branding JSON</button
+          ><button
+            type="button"
+            aria-label="Export PanelProvider branding config"
+            @click="emit('exportBrandingPhp')"
+          >
+            Export branding PHP
+          </button></ToolbarMenu
+        ><button
+          type="button"
+          class="toolbar-primary-action"
+          data-tour="save-theme"
+          aria-label="Save theme"
+          @click="emit('save')"
+        >
+          <ToolbarIcon name="save" />Save theme
+        </button>
+      </div>
+    </div>
   </header>
-  <p v-if="exportStatus" role="status" aria-label="Export status" aria-live="polite" data-export-status>{{ exportStatus }}</p>
-  <p role="status" aria-label="Inspector status" aria-live="polite" data-inspector-status>{{ inspectorStatus }}</p>
-  <p v-if="runtimeLoading" role="status" aria-live="polite" data-preview-loading>Refreshing runtime preview…</p>
+  <p
+    v-if="exportStatus"
+    role="status"
+    aria-label="Export status"
+    aria-live="polite"
+    data-export-status
+  >
+    {{ exportStatus }}
+  </p>
+  <p
+    role="status"
+    aria-label="Inspector status"
+    aria-live="polite"
+    data-inspector-status
+  >
+    {{ inspectorStatus }}
+  </p>
+  <p
+    v-if="runtimeLoading"
+    role="status"
+    aria-live="polite"
+    data-preview-loading
+  >
+    Refreshing runtime preview…
+  </p>
   <aside v-if="legacyRecoveryAvailable" role="alert" class="legacy-recovery">
     <strong>Legacy customization archived.</strong>
-    <span>Unversioned foundation values are ambiguous; restore marks non-default legacy values explicit.</span>
+    <span
+      >Unversioned foundation values are ambiguous; restore marks non-default
+      legacy values explicit.</span
+    >
     <p v-if="legacyRecoveryError" role="status">{{ legacyRecoveryError }}</p>
-    <button type="button" aria-label="Restore legacy customization" :disabled="!!legacyRecoveryError" @click="emit('restoreLegacyRecovery')">
+    <button
+      type="button"
+      aria-label="Restore legacy customization"
+      :disabled="!!legacyRecoveryError"
+      @click="emit('restoreLegacyRecovery')"
+    >
       Restore legacy customization
     </button>
-    <button type="button" aria-label="Download archived legacy JSON" @click="emit('downloadLegacyRecovery')">
+    <button
+      type="button"
+      aria-label="Download archived legacy JSON"
+      @click="emit('downloadLegacyRecovery')"
+    >
       Download archived JSON
     </button>
   </aside>
