@@ -7,9 +7,11 @@ const [agents, tickets] = await Promise.all([
   readFile(new URL('../TICKETS.md', import.meta.url), 'utf8'),
 ]);
 
-test('repository guidance records the gated demo-first sequence', () => {
-  assert.match(agents, /FTB-009A[\s\S]*FTB-009B[\s\S]*FTB-010/);
-  assert.match(agents, /FTB-027\/028[\s\S]*parallel[\s\S]*outside the current plan/i);
+test('repository guidance points volatile sequencing to authoritative records', () => {
+  assert.match(agents, /TICKETS\.md/);
+  assert.match(agents, /implementation-order\.md/);
+  assert.match(agents, /capability inventory/i);
+  assert.doesNotMatch(agents, /FTB-012 .*partial/i);
 });
 
 test('ticket plan separates the three ordered milestone slices', () => {

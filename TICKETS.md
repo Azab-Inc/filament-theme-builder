@@ -802,7 +802,7 @@ Completed: native fixtures and selector-only registry coverage include every vis
 
 ## FTB-012 — Cover Tables visually
 
-**Status:** done (2026-11-28). **GitHub:** [#12](https://github.com/Azab-Inc/filament-theme-builder/issues/12). **Project #30:** Done. Density MCP completion is uncommitted on `dev`, base `7e471f3`; nothing was pushed.
+**Status:** done (2026-11-28). **GitHub:** [#12](https://github.com/Azab-Inc/filament-theme-builder/issues/12). **Project #30:** Done. Density MCP completion is committed in local `81587f2`; nothing was pushed.
 **Blocked by:** [FTB-005](#ftb-005), [FTB-006](#ftb-006), [FTB-002](#ftb-002)
 
 ### What to build
@@ -823,7 +823,7 @@ The native tables and interaction contract are implemented. Density integration 
 
 Implementation: `293b7aa` (`Feature: add tables showcase fixtures`); verification: [`TablesShowcaseTest`](./demo/tests/Feature/Filament/Showcase/TablesShowcaseTest.php), `e2e/demo-showcase.spec.ts`.
 
-Completion verification on base `7e471f3` plus only the scoped density MCP implementation/tests/inventory (initial worktree clean):
+Completion verification on base `7e471f3` plus only the scoped density MCP implementation/tests/inventory (initial worktree clean), subsequently committed unchanged in `81587f2`:
 
 - `builder/`: `npm run test:unit -- --run src/__tests__/foundation-projection-scopes.spec.ts src/__tests__/foundation-inventory-evidence.spec.ts src/__tests__/theme-state-density.spec.ts` — exit 0, 20 passed. New density boundary units — 16 passed. Initial meaningful red: density intent parsed as null; later tests exposed link/unlink/read contract gaps before repair. The browser red showed missing `foundation_targets` discovery. An initial PHP discovery test had a harness error, not a product regression.
 - `builder/`: final `npm run test:unit -- --run --testTimeout=20000 && npm run type-check && npm run build` — exit 0, 158 files / 772 tests, type-check and normal production build passed. Earlier default-5-second full run passed once; a later concurrent run had two timeouts (`App.foundations`, `App.inspector-advanced`), 770 passed. Both files passed in isolation (10 tests) without changing their timeout; the final serialized full run above passed. No crash or flakiness claim is made.

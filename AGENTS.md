@@ -35,7 +35,7 @@ Use test-driven development for every feature and bug fix: write the test first,
 
 ### Version control
 
-Create commits automatically once the approved implementation and required verification are settled. Never push commits or modify remote branches unless the user explicitly requests it.
+Commit authority follows the shared version-control policy: commit only after approved implementation and required verification settle, and honor any explicit user no-commit instruction. Never push commits or modify remote branches unless the user explicitly requests it. Use the repository's configured commit tool/workflow when committing.
 
 ## Theme mode isolation
 
@@ -43,7 +43,11 @@ Treat light and dark mode values as independent theme-context values with inheri
 
 ### Demo-first implementation gate
 
-After FTB-003, remaining builder feature work stays blocked until all demo-complete requirements are met: FTB-009A, FTB-009B, FTB-010, FTB-011, FTB-013, FTB-014, FTB-015, FTB-016, FTB-017, and FTB-018 are now evidenced complete. FTB-012 (tables) remains explicitly partial only for theme-density integration, which is not a blocker. Operational FTB-027/028 are parallel and outside the current plan; they retain separate status/prerequisites and are not substitutes for or relaxations of this gate. Preserve TDD and Playwright requirements above for all feature work.
+Feature sequencing and gate status are maintained in [TICKETS.md](./TICKETS.md) and [implementation-order.md](./implementation-order.md); consult those authoritative records before planning feature work. Preserve TDD and Playwright requirements above for all feature work.
+
+MCP capability navigation starts at the [capability inventory](./docs/ai-operability/demo-showcase-capability-inventory.md), which links product capabilities to their tools and acceptance evidence.
+
+For a fast changed-code gate run `npm run lint:changed`; for the canonical sequential local evidence checkpoint run `npm run verify:local`; inspect or validate the latest git-private checkpoint with `node scripts/verification-checkpoint.mjs identity` or `node scripts/verification-checkpoint.mjs check`.
 
 ## More Specific Instructions
 

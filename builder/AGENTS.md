@@ -9,7 +9,7 @@ These instructions apply to the Vue application in `builder/`.
 - Do not install or add a third-party package without first asking for and receiving explicit user consent.
 - Prefer the existing dependencies, project utilities, and platform APIs before proposing a new package.
 - Use the `@/*` alias for imports from `src/`.
-- Don't let any file be over 100 lines, if it is over a 100 lines that means you need to split it up into either seperate components, composables or something else.
+- Keep modules cohesive and review files over 100 lines for a responsibility split; the shared coding rules govern explicit declarations and signatures.
 
 ## Source Structure
 
@@ -27,7 +27,7 @@ Keep responsibilities in their designated layer. Do not duplicate a domain model
 ## TypeScript Best Practices
 
 - Use strict type checking
-- Prefer type inference when the type is obvious
+- Follow the shared coding rules for explicit declarations and signatures; use precise domain types rather than widening to `any`.
 - Avoid the `any` type; use `unknown` when type is uncertain
 - Use `type` instead of `interface` where possible
 - Make sure all `types` and `interfaces` are in their own files.
