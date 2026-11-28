@@ -1,1 +1,5 @@
 /* Controls remain adjacent to the layout import to preserve dashboard cascade order. */
+button:hover,
+a:hover {
+  @apply cursor-pointer;
+}
