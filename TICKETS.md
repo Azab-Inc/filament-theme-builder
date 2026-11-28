@@ -805,6 +805,8 @@ Completed: native fixtures and selector-only registry coverage include every vis
 **Status:** done (2026-11-28). **GitHub:** [#12](https://github.com/Azab-Inc/filament-theme-builder/issues/12). **Project #30:** Done. Density MCP completion is committed in local `81587f2`; nothing was pushed.
 **Blocked by:** [FTB-005](#ftb-005), [FTB-006](#ftb-006), [FTB-002](#ftb-002)
 
+**Committed verification follow-up:** `1358cb4` extracts the pure density transformation shared by UI and MCP; `38c4ee6` adds stronger standards checks, sequential verification/checkpoints and Jenkins acceptance selection; `10491d6` records guidance/evidence. Final integrated verification passes 773 builder tests, type-check/build, full Composer checks (275 PHP tests / 2,414 assertions), and 27 browser checks including the actual density MCP journey. The original completion evidence below is retained. See the [retrospective follow-up](./docs/verification/2026-11-27-agent-retrofit.md#repository-only-retrospective-follow-up--2026-11-28). All commits are local, not pushed.
+
 ### What to build
 
 Create a Tables showcase and realistic table fixtures covering all visually distinct first-party Filament table states and capabilities relevant to theme design.
@@ -1359,6 +1361,8 @@ logs/artifacts. Node contract tests pass; no live Jenkins endpoint is available.
 This is partial work only: deployment, release monitoring, full visual regression
 and this ticket's existing prerequisites/acceptance remain outstanding. No GitHub
 Actions or Git hooks were added. [Evidence](./docs/verification/2026-11-27-agent-retrofit.md).
+
+**2026-11-28 verification guardrails follow-up:** local `38c4ee6` wires `npm run lint:changed`, the shared 20-second unit/hook timeout, checkpoint contract tests, and the exact Inspector/table/density/MCP browser selections into Jenkins. Browser execution has a separate 15-minute bound within the job-owned 30-minute Compose stage. The local sequential checkpoint passed 32 focused tooling tests separately, 773 full builder tests, type-check/build, 275 PHP tests / 2,414 assertions with Pint/PHPStan, and 27 real browser checks. Documentation is committed in `10491d6`; density-seam repair is `1358cb4`. No live Jenkins run is claimed. FTB-033/035 prerequisites, deployment parameters/release monitoring/full visual regression and this ticket's remaining acceptance stay open; Project #30 remains Todo. Nothing was pushed.
 
 ### What to build
 
